@@ -21,3 +21,12 @@ variable "db_username" {
   type        = string
   default     = "mrb_admin"
 }
+
+variable "public_subnet_ids" {
+  description = "Public subnets used by the bastion host"
+  type        = list(string)
+  default     = [
+    "subnet-022be9ea4ac9e10eb",
+    "subnet-032e887c9ef595bd6"
+  ]
+}

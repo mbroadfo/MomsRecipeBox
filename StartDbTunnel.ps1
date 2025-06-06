@@ -4,10 +4,14 @@ $instanceId = (aws ec2 describe-instances `
   --query "Reservations[*].Instances[*].InstanceId" `
   --output text).Trim()
 
-Write-Output $instanceId
+Write-Output "Bastion instance ID: $instanceId"
 
-# Start the SSM port forwarding session
+# Ensure AWS CLI can find the Session Manager plugin
+$pluginPath = "C:\Program Files\Amazon\SessionManagerPlugin\bin\SessionManagerPlugin.exe"
+$env:AWS_SSM_PLUGIN = $pluginPath
+
+# Start the SSM port forwarding session using the ToRemoteHost document
 aws ssm start-session `
   --target $instanceId `
-  --document-name "AWS-StartPortForwardingSession" `
-  --parameters '{\"portNumber\":[\"5432\"],\"localPortNumber\":[\"5432\"]}'
+  --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
+  --parameters file://ssm-port-forward.json

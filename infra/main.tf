@@ -77,8 +77,3 @@ resource "aws_db_instance" "mrb_postgres" {
 output "db_endpoint" {
   value = aws_db_instance.mrb_postgres.endpoint
 }
-
-output "db_password" {
-  value     = random_password.db_password.result
-  sensitive = true
-}

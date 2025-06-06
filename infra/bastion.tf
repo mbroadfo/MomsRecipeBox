@@ -66,6 +66,25 @@ data "aws_ami" "amazon_linux" {
     values = ["hvm"]
   }
 }
+########################################
+# Bastion Security Group
+########################################
+resource "aws_security_group" "bastion_sg" {
+  name        = "mrb-bastion-sg"
+  description = "Allow outbound SSM and PostgreSQL access"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "mrb-bastion-sg"
+  }
+}
 
 ########################################
 # Bastion EC2 Instance
@@ -74,7 +93,7 @@ resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.micro"
   subnet_id                   = var.public_subnet_ids[0]
-  vpc_security_group_ids      = [aws_security_group.rds_sg.id]
+  vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.bastion_profile.name
   tags = {
@@ -82,16 +101,22 @@ resource "aws_instance" "bastion" {
   }
   user_data = <<-EOF
     #!/bin/bash
+    exec > >(tee /var/log/custom-debug.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+    echo "==== Starting bastion instance setup ===="
+
+    echo "Installing SSM and CloudWatch agents..."
     yum install -y amazon-ssm-agent
     yum install -y amazon-cloudwatch-agent
 
+    echo "Enabling and starting SSM agent..."
     systemctl enable amazon-ssm-agent
     systemctl start amazon-ssm-agent
+
+    echo "Enabling CloudWatch agent..."
     systemctl enable amazon-cloudwatch-agent
 
-    echo "SSM Agent status:" > /tmp/ssm_debug.log
-    systemctl status amazon-ssm-agent >> /tmp/ssm_debug.log
-
+    echo "Writing CloudWatch Agent config..."
     cat <<EOC > /opt/aws/amazon-cloudwatch-agent/bin/config.json
     {
       "agent": {
@@ -108,8 +133,23 @@ resource "aws_instance" "bastion" {
                 "log_stream_name": "{instance_id}"
               },
               {
-                "file_path": "/var/log/cloud-init.log",
-                "log_group_name": "/ec2/bastion/cloud-init",
+                "file_path": "/var/log/cloud-init-output.log",
+                "log_group_name": "/ec2/bastion/cloud-init-output",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
+                "log_group_name": "/ec2/bastion/ssm-agent",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/yum.log",
+                "log_group_name": "/ec2/bastion/yum",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/custom-debug.log",
+                "log_group_name": "/ec2/bastion/custom-debug",
                 "log_stream_name": "{instance_id}"
               }
             ]
@@ -119,12 +159,15 @@ resource "aws_instance" "bastion" {
     }
     EOC
 
+    echo "Starting CloudWatch agent..."
     /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
       -a fetch-config \
       -m ec2 \
       -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json \
       -s
-    EOF
+
+    echo "==== Setup complete ===="
+  EOF
 }
 
 ########################################
@@ -182,4 +225,32 @@ resource "aws_vpc_endpoint" "ec2messages" {
   tags = {
     Name = "ec2messages-endpoint"
   }
+}
+
+########################################
+# Security Group Rule for VPC Endpoint Access
+########################################
+resource "aws_security_group_rule" "allow_bastion_https_to_endpoints" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.1.0/24"]
+  security_group_id = aws_security_group.rds_sg.id
+  description       = "Allow HTTPS from Bastion subnet to VPC endpoints"
+}
+
+
+########################################
+# Security Group Rule for Bastion Access
+########################################
+resource "aws_security_group_rule" "allow_bastion_to_rds" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds_sg.id
+  source_security_group_id = aws_security_group.bastion_sg.id
+  description              = "Allow bastion to access Postgres"
+  depends_on               = [aws_instance.bastion]
 }

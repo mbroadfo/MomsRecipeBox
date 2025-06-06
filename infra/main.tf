@@ -22,13 +22,6 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow DB access from Lambda or specific IPs"
   vpc_id      = var.vpc_id
 
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidrs
-  }
-
   egress {
     from_port   = 0
     to_port     = 0

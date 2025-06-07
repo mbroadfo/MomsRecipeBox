@@ -90,6 +90,7 @@ resource "aws_security_group" "bastion_sg" {
 # Bastion EC2 Instance
 ########################################
 resource "aws_instance" "bastion" {
+  count                       = var.enable_bastion ? 1 : 0
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.micro"
   subnet_id                   = var.public_subnet_ids[0]
@@ -183,6 +184,7 @@ variable "region" {
 # VPC Interface Endpoint for SSM
 ########################################
 resource "aws_vpc_endpoint" "ssm" {
+  count             = var.enable_bastion ? 1 : 0
   vpc_id            = var.vpc_id
   service_name      = "com.amazonaws.${var.region}.ssm"
   vpc_endpoint_type = "Interface"
@@ -199,6 +201,7 @@ resource "aws_vpc_endpoint" "ssm" {
 # VPC Interface Endpoint for SSM Messages
 ########################################
 resource "aws_vpc_endpoint" "ssmmessages" {
+  count             = var.enable_bastion ? 1 : 0
   vpc_id            = var.vpc_id
   service_name      = "com.amazonaws.${var.region}.ssmmessages"
   vpc_endpoint_type = "Interface"
@@ -215,6 +218,7 @@ resource "aws_vpc_endpoint" "ssmmessages" {
 # VPC Interface Endpoint for EC2 Messages
 ########################################
 resource "aws_vpc_endpoint" "ec2messages" {
+  count             = var.enable_bastion ? 1 : 0
   vpc_id            = var.vpc_id
   service_name      = "com.amazonaws.${var.region}.ec2messages"
   vpc_endpoint_type = "Interface"
@@ -231,6 +235,7 @@ resource "aws_vpc_endpoint" "ec2messages" {
 # Security Group Rule for VPC Endpoint Access
 ########################################
 resource "aws_security_group_rule" "allow_bastion_https_to_endpoints" {
+  count             = var.enable_bastion ? 1 : 0
   type              = "ingress"
   from_port         = 443
   to_port           = 443
@@ -245,6 +250,7 @@ resource "aws_security_group_rule" "allow_bastion_https_to_endpoints" {
 # Security Group Rule for Bastion Access
 ########################################
 resource "aws_security_group_rule" "allow_bastion_to_rds" {
+  count                    = var.enable_bastion ? 1 : 0
   type                     = "ingress"
   from_port                = 5432
   to_port                  = 5432

@@ -30,3 +30,9 @@ variable "public_subnet_ids" {
     "subnet-032e887c9ef595bd6"
   ]
 }
+
+variable "enable_bastion" {
+  description = "Enable bastion host and VPC Endpoints for RDS access via Session Manager"
+  type        = bool
+  default     = false
+}

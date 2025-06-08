@@ -53,3 +53,15 @@ aws ssm start-session `
   --target $instanceId `
   --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
   --parameters file://ssm-port-forward.json
+
+## Running Database Tests
+
+Our project includes unit-style tests for the PostgreSQL database using `plpgsql` procedures.
+
+### Prerequisites
+
+- The RDS instance must be running and reachable via the Bastion + SSM tunnel.
+- The Bastion must be enabled via Terraform (`enable_bastion = true`).
+- The SSM port forwarding tunnel must be active:
+  ```powershell
+  .\StartDbTunnel.ps1

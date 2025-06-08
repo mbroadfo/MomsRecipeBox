@@ -1,13 +1,14 @@
--- SQL Init Script for Mom's Recipe Box Schema and Seed Data
+DROP TABLE IF EXISTS comments CASCADE;
+DROP TABLE IF EXISTS likes CASCADE;
+DROP TABLE IF EXISTS recipe_ingredients CASCADE;
+DROP TABLE IF EXISTS recipe_sections CASCADE;
+DROP TABLE IF EXISTS recipes CASCADE;
 
--- Drop tables if they exist (for idempotent dev use)
-DROP TABLE IF EXISTS comments, likes, recipe_sections, recipe_ingredients, recipes CASCADE;
-
--- Create recipes table
 CREATE TABLE recipes (
     id SERIAL PRIMARY KEY,
     owner_id TEXT NOT NULL,
-    visibility TEXT CHECK (visibility IN ('none', 'family', 'all')) DEFAULT 'none',
+    visibility VARCHAR(20) NOT NULL CHECK (visibility IN ('none', 'family', 'public')),
+    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
     title TEXT NOT NULL,
     subtitle TEXT,
     description TEXT,
@@ -16,47 +17,32 @@ CREATE TABLE recipes (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Recipe sections (instructions, before you begin, etc.)
 CREATE TABLE recipe_sections (
     id SERIAL PRIMARY KEY,
-    recipe_id INT REFERENCES recipes(id) ON DELETE CASCADE,
-    section_type TEXT NOT NULL,
-    content TEXT NOT NULL,
-    position INT NOT NULL
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    section_type VARCHAR(50) NOT NULL, -- e.g., 'Instructions', 'Notes'
+    content TEXT,
+    position INTEGER NOT NULL
 );
 
--- Ingredients (structured)
 CREATE TABLE recipe_ingredients (
     id SERIAL PRIMARY KEY,
-    recipe_id INT REFERENCES recipes(id) ON DELETE CASCADE,
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     quantity TEXT,
-    position INT NOT NULL
+    position INTEGER NOT NULL
 );
 
--- Likes
-CREATE TABLE likes (
-    id SERIAL PRIMARY KEY,
-    recipe_id INT REFERENCES recipes(id) ON DELETE CASCADE,
-    user_id TEXT NOT NULL,
-    liked_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
--- Comments
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY,
-    recipe_id INT REFERENCES recipes(id) ON DELETE CASCADE,
-    user_id TEXT NOT NULL,
-    comment TEXT NOT NULL,
-    commented_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    author_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert a test recipe
-INSERT INTO recipes (owner_id, visibility, title, subtitle, description, image_url, tags)
-VALUES (
-    'auth0|user123', 'family', 'Zarzuela (Spanish Seafood Stew)', 'A rich, classic Catalan dish',
-    'Teeming with mussels, squid, shrimp, and cod, this stew balances tomato, saffron, and wine.',
-    'https://example.com/image.jpg', ARRAY['Spanish', 'Seafood', 'Stew']
-) RETURNING id;
-
--- Note: Additional INSERTs for sections and ingredients would follow here
+CREATE TABLE likes (
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    PRIMARY KEY (recipe_id, user_id)
+);

@@ -260,3 +260,33 @@ resource "aws_security_group_rule" "allow_bastion_to_rds" {
   description              = "Allow bastion to access Postgres"
   depends_on               = [aws_instance.bastion]
 }
+
+########################################
+# CloudWatch Log Retention
+########################################
+resource "aws_cloudwatch_log_group" "bastion_cloud_init" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/cloud-init-output"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-cloud-init-log-group"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "bastion_custom_debug" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/custom-debug"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-custom-debug-log-group"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "bastion_ssm_agent" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/ssm-agent"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-ssm-agent-log-group"
+  }
+}

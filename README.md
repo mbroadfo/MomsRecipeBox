@@ -8,31 +8,32 @@ This guide explains how to securely access the RDS PostgreSQL instance using **p
 
 - pgAdmin installed locally
 - AWS CLI installed and configured
-- Session Manager Plugin installed (check: `session-manager-plugin --version`)
+- Session Manager Plugin installed  
+  _Check:_ `session-manager-plugin --version`
 - PowerShell (Windows dev environment assumed)
-- Terraform deployed infrastructure
+- Terraform-deployed infrastructure
 
 ---
 
 ## 🏗️ Infrastructure Recap
 
-- `bastion` EC2 in public subnet (SSM only, no SSH)
-- `mrb-postgres-db` in private subnets
+- `bastion` EC2 instance in public subnet (SSM only — no SSH)
+- `mrb-postgres-db` RDS instance in private subnets
 - VPC endpoints for:
   - `ssm`
   - `ssmmessages`
   - `ec2messages`
 - Security Groups:
-  - `bastion_sg`: allows all egress
+  - `bastion_sg`: allows all outbound traffic
   - `rds_sg`: allows port `5432` from `bastion_sg`
 
 ---
 
 ## 🚀 Steps to Connect
 
-### 1. Start Port Forwarding Tunnel
+### 1️⃣ Start Port Forwarding Tunnel
 
-Ensure the following script exists at `StartDbTunnel.ps1`:
+Ensure this script exists at `StartDbTunnel.ps1`:
 
 ```powershell
 # StartDbTunnel.ps1
@@ -53,15 +54,3 @@ aws ssm start-session `
   --target $instanceId `
   --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
   --parameters file://ssm-port-forward.json
-
-## Running Database Tests
-
-Our project includes unit-style tests for the PostgreSQL database using `plpgsql` procedures.
-
-### Prerequisites
-
-- The RDS instance must be running and reachable via the Bastion + SSM tunnel.
-- The Bastion must be enabled via Terraform (`enable_bastion = true`).
-- The SSM port forwarding tunnel must be active:
-  ```powershell
-  .\StartDbTunnel.ps1

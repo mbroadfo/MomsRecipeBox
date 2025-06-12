@@ -1,0 +1,42 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_run:
+    workflows: [ "CI Build and Test" ]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.ref_name }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.8.0
+
+    - name: Terraform Init
+      working-directory: infra
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: infra
+      run: terraform plan
+
+    - name: Terraform Apply (with approval on main)
+      if: github.ref == 'refs/heads/dev'
+      working-directory: infra
+      run: terraform apply -auto-approve
+
+    - name: Terraform Apply with manual approval
+      if: github.ref == 'refs/heads/main'
+      working-directory: infra
+      run: terraform apply

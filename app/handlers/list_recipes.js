@@ -5,13 +5,11 @@ exports.handler = async (event) => {
 
     const params = event.queryStringParameters || {};
 
-    const limit = parseInt(params.limit, 10) || 20;
-    const offset = parseInt(params.offset, 10) || 0;
+    const limit = parseInt(params.limit) || 20;
+    const offset = parseInt(params.offset) || 0;
     const owner_id = params.owner_id || null;
     const visibility = params.visibility || null;
-    const tags = params.tags ? params.tags.split(',').map(tag => tag.trim()) : null;
-
-    console.log('List recipes with params:', { limit, offset, owner_id, visibility, tags });
+    const tags = params.tags ? params.tags.split(',') : null;
 
     try {
         const query = `
@@ -25,9 +23,7 @@ exports.handler = async (event) => {
             LIMIT $4 OFFSET $5;
         `;
 
-        const values = [owner_id, visibility, tags, limit, offset];
-
-        const res = await client.query(query, values);
+        const res = await client.query(query, [owner_id, visibility, tags, limit, offset]);
 
         return {
             statusCode: 200,
@@ -36,7 +32,7 @@ exports.handler = async (event) => {
                 pagination: {
                     limit,
                     offset,
-                    count: res.rowCount, // total *returned* count (not full count — could add that if needed)
+                    count: res.rowCount,
                 },
             }),
         };

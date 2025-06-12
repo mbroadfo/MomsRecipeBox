@@ -1,21 +1,33 @@
-const getRecipe = require('./handlers/get_recipe');
+const { handler: createRecipeHandler } = require('./create_recipe');
+const { handler: listRecipesHandler } = require('./list_recipes');
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
     console.log(`Received event: ${JSON.stringify(event)}`);
 
-    const { path, httpMethod } = event;
+    const method = event.httpMethod;
+    const path = event.resource;
 
-    if (httpMethod === 'GET' && path === '/recipes') {
-        return await getRecipe(event);
+    try {
+        // POST /recipes
+        if (method === 'POST' && path === '/recipes') {
+            return await createRecipeHandler(event, context);
+        }
+
+        // GET /recipes
+        if (method === 'GET' && path === '/recipes') {
+            return await listRecipesHandler(event, context);
+        }
+
+        // 404 default
+        return {
+            statusCode: 404,
+            body: JSON.stringify({ message: 'Not Found' }),
+        };
+    } catch (err) {
+        console.error('Error in index.js handler:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
+        };
     }
-
-    else if (httpMethod === 'POST' && path === '/recipes') {
-        const postRecipe = require('./handlers/post_recipe');
-        return await postRecipe.handler(event);
-    }
-
-    return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Not found' }),
-    };
 };

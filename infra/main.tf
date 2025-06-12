@@ -42,31 +42,8 @@ resource "aws_db_subnet_group" "mrb_db_subnet_group" {
 }
 
 ##################################################################
-# RDS PostgreSQL instance
-##################################################################
-resource "aws_db_instance" "mrb_postgres" {
-  identifier             = "mrb-postgres-db"
-  allocated_storage      = 20
-  engine                 = "postgres"
-  engine_version         = "15.13"
-  instance_class         = "db.t3.micro"
-  username               = var.db_username
-  password               = random_password.db_password.result
-  db_subnet_group_name   = aws_db_subnet_group.mrb_db_subnet_group.name
-  vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  skip_final_snapshot    = true
-  publicly_accessible    = false
-  storage_encrypted      = true
-  auto_minor_version_upgrade = true
-  backup_retention_period    = 7
-  tags = {
-    Name = "mrb-postgres-db"
-  }
-}
-
-##################################################################
 # Outputs
 ##################################################################
 output "db_endpoint" {
-  value = aws_db_instance.mrb_postgres.endpoint
+  value = "${aws_rds_cluster.mrb_postgres.endpoint}:5432"
 }

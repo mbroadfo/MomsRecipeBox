@@ -1,5 +1,5 @@
 {
-  "host": ["mrb-postgres-db.cyqjzn4kfzk8.us-west-2.rds.amazonaws.com"],
+  "host": ["mrb-postgres-cluster.cluster-cyqjzn4kfzk8.us-west-2.rds.amazonaws.com"],
   "portNumber": ["5432"],
   "localPortNumber": ["5432"]
 }

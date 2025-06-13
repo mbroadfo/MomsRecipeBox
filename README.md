@@ -16,7 +16,7 @@ This guide explains how to securely access the RDS PostgreSQL instance using **p
 ---
 
 ## 🏗️ Infrastructure Recap
-
+ 
 - `bastion` EC2 instance in public subnet (SSM only — no SSH)  
 - `mrb-postgres-db` RDS instance in private subnets  
 - VPC endpoints for:  

@@ -47,7 +47,7 @@ resource "aws_lambda_function" "app_lambda" {
   function_name = "mrb-app-api"
   role          = aws_iam_role.app_lambda_role.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.app_repo.repository_url}:latest"
+  image_uri     = "${aws_ecr_repository.app_repo.repository_url}:dev"
   timeout       = 15
   memory_size   = 256
 

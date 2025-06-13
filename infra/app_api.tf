@@ -75,23 +75,40 @@ resource "aws_api_gateway_resource" "recipes" {
   path_part   = "recipes"
 }
 
-# API Gateway method ANY /recipes
-resource "aws_api_gateway_method" "recipes_any" {
+# API Gateway method GET /recipes (list_recipes)
+resource "aws_api_gateway_method" "recipes_get" {
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipes.id
-  http_method   = "ANY"
+  http_method   = "GET"
   authorization = "NONE"
 }
 
-# API Gateway integration (Lambda proxy)
-resource "aws_api_gateway_integration" "recipes_integration" {
+# API Gateway integration for GET /recipes
+resource "aws_api_gateway_integration" "recipes_get_integration" {
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipes.id
-  http_method             = aws_api_gateway_method.recipes_any.http_method
+  http_method             = aws_api_gateway_method.recipes_get.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.app_lambda.invoke_arn
-  timeout_milliseconds    = 29000
+}
+
+# API Gateway method POST /recipes (create_recipe)
+resource "aws_api_gateway_method" "recipes_post" {
+  rest_api_id   = aws_api_gateway_rest_api.app_api.id
+  resource_id   = aws_api_gateway_resource.recipes.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# API Gateway integration for POST /recipes
+resource "aws_api_gateway_integration" "recipes_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.app_api.id
+  resource_id             = aws_api_gateway_resource.recipes.id
+  http_method             = aws_api_gateway_method.recipes_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda.invoke_arn
 }
 
 # Lambda permission for API Gateway
@@ -107,7 +124,8 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
 resource "aws_api_gateway_deployment" "app_api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   depends_on = [
-    aws_api_gateway_integration.recipes_integration
+    aws_api_gateway_integration.recipes_get_integration,
+    aws_api_gateway_integration.recipes_post_integration
   ]
 }
 

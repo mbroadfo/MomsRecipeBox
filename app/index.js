@@ -5,7 +5,7 @@ exports.handler = async (event, context) => {
     console.log(`Received event: ${JSON.stringify(event)}`);
 
     const method = event.httpMethod;
-    const path = event.resource;
+    const path = event.path;
 
     try {
         // POST /recipes

@@ -127,6 +127,15 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
     aws_api_gateway_integration.recipes_get_integration,
     aws_api_gateway_integration.recipes_post_integration
   ]
+
+  # Force redeploy on each apply
+  triggers = {
+    redeploy = timestamp()
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # API Gateway stage

@@ -1,4 +1,4 @@
-const { getDbClient } = require('./db');
+const { getDbClient } = require('../db');
 
 exports.handler = async (event) => {
     const client = await getDbClient();

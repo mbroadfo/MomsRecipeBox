@@ -5,16 +5,16 @@ exports.handler = async (event, context) => {
     console.log(`Received event: ${JSON.stringify(event)}`);
 
     const method = event.httpMethod;
-    const path = event.path;
+    const resourcePath = event.resource || event.path;
 
     try {
         // POST /recipes
-        if (method === 'POST' && path === '/recipes') {
+        if (method === 'POST' && resourcePath.endsWith('/recipes')) {
             return await createRecipeHandler(event, context);
         }
 
         // GET /recipes
-        if (method === 'GET' && path === '/recipes') {
+        if (method === 'GET' && resourcePath.endsWith('/recipes')) {
             return await listRecipesHandler(event, context);
         }
 

@@ -1,5 +1,5 @@
-const { handler: createRecipeHandler } = require('./create_recipe');
-const { handler: listRecipesHandler } = require('./list_recipes');
+const { handler: createRecipeHandler } = require('./handlers/create_recipe');
+const { handler: listRecipesHandler } = require('./handlers/list_recipes');
 
 exports.handler = async (event, context) => {
     console.log(`Received event: ${JSON.stringify(event)}`);

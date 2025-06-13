@@ -31,14 +31,39 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        run: |
-          docker build --platform linux/amd64 --provenance=false --sbom=false -t $ECR_REPOSITORY:$IMAGE_TAG app
+      - name: Extract Git SHA
+        id: extract_sha
+        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Print Git SHA (debug, optional)
+        run: echo "GIT_SHA is $GIT_SHA"
 
       - name: Tag Docker image
         run: |
           docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:dev
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:git-${GIT_SHA}
 
       - name: Push Docker image to ECR
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:dev
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:git-${GIT_SHA}
+
+      - name: Save deployed Git SHA to file
+        run: |
+          echo "DEPLOYED_GIT_SHA=git-${GIT_SHA}" > deployed_version.txt
+
+      - name: Force Lambda to refresh image (use 'dev' tag for dev env)
+        run: |
+          aws lambda update-function-code \
+            --function-name mrb-app-api \
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev
+
+      - name: Upload deployed Git SHA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-version
+          path: deployed_version.txt
+      - name: Log SHA Version
+        run: cat deployed_version.txt

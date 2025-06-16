@@ -40,10 +40,3 @@ resource "aws_db_subnet_group" "mrb_db_subnet_group" {
     Name = "mrb-db-subnet-group"
   }
 }
-
-##################################################################
-# Outputs
-##################################################################
-output "db_endpoint" {
-  value = "${aws_rds_cluster.mrb_postgres.endpoint}:5432"
-}

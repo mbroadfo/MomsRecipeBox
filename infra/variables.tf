@@ -36,3 +36,9 @@ variable "enable_bastion" {
   type        = bool
   default     = false
 }
+
+variable "enable_aurora" {
+  description = "Whether to provision Aurora database resources"
+  type        = bool
+  default     = false
+}

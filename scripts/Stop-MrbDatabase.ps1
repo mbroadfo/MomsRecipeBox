@@ -10,12 +10,17 @@ if (-not (Test-Path -Path $backupDir)) {
 }
 
 Write-Host "Creating database backup..."
-docker exec $containerName pg_dump -U mrb_admin mrb_dev > $backupFile
+
+# Use docker exec without PowerShell redirection to avoid encoding issues
+$backupContent = docker exec $containerName pg_dump -U mrb_admin --data-only mrb_dev
 
 if ($LASTEXITCODE -ne 0) {
     Write-Warning "Backup failed. Skipping container shutdown."
     exit 1
 }
+
+# Write as UTF-8 without BOM
+[System.IO.File]::WriteAllLines($backupFile, $backupContent, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Backup completed: $backupFile"
 

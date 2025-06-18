@@ -1,3 +1,9 @@
+// Local Lambda & RDS
+require('dotenv').config({ path: '.env.ps1' });
+const express = require('express');
+const app = express();
+app.use(express.json());
+
 const { handler: createRecipeHandler } = require('./handlers/create_recipe');
 const { handler: listRecipesHandler } = require('./handlers/list_recipes');
 

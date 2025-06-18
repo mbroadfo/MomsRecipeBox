@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15
+    container_name: mrb-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: mrb_admin
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: mrb_dev
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mrb_admin -d mrb_dev"]
+      interval: 5s
+      retries: 5

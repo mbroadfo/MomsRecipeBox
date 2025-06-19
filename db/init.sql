@@ -1,5 +1,14 @@
 -- Mom's Recipe Box Database Schema
+
 -- Clean slate initialization
+DO $$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mrb_admin') THEN
+      CREATE ROLE mrb_admin LOGIN PASSWORD 'dev_password';
+      GRANT ALL PRIVILEGES ON DATABASE mrb_dev TO mrb_admin;
+   END IF;
+END
+$$;
 
 DROP TABLE IF EXISTS comments CASCADE;
 DROP TABLE IF EXISTS likes CASCADE;

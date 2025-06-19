@@ -1,8 +1,8 @@
 const { getDbClient } = require('../db');
 
 exports.handler = async (event) => {
+    console.log('listRecipes handler invoked with event:', event);
     const client = await getDbClient();
-
     const params = event.queryStringParameters || {};
 
     const limit = parseInt(params.limit) || 20;
@@ -10,6 +10,8 @@ exports.handler = async (event) => {
     const owner_id = params.owner_id || null;
     const visibility = params.visibility || null;
     const tags = params.tags ? params.tags.split(',') : null;
+
+    console.log('Query params:', { owner_id, visibility, tags, limit, offset });
 
     try {
         const query = `
@@ -24,7 +26,8 @@ exports.handler = async (event) => {
         `;
 
         const res = await client.query(query, [owner_id, visibility, tags, limit, offset]);
-
+        console.log('Query returned:', res.rowCount, 'rows');
+        
         return {
             statusCode: 200,
             body: JSON.stringify({

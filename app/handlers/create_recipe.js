@@ -1,13 +1,5 @@
-const { Pool } = require('pg');
-
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: 5432,
-    ssl: false, // true for production with SSL
-});
+// Updated create_recipe.js using db.js
+const { getDbClient } = require('../db');
 
 exports.handler = async (event) => {
     try {
@@ -33,7 +25,7 @@ exports.handler = async (event) => {
             };
         }
 
-        const client = await pool.connect();
+        const client = await getDbClient();
 
         try {
             await client.query('BEGIN');
@@ -91,7 +83,7 @@ exports.handler = async (event) => {
                 body: JSON.stringify({ message: 'Internal server error', error: error.message }),
             };
         } finally {
-            client.release();
+            await client.end();
         }
     } catch (err) {
         console.error('Handler error:', err);

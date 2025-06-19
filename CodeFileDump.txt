@@ -1,0 +1,1716 @@
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\.env.local ===
+
+DB_USER=mrb_admin
+DB_PASSWORD=dev_password
+DB_NAME=mrb_dev
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\.env.ps1 ===
+
+$env:POSTGRES_USER = "mrb_admin"
+$env:POSTGRES_PASSWORD = "dev_password"
+$env:POSTGRES_DB = "mrb_dev"
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\.gitignore ===
+
+# Node
+node_modules/
+.env
+.env.*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# VSCode
+.vscode/
+
+# dev-backups
+db/backups/
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\CodeFileList.txt ===
+
+C:\Users\Mike\Documents\Code\MomsRecipeBox\.env.local
+C:\Users\Mike\Documents\Code\MomsRecipeBox\.env.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\.gitignore
+C:\Users\Mike\Documents\Code\MomsRecipeBox\CodeFileList.txt
+C:\Users\Mike\Documents\Code\MomsRecipeBox\docker-compose.yml
+C:\Users\Mike\Documents\Code\MomsRecipeBox\Dockerfile
+C:\Users\Mike\Documents\Code\MomsRecipeBox\run_tests.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\StartDbTunnel.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\.github\workflows\deploy.yaml
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\db.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\index.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\local_server.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\PushFirstContainer.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\delete_user.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\invite_user.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\list_users.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\create_recipe.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\get_recipe.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\list_recipes.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\post_comment.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\post_like.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\app\utils\auth.js
+C:\Users\Mike\Documents\Code\MomsRecipeBox\db\init.sql
+C:\Users\Mike\Documents\Code\MomsRecipeBox\db\tests\test_recipe_lifecycle.sql
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\app_api.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\aurora.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\bastion.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\main.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\outputs.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\toggle-aws-profile.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\variables.tf
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\DumpIt.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Load-Env.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Reset-MrbDatabase.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Start-MrbApp.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Start-MrbDatabase.ps1
+C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Stop-MrbDatabase.ps1
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\docker-compose.yml ===
+
+services:
+  mrb-postgres:
+    image: postgres:15
+    container_name: mrb-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $DB_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    container_name: momsrecipebox-app
+    build:
+      context: .
+    depends_on:
+      mrb-postgres:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    environment:
+      PGHOST: mrb-postgres
+      PGUSER: $DB_USER
+      PGPASSWORD: $DB_PASSWORD
+      PGDATABASE: $DB_NAME
+    entrypoint: ["app.handler"]  # Adjust based on actual Lambda-like app handler
+
+volumes:
+  pgdata:
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\Dockerfile ===
+
+FROM public.ecr.aws/lambda/nodejs:18.2025.05.04.04
+
+# Copy function code
+COPY . .
+
+# Install dependencies
+RUN npm ci
+
+# Lambda entrypoint
+CMD [ "node", "local_server.js" ]
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\run_tests.ps1 ===
+
+# run_tests.ps1
+
+# Get script directory (portable)
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+# Load environment variables
+$envFile = "$scriptDir/.env.ps1"
+if (Test-Path $envFile) {
+    Write-Host "=== Loading environment variables ===" -ForegroundColor Cyan
+    . $envFile
+} else {
+    Write-Host "WARNING: No .env.ps1 file found. You must export PGPASSWORD manually." -ForegroundColor Yellow
+}
+
+# Prepare psql arguments
+$psqlArgs = @(
+    "-h", "127.0.0.1",
+    "-U", "mrb_admin",
+    "-d", "mrb_dev"
+)
+
+# Loading test procedure
+Write-Host "=== Loading test procedure ===" -ForegroundColor Cyan
+& psql @psqlArgs -f "$scriptDir/db/tests/test_recipe_lifecycle.sql"
+
+# Executing test procedure
+Write-Host "=== Executing test procedure ===" -ForegroundColor Cyan
+& psql @psqlArgs -c "CALL test_recipe_lifecycle();"
+
+# Done
+Write-Host "=== Test run complete ===" -ForegroundColor Green
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\StartDbTunnel.ps1 ===
+
+# Fetch the instance ID of the bastion instance with Name tag 'bastion' and state 'running'
+$instanceId = (aws ec2 describe-instances `
+  --filters "Name=tag:Name,Values=bastion" "Name=instance-state-name,Values=running" `
+  --query "Reservations[*].Instances[*].InstanceId" `
+  --output text).Trim()
+
+Write-Output "Bastion instance ID: $instanceId"
+
+# Ensure AWS CLI can find the Session Manager plugin
+$pluginPath = "C:\Program Files\Amazon\SessionManagerPlugin\bin\SessionManagerPlugin.exe"
+$env:AWS_SSM_PLUGIN = $pluginPath
+
+# Start the SSM port forwarding session using the ToRemoteHost document
+aws ssm start-session `
+  --target $instanceId `
+  --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
+  --parameters file://ssm-port-forward.json
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\.github\workflows\deploy.yaml ===
+
+# .github/workflows/deploy.yaml
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY: mrb-app-api
+  IMAGE_TAG: latest
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract Git SHA
+        id: extract_sha
+        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Print Git SHA (debug, optional)
+        run: echo "GIT_SHA is $GIT_SHA"
+
+      - name: Build Docker image
+        run: |
+          docker build --platform linux/amd64 --provenance=false --sbom=false -t $ECR_REPOSITORY:$IMAGE_TAG app
+      
+      - name: Tag Docker image
+        run: |
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:dev
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:git-${GIT_SHA}
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:dev
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:git-${GIT_SHA}
+
+      - name: Save deployed Git SHA to file
+        run: |
+          echo "DEPLOYED_GIT_SHA=git-${GIT_SHA}" > deployed_version.txt
+
+      - name: Force Lambda to refresh image (use 'dev' tag for dev env)
+        run: |
+          aws lambda update-function-code \
+            --function-name mrb-app-api \
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev
+
+      - name: Upload deployed Git SHA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployed-version
+          path: deployed_version.txt
+      - name: Log SHA Version
+        run: cat deployed_version.txt
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\db.js ===
+
+const { Pool } = require('pg');
+
+function getDbClient() {
+  return new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\index.js ===
+
+// Local Lambda & RDS
+require('dotenv').config({ path: '.env.ps1' });
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+const { handler: createRecipeHandler } = require('./handlers/create_recipe');
+const { handler: listRecipesHandler } = require('./handlers/list_recipes');
+
+exports.handler = async (event, context) => {
+    console.log(`Received event: ${JSON.stringify(event)}`);
+
+    const method = event.httpMethod;
+    const resourcePath = event.resource || event.path;
+
+    try {
+        // POST /recipes
+        if (method === 'POST' && resourcePath.endsWith('/recipes')) {
+            return await createRecipeHandler(event, context);
+        }
+
+        // GET /recipes
+        if (method === 'GET' && resourcePath.endsWith('/recipes')) {
+            return await listRecipesHandler(event, context);
+        }
+
+        // 404 default
+        return {
+            statusCode: 404,
+            body: JSON.stringify({ message: 'Not Found' }),
+        };
+    } catch (err) {
+        console.error('Error in index.js handler:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
+        };
+    }
+};
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\local_server.js ===
+
+require('dotenv').config({ path: '.env.ps1' });
+const express = require('express');
+const app = express();
+
+const { handler: createRecipe } = require('./handlers/create_recipe');
+const { handler: listRecipes } = require('./handlers/list_recipes');
+
+app.use(express.json());
+
+app.post('/recipes', async (req, res) => {
+  const response = await createRecipe({
+    httpMethod: 'POST',
+    path: '/recipes',
+    body: JSON.stringify(req.body),
+  });
+  res.status(response.statusCode).json(JSON.parse(response.body));
+});
+
+app.get('/recipes', async (req, res) => {
+  const response = await listRecipes({
+    httpMethod: 'GET',
+    path: '/recipes',
+    queryStringParameters: req.query,
+  });
+  res.status(response.statusCode).json(JSON.parse(response.body));
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Local server running at http://localhost:${PORT}`);
+});
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\PushFirstContainer.ps1 ===
+
+# PushFirstContainer.ps1 - Fixed for Lambda compatibility
+
+# 1️⃣ Authenticate Docker to ECR
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 491696534851.dkr.ecr.us-west-2.amazonaws.com
+
+# 2️⃣ Build your app container (FIXED: disable attestations for Lambda compatibility)
+docker build --platform linux/amd64 --provenance=false --sbom=false -t mrb-app-api:latest app
+
+# 3️⃣ Tag the image for ECR
+docker tag mrb-app-api:latest 491696534851.dkr.ecr.us-west-2.amazonaws.com/mrb-app-api:latest
+
+# 4️⃣ Push to ECR
+docker push 491696534851.dkr.ecr.us-west-2.amazonaws.com/mrb-app-api:latest
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\delete_user.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\invite_user.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\admin\list_users.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\create_recipe.js ===
+
+// Updated create_recipe.js using db.js
+const { getDbClient } = require('../db');
+
+exports.handler = async (event) => {
+    try {
+        const body = JSON.parse(event.body);
+
+        const {
+            owner_id,
+            visibility,
+            status = 'draft',
+            title,
+            subtitle,
+            description,
+            image_url,
+            tags = [],
+            sections = [],
+            ingredients = [],
+        } = body;
+
+        if (!owner_id || !visibility || !title) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ message: 'Missing required fields: owner_id, visibility, title' }),
+            };
+        }
+
+        const client = await getDbClient();
+
+        try {
+            await client.query('BEGIN');
+
+            const insertRecipeQuery = `
+                INSERT INTO recipes (owner_id, visibility, status, title, subtitle, description, image_url, tags)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id, created_at
+            `;
+
+            const recipeResult = await client.query(insertRecipeQuery, [
+                owner_id,
+                visibility,
+                status,
+                title,
+                subtitle,
+                description,
+                image_url,
+                tags,
+            ]);
+
+            const recipe_id = recipeResult.rows[0].id;
+
+            const insertSectionQuery = `
+                INSERT INTO recipe_sections (recipe_id, section_type, content, position)
+                VALUES ($1, $2, $3, $4)
+            `;
+
+            for (const section of sections) {
+                const { section_type, content, position } = section;
+                await client.query(insertSectionQuery, [recipe_id, section_type, content, position]);
+            }
+
+            const insertIngredientQuery = `
+                INSERT INTO recipe_ingredients (recipe_id, name, quantity, position)
+                VALUES ($1, $2, $3, $4)
+            `;
+
+            for (const ingredient of ingredients) {
+                const { name, quantity, position } = ingredient;
+                await client.query(insertIngredientQuery, [recipe_id, name, quantity, position]);
+            }
+
+            await client.query('COMMIT');
+
+            return {
+                statusCode: 201,
+                body: JSON.stringify({ message: 'Recipe created', recipe_id }),
+            };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Transaction error:', error);
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Internal server error', error: error.message }),
+            };
+        } finally {
+            await client.end();
+        }
+    } catch (err) {
+        console.error('Handler error:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
+        };
+    }
+};
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\get_recipe.js ===
+
+const { getDbClient } = require('../db');
+
+exports.handler = async (event) => {
+    const client = await getDbClient();
+
+    const params = event.queryStringParameters || {};
+
+    const limit = parseInt(params.limit, 10) || 20;
+    const offset = parseInt(params.offset, 10) || 0;
+    const owner_id = params.owner_id || null;
+    const visibility = params.visibility || null;
+    const tags = params.tags ? params.tags.split(',').map(tag => tag.trim()) : null;
+
+    console.log('List recipes with params:', { limit, offset, owner_id, visibility, tags });
+
+    try {
+        const query = `
+            SELECT id, owner_id, visibility, status, title, subtitle, description, image_url, tags, created_at
+            FROM recipes
+            WHERE
+                ($1::text IS NULL OR owner_id = $1)
+                AND ($2::text IS NULL OR visibility = $2)
+                AND ($3::text[] IS NULL OR tags && $3::text[])
+            ORDER BY created_at DESC
+            LIMIT $4 OFFSET $5;
+        `;
+
+        const values = [owner_id, visibility, tags, limit, offset];
+
+        const res = await client.query(query, values);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                recipes: res.rows,
+                pagination: {
+                    limit,
+                    offset,
+                    count: res.rowCount, // total *returned* count (not full count — could add that if needed)
+                },
+            }),
+        };
+    } catch (err) {
+        console.error('Error listing recipes:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
+        };
+    } finally {
+        await client.end();
+    }
+};
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\list_recipes.js ===
+
+const { getDbClient } = require('../db');
+
+exports.handler = async (event) => {
+    const client = await getDbClient();
+
+    const params = event.queryStringParameters || {};
+
+    const limit = parseInt(params.limit) || 20;
+    const offset = parseInt(params.offset) || 0;
+    const owner_id = params.owner_id || null;
+    const visibility = params.visibility || null;
+    const tags = params.tags ? params.tags.split(',') : null;
+
+    try {
+        const query = `
+            SELECT id, owner_id, visibility, status, title, subtitle, description, image_url, tags, created_at
+            FROM recipes
+            WHERE
+                ($1::text IS NULL OR owner_id = $1)
+                AND ($2::text IS NULL OR visibility = $2)
+                AND ($3::text[] IS NULL OR tags && $3::text[])
+            ORDER BY created_at DESC
+            LIMIT $4 OFFSET $5;
+        `;
+
+        const res = await client.query(query, [owner_id, visibility, tags, limit, offset]);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                recipes: res.rows,
+                pagination: {
+                    limit,
+                    offset,
+                    count: res.rowCount,
+                },
+            }),
+        };
+    } catch (err) {
+        console.error('Error listing recipes:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
+        };
+    } finally {
+        await client.end();
+    }
+};
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\post_comment.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\handlers\post_like.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\app\utils\auth.js ===
+
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\db\init.sql ===
+
+-- Mom's Recipe Box Database Schema
+
+-- Clean slate initialization
+IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mrb_admin') THEN
+      CREATE ROLE mrb_admin LOGIN PASSWORD 'dev_password';
+      GRANT ALL PRIVILEGES ON DATABASE mrb_dev TO mrb_admin;
+   END IF;
+
+DROP TABLE IF EXISTS comments CASCADE;
+DROP TABLE IF EXISTS likes CASCADE;
+DROP TABLE IF EXISTS recipe_ingredients CASCADE;
+DROP TABLE IF EXISTS recipe_sections CASCADE;
+DROP TABLE IF EXISTS recipes CASCADE;
+
+-- Main recipes table
+CREATE TABLE recipes (
+    id SERIAL PRIMARY KEY,
+    owner_id TEXT NOT NULL,
+    visibility VARCHAR(20) NOT NULL CHECK (visibility IN ('none', 'family', 'public')),
+    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    description TEXT,
+    image_url TEXT,
+    tags TEXT[],
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Recipe sections (instructions, notes, etc.)
+CREATE TABLE recipe_sections (
+    id SERIAL PRIMARY KEY,
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    section_type VARCHAR(50) NOT NULL, -- e.g., 'Instructions', 'Notes'
+    content TEXT,
+    position INTEGER NOT NULL
+);
+
+-- Recipe ingredients
+CREATE TABLE recipe_ingredients (
+    id SERIAL PRIMARY KEY,
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    quantity TEXT,
+    position INTEGER NOT NULL
+);
+
+-- Comments on recipes
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    author_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Recipe likes (user can only like a recipe once)
+CREATE TABLE likes (
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    PRIMARY KEY (recipe_id, user_id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_recipes_owner_id ON recipes(owner_id);
+CREATE INDEX idx_recipes_visibility ON recipes(visibility);
+CREATE INDEX idx_recipes_status ON recipes(status);
+CREATE INDEX idx_recipe_sections_recipe_id ON recipe_sections(recipe_id);
+CREATE INDEX idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
+CREATE INDEX idx_comments_recipe_id ON comments(recipe_id);
+CREATE INDEX idx_likes_recipe_id ON likes(recipe_id);
+
+-- Display initialization summary
+\echo 'Database initialized successfully!'
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\db\tests\test_recipe_lifecycle.sql ===
+
+-- Recipe Lifecycle Test
+-- This test creates a recipe, modifies it through various states, and then cleans up
+
+\echo '========================================='
+\echo 'Starting Recipe Lifecycle Test...'
+\echo '========================================='
+
+DO $$
+DECLARE
+    v_recipe_id INTEGER;
+    v_count INTEGER;
+BEGIN
+    RAISE NOTICE 'Step 1: Creating recipe in DRAFT state...';
+    
+    -- Create Recipe in DRAFT state
+    INSERT INTO recipes (title, visibility, status, owner_id)
+    VALUES ('PB&J Pizza', 'family', 'draft', 'auth0|test-user')
+    RETURNING id INTO v_recipe_id;
+    
+    RAISE NOTICE '✓ Created recipe with ID: %', v_recipe_id;
+
+    RAISE NOTICE 'Step 2: Adding recipe sections...';
+    
+    -- Add Sections
+    INSERT INTO recipe_sections (recipe_id, section_type, content, position) VALUES
+        (v_recipe_id, 'Instructions', 'Prepare the crust', 1),
+        (v_recipe_id, 'Instructions', 'Apply toppings', 2);
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RAISE NOTICE '✓ Added % recipe sections', v_count;
+
+    RAISE NOTICE 'Step 3: Adding ingredients...';
+    
+    -- Add Ingredients
+    INSERT INTO recipe_ingredients (recipe_id, name, quantity, position) VALUES
+        (v_recipe_id, 'Wonder Bread', '2 slices', 1),
+        (v_recipe_id, 'Peanut Butter', '2 tbsp', 2),
+        (v_recipe_id, 'Jellybeans', '12 pieces', 3),
+        (v_recipe_id, 'Rainbow Sprinkles', '1 tsp', 4);
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RAISE NOTICE '✓ Added % ingredients', v_count;
+
+    RAISE NOTICE 'Step 4: Publishing recipe and updating ingredients...';
+    
+    -- Update Recipe to PUBLISHED and update Ingredient
+    UPDATE recipes
+    SET title = 'Ultimate PB&J Pizza',
+        visibility = 'public',
+        status = 'published'
+    WHERE id = v_recipe_id;
+    
+    RAISE NOTICE '✓ Updated recipe to PUBLISHED status';
+
+    UPDATE recipe_ingredients
+    SET name = 'Grape Jelly', quantity = '1 tbsp'
+    WHERE recipe_id = v_recipe_id AND name = 'Jellybeans';
+    
+    RAISE NOTICE '✓ Updated ingredient: Jellybeans → Grape Jelly';
+
+    RAISE NOTICE 'Step 5: Adding user interactions...';
+    
+    -- Add Comment
+    INSERT INTO comments (recipe_id, author_id, content)
+    VALUES (v_recipe_id, 'auth0|test-user', 'Wow! This sounds disgusting.');
+    
+    RAISE NOTICE '✓ Added comment';
+
+    -- Add Like
+    INSERT INTO likes (recipe_id, user_id)
+    VALUES (v_recipe_id, 'auth0|test-user');
+    
+    RAISE NOTICE '✓ Added like';
+
+    RAISE NOTICE 'Step 6: Verifying data integrity...';
+    
+    -- Verification Counts
+    SELECT COUNT(*) INTO v_count FROM recipe_sections WHERE recipe_id = v_recipe_id;
+    RAISE NOTICE '✓ Recipe sections: %', v_count;
+    
+    SELECT COUNT(*) INTO v_count FROM recipe_ingredients WHERE recipe_id = v_recipe_id;
+    RAISE NOTICE '✓ Recipe ingredients: %', v_count;
+    
+    SELECT COUNT(*) INTO v_count FROM comments WHERE recipe_id = v_recipe_id;
+    RAISE NOTICE '✓ Comments: %', v_count;
+    
+    SELECT COUNT(*) INTO v_count FROM likes WHERE recipe_id = v_recipe_id;
+    RAISE NOTICE '✓ Likes: %', v_count;
+
+    RAISE NOTICE 'Step 7: Cleaning up test data...';
+    
+    -- Cleanup (cascading deletes should handle related records)
+    DELETE FROM recipes WHERE id = v_recipe_id;
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    
+    IF v_count > 0 THEN
+        RAISE NOTICE '✓ Cleaned up recipe and all related data';
+    ELSE
+        RAISE WARNING '⚠ No recipe found to clean up';
+    END IF;
+
+END;
+$$;
+
+\echo '========================================='
+\echo '✓ Recipe Lifecycle Test Complete!'
+\echo '========================================='
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\app_api.tf ===
+
+# app_api.tf
+
+# Create the ECR repository
+resource "aws_ecr_repository" "app_repo" {
+  name = "mrb-app-api"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  image_tag_mutability = "MUTABLE"
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+}
+
+# Lambda execution role
+resource "aws_iam_role" "app_lambda_role" {
+  name = "app_lambda_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Attach policies to the Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.app_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
+  role       = aws_iam_role.app_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+}
+
+# Lambda function from ECR image
+resource "aws_lambda_function" "app_lambda" {
+  function_name = "mrb-app-api"
+  role          = aws_iam_role.app_lambda_role.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.app_repo.repository_url}:dev"
+  timeout       = 15
+  memory_size   = 256
+
+  environment {
+    variables = {
+      NODE_ENV    = "production"
+      DB_HOST     = "<aurora_writer_endpoint>"
+      DB_USER     = "mrb_admin"
+      DB_PASSWORD = "<password>"
+      DB_NAME     = "mrb_dev"
+    }
+  }
+}
+
+# API Gateway REST API
+resource "aws_api_gateway_rest_api" "app_api" {
+  name        = "mrb-app-api"
+  description = "API Gateway for Mom's Recipe Box app tier"
+}
+
+# API Gateway resource /recipes
+resource "aws_api_gateway_resource" "recipes" {
+  rest_api_id = aws_api_gateway_rest_api.app_api.id
+  parent_id   = aws_api_gateway_rest_api.app_api.root_resource_id
+  path_part   = "recipes"
+}
+
+# API Gateway method GET /recipes (list_recipes)
+resource "aws_api_gateway_method" "recipes_get" {
+  rest_api_id   = aws_api_gateway_rest_api.app_api.id
+  resource_id   = aws_api_gateway_resource.recipes.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# API Gateway integration for GET /recipes
+resource "aws_api_gateway_integration" "recipes_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.app_api.id
+  resource_id             = aws_api_gateway_resource.recipes.id
+  http_method             = aws_api_gateway_method.recipes_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda.invoke_arn
+}
+
+# API Gateway method POST /recipes (create_recipe)
+resource "aws_api_gateway_method" "recipes_post" {
+  rest_api_id   = aws_api_gateway_rest_api.app_api.id
+  resource_id   = aws_api_gateway_resource.recipes.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# API Gateway integration for POST /recipes
+resource "aws_api_gateway_integration" "recipes_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.app_api.id
+  resource_id             = aws_api_gateway_resource.recipes.id
+  http_method             = aws_api_gateway_method.recipes_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda.invoke_arn
+}
+
+# Lambda permission for API Gateway
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.app_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.app_api.execution_arn}/*/*"
+}
+
+# API Gateway deployment
+resource "aws_api_gateway_deployment" "app_api_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.app_api.id
+  depends_on = [
+    aws_api_gateway_integration.recipes_get_integration,
+    aws_api_gateway_integration.recipes_post_integration
+  ]
+
+  # Force redeploy on each apply
+  triggers = {
+    redeploy = timestamp()
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# API Gateway stage
+resource "aws_api_gateway_stage" "app_api_stage" {
+  rest_api_id   = aws_api_gateway_rest_api.app_api.id
+  deployment_id = aws_api_gateway_deployment.app_api_deployment.id
+  stage_name    = "dev"
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\aurora.tf ===
+
+# aurora.tf
+
+# Aurora Serverless v2 Cluster
+resource "aws_rds_cluster" "mrb_postgres" {
+  count = var.enable_aurora ? 1 : 0
+  cluster_identifier      = "mrb-postgres-cluster"
+  engine                  = "aurora-postgresql"
+  engine_version          = "15.4"
+  database_name           = "mrb_dev"
+  master_username         = "mrb_admin"
+  master_password         = random_password.db_password.result
+  db_subnet_group_name    = aws_db_subnet_group.mrb_db_subnet_group.name
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
+  skip_final_snapshot     = true
+
+  # Enable Aurora Serverless v2 scaling
+  serverlessv2_scaling_configuration {
+    min_capacity = 0.5  # Smallest allowed (half an ACU)
+    max_capacity = 2    # Can increase this later if needed
+  }
+
+  storage_encrypted = true
+
+  tags = {
+    Name = "mrb-postgres-cluster"
+  }
+}
+
+# Aurora Instance (temporary workaround — enable Serverless v2 manually in AWS Console)
+resource "aws_rds_cluster_instance" "mrb_postgres_instance" {
+  count = var.enable_aurora ? 1 : 0
+  cluster_identifier      = aws_rds_cluster.mrb_postgres[0].id
+  instance_class          = "db.serverless"  # Required for Serverless v2
+  engine                  = "aurora-postgresql"
+  engine_version          = "15.4"
+  publicly_accessible     = false
+  db_subnet_group_name    = aws_db_subnet_group.mrb_db_subnet_group.name
+
+  tags = {
+    Name = "mrb-postgres-cluster-instance-1"
+  }
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\bastion.tf ===
+
+# Bastion EC2 instance with SSM Session Manager support
+
+########################################
+# IAM Role for SSM
+########################################
+resource "aws_iam_role" "ssm_bastion_role" {
+  name = "ssm-bastion-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+########################################
+# IAM Policy Attachment for SSM
+########################################
+resource "aws_iam_role_policy_attachment" "ssm_core_attach" {
+  role       = aws_iam_role.ssm_bastion_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+########################################
+# IAM Policy Attachment for Cloudwatch
+########################################
+resource "aws_iam_role_policy_attachment" "cw_agent_attach" {
+  role       = aws_iam_role.ssm_bastion_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+########################################
+# IAM Instance Profile for EC2
+########################################
+resource "aws_iam_instance_profile" "bastion_profile" {
+  name = "bastion-instance-profile"
+  role = aws_iam_role.ssm_bastion_role.name
+}
+
+########################################
+# Amazon Linux 2023 AMI Lookup
+########################################
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["137112412989"] # Amazon
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-kernel-6.1-x86_64"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+########################################
+# Bastion Security Group
+########################################
+resource "aws_security_group" "bastion_sg" {
+  name        = "mrb-bastion-sg"
+  description = "Allow outbound SSM and PostgreSQL access"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "mrb-bastion-sg"
+  }
+}
+
+########################################
+# Bastion EC2 Instance
+########################################
+resource "aws_instance" "bastion" {
+  count                       = var.enable_bastion ? 1 : 0
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  subnet_id                   = var.public_subnet_ids[0]
+  vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
+  associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.bastion_profile.name
+  tags = {
+    Name = "bastion"
+  }
+  user_data = <<-EOF
+    #!/bin/bash
+    exec > >(tee /var/log/custom-debug.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+    echo "==== Starting bastion instance setup ===="
+
+    echo "Installing SSM and CloudWatch agents..."
+    yum install -y amazon-ssm-agent
+    yum install -y amazon-cloudwatch-agent
+
+    echo "Enabling and starting SSM agent..."
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+
+    echo "Enabling CloudWatch agent..."
+    systemctl enable amazon-cloudwatch-agent
+
+    echo "Writing CloudWatch Agent config..."
+    cat <<EOC > /opt/aws/amazon-cloudwatch-agent/bin/config.json
+    {
+      "agent": {
+        "metrics_collection_interval": 60,
+        "run_as_user": "root"
+      },
+      "logs": {
+        "logs_collected": {
+          "files": {
+            "collect_list": [
+              {
+                "file_path": "/var/log/messages",
+                "log_group_name": "/ec2/bastion/messages",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/cloud-init-output.log",
+                "log_group_name": "/ec2/bastion/cloud-init-output",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
+                "log_group_name": "/ec2/bastion/ssm-agent",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/yum.log",
+                "log_group_name": "/ec2/bastion/yum",
+                "log_stream_name": "{instance_id}"
+              },
+              {
+                "file_path": "/var/log/custom-debug.log",
+                "log_group_name": "/ec2/bastion/custom-debug",
+                "log_stream_name": "{instance_id}"
+              }
+            ]
+          }
+        }
+      }
+    }
+    EOC
+
+    echo "Starting CloudWatch agent..."
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+      -a fetch-config \
+      -m ec2 \
+      -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json \
+      -s
+
+    echo "==== Setup complete ===="
+  EOF
+}
+
+########################################
+# VPC Region Variable
+########################################
+variable "region" {
+  description = "AWS region to use for VPC endpoints"
+  type        = string
+  default     = "us-west-2"
+}
+
+########################################
+# VPC Interface Endpoint for SSM
+########################################
+resource "aws_vpc_endpoint" "ssm" {
+  count             = var.enable_bastion ? 1 : 0
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${var.region}.ssm"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = var.db_subnet_ids
+  security_group_ids = [aws_security_group.rds_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "ssm-endpoint"
+  }
+}
+
+########################################
+# VPC Interface Endpoint for SSM Messages
+########################################
+resource "aws_vpc_endpoint" "ssmmessages" {
+  count             = var.enable_bastion ? 1 : 0
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = var.db_subnet_ids
+  security_group_ids = [aws_security_group.rds_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "ssmmessages-endpoint"
+  }
+}
+
+########################################
+# VPC Interface Endpoint for EC2 Messages
+########################################
+resource "aws_vpc_endpoint" "ec2messages" {
+  count             = var.enable_bastion ? 1 : 0
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${var.region}.ec2messages"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = var.db_subnet_ids
+  security_group_ids = [aws_security_group.rds_sg.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "ec2messages-endpoint"
+  }
+}
+
+########################################
+# Security Group Rule for VPC Endpoint Access
+########################################
+resource "aws_security_group_rule" "allow_bastion_https_to_endpoints" {
+  count             = var.enable_bastion ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.1.0/24"]
+  security_group_id = aws_security_group.rds_sg.id
+  description       = "Allow HTTPS from Bastion subnet to VPC endpoints"
+}
+
+
+########################################
+# Security Group Rule for Bastion Access
+########################################
+resource "aws_security_group_rule" "allow_bastion_to_rds" {
+  count                    = var.enable_bastion ? 1 : 0
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds_sg.id
+  source_security_group_id = aws_security_group.bastion_sg.id
+  description              = "Allow bastion to access Postgres"
+  depends_on               = [aws_instance.bastion]
+}
+
+########################################
+# CloudWatch Log Retention
+########################################
+resource "aws_cloudwatch_log_group" "bastion_cloud_init" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/cloud-init-output"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-cloud-init-log-group"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "bastion_custom_debug" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/custom-debug"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-custom-debug-log-group"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "bastion_ssm_agent" {
+  count             = var.enable_bastion ? 1 : 0
+  name              = "/ec2/bastion/ssm-agent"
+  retention_in_days = 7
+  tags = {
+    Name = "bastion-ssm-agent-log-group"
+  }
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\main.tf ===
+
+##################################################################
+# Terraform RDS PostgreSQL Setup for Mom's Recipe Box
+##################################################################
+
+provider "aws" {
+  region = "us-west-2"
+}
+
+##################################################################
+# Define a random password for DB admin
+##################################################################
+resource "random_password" "db_password" {
+  length  = 16
+  special = true
+}
+
+##################################################################
+# Create a security group for RDS
+##################################################################
+resource "aws_security_group" "rds_sg" {
+  name        = "mrb-rds-sg"
+  description = "Allow DB access from Lambda or specific IPs"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+##################################################################
+# RDS subnet group
+##################################################################
+resource "aws_db_subnet_group" "mrb_db_subnet_group" {
+  name       = "mrb-db-subnet-group"
+  subnet_ids = var.db_subnet_ids
+  tags = {
+    Name = "mrb-db-subnet-group"
+  }
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\outputs.tf ===
+
+output "db_endpoint" {
+  value = "${try(aws_rds_cluster.mrb_postgres[0].endpoint, "")}:5432"
+}
+
+output "db_username" {
+  value = try(aws_rds_cluster.mrb_postgres[0].master_username, "")
+}
+
+output "db_password" {
+  value     = try(random_password.db_password.result, "")
+  sensitive = true
+}
+
+output "aurora_cluster_endpoint" {
+  value = try(aws_rds_cluster.mrb_postgres[0].endpoint, "")
+}
+
+output "aurora_reader_endpoint" {
+  value = try(aws_rds_cluster.mrb_postgres[0].reader_endpoint, "")
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\toggle-aws-profile.ps1 ===
+
+# toggle-aws-profile.ps1
+
+$current = $env:AWS_PROFILE
+
+if (-not $current) {
+    $env:AWS_PROFILE = "terraform"
+    Write-Host "Switched to: terraform (was unset)"
+} elseif ($current -eq "terraform") {
+    $env:AWS_PROFILE = "default"
+    Write-Host "Switched to: default"
+} else {
+    $env:AWS_PROFILE = "terraform"
+    Write-Host "Switched to: terraform"
+}
+
+# Show current AWS identity
+aws sts get-caller-identity
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\infra\variables.tf ===
+
+# Variables for Mom's Recipe Box Terraform RDS Setup
+
+variable "vpc_id" {
+  description = "The VPC ID where RDS and security groups will be provisioned"
+  type        = string
+}
+
+variable "db_subnet_ids" {
+  description = "List of subnet IDs to launch RDS within"
+  type        = list(string)
+}
+
+variable "allowed_cidrs" {
+  description = "List of CIDR blocks allowed to access the RDS instance"
+  type        = list(string)
+  default     = []
+}
+
+variable "db_username" {
+  description = "The master username for the RDS instance"
+  type        = string
+  default     = "mrb_admin"
+}
+
+variable "public_subnet_ids" {
+  description = "Public subnets used by the bastion host"
+  type        = list(string)
+  default     = [
+    "subnet-022be9ea4ac9e10eb",
+    "subnet-032e887c9ef595bd6"
+  ]
+}
+
+variable "enable_bastion" {
+  description = "Enable bastion host and VPC Endpoints for RDS access via Session Manager"
+  type        = bool
+  default     = false
+}
+
+variable "enable_aurora" {
+  description = "Whether to provision Aurora database resources"
+  type        = bool
+  default     = false
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\DumpIt.ps1 ===
+
+param (
+    [string]$RootPath = ".",
+    
+    # List of folder names to exclude (relative, not full paths)
+    [string[]]$ExcludeFolders = @("node_modules", "bin", "obj", ".git", "infra\.terraform", "db\backups"),
+
+    # File extensions to include (e.g., ".ps1", ".js"), or empty to include all
+    [string[]]$IncludeExtensions = @(),
+
+    # File extensions to exclude (e.g., ".md", ".log")
+    [string[]]$ExcludeExtensions = @(".log", ".md", ".json", ".tfstate", ".backup", ".tfvars", ".hcl")
+)
+
+function Get-CodeFiles {
+    param (
+        [string]$BasePath
+    )
+
+    Get-ChildItem -Path $BasePath -Recurse -File |
+        Where-Object {
+            # Exclude folders by checking the path components
+            foreach ($folder in $ExcludeFolders) {
+                if ($_.FullName -match [regex]::Escape("\$folder\")) {
+                    return $false
+                }
+            }
+
+            # Include extensions filter (if any)
+            if ($IncludeExtensions.Count -gt 0 -and ($IncludeExtensions -notcontains $_.Extension)) {
+                return $false
+            }
+
+            # Exclude extensions filter
+            if ($ExcludeExtensions -contains $_.Extension) {
+                return $false
+            }
+
+            return $true
+        }
+}
+
+Write-Host "`n Scanning '$RootPath' for code files..."
+$files = Get-CodeFiles -BasePath (Resolve-Path $RootPath)
+
+Write-Host "`n Found $($files.Count) file(s):"
+$files | ForEach-Object { Write-Host $_.FullName }
+
+Write-Host "`n Code Dumped: CodeFileList.txt"
+$path = "CodeFileList.txt"
+$files | Select-Object -ExpandProperty FullName | Out-File -FilePath $path -Encoding utf8
+
+# Dump contents of all code files into a single file with headers
+$dumpFile = "CodeFileDump.txt"
+Remove-Item -Path $dumpFile -ErrorAction SilentlyContinue
+
+foreach ($file in $files) {
+    Add-Content -Path $dumpFile -Value "## === File: $($file.FullName) ==="
+    Add-Content -Path $dumpFile -Value ""
+    Get-Content -Path $file.FullName | Add-Content -Path $dumpFile
+    Add-Content -Path $dumpFile -Value "`n"  # add extra newline between files
+}
+
+Write-Host "`n Code contents written to: $dumpFile"
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Load-Env.ps1 ===
+
+# Load-Env.ps1
+
+$envPath = Join-Path -Path $PSScriptRoot -ChildPath "..\.env.local"
+if (Test-Path $envPath) {
+    Get-Content $envPath | ForEach-Object {
+        if ($_ -match "^\s*([^#=]+?)\s*=\s*(.+)\s*$") {
+            $key, $value = $matches[1], $matches[2]
+            [System.Environment]::SetEnvironmentVariable($key, $value)
+        }
+    }
+    Write-Host ".env.local variables loaded." -ForegroundColor Green
+} else {
+    Write-Warning ".env.local not found at $envPath"
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Reset-MrbDatabase.ps1 ===
+
+# Reset-MrbDatabase.ps1
+# Completely resets the database to a clean state
+param (
+    [switch]$Force
+)
+
+$containerName = "mrb-postgres"
+$volumeName = "postgres_data"
+$backupDir = ".\db\backups"
+
+if (-not $Force) {
+    $confirm = Read-Host "This will completely reset your database and delete all data. Are you sure? (y/N)"
+    if ($confirm -ne 'y' -and $confirm -ne 'Y') {
+        Write-Host "Operation cancelled."
+        exit 0
+    }
+}
+
+Write-Host "Stopping and removing container..."
+docker compose down
+
+Write-Host "Removing Docker volume..."
+# Get the actual volume name with project prefix
+$actualVolumeName = docker volume ls --format "{{.Name}}" | Where-Object { $_ -like "*$volumeName" }
+
+if ($actualVolumeName) {
+    Write-Host "Found volume: $actualVolumeName"
+    docker volume rm $actualVolumeName
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Volume removed successfully."
+    } else {
+        Write-Warning "Failed to remove volume: $actualVolumeName"
+    }
+} else {
+    Write-Host "No volume found matching '*$volumeName'. This is normal if the volume was already removed or never created."
+}
+
+Write-Host "Cleaning old backups..."
+if (Test-Path $backupDir) {
+    $oldBackups = Get-ChildItem -Path $backupDir -Filter "*.sql"
+    if ($oldBackups.Count -gt 0) {
+        $oldDir = Join-Path $backupDir "old"
+        if (-not (Test-Path $oldDir)) {
+            New-Item -Path $oldDir -ItemType Directory | Out-Null
+        }
+        Move-Item -Path "$backupDir\*.sql" -Destination $oldDir -Force
+        Write-Host "Moved $($oldBackups.Count) old backups to $oldDir"
+    }
+}
+
+Write-Host "Starting fresh database..."
+docker compose up -d
+
+Write-Host "Database reset complete! Starting with fresh schema and sample data."
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Start-MrbApp.ps1 ===
+
+. "$PSScriptRoot\Load-Env.ps1"
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "Shutting down existing containers..."
+docker compose down
+
+# Check if backup exists
+$backupPath = "$PSScriptRoot\..\db\backup\mrb-db.backup"
+
+if (Test-Path -Path $backupPath) {
+    Write-Host "Backup found. Will restore from $backupPath."
+    $env:MRB_DB_INIT_MODE = "restore"
+    $env:MRB_DB_BACKUP_FILE = $backupPath
+} else {
+    Write-Host "No backup found. Will initialize from SQL script."
+    $env:MRB_DB_INIT_MODE = "init"
+    $env:MRB_DB_INIT_SCRIPT = "/docker-entrypoint-initdb.d/init.sql"
+}
+
+Write-Host "Starting containers..."
+docker compose up --build --detach
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Start-MrbDatabase.ps1 ===
+
+# Start-MrbDatabase.ps1
+# Usage: ./Start-MrbDatabase.ps1 -Action start|stop
+param (
+    [ValidateSet("start", "stop")]
+    [string]$Action = "start"
+)
+$ErrorActionPreference = "Stop"
+$envFile = ".\.env.ps1"
+$volumeName = "postgres_data"
+$containerName = "mrb-postgres"
+$backupDir = ".\db\backups"
+$testScript = ".\db\tests\test_recipe_lifecycle.sql"
+# Load environment variables
+if (Test-Path $envFile) {
+    . $envFile
+} else {
+    Write-Warning ".env.ps1 not found. Environment variables may be missing."
+}
+function VolumeExists {
+    docker volume ls --format '{{.Name}}' | Select-String -Quiet "^$volumeName$"
+}
+function GetLatestBackupFile {
+    if (Test-Path $backupDir) {
+        return Get-ChildItem -Path $backupDir -Filter "mrb_dev_backup_*.sql" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    }
+    return $null
+}
+function StartDatabase {
+    $isNewVolume = -not (VolumeExists)
+    $latestBackup = GetLatestBackupFile
+    if ($isNewVolume -and -not $latestBackup) {
+        Write-Host "Docker volume '$volumeName' not found and no backup exists. Creating volume and initializing DB with init.sql..."
+    } elseif ($isNewVolume -and $latestBackup) {
+        Write-Host "Docker volume '$volumeName' not found. Creating volume and will restore from backup..."
+    } else {
+        Write-Host "Docker volume '$volumeName' found. Skipping init script."
+    }
+    docker compose up -d
+    Write-Host "Waiting for PostgreSQL container to become healthy..."
+    for ($i = 0; $i -lt 10; $i++) {
+        $status = docker inspect --format='{{json .State.Health.Status}}' $containerName 2>$null
+        if ($status -eq '"healthy"') {
+            Write-Host "PostgreSQL is ready."
+            break
+        }
+        Start-Sleep -Seconds 3
+    }
+    if ($isNewVolume -and $latestBackup) {
+        $containerBackupPath = "/tmp/restore.sql"
+        Write-Host "Restoring from latest backup: $($latestBackup.FullName)"
+        docker cp $($latestBackup.FullName) "$containerName`:$containerBackupPath"
+        docker exec -i $containerName psql -U $env:POSTGRES_USER -d $env:POSTGRES_DB -f $containerBackupPath
+    }
+    # Run test script
+    if (Test-Path $testScript) {
+        $containerTestPath = "/tmp/test_script.sql"
+        Write-Host "Running database lifecycle tests from: $testScript"
+        docker cp $testScript "$containerName`:$containerTestPath"
+        docker exec -i $containerName psql -U $env:POSTGRES_USER -d $env:POSTGRES_DB -f $containerTestPath
+    } else {
+        Write-Warning "Test script $testScript not found."
+    }
+}
+function StopDatabase {
+    if (-not (Test-Path $backupDir)) {
+        New-Item -Path $backupDir -ItemType Directory | Out-Null
+    }
+    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+    $backupFile = Join-Path $backupDir "mrb_dev_backup_${timestamp}.sql"
+    Write-Host "Creating database backup..."
+    
+    # Use docker exec without PowerShell redirection to avoid encoding issues
+    $backupContent = docker exec $containerName pg_dump -U $env:POSTGRES_USER --data-only $env:POSTGRES_DB
+    if ($LASTEXITCODE -eq 0) {
+        # Write as UTF-8 without BOM
+        [System.IO.File]::WriteAllLines($backupFile, $backupContent, [System.Text.UTF8Encoding]::new($false))
+        Write-Host "Backup completed: $backupFile"
+    } else {
+        Write-Error "Backup failed with exit code $LASTEXITCODE"
+        return
+    }
+    
+    Write-Host "Stopping container $containerName..."
+    docker compose down
+}
+switch ($Action) {
+    "start" { StartDatabase }
+    "stop"  { StopDatabase }
+}
+
+
+## === File: C:\Users\Mike\Documents\Code\MomsRecipeBox\scripts\Stop-MrbDatabase.ps1 ===
+
+# Stop-MrbDatabase.ps1
+$containerName = "mrb-postgres"
+$backupDir = "./db/backups"
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$backupFile = "$backupDir/mrb_dev_backup_$timestamp.sql"
+
+# Ensure backup directory exists
+if (-not (Test-Path -Path $backupDir)) {
+    New-Item -ItemType Directory -Path $backupDir | Out-Null
+}
+
+Write-Host "Creating database backup..."
+
+# Use docker exec without PowerShell redirection to avoid encoding issues
+$backupContent = docker exec $containerName pg_dump -U mrb_admin --data-only mrb_dev
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "Backup failed. Skipping container shutdown."
+    exit 1
+}
+
+# Write as UTF-8 without BOM
+[System.IO.File]::WriteAllLines($backupFile, $backupContent, [System.Text.UTF8Encoding]::new($false))
+
+Write-Host "Backup completed: $backupFile"
+
+Write-Host "Stopping container $containerName..."
+docker stop $containerName
+
+

@@ -1,18 +1,21 @@
 services:
   mrb-postgres:
     image: postgres:15
-    container_name: mrb-postgres
+    container_name: momsrecipebox-db
     restart: unless-stopped
     env_file:
       - .env.local
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $DB_USER"]
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,9 +31,9 @@ services:
       - .env.local
     environment:
       PGHOST: mrb-postgres
-      PGUSER: $DB_USER
-      PGPASSWORD: $DB_PASSWORD
-      PGDATABASE: $DB_NAME
+      PGUSER: $POSTGRES_USER
+      PGPASSWORD: $POSTGRES_PASSWORD
+      PGDATABASE: $POSTGRES_NAME
     ports:
       - "3000:3000"
     command: [ "node", "local_server.js" ]  # This line overrides CMD in Dockerfile
@@ -38,3 +41,5 @@ services:
 
 volumes:
   pgdata:
+    external: true
+    name: momsrecipebox_pgdata

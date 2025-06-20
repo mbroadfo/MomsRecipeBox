@@ -53,11 +53,11 @@ resource "aws_lambda_function" "app_lambda" {
 
   environment {
     variables = {
-      NODE_ENV    = "production"
-      DB_HOST     = "<aurora_writer_endpoint>"
-      DB_USER     = "mrb_admin"
-      DB_PASSWORD = "<password>"
-      DB_NAME     = "mrb_dev"
+      NODE_ENV          = "production"
+      DB_HOST           = "<aurora_writer_endpoint>"
+      POSTGRES_USER     = "mrb_admin"
+      POSTGRES_PASSWORD = "<password>"
+      POSTGRES_NAME     = "mrb_dev"
     }
   }
 }

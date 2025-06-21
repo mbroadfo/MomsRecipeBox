@@ -34,3 +34,6 @@ if ($containerStatus -ne 'running') {
 } else {
     Write-Host "$containerName is running successfully." -ForegroundColor Green
 }
+
+Write-Host "Running App-Tier Test"
+.\app\tests\Post-TestRecipe.ps1

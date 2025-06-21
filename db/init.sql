@@ -45,7 +45,8 @@ CREATE TABLE comments (
     recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     author_id TEXT NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 );
 
 -- Recipe likes (user can only like a recipe once)

@@ -1,47 +1,61 @@
+// File: get_recipe.js
 const { getDbClient } = require('../db');
 
 exports.handler = async (event) => {
+    const recipeId = event.pathParameters?.id;
+    const expand = (event.queryStringParameters?.expand || '').toLowerCase() === 'full';
+
+    if (!recipeId || isNaN(recipeId)) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ message: 'Invalid or missing recipe ID' }),
+        };
+    }
+
     const client = await getDbClient();
 
-    const params = event.queryStringParameters || {};
-
-    const limit = parseInt(params.limit, 10) || 20;
-    const offset = parseInt(params.offset, 10) || 0;
-    const owner_id = params.owner_id || null;
-    const visibility = params.visibility || null;
-    const tags = params.tags ? params.tags.split(',').map(tag => tag.trim()) : null;
-
-    console.log('List recipes with params:', { limit, offset, owner_id, visibility, tags });
-
     try {
-        const query = `
+        const recipeRes = await client.query(`
             SELECT id, owner_id, visibility, status, title, subtitle, description, image_url, tags, created_at
             FROM recipes
-            WHERE
-                ($1::text IS NULL OR owner_id = $1)
-                AND ($2::text IS NULL OR visibility = $2)
-                AND ($3::text[] IS NULL OR tags && $3::text[])
-            ORDER BY created_at DESC
-            LIMIT $4 OFFSET $5;
-        `;
+            WHERE id = $1
+        `, [recipeId]);
 
-        const values = [owner_id, visibility, tags, limit, offset];
+        if (recipeRes.rows.length === 0) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: 'Recipe not found' }),
+            };
+        }
 
-        const res = await client.query(query, values);
+        const recipe = recipeRes.rows[0];
+
+        if (expand) {
+            const [sectionsRes, ingredientsRes] = await Promise.all([
+                client.query(`
+                    SELECT section_type, content, position
+                    FROM recipe_sections
+                    WHERE recipe_id = $1
+                    ORDER BY position
+                `, [recipeId]),
+                client.query(`
+                    SELECT name, quantity, position
+                    FROM recipe_ingredients
+                    WHERE recipe_id = $1
+                    ORDER BY position
+                `, [recipeId])
+            ]);
+
+            recipe.sections = sectionsRes.rows;
+            recipe.ingredients = ingredientsRes.rows;
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                recipes: res.rows,
-                pagination: {
-                    limit,
-                    offset,
-                    count: res.rowCount, // total *returned* count (not full count — could add that if needed)
-                },
-            }),
+            body: JSON.stringify(recipe),
         };
     } catch (err) {
-        console.error('Error listing recipes:', err);
+        console.error('Error fetching recipe:', err);
         return {
             statusCode: 500,
             body: JSON.stringify({ message: 'Internal server error', error: err.message }),

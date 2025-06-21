@@ -1,6 +1,6 @@
 # Stop-MrbDatabase.ps1
-
-$containerName = "mrb-postgres"
+$projectName = (Get-Item ".").Name.ToLower()
+$containerName = "${projectName}-db"
 
 Write-Host "Stopping container $containerName..."
 docker stop $containerName

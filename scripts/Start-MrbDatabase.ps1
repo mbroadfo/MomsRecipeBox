@@ -8,10 +8,11 @@ param (
 $ErrorActionPreference = "Stop"
 $envFile = ".\.env.ps1"
 $projectName = (Get-Item ".").Name.ToLower()
-$containerName = "${projectName}_db"
+$containerName = "momsrecipebox-db"
 $volumeName = "${projectName}_pgdata"
 $testScript = ".\db\tests\test_recipe_lifecycle.sql"
 $initScript = ".\db\init.sql"
+
 # Load environment variables
 if (Test-Path $envFile) {
     . $envFile
@@ -22,15 +23,47 @@ if (Test-Path $envFile) {
 function VolumeExists {
     $actualVolumeName = docker compose config --format json | ConvertFrom-Json | ForEach-Object { $_.volumes.pgdata.name }
     if (-not $actualVolumeName) {
-        $actualVolumeName = "${projectName}_${volumeName}"
+        $actualVolumeName = "${projectName}_pgdata"
     }
     docker volume ls --format '{{.Name}}' | Select-String -Quiet "^$actualVolumeName$"
 }
 
 function IsVolumeEmpty {
-    $fullVolumeName = "${projectName}_${volumeName}"
-    $cmd = '[ -z "$(ls -A /var/lib/postgresql/data 2>/dev/null)" ] && echo empty || echo not-empty'
-    $result = docker run --rm -v "${fullVolumeName}:/var/lib/postgresql/data" busybox sh -c "$cmd"
+    
+    # Create a temporary shell script file
+    $tempScript = [System.IO.Path]::GetTempFileName() + ".sh"
+    $scriptContent = @'
+#!/bin/sh
+if [ "$(ls -A /var/lib/postgresql/data 2>/dev/null)" ]; then
+    echo not-empty
+else
+    echo empty
+fi
+'@ -replace "`r`n", "`n"  # Ensure LF line endings
+
+    # Write the shell script with proper encoding (UTF8 without BOM)
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($tempScript, $scriptContent, $utf8NoBom)
+
+    Write-Host "Debug: Checking if volume '$VolumeName' is empty..."
+
+    try {
+        $result = docker run --rm -v "${VolumeName}:/var/lib/postgresql/data" -v "${tempScript}:/check.sh:ro" busybox sh /check.sh
+        Write-Host "Debug: Volume check result: '$result'"
+    } catch {
+        Write-Warning "Error while checking volume content: $_"
+        return $false
+    } finally {
+        if (Test-Path $tempScript) {
+            Remove-Item $tempScript -Force
+        }
+    }
+
+    if (-not $result) {
+        Write-Warning "Debug: Volume inspection returned no result. Assuming not empty."
+        return $false
+    }
+
     return $result.Trim() -eq "empty"
 }
 

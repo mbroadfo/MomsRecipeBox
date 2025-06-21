@@ -1,44 +1,72 @@
-# 🔐 Bastion Access for pgAdmin (via AWS Session Manager)
+# 🗄️ Database Access Guide: Local and Cloud Modes
 
-This guide explains how to securely access the RDS PostgreSQL instance using **pgAdmin** with a port-forwarding tunnel via a **bastion host** and **AWS Session Manager**.
-
----
-
-## 🔧 Prerequisites
-
-- pgAdmin installed locally  
-- AWS CLI installed and configured  
-- Session Manager Plugin installed  
-  _Check:_ `session-manager-plugin --version`  
-- PowerShell (Windows dev environment assumed)  
-- Terraform-deployed infrastructure  
+This guide covers how to access and work with the MomsRecipeBox PostgreSQL database in both **local development** and **cloud environments**.
 
 ---
 
-## 🏗️ Infrastructure Recap
- 
-- `bastion` EC2 instance in public subnet (SSM only — no SSH)  
-- `mrb-postgres-db` RDS instance in private subnets  
-- VPC endpoints for:  
-  - `ssm`  
-  - `ssmmessages`  
-  - `ec2messages`  
-- Security Groups:  
-  - `bastion_sg`: allows all outbound traffic  
-  - `rds_sg`: allows port `5432` from `bastion_sg`  
+## 🖥️ Local Database Setup
+
+Use Docker Compose and PowerShell scripts to launch a local PostgreSQL container.
+
+### 🧰 Prerequisites (Local)
+
+* Docker Desktop (Windows)
+* PowerShell (with script execution enabled)
+
+### ▶️ Start the Local Database
+
+```powershell
+./scripts/Start-MrbDatabase.ps1
+```
+
+This will:
+
+* Create a Docker volume
+* Start the PostgreSQL container
+* Run schema initialization (`init.sql`)
+* Execute a full test lifecycle (if present)
+
+### ⏹️ Stop the Local Database
+
+```powershell
+./scripts/Stop-MrbDatabase.ps1
+```
 
 ---
 
-## 🚀 Steps to Connect
+## ☁️ Cloud Database Access (via Bastion Host)
 
-### 1️⃣ Start Port Forwarding Tunnel
+To securely access the RDS PostgreSQL instance, use pgAdmin with a port-forwarding tunnel established through a bastion host and AWS Session Manager.
 
-Ensure this script exists at `StartDbTunnel.ps1`:
+### 🔧 Prerequisites (Cloud)
+
+* pgAdmin installed locally
+* AWS CLI configured
+* Session Manager Plugin
+* PowerShell (Windows)
+* Terraform-deployed infrastructure
+
+### 🏗️ Cloud Infrastructure Recap
+
+* **Bastion** EC2 instance in public subnet (SSM access only)
+* **RDS** PostgreSQL instance in private subnets
+* VPC Endpoints: `ssm`, `ssmmessages`, `ec2messages`
+* Security Groups:
+
+  * `bastion_sg`: outbound traffic
+  * `rds_sg`: allows port 5432 from bastion
+
+### 🚀 Start the SSM Tunnel
+
+```powershell
+./StartDbTunnel.ps1
+```
+
+Script content:
 
 ```powershell
 # StartDbTunnel.ps1
 
-# Fetch Bastion instance ID
 $instanceId = (aws ec2 describe-instances `
   --filters "Name=tag:Name,Values=bastion" "Name=instance-state-name,Values=running" `
   --query "Reservations[*].Instances[*].InstanceId" `
@@ -46,72 +74,59 @@ $instanceId = (aws ec2 describe-instances `
 
 Write-Output "Bastion instance ID: $instanceId"
 
-# Ensure Session Manager plugin is registered
 $env:AWS_SSM_PLUGIN = "C:\Program Files\Amazon\SessionManagerPlugin\bin\SessionManagerPlugin.exe"
 
-# Start port forwarding session
 aws ssm start-session `
   --target $instanceId `
   --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
   --parameters file://ssm-port-forward.json
 ```
 
-### 2️⃣ Connect pgAdmin
+### 📥 Connect Using pgAdmin
 
-In pgAdmin:
-
-- **Host:** `localhost`  
-- **Port:** `5432`  
-- **Username:** `mrb_admin` _(from Terraform output)_  
-- **Password:** `db_password` _(from Terraform output)_  
-- **Database:** `mrb_dev`  
-
-Once the tunnel is running, you can connect normally.
+* **Host:** `localhost`
+* **Port:** `5432`
+* **Username:** `mrb_admin`
+* **Password:** `db_password`
+* **Database:** `mrb_dev`
 
 ---
 
 ## 🧪 Running Database Tests
 
-Database unit tests are defined in `db/tests/` as `plpgsql` procedures.
-
-Run tests using the provided PowerShell helper:
+Database tests are defined as `plpgsql` procedures under `db/tests/`.
 
 ```powershell
-.\run_tests.ps1
+./scripts/run_tests.ps1
 ```
 
-This will:
+This script will:
 
-- Load and install the test procedure  
-- Execute `CALL test_recipe_lifecycle();`  
-- Display test output and automatically clean up all test data  
+* Upload and install the test function
+* Run `CALL test_recipe_lifecycle();`
+* Output results and clean up test data
 
-### ✅ Prerequisites
+### ✅ Cloud Mode Requirements
 
-- RDS instance must be running  
-- Bastion must be enabled (`enable_bastion = true`)  
-- SSM tunnel must be active:  
-  ```powershell
-  .\StartDbTunnel.ps1
-  ```
+* RDS instance running
+* Bastion and tunnel active:
+
+```powershell
+./StartDbTunnel.ps1
+```
 
 ---
 
-## ⚙️ Bastion Mode Toggle
+## ⚙️ Bastion Toggle in Terraform
 
-The Bastion EC2 instance, VPC endpoints, and related infrastructure are deployed only when needed.
-
-Controlled via Terraform:
+Enable bastion infrastructure only when needed:
 
 ```hcl
-enable_bastion = true  # Enable when accessing the database via SSM
-# Set to false when not needed to save AWS costs
+enable_bastion = true  # Set false to save costs
 ```
 
 ---
 
-## 📝 CloudWatch Logs Retention
+## 📝 CloudWatch Logs
 
-Bastion-related CloudWatch log groups have a 7-day retention policy to manage costs.
-
-This is controlled via Terraform (`aws_cloudwatch_log_group` resources).
+Bastion log groups have a 7-day retention period, configurable via Terraform.

@@ -1,0 +1,55 @@
+{
+  "title": "Easy Baked Polenta",
+  "subtitle": "Creamy, lump-free polenta without stirring",
+  "description": "A hands-off version of traditional creamy polenta, baked in the oven and enriched with Parmesan and butter.",
+  "tags": [
+    "side dish",
+    "Italian",
+    "comfort food",
+    "polenta"
+  ],
+  "timing": {
+    "prep": "5 min",
+    "cook": "1 hr",
+    "total": "1 hr 5 min"
+  },
+  "stats": {
+    "course": "Side Dish",
+    "cuisine": "Italian",
+    "servings": "6 to 8",
+    "cost": "Budget-friendly"
+  },
+  "ingredients": [
+    {
+      "name": "Water",
+      "quantity": "8 cups"
+    },
+    {
+      "name": "Medium-grind polenta",
+      "quantity": "2 cups"
+    },
+    {
+      "name": "Salt",
+      "quantity": "2 teaspoons"
+    },
+    {
+      "name": "Pepper",
+      "quantity": "1/8 teaspoon"
+    },
+    {
+      "name": "Parmesan cheese, grated",
+      "quantity": "4 ounces (2 cups)"
+    },
+    {
+      "name": "Unsalted butter, cut into 6 pieces",
+      "quantity": "4 tablespoons"
+    }
+  ],
+  "instructions": [
+    "Adjust oven rack to middle position and heat oven to 375\u00b0F.",
+    "Combine water, polenta, salt, and pepper in a 13 by 9-inch baking dish.",
+    "Transfer dish to oven and bake, uncovered, until water is absorbed and polenta has thickened, about 60 minutes.",
+    "Remove baking dish from oven and whisk in Parmesan and butter until polenta is smooth and creamy.",
+    "Serve."
+  ]
+}

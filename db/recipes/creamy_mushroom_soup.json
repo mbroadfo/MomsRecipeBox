@@ -1,0 +1,112 @@
+{
+  "title": "Creamy Mushroom Soup",
+  "subtitle": "Deliciously rich and creamy mushroom soup",
+  "description": "Perfect for cold winter nights or an easy thermos lunch!",
+  "owner_id": "auth0|test-user",
+  "visibility": "public",
+  "status": "published",
+  "tags": [
+    "soup",
+    "winter",
+    "comfort food"
+  ],
+  "ingredients": [
+    {
+      "name": "Baby bella mushrooms",
+      "quantity": "1 lb",
+      "position": 1
+    },
+    {
+      "name": "Garlic, minced",
+      "quantity": "3 cloves",
+      "position": 2
+    },
+    {
+      "name": "Olive oil",
+      "quantity": "1 Tbsp",
+      "position": 3
+    },
+    {
+      "name": "Salt & pepper",
+      "quantity": "1 pinch",
+      "position": 4
+    },
+    {
+      "name": "Butter",
+      "quantity": "4 Tbsp",
+      "position": 5
+    },
+    {
+      "name": "All-purpose flour",
+      "quantity": "1/4 cup",
+      "position": 6
+    },
+    {
+      "name": "Vegetable broth",
+      "quantity": "3 cups",
+      "position": 7
+    },
+    {
+      "name": "Soy sauce",
+      "quantity": "1 tsp",
+      "position": 8
+    },
+    {
+      "name": "Dried thyme",
+      "quantity": "1/8 tsp",
+      "position": 9
+    },
+    {
+      "name": "Heavy cream",
+      "quantity": "1/2 cup",
+      "position": 10
+    }
+  ],
+  "sections": [
+    {
+      "section_type": "Instructions",
+      "content": "Wash the mushrooms and mince the garlic.",
+      "position": 1
+    },
+    {
+      "section_type": "Instructions",
+      "content": "Saut\u00e9 mushrooms in olive oil with salt and pepper until browned.",
+      "position": 2
+    },
+    {
+      "section_type": "Instructions",
+      "content": "Add garlic and cook for one more minute.",
+      "position": 3
+    },
+    {
+      "section_type": "Instructions",
+      "content": "Add butter and flour, stir until golden.",
+      "position": 4
+    },
+    {
+      "section_type": "Instructions",
+      "content": "Add broth, soy sauce, thyme; simmer until thickened.",
+      "position": 5
+    },
+    {
+      "section_type": "Instructions",
+      "content": "Stir in cream and season to taste. Serve hot.",
+      "position": 6
+    },
+    {
+      "section_type": "Timing",
+      "content": "Prep: 5 min\nCook: 30 min\nTotal: 35 min",
+      "position": 7
+    },
+    {
+      "section_type": "Stats",
+      "content": "Course: Soup\nCuisine: American\nServings: 4 (1 cup each)\nCost: $6.82 total / $1.71 per serving",
+      "position": 8
+    },
+    {
+      "section_type": "Nutrition",
+      "content": "Calories: 299 kcal\nCarbs: 15g\nProtein: 5g\nFat: 26g\nSodium: 904mg\nFiber: 1g",
+      "position": 9
+    }
+  ]
+}

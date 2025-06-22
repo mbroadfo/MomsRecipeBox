@@ -2,6 +2,7 @@
   "name": "moms-recipe-box",
   "version": "1.0.0",
   "description": "Family recipe app - local and cloud compatible",
+  "type": "commonjs",
   "main": "app/index.js",
   "scripts": {
     "dev": "node app/local_server.js",

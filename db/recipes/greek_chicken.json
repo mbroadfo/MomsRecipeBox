@@ -1,0 +1,62 @@
+{
+  "title": "Greek Chicken That We Can\u2019t Stop Eating",
+  "subtitle": "Ridiculously juicy and flavorful grilled chicken thighs",
+  "description": "A marinated Greek-style chicken that\u2019s simple, smoky, and perfect for any night.",
+  "owner_id": "auth0|test-user",
+  "visibility": "public",
+  "status": "published",
+  "tags": [
+    "chicken",
+    "grilled",
+    "greek",
+    "dinner"
+  ],
+  "ingredients": [
+    {
+      "name": "Boneless skinless chicken thighs",
+      "quantity": "2 lbs"
+    },
+    {
+      "name": "Olive oil",
+      "quantity": "1/4 cup"
+    },
+    {
+      "name": "Lemon juice",
+      "quantity": "1/4 cup"
+    },
+    {
+      "name": "Red wine vinegar",
+      "quantity": "2 tablespoons"
+    },
+    {
+      "name": "Garlic cloves, minced",
+      "quantity": "4"
+    },
+    {
+      "name": "Dried oregano",
+      "quantity": "1 tablespoon"
+    },
+    {
+      "name": "Salt and pepper",
+      "quantity": "To taste"
+    }
+  ],
+  "instructions": [
+    "Put the chicken into a large bowl or zip top bag.",
+    "Add remaining ingredients and mix really well to coat.",
+    "Cover or seal and refrigerate for at least 2 hours, up to overnight.",
+    "Preheat grill to medium-high.",
+    "Grill chicken until golden brown and cooked through, flipping as needed.",
+    "Remove and let rest for a couple minutes before serving."
+  ],
+  "sections": [
+    {
+      "type": "Timing",
+      "content": "Prep: 10 min\nMarinate: 2+ hrs\nCook: 15-20 min\nTotal: ~2.5 hrs"
+    },
+    {
+      "type": "Stats",
+      "content": "Course: Dinner\nCuisine: Greek\nServings: 4-6\nCost: Moderate"
+    }
+  ]
+}

@@ -29,8 +29,6 @@ function VolumeExists {
 }
 
 function IsVolumeEmpty {
-    
-    # Create a temporary shell script file
     $tempScript = [System.IO.Path]::GetTempFileName() + ".sh"
     $scriptContent = @'
 #!/bin/sh
@@ -39,9 +37,7 @@ if [ "$(ls -A /var/lib/postgresql/data 2>/dev/null)" ]; then
 else
     echo empty
 fi
-'@ -replace "`r`n", "`n"  # Ensure LF line endings
-
-    # Write the shell script with proper encoding (UTF8 without BOM)
+'@ -replace "`r`n", "`n"
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($tempScript, $scriptContent, $utf8NoBom)
 
@@ -158,6 +154,22 @@ function StartDatabase {
     if (-not (WaitForTableCreation)) {
         Write-Error "Schema not ready. Aborting tests."
         return
+    }
+
+    # === Recipe Seeding Step ===
+    $seedScript = ".\db\seed-recipes.cjs"
+    if (Test-Path $seedScript) {
+        Write-Host "Seeding database with standard recipes from JSON files..."
+        $env:NODE_ENV = "development"
+        $seedOutput = & node $seedScript 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Standard recipes seeded successfully."
+        } else {
+            Write-Warning "⚠️ Recipe seeding failed. Output:"
+            Write-Host $seedOutput
+        }
+    } else {
+        Write-Warning "Seed script $seedScript not found. Skipping recipe seeding."
     }
 
     if (Test-Path $testScript) {

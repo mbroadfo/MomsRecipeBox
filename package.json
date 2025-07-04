@@ -9,10 +9,24 @@
     "test": "node run_tests.ps1"
   },
   "dependencies": {
-    "dotenv": "^16.3.1",
-    "express": "^4.18.4",
-    "pg": "^8.11.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "pg": "^8.16.3",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbroadfo/MomsRecipeBox.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mbroadfo/MomsRecipeBox/issues"
+  },
+  "homepage": "https://github.com/mbroadfo/MomsRecipeBox#readme"
 }

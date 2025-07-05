@@ -6,6 +6,7 @@
   "source": "Cook's Illustrated September/October 2017",
   "visibility": "public",
   "status": "published",
+  "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
   "tags": [
     "beef",
     "main course",

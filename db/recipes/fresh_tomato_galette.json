@@ -4,6 +4,7 @@
     "description": "A rustic tomato galette with Gruy\u00e8re cheese, Dijon mustard, and a flaky homemade crust, designed to avoid sogginess from juicy tomatoes.",
     "author": "Alli Berkey",
     "source": "Cook's Country August/September 2019",
+    "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
     "tags": [
         "savory tart",
         "vegetarian",
@@ -17,28 +18,24 @@
         "cool": "20 min",
         "total": "~3.5 hrs"
     },
-    "ingredients": {
-        "crust": [
-            "1 \u00bd cups (213g) all-purpose flour",
-            "\u00bd tsp salt",
-            "10 tbsp unsalted butter, chilled and cut into \u00bd-inch pieces",
-            "6-7 tbsp ice water"
-        ],
-        "filling": [
-            "1 \u00bd lbs mixed tomatoes, sliced \u00bc inch thick",
-            "1 shallot, thinly sliced",
-            "2 tbsp extra-virgin olive oil",
-            "1 tsp fresh thyme, minced",
-            "1 garlic clove, minced",
-            "\u00bc tsp pepper",
-            "1 tsp salt",
-            "2 tsp Dijon mustard",
-            "3 oz (85g) Gruy\u00e8re cheese, shredded (\u00be cup)",
-            "2 tbsp Parmesan cheese, grated",
-            "1 large egg, lightly beaten",
-            "1 tbsp fresh basil, chopped"
-        ]
-    },
+    "ingredients": [
+        { "name": "All-purpose flour", "quantity": "1 ½ cups (213g)", "position": 1 },
+        { "name": "Salt", "quantity": "½ tsp", "position": 2 },
+        { "name": "Unsalted butter", "quantity": "10 tbsp, chilled and cut into ½-inch pieces", "position": 3 },
+        { "name": "Ice water", "quantity": "6-7 tbsp", "position": 4 },
+        { "name": "Mixed tomatoes, sliced ¼ inch thick", "quantity": "1 ½ lbs", "position": 5 },
+        { "name": "Shallot, thinly sliced", "quantity": "1", "position": 6 },
+        { "name": "Extra-virgin olive oil", "quantity": "2 tbsp", "position": 7 },
+        { "name": "Fresh thyme, minced", "quantity": "1 tsp", "position": 8 },
+        { "name": "Garlic clove, minced", "quantity": "1", "position": 9 },
+        { "name": "Pepper", "quantity": "¼ tsp", "position": 10 },
+        { "name": "Salt", "quantity": "1 tsp", "position": 11 },
+        { "name": "Dijon mustard", "quantity": "2 tsp", "position": 12 },
+        { "name": "Gruyère cheese, shredded", "quantity": "3 oz (85g)", "position": 13 },
+        { "name": "Parmesan cheese, grated", "quantity": "2 tbsp", "position": 14 },
+        { "name": "Large egg, lightly beaten", "quantity": "1", "position": 15 },
+        { "name": "Fresh basil, chopped", "quantity": "1 tbsp", "position": 16 }
+    ],
     "instructions": [
         "Process flour and \u00bd tsp salt in food processor until combined. Add butter and pulse until coarse crumbs form. Transfer to bowl.",
         "Sprinkle with 6 tbsp ice water and stir until dough forms, adding up to 1 tbsp more if needed. Shape into 4-inch disk, wrap, and chill for 1 hour.",

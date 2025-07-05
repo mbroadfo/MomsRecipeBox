@@ -14,6 +14,7 @@
         "tv_season": "Season 3",
         "episode": "Breakfast Showstoppers"
     },
+    "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
     "description": "Monkey bread is a knotty-looking loaf of bread made from buttery balls of sweet dough glued together with caramel.",
     "yield": "Serves 6 to 8",
     "ingredients": {

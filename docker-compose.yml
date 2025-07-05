@@ -23,7 +23,7 @@ services:
   app:
     container_name: momsrecipebox-app
     build:
-      context: .
+      context: ./app
     depends_on:
       mrb-postgres:
         condition: service_healthy

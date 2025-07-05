@@ -1,8 +1,14 @@
 {
   "name": "mrb-app-api",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "local_server.js",
   "dependencies": {
-    "pg": "^8.16.0"
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "pg": "^8.16.0",
+    "serverless-http": "^3.2.0",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   }
 }

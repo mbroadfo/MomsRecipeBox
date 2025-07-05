@@ -4,6 +4,7 @@
   "description": "This streamlined trifle recipe features a quick-bake chiffon sheet cake, a rich pastry cream fortified with cornstarch, and a mix of fresh and mashed berries for optimal flavor melding. Cream sherry ties the layers together.",
   "owner_id": "auth0|test-user",
   "visibility": "public",
+  "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
   "status": "published",
   "tags": [
     "dessert",

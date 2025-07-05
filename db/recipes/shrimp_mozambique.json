@@ -4,6 +4,7 @@
   "source": "Cook's Country December/January 2019",
   "yield": "Serves 4",
   "time": "50 minutes",
+  "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
   "categories": [
     "Main Courses",
     "Fish & Seafood"

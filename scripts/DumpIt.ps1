@@ -2,13 +2,13 @@ param (
     [string]$RootPath = ".",
     
     # List of folder names to exclude (relative, not full paths)
-    [string[]]$ExcludeFolders = @("node_modules", "bin", "obj", ".git", "infra\.terraform", "db\backups", "output"),
+    [string[]]$ExcludeFolders = @("node_modules", "bin", "obj", ".git", "infra\.terraform", "db\backups", "\ui\public", "output"),
 
     # File extensions to include (e.g., ".ps1", ".js"), or empty to include all
     [string[]]$IncludeExtensions = @(),
 
     # File extensions to exclude (e.g., ".md", ".log")
-    [string[]]$ExcludeExtensions = @(".log", ".md", ".json", ".tfstate", ".backup", ".tfvars", ".hcl")
+    [string[]]$ExcludeExtensions = @(".log", ".md", ".json", ".tfstate", ".backup", ".tfvars", ".hcl", ".txt", ".png")
 )
 
 function Get-CodeFiles {

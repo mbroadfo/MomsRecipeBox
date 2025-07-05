@@ -1,26 +1,26 @@
 {
-    "title": "Spinach and Bacon Quiche",
-    "author": "Paula Deen",
-    "difficulty": "Easy",
-    "prep_time": "10 minutes",
-    "cook_time": "35-45 minutes",
-    "servings": 10,
-    "ingredients": [
-        "1 9 inch refrigerated piecrust, fitted to a 9 inch glass pie plate",
-        "1 1/2 cups shredded Swiss cheese",
-        "1 lb cooked and crumbled bacon",
-        "2 cups chopped packed fresh baby spinach",
-        "6 large beaten eggs",
-        "1 1/2 cups heavy cream",
-        "Salt to taste",
-        "Black pepper to taste"
-    ],
-    "instructions": [
-        "Preheat the oven to 375\u00b0F.",
-        "Combine the eggs, cream, salt, and pepper in a food processor or blender.",
-        "Layer the spinach, bacon, and cheese in the bottom of the pie crust.",
-        "Pour the egg mixture on top.",
-        "Bake for 35 to 45 minutes until the egg mixture is set.",
-        "Cut into 8 wedges and serve."
-    ]
+  "title": "Spinach and Bacon Quiche",
+  "subtitle": "Paula Deen",
+  "description": "A savory quiche layered with spinach, crispy bacon, and Swiss cheese, bound together with a creamy egg custard.",
+  "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
+  "tags": ["brunch", "quiche", "spinach", "bacon"],
+  "ingredients": [
+    { "name": "Large eggs", "quantity": "6", "position": 1 },
+    { "name": "Heavy cream", "quantity": "1½ cups", "position": 2 },
+    { "name": "Salt", "quantity": "to taste", "position": 3 },
+    { "name": "Black pepper", "quantity": "to taste", "position": 4 },
+    { "name": "Baby spinach, chopped", "quantity": "2 cups", "position": 5 },
+    { "name": "Bacon, cooked and crumbled", "quantity": "1 lb", "position": 6 },
+    { "name": "Swiss cheese, shredded", "quantity": "1½ cups", "position": 7 },
+    { "name": "Pie crust (9-inch)", "quantity": "1", "position": 8 }
+  ],
+  "steps": [
+    "Preheat oven to 375°F.",
+    "Beat eggs, heavy cream, salt, and pepper together.",
+    "Place chopped spinach, crumbled bacon, and Swiss cheese in the bottom of prepared pie crust.",
+    "Pour egg mixture over the filling.",
+    "Bake for 35–45 minutes until custard is set and golden.",
+    "Let quiche rest briefly before slicing into 8 wedges."
+  ],
+  "notes": "This recipe is inspired by Paula Deen’s version shared on PaulaDeen.com; it’s crowd‑pleasing and easy to customize with your favorite cheese."
 }

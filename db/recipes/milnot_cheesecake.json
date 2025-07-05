@@ -5,6 +5,7 @@
     "owner_id": "auth0|test-user",
     "visibility": "public",
     "status": "published",
+    "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
     "tags": [
         "dessert",
         "cheesecake",

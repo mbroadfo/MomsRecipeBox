@@ -33,7 +33,7 @@ Start-Sleep -Seconds 1
 
 Write-Host "`nFetching all recipes (expand=full)..."
 $recipesResponse = Invoke-RestMethod -Uri "$baseUrl/recipes?expand=full" -Method GET
-$recipesResponse | ConvertTo-Json -Depth 5 | Write-Output
+#$recipesResponse | ConvertTo-Json -Depth 5 | Write-Output
 
 $firstRecipeId = $recipesResponse.recipes[0].id
 

@@ -10,6 +10,7 @@
     "spinach"
   ],
   "yield": "Serves 10 to 12",
+  "image_url": "https://mrb-recipe-images-dev.s3.amazonaws.com/default.png",
   "time": {
     "prep": "1\u00bc hours",
     "cooling": "45 minutes"

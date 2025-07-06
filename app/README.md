@@ -4,7 +4,7 @@ This directory contains all the Lambda-style route handlers for the MomsRecipeBo
 
 ## Directory Purpose
 
-The `app/handlers` folder isolates each route into its own self-contained file. This aligns with the serverless philosophy (think: AWS Lambda functions) and enables modular, testable, and easily composable logic.
+The `app/handlers` folder isolates each route into its own self-contained file. This aligns with the serverless philosophy (e.g., AWS Lambda functions) and enables modular, testable, and easily composable logic.
 
 ## Handler Structure
 
@@ -23,9 +23,9 @@ export async function handler(event) {
 
 | File Name           | Method | Route           | Description                       |
 | ------------------- | ------ | --------------- | --------------------------------- |
-| `get_recipes.js`    | GET    | /recipes        | Lists recipes with pagination     |
+| `list_recipes.js`   | GET    | /recipes        | Lists recipes with pagination     |
 | `get_recipe.js`     | GET    | /recipe?id=...  | Fetches full recipe by ID         |
-| `post_recipe.js`    | POST   | /recipes        | Creates a new recipe              |
+| `create_recipe.js`  | POST   | /recipes        | Creates a new recipe              |
 | `update_recipe.js`  | PUT    | /recipe?id=...  | Updates an existing recipe        |
 | `delete_recipe.js`  | DELETE | /recipe?id=...  | Deletes a recipe and its children |
 | `post_comment.js`   | POST   | /recipe/comment | Adds a comment to a recipe        |
@@ -40,12 +40,22 @@ export async function handler(event) {
 * **Consistency:** Common patterns for error handling, logging, and responses.
 * **Scalability:** Easily extendable with new handlers following the same conventions.
 
+## Key Learnings and Updates (2025-07-05)
+
+* **CORS:** Resolved CORS issues by explicitly defining origin, methods, and credentials in middleware.
+* **Routing Debugging:** Corrected and safeguarded introspection of Express routes to avoid reading `undefined.stack`.
+* **Swagger UI:** Integrated Swagger UI using `swagger-ui-express` and YAML loading via `yamljs`, mounted at `/api-docs`.
+* **Robust Startup Scripts:** Confirmed full compatibility of PowerShell lifecycle scripts (`Start-MrbApp.ps1`, `Stop-MrbApp.ps1`) with containerized app and Lambda-style handlers.
+* **Volume Reuse:** Validated volume reuse logic and clean separation of DB lifecycle and app tier.
+* **End-to-End Test Pass:** Verified local development flow with recipe creation, update, like, comment, and delete operations all passing against a seeded PostgreSQL instance.
+
 ## Tips for Developers
 
 * Use `lib/db.js` for direct SQL execution.
 * Ensure your handler returns a JSON object with `statusCode` and `body` (stringified).
-* Keep logic readable and defer complexity to helpers/libraries if possible.
-* Run `Post-TestRecipe.ps1` after changes to validate API behavior.
+* Keep logic readable and defer complexity to helpers/libraries when possible.
+* Run `Post-TestRecipe.ps1` or `Start-MrbApp.ps1` to validate full API behavior.
+* Swagger definitions live in `app/docs/swagger.yaml` and reflect current handler contracts.
 
 ---
 

@@ -1,6 +1,6 @@
 // File: ui/src/components/RecipeList.tsx
 import React, { useEffect, useState } from 'react';
-import { RecipeCard } from './RecipeCard';
+import RecipeCard from './RecipeCard';
 
 interface Recipe {
   id: number;
@@ -33,7 +33,11 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
       {error && <p className="text-red-500">{error}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} {...recipe} onClick={onSelectRecipe} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            onClick={onSelectRecipe}
+          />
         ))}
       </div>
     </div>

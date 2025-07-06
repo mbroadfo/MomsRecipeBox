@@ -1,7 +1,7 @@
 $folders = @("app", "ui")
 
 foreach ($folder in $folders) {
-    $outputFile = ".\scripts\Dependencies_$folder.txt"
+    $outputFile = ".\output\Dependencies_$folder.txt"
     Write-Host "Scanning $folder... (saving to $outputFile)" -ForegroundColor Yellow
 
     $results = @()

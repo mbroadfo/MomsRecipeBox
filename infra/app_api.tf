@@ -54,9 +54,9 @@ resource "aws_lambda_function" "app_lambda" {
   environment {
     variables = {
       NODE_ENV          = "production"
-      DB_HOST           = "<aurora_writer_endpoint>"
-      POSTGRES_USER     = "mrb_admin"
-      POSTGRES_PASSWORD = "<password>"
+      DB_HOST           = aws_rds_cluster.aurora_dsql.endpoint
+      POSTGRES_USER     = local.db_creds.db_username
+      POSTGRES_PASSWORD = local.db_creds.db_password
       POSTGRES_NAME     = "mrb_dev"
     }
   }

@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "recipe_images" {
 
   tags = {
     Environment = "dev"
-    Name        = "Mom's Recipe Box Images"
+    Name        = "Moms Recipe Box Images"
   }
 }
 

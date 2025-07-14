@@ -1,67 +1,28 @@
-# 🗄️ Database Access Guide: Cloud-Only Aurora MySQL
+# 🗄️ MomsRecipeBox Database Guide — Aurora MySQL (Cloud-Only)
 
-This guide explains how to access and work with the MomsRecipeBox database using **Aurora MySQL**, now the exclusive backend for all environments.
-
----
-
-## ☁️ Cloud Database Setup (Aurora MySQL)
-
-All development, testing, and deployment use an Aurora MySQL cluster managed through Terraform. There is no local MySQL container.
+This guide details how to interact with the **Aurora MySQL** backend used across all environments for MomsRecipeBox. There is no local MySQL container — everything runs in AWS.
 
 ---
 
-## 📥 Connecting to the Cloud Database
+## ☁️ Aurora MySQL: Cloud-Only Architecture
 
-Use the `init-mrb-db` Lambda function to seed and test the database, or connect manually via MySQL Workbench.
-
-### 🔧 Requirements
-
-* MySQL Workbench or another MySQL-compatible client
-* `.env` and `.env.ps1` with credentials
-* AWS credentials and Terraform-deployed infrastructure
-
-### 🚀 Initialize the Database via Lambda
-
-The `init-mrb-db` Lambda:
-- Initializes the schema (`init.sql`)
-- Runs health checks (e.g., `test_creamy_mushroom_soup.sql`)
-- Seeds with sample recipes (via `seed-recipes.cjs`)
-
-This is triggered automatically by Terraform when `initialize_db = true`.
+- All development, staging, and production environments use a Terraform-managed Aurora MySQL cluster.
+- Database initialization and seeding are handled by a Lambda function (`init-mrb-db`).
+- Secrets are securely retrieved from AWS Secrets Manager.
 
 ---
 
-## 🧪 Running Tests
+## 🚀 Automated Initialization via Lambda
 
-Database tests are defined as SQL scripts under `db/tests/` and invoked by the `init-mrb-db` Lambda.
+The `init-mrb-db` Lambda function performs:
 
-To run manually:
+- 🔧 Schema setup via `init.sql`
+- ✅ Health check using SQL test scripts (e.g., `test_creamy_mushroom_soup.sql`)
+- 🍽️ Seeding of built-in recipes from JSON files under `db/recipes/`
 
-```powershell
-./scripts/run_tests.ps1
-```
+### 🔁 When does it run?
 
-Ensure:
-- Aurora cluster is deployed
-- Secrets are up-to-date
-- Lambda has VPC access and correct IAM roles
+Terraform will trigger the Lambda during `apply` if the following flag is set:
 
----
-
-## 📝 Environment Variables
-
-Stored in `.env.ps1` for PowerShell and `.env` for CLI and deployment tooling:
-
-```powershell
-$env:MYSQL_USER = "mrb_admin"
-$env:MYSQL_PASSWORD = "dev_password"
-$env:MYSQL_DATABASE = "mrb_dev"
-$env:MYSQL_ROOT_PASSWORD = "dev_password"
-```
-
----
-
-## 📚 Bastion Access (Optional)
-
-Direct database connections (e.g., from MySQL Workbench) are not required for typical workflows.
-For manual access, see `bastion/README.md`.
+```hcl
+initialize_db = true

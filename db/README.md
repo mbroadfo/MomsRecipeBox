@@ -1,132 +1,67 @@
-# 🗄️ Database Access Guide: Local and Cloud Modes
+# 🗄️ Database Access Guide: Cloud-Only Aurora MySQL
 
-This guide covers how to access and work with the MomsRecipeBox PostgreSQL database in both **local development** and **cloud environments**.
-
----
-
-## 🖥️ Local Database Setup
-
-Use Docker Compose and PowerShell scripts to launch a local PostgreSQL container.
-
-### 🧰 Prerequisites (Local)
-
-* Docker Desktop (Windows)
-* PowerShell (with script execution enabled)
-
-### ▶️ Start the Local Database
-
-```powershell
-./scripts/Start-MrbDatabase.ps1
-```
-
-This will:
-
-* Create a Docker volume
-* Start the PostgreSQL container
-* Run schema initialization (`init.sql`)
-* Execute a full test lifecycle (if present)
-
-### ⏹️ Stop the Local Database
-
-```powershell
-./scripts/Stop-MrbDatabase.ps1
-```
+This guide explains how to access and work with the MomsRecipeBox database using **Aurora MySQL**, now the exclusive backend for all environments.
 
 ---
 
-## ☁️ Cloud Database Access (via Bastion Host)
+## ☁️ Cloud Database Setup (Aurora MySQL)
 
-To securely access the RDS PostgreSQL instance, use pgAdmin with a port-forwarding tunnel established through a bastion host and AWS Session Manager.
-
-### 🔧 Prerequisites (Cloud)
-
-* pgAdmin installed locally
-* AWS CLI configured
-* Session Manager Plugin
-* PowerShell (Windows)
-* Terraform-deployed infrastructure
-
-### 🏗️ Cloud Infrastructure Recap
-
-* **Bastion** EC2 instance in public subnet (SSM access only)
-* **RDS** PostgreSQL instance in private subnets
-* VPC Endpoints: `ssm`, `ssmmessages`, `ec2messages`
-* Security Groups:
-
-  * `bastion_sg`: outbound traffic
-  * `rds_sg`: allows port 5432 from bastion
-
-### 🚀 Start the SSM Tunnel
-
-```powershell
-./StartDbTunnel.ps1
-```
-
-Script content:
-
-```powershell
-# StartDbTunnel.ps1
-
-$instanceId = (aws ec2 describe-instances `
-  --filters "Name=tag:Name,Values=bastion" "Name=instance-state-name,Values=running" `
-  --query "Reservations[*].Instances[*].InstanceId" `
-  --output text).Trim()
-
-Write-Output "Bastion instance ID: $instanceId"
-
-$env:AWS_SSM_PLUGIN = "C:\Program Files\Amazon\SessionManagerPlugin\bin\SessionManagerPlugin.exe"
-
-aws ssm start-session `
-  --target $instanceId `
-  --document-name "AWS-StartPortForwardingSessionToRemoteHost" `
-  --parameters file://ssm-port-forward.json
-```
-
-### 📥 Connect Using pgAdmin
-
-* **Host:** `localhost`
-* **Port:** `5432`
-* **Username:** `mrb_admin`
-* **Password:** `db_password`
-* **Database:** `mrb_dev`
+All development, testing, and deployment use an Aurora MySQL cluster managed through Terraform. There is no local MySQL container.
 
 ---
 
-## 🧪 Running Database Tests
+## 📥 Connecting to the Cloud Database
 
-Database tests are defined as `plpgsql` procedures under `db/tests/`.
+Use the `init-mrb-db` Lambda function to seed and test the database, or connect manually via MySQL Workbench.
+
+### 🔧 Requirements
+
+* MySQL Workbench or another MySQL-compatible client
+* `.env` and `.env.ps1` with credentials
+* AWS credentials and Terraform-deployed infrastructure
+
+### 🚀 Initialize the Database via Lambda
+
+The `init-mrb-db` Lambda:
+- Initializes the schema (`init.sql`)
+- Runs health checks (e.g., `test_creamy_mushroom_soup.sql`)
+- Seeds with sample recipes (via `seed-recipes.cjs`)
+
+This is triggered automatically by Terraform when `initialize_db = true`.
+
+---
+
+## 🧪 Running Tests
+
+Database tests are defined as SQL scripts under `db/tests/` and invoked by the `init-mrb-db` Lambda.
+
+To run manually:
 
 ```powershell
 ./scripts/run_tests.ps1
 ```
 
-This script will:
+Ensure:
+- Aurora cluster is deployed
+- Secrets are up-to-date
+- Lambda has VPC access and correct IAM roles
 
-* Upload and install the test function
-* Run `CALL test_recipe_lifecycle();`
-* Output results and clean up test data
+---
 
-### ✅ Cloud Mode Requirements
+## 📝 Environment Variables
 
-* RDS instance running
-* Bastion and tunnel active:
+Stored in `.env.ps1` for PowerShell and `.env` for CLI and deployment tooling:
 
 ```powershell
-./StartDbTunnel.ps1
+$env:MYSQL_USER = "mrb_admin"
+$env:MYSQL_PASSWORD = "dev_password"
+$env:MYSQL_DATABASE = "mrb_dev"
+$env:MYSQL_ROOT_PASSWORD = "dev_password"
 ```
 
 ---
 
-## ⚙️ Bastion Toggle in Terraform
+## 📚 Bastion Access (Optional)
 
-Enable bastion infrastructure only when needed:
-
-```hcl
-enable_bastion = true  # Set false to save costs
-```
-
----
-
-## 📝 CloudWatch Logs
-
-Bastion log groups have a 7-day retention period, configurable via Terraform.
+Direct database connections (e.g., from MySQL Workbench) are not required for typical workflows.
+For manual access, see `bastion/README.md`.

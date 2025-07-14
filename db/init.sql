@@ -1,59 +1,63 @@
--- Mom's Recipe Box Database Schema
+-- Mom's Recipe Box Database Schema for MySQL
 -- Clean slate initialization
 
-DROP TABLE IF EXISTS comments CASCADE;
-DROP TABLE IF EXISTS likes CASCADE;
-DROP TABLE IF EXISTS recipe_ingredients CASCADE;
-DROP TABLE IF EXISTS recipe_sections CASCADE;
-DROP TABLE IF EXISTS recipes CASCADE;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS likes;
+DROP TABLE IF EXISTS recipe_ingredients;
+DROP TABLE IF EXISTS recipe_sections;
+DROP TABLE IF EXISTS recipes;
 
 -- Main recipes table
 CREATE TABLE recipes (
-    id SERIAL PRIMARY KEY,
-    owner_id TEXT NOT NULL,
-    visibility VARCHAR(20) NOT NULL CHECK (visibility IN ('none', 'family', 'public')),
-    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_id VARCHAR(255) NOT NULL,
+    visibility ENUM('none', 'family', 'public') NOT NULL,
+    status ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
     title TEXT NOT NULL,
     subtitle TEXT,
     description TEXT,
     image_url TEXT,
-    tags TEXT[],
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    tags TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Recipe sections (instructions, notes, etc.)
 CREATE TABLE recipe_sections (
-    id SERIAL PRIMARY KEY,
-    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-    section_type VARCHAR(50) NOT NULL, -- e.g., 'Instructions', 'Notes'
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    section_type VARCHAR(50) NOT NULL,
     content TEXT,
-    position INTEGER NOT NULL
+    position INT NOT NULL,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
 -- Recipe ingredients
 CREATE TABLE recipe_ingredients (
-    id SERIAL PRIMARY KEY,
-    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
     name TEXT NOT NULL,
     quantity TEXT,
-    position INTEGER NOT NULL
+    position INT NOT NULL,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
 -- Comments on recipes
 CREATE TABLE comments (
-    id SERIAL PRIMARY KEY,
-    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-    author_id TEXT NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    author_id VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
 -- Recipe likes (user can only like a recipe once)
 CREATE TABLE likes (
-    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-    user_id TEXT NOT NULL,
-    PRIMARY KEY (recipe_id, user_id)
+    recipe_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    PRIMARY KEY (recipe_id, user_id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
 -- Create indexes for better performance
@@ -64,6 +68,3 @@ CREATE INDEX idx_recipe_sections_recipe_id ON recipe_sections(recipe_id);
 CREATE INDEX idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
 CREATE INDEX idx_comments_recipe_id ON comments(recipe_id);
 CREATE INDEX idx_likes_recipe_id ON likes(recipe_id);
-
--- Display initialization summary
-\echo 'Database initialized successfully!'

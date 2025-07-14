@@ -50,16 +50,6 @@ resource "aws_lambda_function" "app_lambda" {
   image_uri     = "${aws_ecr_repository.app_repo.repository_url}:dev"
   timeout       = 15
   memory_size   = 256
-
-  environment {
-    variables = {
-      NODE_ENV          = "production"
-      DB_HOST           = aws_rds_cluster.aurora_dsql.endpoint
-      POSTGRES_USER     = local.db_creds.db_username
-      POSTGRES_PASSWORD = local.db_creds.db_password
-      POSTGRES_NAME     = "mrb_dev"
-    }
-  }
 }
 
 # API Gateway REST API

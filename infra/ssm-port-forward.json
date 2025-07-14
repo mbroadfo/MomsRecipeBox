@@ -1,5 +1,11 @@
-{
-  "host": ["mrb-postgres-cluster.cluster-cyqjzn4kfzk8.us-west-2.rds.amazonaws.com"],
-  "portNumber": ["5432"],
-  "localPortNumber": ["5432"]
+﻿{
+	"host": [
+		"mrb-aurora-dsql-cluster.cluster-cyqjzn4kfzk8.us-west-2.rds.amazonaws.com"
+	],
+	"portNumber": [
+		"3306"
+	],
+	"localPortNumber": [
+		"3306"
+	]
 }

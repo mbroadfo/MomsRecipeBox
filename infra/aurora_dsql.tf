@@ -12,12 +12,13 @@ locals {
   db_creds = jsondecode(data.aws_secretsmanager_secret_version.mrb_secrets_version.secret_string)
 }
 
-# === Aurora Serverless v2 Cluster (PostgreSQL 15.4) ===
+# === Aurora DSQL Cluster (Free Tier) ===
 
 resource "aws_rds_cluster" "aurora_dsql" {
   cluster_identifier      = "mrb-aurora-dsql-cluster"
-  engine                  = "aurora-postgresql"
-  engine_version          = "15.4"
+  engine                  = "aurora-mysql"                  # MUST be this for DSQL
+  engine_mode             = "provisioned"                   # Required for DSQL
+  engine_version          = "8.0.mysql_aurora.3.04.0"        # Pick latest DSQL-compatible version
   database_name           = "mrb_dev"
   master_username         = local.db_creds.db_username
   master_password         = local.db_creds.db_password
@@ -26,23 +27,17 @@ resource "aws_rds_cluster" "aurora_dsql" {
   skip_final_snapshot     = true
   storage_encrypted       = true
 
-  serverlessv2_scaling_configuration {
-    min_capacity = 0.5
-    max_capacity = 2
-  }
-
   tags = {
     Name = "mrb-aurora-dsql-cluster"
   }
 }
 
-# === Aurora Serverless v2 Instance ===
-
 resource "aws_rds_cluster_instance" "aurora_dsql_instance" {
+  identifier              = "mrb-aurora-dsql-instance"
   cluster_identifier      = aws_rds_cluster.aurora_dsql.id
-  instance_class          = "db.serverless"
-  engine                  = "aurora-postgresql"
-  engine_version          = "15.4"
+  instance_class          = "db.t4g.medium"
+  engine                  = "aurora-mysql"
+  engine_version          = "8.0.mysql_aurora.3.04.0"
   publicly_accessible     = false
   db_subnet_group_name    = aws_db_subnet_group.mrb_db_subnet_group.name
 

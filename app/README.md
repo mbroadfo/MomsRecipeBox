@@ -47,7 +47,7 @@ export async function handler(event) {
 * **Swagger UI:** Integrated Swagger UI using `swagger-ui-express` and YAML loading via `yamljs`, mounted at `/api-docs`.
 * **Robust Startup Scripts:** Confirmed full compatibility of PowerShell lifecycle scripts (`Start-MrbApp.ps1`, `Stop-MrbApp.ps1`) with containerized app and Lambda-style handlers.
 * **Volume Reuse:** Validated volume reuse logic and clean separation of DB lifecycle and app tier.
-* **End-to-End Test Pass:** Verified local development flow with recipe creation, update, like, comment, and delete operations all passing against a seeded PostgreSQL instance.
+* **End-to-End Test Pass:** Verified local development flow with recipe creation, update, like, comment, and delete operations all passing against a seeded MySQL instance.
 
 ## Tips for Developers
 

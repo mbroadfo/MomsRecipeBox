@@ -1,21 +1,22 @@
 services:
-  mrb-postgres:
-    image: postgres:15
+  mrb-mysql:
+    image: mysql:8.0
     container_name: momsrecipebox-db
     restart: unless-stopped
     env_file:
       - .env.local
     environment:
-      POSTGRES_USER: $POSTGRES_USER
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      POSTGRES_DB: $POSTGRES_DB
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+      MYSQL_DATABASE: $MYSQL_DATABASE
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD  # if needed
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "$MYSQL_USER", "-p$MYSQL_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,21 +26,21 @@ services:
     build:
       context: ./app
     depends_on:
-      mrb-postgres:
+      mrb-mysql:
         condition: service_healthy
     env_file:
       - .env.local
     environment:
-      PGHOST: mrb-postgres
-      PGUSER: $POSTGRES_USER
-      PGPASSWORD: $POSTGRES_PASSWORD
-      PGDATABASE: $POSTGRES_NAME
+      DB_HOST: mrb-mysql
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+      MYSQL_DATABASE: $MYSQL_DATABASE
     ports:
       - "3000:3000"
-    command: [ "node", "local_server.js" ]  # This line overrides CMD in Dockerfile
+    command: [ "node", "local_server.js" ]
     entrypoint: ["node", "local_server.js"]
 
 volumes:
-  pgdata:
+  mysqldata:
     external: true
-    name: momsrecipebox_pgdata
+    name: momsrecipebox_mysqldata

@@ -71,7 +71,7 @@ data "aws_ami" "amazon_linux" {
 ########################################
 resource "aws_security_group" "bastion_sg" {
   name        = "mrb-bastion-sg"
-  description = "Allow outbound SSM and PostgreSQL access"
+  description = "Allow outbound SSM and MySQL access"
   vpc_id      = var.vpc_id
 
   egress {
@@ -252,12 +252,12 @@ resource "aws_security_group_rule" "allow_bastion_https_to_endpoints" {
 resource "aws_security_group_rule" "allow_bastion_to_rds" {
   count                    = var.enable_bastion ? 1 : 0
   type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
+  from_port                = 3306
+  to_port                  = 3306
   protocol                 = "tcp"
   security_group_id        = aws_security_group.rds_sg.id
   source_security_group_id = aws_security_group.bastion_sg.id
-  description              = "Allow bastion to access Postgres"
+  description              = "Allow bastion to access MySQL"
   depends_on               = [aws_instance.bastion]
 }
 

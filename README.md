@@ -60,7 +60,7 @@ scripts/
 
 ## ☁️ Cloud Mode (Optional)
 
-The `/db/README.md` contains full instructions for using Bastion + Session Manager to connect securely to an RDS instance via pgAdmin.
+The `/db/README.md` contains full instructions for using Bastion + Session Manager to connect securely to an RDS instance.
 
 Use Terraform variables to enable or disable cloud resources as needed.
 

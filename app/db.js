@@ -1,12 +1,15 @@
-const { Pool } = require('pg');
+const mysql = require('mysql2/promise');
 
 function getDbClient() {
-  return new Pool({
-    host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_NAME,
+  return mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
   });
 }
 

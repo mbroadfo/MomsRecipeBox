@@ -1,31 +1,18 @@
 # run_tests.ps1
+# Delegates database testing to the init-mrb-db Lambda
 
-# Get script directory (portable)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+. "$scriptDir/.env.ps1"
 
-# Load environment variables
-$envFile = "$scriptDir/.env.ps1"
-if (Test-Path $envFile) {
-    Write-Host "=== Loading environment variables ===" -ForegroundColor Cyan
-    . $envFile
-} else {
-    Write-Host "WARNING: No .env.ps1 file found. You must export PGPASSWORD manually." -ForegroundColor Yellow
-}
+Write-Host "=== Invoking init-mrb-db Lambda ===" -ForegroundColor Cyan
 
-# Prepare psql arguments
-$psqlArgs = @(
-    "-h", "127.0.0.1",
-    "-U", "mrb_admin",
-    "-d", "mrb_dev"
-)
+$response = aws lambda invoke `
+  --function-name init-mrb-db `
+  --payload '{}' `
+  "$scriptDir/test_results.json" `
+  --cli-binary-format raw-in-base64-out
 
-# Loading test procedure
-Write-Host "=== Loading test procedure ===" -ForegroundColor Cyan
-& psql @psqlArgs -f "$scriptDir/db/tests/test_recipe_lifecycle.sql"
+Write-Host "Lambda response:"
+Get-Content "$scriptDir/test_results.json" | ConvertFrom-Json | ConvertTo-Json -Depth 5
 
-# Executing test procedure
-Write-Host "=== Executing test procedure ===" -ForegroundColor Cyan
-& psql @psqlArgs -c "CALL test_recipe_lifecycle();"
-
-# Done
-Write-Host "=== Test run complete ===" -ForegroundColor Green
+Write-Host "=== Test complete ===" -ForegroundColor Green

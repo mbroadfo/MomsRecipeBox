@@ -1,4 +1,6 @@
+###############################################################################
 # Dedicated ECR repository for init-mrb-db Lambda
+###############################################################################
 resource "aws_ecr_repository" "init_db_repo" {
   name                 = "init-mrb-db"
   image_tag_mutability = "MUTABLE"
@@ -38,6 +40,9 @@ resource "aws_iam_role_policy_attachment" "init_db_secrets_access" {
 # Lambda Function: init-mrb-db
 # This function initializes the database and is invoked once via Terraform
 ###############################################################################
+data "aws_db_instance" "manual_db_instance" {
+  db_instance_identifier = "mrb-aurora-dsql-manual-instance-1"
+}
 
 resource "aws_lambda_function" "init_mrb_db" {
   function_name = "init-mrb-db"
@@ -48,16 +53,11 @@ resource "aws_lambda_function" "init_mrb_db" {
   timeout       = 30
   memory_size   = 128
 
-  depends_on = [
-    aws_rds_cluster.aurora_dsql,
-    aws_rds_cluster_instance.aurora_dsql_instance
-  ]
-
   environment {
     variables = {
       DB_SECRET_ARN = data.aws_secretsmanager_secret.mrb_secrets.arn
-      DB_HOST       = aws_rds_cluster.aurora_dsql.endpoint
-      DB_PORT       = "3306"  # Aurora MySQL default port
+      DB_HOST       = data.aws_db_instance.manual_db_instance.address
+      DB_PORT       = "3306"
     }
   }
 
@@ -82,19 +82,4 @@ resource "aws_lambda_invocation" "init_db" {
 output "init_db_invoke_response" {
   value       = var.initialize_db && length(aws_lambda_invocation.init_db) > 0 ? aws_lambda_invocation.init_db[0].result : "skipped"
   description = "Result of initializing the DB via Lambda"
-}
-
-###############################################################################
-# Input variables
-###############################################################################
-
-variable "initialize_db" {
-  description = "Whether to initialize the database during apply"
-  type        = bool
-  default     = false
-}
-
-variable "db_secret_arn" {
-  description = "ARN of the database secret in Secrets Manager"
-  type        = string
 }

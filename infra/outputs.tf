@@ -1,5 +1,5 @@
 output "aurora_dsql_writer_endpoint" {
-  value = aws_rds_cluster.aurora_dsql.endpoint
+  value = var.enable_aurora_dsql ? aws_rds_cluster.aurora_dsql[0].endpoint : null
 }
 ###############################################################################
 # Output - Private Subnet IDs (used by Lambda to attach to the VPC)

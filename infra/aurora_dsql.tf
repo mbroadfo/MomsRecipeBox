@@ -36,7 +36,7 @@ resource "aws_rds_cluster" "aurora_dsql" {
 resource "aws_rds_cluster_instance" "aurora_dsql_instance" {
   count                   = var.enable_aurora_dsql ? 1 : 0
   identifier              = "mrb-aurora-dsql-instance"
-  cluster_identifier      = aws_rds_cluster.aurora_dsql.id
+  cluster_identifier      = aws_rds_cluster.aurora_dsql[0].id
   instance_class          = "db.t4g.micro"   # ✅ Free tier eligible
   engine                  = "aurora-mysql"
   engine_version          = "8.0.mysql_aurora.3.04.0"

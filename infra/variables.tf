@@ -8,6 +8,7 @@ variable "vpc_id" {
 variable "db_subnet_ids" {
   description = "List of subnet IDs to launch RDS within"
   type        = list(string)
+  default     = []
 }
 
 variable "allowed_cidrs" {
@@ -39,6 +40,12 @@ variable "enable_bastion" {
 
 variable "enable_aurora_dsql" {
   description = "Whether to provision the Aurora DSQL cluster"
+  type        = bool
+  default     = false
+}
+
+variable "initialize_db" {
+  description = "Whether to initialize the database during apply"
   type        = bool
   default     = false
 }

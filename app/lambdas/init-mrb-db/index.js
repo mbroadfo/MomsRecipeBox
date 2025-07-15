@@ -44,7 +44,7 @@ exports.handler = async () => {
     if (!rows || rows.length === 0) throw new Error('Health check failed');
     console.log('Health check passed');
 
-    // Seed recipes w/ defaults for missing fields
+    // Seed recipes
     const { seedRecipes } = require('./seed-recipes.cjs');
     await seedRecipes({
       host: process.env.DB_HOST,
@@ -55,7 +55,7 @@ exports.handler = async () => {
     });
     console.log('Recipes seeded');
 
-    // Check status
+    // Check status 
     return { status: 'OK' };
   } catch (err) {
     console.error('Error during DB initialization', err);

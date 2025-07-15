@@ -9,8 +9,11 @@ COPY app/lambdas/init-mrb-db/package*.json ./
 COPY app/lambdas/init-mrb-db/index.js ./
 
 # Install dependencies
-RUN npm install --omit=dev
-
+RUN echo "Installing packages..." \
+  && npm install --omit=dev \
+  && echo "Installed packages:" \
+  && npm list --depth=0 > installed.txt && cat installed.txt || true
+  
 # Copy the seed script and SQL files from the repo structure
 COPY db/init.sql ./init.sql
 COPY db/tests/test_creamy_mushroom_soup.sql ./test_creamy_mushroom_soup.sql

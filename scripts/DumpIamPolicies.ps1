@@ -1,12 +1,14 @@
+# DumpIamPolicies.ps1
+
 param (
     [string]$UserName = "terraform",
     [string]$OutputDir = ".\TerraformPolicies"
 )
 
-# Ensure AWS Tools module is loaded
-Import-Module AWS.Tools.IAM -ErrorAction Stop
+# Ensure AWSPowerShell.NetCore is loaded
+Import-Module AWSPowerShell.NetCore -ErrorAction Stop
 
-# Create output directory if needed
+# Create output directory if it doesn't exist
 if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir | Out-Null
 }
@@ -21,7 +23,7 @@ foreach ($policy in $attachedPolicies.AttachedPolicies) {
     $policyName = $policy.PolicyName
 
     $policyDetails = Get-IAMPolicy -PolicyArn $policyArn
-    $version = Get-IAMPolicyVersion -PolicyArn $policyArn -VersionId $policyDetails.DefaultVersionId
+    $version = Get-IAMPolicyVersion -PolicyArn $policyArn -VersionId $policyDetails.Policy.DefaultVersionId
     $policyJson = $version.PolicyVersion.Document | ConvertTo-Json -Depth 10
 
     $filePath = Join-Path $OutputDir "$UserName-managed-$policyName.json"

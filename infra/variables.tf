@@ -36,3 +36,9 @@ variable "enable_bastion" {
   type        = bool
   default     = false
 }
+
+variable "enable_aurora_dsql" {
+  description = "Whether to provision the Aurora DSQL cluster"
+  type        = bool
+  default     = false
+}

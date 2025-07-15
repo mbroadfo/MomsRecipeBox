@@ -80,7 +80,8 @@ resource "aws_lambda_invocation" "init_db" {
 }
 
 output "init_db_invoke_response" {
-  value = aws_lambda_invocation.init_db[0].result
+  value       = var.initialize_db && length(aws_lambda_invocation.init_db) > 0 ? aws_lambda_invocation.init_db[0].result : "skipped"
+  description = "Result of initializing the DB via Lambda"
 }
 
 ###############################################################################

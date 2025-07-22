@@ -12,5 +12,3 @@ allowed_cidrs = [
 ]
 
 db_username = "mrb_admin"
-
-db_secret_arn = "arn:aws:secretsmanager:us-west-2:491696534851:secret:moms-recipe-box-secrets"

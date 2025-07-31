@@ -1,67 +1,29 @@
-const { getDbClient } = require('../db');
+const { ObjectId } = require('mongodb');
+const { getDb } = require('./mongoClient');
 
-exports.handler = async (event) => {
-    const recipeId = event.pathParameters?.id;
-    let userId;
+module.exports.handler = async (event) => {
+  try {
+    const { id } = event.queryStringParameters;
+    const body = JSON.parse(event.body);
+    const db = await getDb();
 
-    try {
-        const body = JSON.parse(event.body);
-        userId = body.user_id;
-    } catch (err) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: 'Invalid request body' }),
-        };
+    const recipe = await db.collection('recipes').findOne({ _id: new ObjectId(id) });
+    if (!recipe) {
+      return { statusCode: 404, body: JSON.stringify({ message: 'Recipe not found' }) };
     }
 
-    if (!recipeId || isNaN(recipeId) || !userId) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: 'Missing or invalid recipe_id or user_id' }),
-        };
+    let update;
+    if (recipe.likes.includes(body.user_id)) {
+      update = { $pull: { likes: body.user_id } };
+    } else {
+      update = { $push: { likes: body.user_id } };
     }
 
-    const client = await getDbClient();
+    await db.collection('recipes').updateOne({ _id: new ObjectId(id) }, update);
 
-    try {
-        const existsQuery = `
-            SELECT 1 FROM likes WHERE recipe_id = $1 AND user_id = $2
-        `;
-        const existsRes = await client.query(existsQuery, [recipeId, userId]);
-
-        let status;
-
-        if (existsRes.rowCount > 0) {
-            await client.query(
-                `DELETE FROM likes WHERE recipe_id = $1 AND user_id = $2`,
-                [recipeId, userId]
-            );
-            status = 'unliked';
-        } else {
-            await client.query(
-                `INSERT INTO likes (recipe_id, user_id) VALUES ($1, $2)`,
-                [recipeId, userId]
-            );
-            status = 'liked';
-        }
-
-        const countRes = await client.query(
-            `SELECT COUNT(*) AS count FROM likes WHERE recipe_id = $1`,
-            [recipeId]
-        );
-
-        const likeCount = parseInt(countRes.rows[0].count, 10);
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ status, like_count: likeCount }),
-        };
-    } catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
-        };
-    } finally {
-        await client.end();
-    }
+    return { statusCode: 200, body: JSON.stringify({ message: 'Like toggled' }) };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
 };

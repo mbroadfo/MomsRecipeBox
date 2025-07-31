@@ -1,46 +1,55 @@
 services:
-  mrb-mysql:
-    image: mysql:8.0
-    container_name: momsrecipebox-db
+  mongo:
+    image: mongo:latest
+    container_name: momsrecipebox-mongo
     restart: unless-stopped
     env_file:
-      - .env.local
+      - .env
     environment:
-      MYSQL_USER: $MYSQL_USER
-      MYSQL_PASSWORD: $MYSQL_PASSWORD
-      MYSQL_DATABASE: $MYSQL_DATABASE
-      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD  # if needed
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME}
     ports:
-      - "3306:3306"
+      - "27017:27017"
     volumes:
-      - mysqldata:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - mongodata:/data/db
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "$MYSQL_USER", "-p$MYSQL_PASSWORD"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_ROOT_USER}", "-p", "${MONGODB_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: momsrecipebox-mongo-express
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_ROOT_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_ROOT_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_ROOT_PASSWORD}
+    ports:
+      - "8081:8081"
 
   app:
     container_name: momsrecipebox-app
     build:
       context: ./app
     depends_on:
-      mrb-mysql:
-        condition: service_healthy
+      - mongo
     env_file:
-      - .env.local
+      - .env
     environment:
-      DB_HOST: mrb-mysql
-      MYSQL_USER: $MYSQL_USER
-      MYSQL_PASSWORD: $MYSQL_PASSWORD
-      MYSQL_DATABASE: $MYSQL_DATABASE
+      MONGODB_URI: mongodb://${MONGODB_ROOT_USER}:${MONGODB_ROOT_PASSWORD}@mongo:27017/${MONGODB_DB_NAME}?authSource=admin
     ports:
       - "3000:3000"
     command: [ "node", "local_server.js" ]
-    entrypoint: ["node", "local_server.js"]
 
 volumes:
-  mysqldata:
-    external: true
-    name: momsrecipebox_mysqldata
+  mongodata:

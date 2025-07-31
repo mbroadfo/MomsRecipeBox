@@ -1,16 +1,25 @@
-const mysql = require('mysql2/promise');
+// app/db.js
+require('dotenv').config();
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
-function getDbClient() {
-  return mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+
+let dbInstance;
+
+async function connectToDB() {
+  if (!dbInstance) {
+    await client.connect();
+    dbInstance = client.db(process.env.MONGODB_DB_NAME);
+    console.log("📦 Connected to MongoDB database:", process.env.MONGODB_DB_NAME);
+  }
+  return dbInstance;
 }
 
-module.exports = { getDbClient };
+module.exports = { connectToDB, client };

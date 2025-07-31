@@ -1,53 +1,31 @@
-// File: post_comment.js
-const { getDbClient } = require('../db');
+const { ObjectId } = require('mongodb');
+const { getDb } = require('./mongoClient');
 
-exports.handler = async (event) => {
-    const recipeId = event.pathParameters?.id;
-    let body;
+module.exports.handler = async (event) => {
+  try {
+    const { id } = event.queryStringParameters;
+    const body = JSON.parse(event.body);
+    const db = await getDb();
 
-    try {
-        body = JSON.parse(event.body);
-    } catch (err) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: 'Invalid JSON format' }),
-        };
+    const comment = {
+      _id: new ObjectId(),
+      user_id: body.user_id,
+      content: body.content,
+      created_at: new Date()
+    };
+
+    const result = await db.collection('recipes').updateOne(
+      { _id: new ObjectId(id) },
+      { $push: { comments: comment }, $set: { updated_at: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return { statusCode: 404, body: JSON.stringify({ message: 'Recipe not found' }) };
     }
 
-    const { author_id, content } = body;
-
-    if (!recipeId || isNaN(recipeId) || !author_id || !content) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: 'Missing or invalid fields: recipeId, author_id, content' }),
-        };
-    }
-
-    const client = await getDbClient();
-
-    try {
-        const insertCommentQuery = `
-            INSERT INTO comments (recipe_id, author_id, content)
-            VALUES ($1, $2, $3)
-            RETURNING id, created_at
-        `;
-
-        const result = await client.query(insertCommentQuery, [recipeId, author_id, content]);
-
-        return {
-            statusCode: 201,
-            body: JSON.stringify({
-                message: 'Comment added',
-                comment_id: result.rows[0].id,
-                created_at: result.rows[0].created_at,
-            }),
-        };
-    } catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Internal server error', error: err.message }),
-        };
-    } finally {
-        await client.end();
-    }
+    return { statusCode: 200, body: JSON.stringify(comment) };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
 };

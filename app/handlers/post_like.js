@@ -3,7 +3,9 @@ import { getDb } from '../app.js';
 
 const handler = async (event) => {
   try {
-    const { id } = event.queryStringParameters;
+    console.log('DEBUG post_like event.pathParameters:', event.pathParameters);
+    const id = event.pathParameters?.id;
+    console.log('DEBUG post_like extracted id:', id);
     const body = JSON.parse(event.body);
     const db = await getDb();
 

@@ -3,7 +3,9 @@ import { getDb } from '../app.js';
 
 const handler = async (event) => {
   try {
+    console.log('DEBUG update_comment event.pathParameters:', event.pathParameters);
     const { comment_id } = event.pathParameters;
+    console.log('DEBUG update_comment extracted comment_id:', comment_id);
     const body = JSON.parse(event.body);
     const db = await getDb();
 

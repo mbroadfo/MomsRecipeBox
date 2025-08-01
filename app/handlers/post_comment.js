@@ -3,7 +3,9 @@ import { getDb } from '../app.js';
 
 const handler = async (event) => {
   try {
-    const { id } = event.queryStringParameters;
+    console.log('DEBUG post_comment event.pathParameters:', event.pathParameters);
+    const id = event.pathParameters?.id;
+    console.log('DEBUG post_comment extracted id:', id);
     const body = JSON.parse(event.body);
     const db = await getDb();
 
@@ -29,5 +31,4 @@ const handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
-
 export default handler;

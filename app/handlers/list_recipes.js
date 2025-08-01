@@ -17,7 +17,7 @@ const handler = async (event) => {
       .limit(parseInt(limit))
       .toArray();
 
-    return { statusCode: 200, body: JSON.stringify(recipes) };
+    return { statusCode: 200, body: JSON.stringify({ recipes }) };
   } catch (err) {
     console.error(err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };

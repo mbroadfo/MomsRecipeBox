@@ -60,11 +60,39 @@ const server = http.createServer(async (req, res) => {
 
   req.on('end', async () => {
     try {
+
+
+      // Remove query string for path matching
+      const cleanPath = req.url.split('?')[0];
+      let pathParameters = {};
+      // /comments/{id}
+      const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
+      if (commentMatch) {
+        pathParameters.comment_id = commentMatch[1];
+      }
+      // /recipes/{id}/comments
+      const recipeCommentMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/comments$/);
+      if (recipeCommentMatch) {
+        pathParameters.id = recipeCommentMatch[1];
+      }
+      // /recipes/{id}/like
+      const recipeLikeMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/like$/);
+      if (recipeLikeMatch) {
+        pathParameters.id = recipeLikeMatch[1];
+      }
+      // /recipes/{id}
+      const recipeIdMatch = cleanPath.match(/^\/recipes\/([\w-]+)$/);
+      if (recipeIdMatch) {
+        pathParameters.id = recipeIdMatch[1];
+      }
+      console.log('DEBUG local_server incoming path:', req.url, 'cleanPath:', cleanPath, 'pathParameters:', pathParameters);
+
       const event = {
         httpMethod: req.method,
         path: req.url,
         headers: req.headers,
         body: body || null,
+        pathParameters,
       };
 
       const context = {};

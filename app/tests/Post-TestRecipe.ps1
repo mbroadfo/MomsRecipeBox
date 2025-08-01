@@ -27,50 +27,51 @@ $bodyJson = $recipe | ConvertTo-Json -Depth 5
 Write-Host "`nPosting new recipe..." -ForegroundColor Cyan
 $response = Invoke-RestMethod -Uri "$baseUrl/recipes" -Method POST -ContentType "application/json" -Body $bodyJson
 $response | ConvertTo-Json -Depth 5
-$recipe_id = $response.recipe_id
+$recipe_id = $response._id
+
 
 Start-Sleep -Seconds 1
 
-Write-Host "`nFetching all recipes (expand=full)..."
-$recipesResponse = Invoke-RestMethod -Uri "$baseUrl/recipes?expand=full" -Method GET
-#$recipesResponse | ConvertTo-Json -Depth 5 | Write-Output
-
-$firstRecipeId = $recipesResponse.recipes[0].id
-
 Write-Host "`nFetching single recipe with expand=full..."
-$singleRecipe = Invoke-RestMethod -Uri "$baseUrl/recipe?id=$firstRecipeId&expand=full" -Method GET
+$singleRecipe = Invoke-RestMethod -Uri "$baseUrl/recipes/$recipe_id?expand=full" -Method GET
 $singleRecipe | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Post a comment
 Write-Host "`nPosting a comment..."
 $comment = @{ author_id = "auth0|testuser"; content = "This is a test comment" } | ConvertTo-Json
-$commentResponse = Invoke-RestMethod -Uri "$baseUrl/recipe/comment?id=$recipe_id" -Method POST -ContentType "application/json" -Body $comment
-$comment_id = $commentResponse.comment_id
+$commentResponse = Invoke-RestMethod -Uri "$baseUrl/recipes/$recipe_id/comments" -Method POST -ContentType "application/json" -Body $comment
+$comment_id = $commentResponse._id
 $commentResponse | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Update the comment
 Write-Host "`nUpdating the comment..."
 $updateComment = @{ content = "Updated comment content" } | ConvertTo-Json
-$updateResponse = Invoke-RestMethod -Uri "$baseUrl/recipe/comment?comment_id=$comment_id" -Method PUT -ContentType "application/json" -Body $updateComment
+$updateResponse = Invoke-RestMethod -Uri "$baseUrl/comments/$comment_id" -Method PUT -ContentType "application/json" -Body $updateComment
 $updateResponse | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Like the recipe
 Write-Host "`nToggling like on the recipe..."
 $likeToggle = @{ user_id = "auth0|testuser" } | ConvertTo-Json
-$likeResponse = Invoke-RestMethod -Uri "$baseUrl/recipe/like?id=$recipe_id" -Method POST -ContentType "application/json" -Body $likeToggle
+$likeResponse = Invoke-RestMethod -Uri "$baseUrl/recipes/$recipe_id/like" -Method POST -ContentType "application/json" -Body $likeToggle
 $likeResponse | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Toggle like again to unlike
 Write-Host "`nToggling like off the recipe..."
-$unlikeResponse = Invoke-RestMethod -Uri "$baseUrl/recipe/like?id=$recipe_id" -Method POST -ContentType "application/json" -Body $likeToggle
+$unlikeResponse = Invoke-RestMethod -Uri "$baseUrl/recipes/$recipe_id/like" -Method POST -ContentType "application/json" -Body $likeToggle
 $unlikeResponse | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Delete the comment
 Write-Host "`nDeleting the comment..."
-$deleteCommentResponse = Invoke-RestMethod -Uri "$baseUrl/recipe/comment?comment_id=$comment_id" -Method DELETE
+$deleteCommentResponse = Invoke-RestMethod -Uri "$baseUrl/comments/$comment_id" -Method DELETE
 $deleteCommentResponse | ConvertTo-Json -Depth 5 | Write-Output
+
 
 # Delete the recipe
 Write-Host "`nDeleting the recipe..."
-$deleteRecipeResponse = Invoke-RestMethod -Uri "$baseUrl/recipe?id=$recipe_id" -Method DELETE
+$deleteRecipeResponse = Invoke-RestMethod -Uri "$baseUrl/recipes/$recipe_id" -Method DELETE
 $deleteRecipeResponse | ConvertTo-Json -Depth 5 | Write-Output

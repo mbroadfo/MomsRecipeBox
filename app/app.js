@@ -12,6 +12,6 @@ export async function getDb() {
   const client = new MongoClient(uri);
   await client.connect();
   cachedDb = client.db(dbName);
-  console.log(`� Connected to MongoDB database: ${dbName}`);
+  // Connected to MongoDB database
   return cachedDb;
 }

@@ -19,7 +19,6 @@ services:
       timeout: 5s
       retries: 5
 
-
   mongo-express:
     image: mongo-express:latest
     container_name: momsrecipebox-mongo-express
@@ -37,19 +36,38 @@ services:
     ports:
       - "8081:8081"
 
+  db-init:
+    build:
+      context: ./db
+    container_name: momsrecipebox-db-init
+    env_file:
+      - .env
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+
   app:
     container_name: momsrecipebox-app
     build:
-      context: ./app
+      context: .
+      dockerfile: app/Dockerfile
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       MONGODB_URI: mongodb://${MONGODB_ROOT_USER}:${MONGODB_ROOT_PASSWORD}@mongo:27017/${MONGODB_DB_NAME}?authSource=admin
+      APP_MODE: ${APP_MODE}
     ports:
       - "3000:3000"
-    command: [ "node", "local_server.js" ]
+    entrypoint: >
+      sh -c "if [ \"$APP_MODE\" = 'lambda' ]; then
+               /lambda-entrypoint.sh lambda.handler;
+             else
+               node local_server.js;
+             fi"
 
 volumes:
   mongodata:

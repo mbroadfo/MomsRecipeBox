@@ -1,7 +1,7 @@
-const { ObjectId } = require('mongodb');
-const { getDb } = require('./mongoClient');
+import { ObjectId } from 'mongodb';
+import { getDb } from '../mongoClient.js';
 
-module.exports.handler = async (event) => {
+const handler = async (event) => {
   try {
     const { comment_id } = event.pathParameters;
     const db = await getDb();
@@ -21,3 +21,5 @@ module.exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+export default handler;

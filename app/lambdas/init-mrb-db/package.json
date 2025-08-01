@@ -1,9 +1,0 @@
-{
-  "name": "init-mrb-db",
-  "version": "1.0.0",
-  "main": "index.js",
-  "dependencies": {
-    "aws-sdk": "^2.1420.0",
-    "mysql2": "^3.9.3"
-  }
-}

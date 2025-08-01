@@ -1,17 +1,19 @@
-FROM public.ecr.aws/lambda/nodejs:18.2025.05.04.04
+# Use AWS Lambda Node.js 18 base image for easy migration
+FROM public.ecr.aws/lambda/nodejs:18
 
+# Set working directory for Lambda
 WORKDIR /var/task
 
-# Copy only package files first to leverage Docker cache
-COPY package*.json ./
+# Copy package.json and install dependencies
+COPY app/package*.json ./
+RUN npm install --omit=dev
 
-# Install dependencies into /var/task/node_modules
-RUN npm ci --omit=dev
+# Copy the application code
+COPY app/ . 
 
-# Now copy the rest of the app code
-COPY . .
+# Make sure local_server.js and lambda.js are in place
+COPY app/local_server.js .
+COPY app/lambda.js .
 
-# Debug: confirm mysql2 is in the final image
-RUN ls -l node_modules/mysql2 && echo "mysql2 found!" || echo "mysql2 NOT found"
-
-CMD [ "index.handler" ]
+# Default command will be overridden in docker-compose based on APP_MODE
+CMD [ "lambda.handler" ]

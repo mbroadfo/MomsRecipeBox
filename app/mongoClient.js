@@ -1,6 +1,7 @@
 // app/mongoClient.js
-require('dotenv').config();
-const { MongoClient } = require('mongodb');
+
+import 'dotenv/config';
+import { MongoClient } from 'mongodb';
 
 let cachedDb = null;
 
@@ -21,4 +22,4 @@ async function getDb() {
   return cachedDb;
 }
 
-module.exports = { getDb };
+export { getDb };

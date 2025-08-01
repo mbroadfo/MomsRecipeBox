@@ -1,5 +1,5 @@
 // app/recipes.js
-const { connectToDB } = require('./db');
+const { connectToDB } = require('./app');
 
 async function addRecipe(recipe) {
   const db = await connectToDB();

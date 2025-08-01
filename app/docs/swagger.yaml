@@ -4,6 +4,7 @@ info:
   description: API documentation for the MomsRecipeBox backend
   version: 1.0.0
 servers:
+  - url: http://localhost:3000
   - url: https://sar6jpcqz1.execute-api.us-west-2.amazonaws.com/dev
 
 paths:
@@ -50,7 +51,7 @@ paths:
         '200':
           description: List of recipes
 
-  /recipe/{id}:
+  /recipes/{id}:
     get:
       summary: Get a specific recipe by ID
       parameters:
@@ -58,7 +59,7 @@ paths:
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       - in: query
         name: expand
         schema:
@@ -73,7 +74,7 @@ paths:
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       requestBody:
         required: true
         content:
@@ -90,20 +91,20 @@ paths:
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       responses:
         '200':
           description: Recipe deleted
 
-  /recipe/comment:
+  /recipes/{id}/comments:
     post:
       summary: Post a comment on a recipe
       parameters:
-      - in: query
+      - in: path
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       requestBody:
         required: true
         content:
@@ -114,7 +115,7 @@ paths:
         '200':
           description: Comment added
 
-  /recipe/comment/{comment_id}:
+  /comments/{comment_id}:
     put:
       summary: Update a comment
       parameters:
@@ -122,7 +123,7 @@ paths:
         name: comment_id
         required: true
         schema:
-          type: integer
+          type: string
       requestBody:
         required: true
         content:
@@ -139,20 +140,20 @@ paths:
         name: comment_id
         required: true
         schema:
-          type: integer
+          type: string
       responses:
         '200':
           description: Comment deleted
 
-  /recipe/like:
+  /recipes/{id}/like:
     post:
       summary: Toggle like for a recipe
       parameters:
-      - in: query
+      - in: path
         name: id
         required: true
         schema:
-          type: integer
+          type: string
       requestBody:
         required: true
         content:

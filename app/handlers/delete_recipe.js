@@ -1,7 +1,8 @@
-const { ObjectId } = require('mongodb');
-const { getDb } = require('./mongoClient');
 
-module.exports.handler = async (event) => {
+import { ObjectId } from 'mongodb';
+import { getDb } from '../mongoClient.js';
+
+const handler = async (event) => {
   try {
     const recipeId = event.pathParameters.id;
     const db = await getDb();
@@ -17,3 +18,5 @@ module.exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+export default handler;

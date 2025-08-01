@@ -1,9 +1,9 @@
-const { getMongoClient } = require('../db');
-const { ObjectId } = require('mongodb');
 
-exports.handler = async (event) => {
-  const client = await getMongoClient();
-  const db = client.db(process.env.MONGODB_DB_NAME);
+import { ObjectId } from 'mongodb';
+import { getDb } from '../mongoClient.js';
+
+const handler = async (event) => {
+  const db = await getDb();
   const collection = db.collection('recipes');
 
   const recipeId = event.pathParameters?.id;
@@ -70,7 +70,7 @@ exports.handler = async (event) => {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal server error', error: err.message }),
     };
-  } finally {
-    await client.close();
   }
 };
+
+export default handler;

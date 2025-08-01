@@ -1,32 +1,17 @@
 // File: app/app.js
-import dotenv from 'dotenv';
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import 'dotenv/config';
+import { MongoClient } from 'mongodb';
 
-dotenv.config();
+let cachedDb = null;
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
-let dbInstance;
-
-export async function connectToDB() {
-  if (!dbInstance) {
-    await client.connect();
-    dbInstance = client.db(process.env.MONGODB_DB_NAME);
-    console.log(`📦 Connected to MongoDB database: ${process.env.MONGODB_DB_NAME}`);
-  }
-  return dbInstance;
-}
-
-// Optional: Gracefully close DB connection (for local dev)
-export async function closeDB() {
-  await client.close();
-  dbInstance = null;
-  console.log('🔌 MongoDB connection closed');
+export async function getDb() {
+  if (cachedDb) return cachedDb;
+  const uri = process.env.MONGODB_URI;
+  const dbName = process.env.MONGODB_DB_NAME;
+  if (!uri || !dbName) throw new Error('Missing MongoDB config');
+  const client = new MongoClient(uri);
+  await client.connect();
+  cachedDb = client.db(dbName);
+  console.log(`� Connected to MongoDB database: ${dbName}`);
+  return cachedDb;
 }

@@ -1,5 +1,5 @@
 // File: app/lambda.js
-import { connectToDB } from './app.js'; // DB connection helper
+import { getDb } from './app.js'; // DB connection helper
 import listRecipes from './handlers/list_recipes.js';
 import getRecipe from './handlers/get_recipe.js';
 import createRecipe from './handlers/create_recipe.js';
@@ -15,7 +15,7 @@ export async function handler(event, context) {
   console.log("📥 Event received:", event.httpMethod, event.path);
 
   try {
-    const db = await connectToDB();
+    const db = await getDb();
 
     // Routing logic
     // Recipes

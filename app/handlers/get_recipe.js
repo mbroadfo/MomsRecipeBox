@@ -1,6 +1,6 @@
 
 import { ObjectId } from 'mongodb';
-import { getDb } from '../mongoClient.js';
+import { getDb } from '../app.js';
 
 const handler = async (event) => {
   try {

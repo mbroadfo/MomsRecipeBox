@@ -1,6 +1,6 @@
 // File: handlers/create_recipe.js
 import { ObjectId } from 'mongodb';
-import { getDb } from '../mongoClient.js';
+import { getDb } from '../app.js';
 
 export default async function createRecipe(db, body) {
   const recipe = {

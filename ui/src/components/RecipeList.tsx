@@ -43,7 +43,6 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold mb-4">Mom's Recipe Box</h1>
       {loading && <p>Loading recipes...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {recipes.length === 0 && !loading && !error && (

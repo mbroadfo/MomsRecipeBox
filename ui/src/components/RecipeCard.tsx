@@ -10,6 +10,8 @@ interface Recipe {
   author?: string;
   tags?: string[];
   image_url?: string;
+  favorites?: number;
+  comments?: number;
 }
 
 interface RecipeCardProps {
@@ -20,52 +22,71 @@ interface RecipeCardProps {
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   const imageUrl = recipe.image_url || fallbackImage;
 
+  // Dummy favorites/comments for demo
+  const favorites = recipe.favorites ?? Math.floor(Math.random() * 200);
+  const comments = recipe.comments ?? Math.floor(Math.random() * 50);
+
   return (
     <div
       onClick={() => onClick(recipe.id.toString())}
-      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden flex flex-col m-4"
-      style={{ height: '350px', border: 'none', padding: '20px' }}
+      className="bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"
+      style={{
+        height: '400px',
+        margin: '16px',
+        padding: '18px',
+        boxSizing: 'border-box',
+        border: '1px solid #e5e7eb', // Tailwind gray-200
+        borderRadius: '16px', // rounded-2xl
+      }}
     >
-      <div className="h-full flex flex-col justify-between">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-16 h-16 flex-shrink-0">
-            <img
-              src={imageUrl}
-              alt={recipe.title}
-              className="w-16 h-16 object-cover rounded-md"
-              style={{ maxWidth: '4rem', maxHeight: '4rem' }}
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = fallbackImage;
-              }}
-            />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold">{recipe.title}</h2>
-            {recipe.subtitle && (
-              <p className="text-xs text-gray-600 italic">{recipe.subtitle}</p>
-            )}
-            {recipe.summary && (
-              <p className="text-xs text-gray-700">{recipe.summary}</p>
-            )}
-            {recipe.author && (
-              <p className="text-xs text-gray-500">Submitted by: {recipe.author}</p>
-            )}
-            {recipe.tags && recipe.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {recipe.tags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        {/* ...other card content can go here... */}
+      {/* Image section */}
+      <div className="flex justify-center items-center" style={{ width: '100%', height: '275px', overflow: 'hidden', padding: 0 }}>
+        <img
+          src={imageUrl}
+          alt={recipe.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', maxWidth: '275px', maxHeight: '275px', padding: 0 }}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = fallbackImage;
+          }}
+        />
+      </div>
+      {/* Title section */}
+      <div className="mt-3 flex-1 flex flex-col justify-start">
+        <h2
+          className="font-bold text-gray-900 text-left text-lg leading-tight"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'normal',
+            minHeight: '3em',
+            maxHeight: '3em',
+          }}
+        >
+          {recipe.title}
+        </h2>
+      </div>
+      {/* Favorites and comments section */}
+      <div className="mt-2 flex items-center text-gray-700 text-base font-bold">
+        <span className="flex items-center gap-3 mr-8">
+          <svg width="20" height="20" fill="#e53e3e" stroke="#e53e3e" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 1.01 4.5 2.09C13.09 4.01 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span>{favorites}</span>
+        </span>
+        <span className="inline-block" style={{ width: '32px' }}></span>
+        <span className="flex items-center gap-3">
+          <svg width="20" height="20" fill="#3182ce" stroke="#3182ce" strokeWidth="2" viewBox="0 0 24 24">
+            <rect x="3" y="7" width="18" height="10" rx="2" />
+            <rect x="7" y="11" width="2" height="2" rx="1" fill="#fff" />
+            <rect x="11" y="11" width="2" height="2" rx="1" fill="#fff" />
+            <rect x="15" y="11" width="2" height="2" rx="1" fill="#fff" />
+          </svg>
+          <span>{comments}</span>
+        </span>
       </div>
     </div>
   );

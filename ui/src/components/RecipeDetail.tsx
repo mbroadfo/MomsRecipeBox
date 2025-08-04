@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface RecipeDetailProps {
-  recipeId: number;
+  recipeId: string;
   onBack: () => void;
 }
 

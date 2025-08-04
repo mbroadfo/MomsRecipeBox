@@ -3,35 +3,53 @@ import React, { useEffect, useState } from 'react';
 import RecipeCard from './RecipeCard';
 
 interface Recipe {
-  id: number;
+  id: string;
   title: string;
   subtitle?: string;
   image_url?: string;
 }
 
 interface RecipeListProps {
-  onSelectRecipe: (id: number) => void;
+  onSelectRecipe: (id: string) => void;
 }
 
 export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch('/api/recipes?expand=full')
+    fetch('/api/recipes')
       .then((res) => res.json())
-      .then((data) => setRecipes(data.recipes || []))
+      .then((data) => {
+        // Try common response shapes
+        if (Array.isArray(data)) {
+          setRecipes(data);
+        } else if (Array.isArray(data.items)) {
+          setRecipes(data.items);
+        } else if (Array.isArray(data.recipes)) {
+          setRecipes(data.recipes);
+        } else {
+          setRecipes([]);
+        }
+        setError(null);
+      })
       .catch((err) => {
         console.error('Error fetching recipes:', err);
         setError('Failed to load recipes');
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
+    <>
       <h1 className="text-2xl font-bold mb-4">Mom's Recipe Box</h1>
+      {loading && <p>Loading recipes...</p>}
       {error && <p className="text-red-500">{error}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {recipes.length === 0 && !loading && !error && (
+        <p className="text-gray-500">No recipes found.</p>
+      )}
+      <div className="grid grid-cols-5 gap-4 w-full">
         {recipes.map((recipe) => (
           <RecipeCard
             key={recipe.id}
@@ -40,6 +58,6 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
           />
         ))}
       </div>
-    </div>
+    </>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import fallbackImage from '../assets/default.png';
 
 interface Recipe {
-  id: number;
+  id: string;
   title: string;
   subtitle?: string;
   summary?: string;
@@ -14,7 +14,7 @@ interface Recipe {
 
 interface RecipeCardProps {
   recipe: Recipe;
-  onClick: (id: number) => void;
+  onClick: (id: string) => void;
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
@@ -22,32 +22,32 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
 
   return (
     <div
-      onClick={() => onClick(recipe.id)}
-      className="bg-white rounded-xl shadow-md hover:shadow-lg ring-1 ring-gray-200 transition-all cursor-pointer overflow-hidden p-4"
+      onClick={() => onClick(recipe.id.toString())}
+      className="bg-white rounded-xl shadow-md hover:shadow-lg ring-1 ring-gray-200 transition-all cursor-pointer overflow-hidden p-2 mx-auto" style={{ width: '220px' }}
     >
-      <div className="flex items-center gap-4">
-        <div className="w-24 h-24 flex-shrink-0">
+      <div className="flex items-center gap-2">
+        <div className="w-16 h-16 flex-shrink-0">
           <img
             src={imageUrl}
             alt={recipe.title}
-            className="w-24 h-24 object-cover rounded-md"
-            style={{ maxWidth: '6rem', maxHeight: '6rem' }}
+            className="w-16 h-16 object-cover rounded-md"
+            style={{ maxWidth: '4rem', maxHeight: '4rem' }}
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = fallbackImage;
             }}
           />
         </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold">{recipe.title}</h2>
+        <div>
+          <h2 className="text-base font-semibold">{recipe.title}</h2>
           {recipe.subtitle && (
-            <p className="text-sm text-gray-600 italic">{recipe.subtitle}</p>
+            <p className="text-xs text-gray-600 italic">{recipe.subtitle}</p>
           )}
           {recipe.summary && (
-            <p className="text-sm text-gray-700">{recipe.summary}</p>
+            <p className="text-xs text-gray-700">{recipe.summary}</p>
           )}
           {recipe.author && (
-            <p className="text-sm text-gray-500">Submitted by: {recipe.author}</p>
+            <p className="text-xs text-gray-500">Submitted by: {recipe.author}</p>
           )}
           {recipe.tags && recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">

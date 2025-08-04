@@ -1,4 +1,6 @@
 import AWS from 'aws-sdk';
+import sharp from 'sharp';
+
 const s3 = new AWS.S3();
 
 export async function handler(event) {
@@ -11,10 +13,13 @@ export async function handler(event) {
   const key = `${id}/image`;
 
   try {
+    // Resize image to max resolution
+    const resizedBuffer = await sharp(buffer).resize({ width: 1280, height: 720, fit: 'inside' }).toBuffer();
+
     await s3.putObject({
       Bucket: bucketName,
       Key: key,
-      Body: buffer,
+      Body: resizedBuffer,
       ContentType: contentType,
     }).promise();
 

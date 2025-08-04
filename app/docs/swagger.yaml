@@ -222,6 +222,24 @@ paths:
       responses:
         '200':
           description: Image deleted successfully
+    get:
+      summary: Get an image for a recipe
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Image fetched successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Image not found
 
 components:
   schemas:

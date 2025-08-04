@@ -60,10 +60,11 @@ const server = http.createServer(async (req, res) => {
 
   req.on('end', async () => {
     try {
-
+      console.debug(`📥 Event received: ${req.method} ${req.url}`);
 
       // Remove query string for path matching
       const cleanPath = req.url.split('?')[0];
+      console.debug(`Routing to handler for path: ${cleanPath}`);
       let pathParameters = {};
       // /comments/{id}
       const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
@@ -89,6 +90,11 @@ const server = http.createServer(async (req, res) => {
       const recipeImageMatch = cleanPath.match(/^\/recipes\/[\w-]+\/image$/);
       if (recipeImageMatch) {
         pathParameters.id = recipeImageMatch[1];
+      }
+      // /recipes/{id}/image
+      const recipeImageGetMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/image$/);
+      if (recipeImageGetMatch) {
+        pathParameters.id = recipeImageGetMatch[1];
       }
 
       const event = {

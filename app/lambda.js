@@ -12,6 +12,7 @@ import postLike from './handlers/post_like.js';
 import { handler as deleteImage } from './handlers/delete_image.js';
 import { handler as uploadImage } from './handlers/upload_image.js';
 import { handler as updateImage } from './handlers/update_image.js';
+import { handler as getImage } from './handlers/get_image.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -21,6 +22,12 @@ export async function handler(event, context) {
     const db = await getDb();
 
     // Routing logic
+    // Image management
+    if (event.httpMethod === 'GET' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
+      console.log("Routing to getImage handler for path:", event.path);
+      return await getImage(event);
+    }
+
     // Recipes
     if (event.httpMethod === 'GET' && event.path.match(/^\/recipes\/[\w-]+$/)) {
       console.log("Routing to getRecipe handler for path:", event.path);

@@ -525,3 +525,27 @@ resource "aws_iam_policy" "mrb_api_s3_access" {
     ]
   })
 }
+
+##############################################
+# API Gateway method GET /recipe/{id}/image (get_image)
+##############################################
+resource "aws_api_gateway_method" "recipe_image_get" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+##############################################
+# API Gateway integration for GET /recipe/{id}/image (get_image)
+##############################################
+resource "aws_api_gateway_integration" "recipe_image_get_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method             = aws_api_gateway_method.recipe_image_get[count.index].http_method
+  integration_http_method = "GET"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}

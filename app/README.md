@@ -3,9 +3,14 @@
 For best results after making changes to the app-tier (code, dependencies, Dockerfile), use the following workflow:
 
 ```powershell
-docker compose down --remove-orphans -v   # Stop and remove all containers, networks, and volumes
-docker compose build --no-cache app       # Rebuild the app container from scratch
-docker compose up -d                     # Start all services in detached mode
+# Stop and remove all containers, networks, and volumes
+docker compose down --remove-orphans -v
+
+# Rebuild the app container from scratch
+docker compose build --no-cache app
+
+# Start all services in detached mode
+docker compose up -d
 ```
 
 This ensures a clean environment and that all changes are reflected in the running containers. For rapid iteration on code only, you may use `docker compose restart app` instead.
@@ -57,8 +62,8 @@ export default async function handler(event) {
 - **RESTful API:** All endpoints use path parameters, not query strings.
 - **Containerized:** Runs in AWS Lambda base image, local dev via Docker Compose.
 - **Swagger UI:** Available at `/api-docs` (see `local_server.js`).
+- **Graceful Error Handling:** Handlers ensure missing collections or invalid queries are handled gracefully.
 - **No Legacy Code:** All obsolete files and logic (e.g., recipes.js, SQL, Express) have been removed.
-
 
 ## Local Development & Testing
 

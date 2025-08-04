@@ -85,7 +85,6 @@ const server = http.createServer(async (req, res) => {
       if (recipeIdMatch) {
         pathParameters.id = recipeIdMatch[1];
       }
-      console.log('DEBUG local_server incoming path:', req.url, 'cleanPath:', cleanPath, 'pathParameters:', pathParameters);
 
       const event = {
         httpMethod: req.method,

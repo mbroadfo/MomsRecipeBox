@@ -1,9 +1,19 @@
 # app_api.tf
 ##############################################
+# Enablement variable
+##############################################
+variable "enable_app_api" {
+  description = "Enable the app API resources"
+  type        = bool
+  default     = false
+}
+
+##############################################
 # Create the ECR repository
 ##############################################
 resource "aws_ecr_repository" "app_repo" {
-  name = "mrb-app-api"
+  count = var.enable_app_api ? 1 : 0
+  name  = "mrb-app-api"
 
   image_scanning_configuration {
     scan_on_push = true
@@ -21,7 +31,8 @@ resource "aws_ecr_repository" "app_repo" {
 # Lambda execution role
 ##############################################
 resource "aws_iam_role" "app_lambda_role" {
-  name = "app_lambda_role"
+  count = var.enable_app_api ? 1 : 0
+  name  = "app_lambda_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -39,16 +50,19 @@ resource "aws_iam_role" "app_lambda_role" {
 # Attach policies to the Lambda role
 ##############################################
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
+  count = var.enable_app_api ? 1 : 0
   role       = aws_iam_role.app_lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  count = var.enable_app_api ? 1 : 0
   role       = aws_iam_role.app_lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
+  count = var.enable_app_api ? 1 : 0
   role       = aws_iam_role.app_lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
@@ -57,6 +71,7 @@ resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
 # Lambda function from ECR image
 ##############################################
 resource "aws_lambda_function" "app_lambda" {
+  count = var.enable_app_api ? 1 : 0
   function_name = "mrb-app-api"
   role          = aws_iam_role.app_lambda_role.arn
   package_type  = "Image"
@@ -83,6 +98,7 @@ resource "aws_lambda_function" "app_lambda" {
 # API Gateway REST API
 ##############################################
 resource "aws_api_gateway_rest_api" "app_api" {
+  count = var.enable_app_api ? 1 : 0
   name        = "mrb-app-api"
   description = "API Gateway for Mom's Recipe Box app tier"
 }
@@ -91,6 +107,7 @@ resource "aws_api_gateway_rest_api" "app_api" {
 # API Gateway resource /recipes
 ##############################################
 resource "aws_api_gateway_resource" "recipes" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_rest_api.app_api.root_resource_id
   path_part   = "recipes"
@@ -100,6 +117,7 @@ resource "aws_api_gateway_resource" "recipes" {
 # API Gateway method GET /recipes (list_recipes)
 ##############################################
 resource "aws_api_gateway_method" "recipes_get" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipes.id
   http_method   = "GET"
@@ -110,6 +128,7 @@ resource "aws_api_gateway_method" "recipes_get" {
 # API Gateway integration for GET /recipes
 ##############################################
 resource "aws_api_gateway_integration" "recipes_get_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipes.id
   http_method             = aws_api_gateway_method.recipes_get.http_method
@@ -122,6 +141,7 @@ resource "aws_api_gateway_integration" "recipes_get_integration" {
 # API Gateway method POST /recipes (create_recipe)
 ##############################################
 resource "aws_api_gateway_method" "recipes_post" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipes.id
   http_method   = "POST"
@@ -132,6 +152,7 @@ resource "aws_api_gateway_method" "recipes_post" {
 # API Gateway integration for POST /recipes
 ##############################################
 resource "aws_api_gateway_integration" "recipes_post_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipes.id
   http_method             = aws_api_gateway_method.recipes_post.http_method
@@ -144,6 +165,7 @@ resource "aws_api_gateway_integration" "recipes_post_integration" {
 # Lambda permission for API Gateway
 ##############################################
 resource "aws_lambda_permission" "api_gateway_invoke" {
+  count = var.enable_app_api ? 1 : 0
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.app_lambda.function_name
@@ -155,6 +177,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
 # API Gateway deployment
 ##############################################
 resource "aws_api_gateway_deployment" "app_api_deployment" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   depends_on = [
     aws_api_gateway_integration.recipes_get_integration,
@@ -181,6 +204,7 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
 # API Gateway stage
 ##############################################
 resource "aws_api_gateway_stage" "app_api_stage" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   deployment_id = aws_api_gateway_deployment.app_api_deployment.id
   stage_name    = "dev"
@@ -191,30 +215,35 @@ resource "aws_api_gateway_stage" "app_api_stage" {
 ##############################################
 
 resource "aws_api_gateway_resource" "recipe" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_rest_api.app_api.root_resource_id
   path_part   = "recipe"
 }
 
 resource "aws_api_gateway_resource" "recipe_id" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_resource.recipe.id
   path_part   = "{id}"
 }
 
 resource "aws_api_gateway_resource" "comment" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_resource.recipe.id
   path_part   = "comment"
 }
 
 resource "aws_api_gateway_resource" "comment_id" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_resource.comment.id
   path_part   = "{comment_id}"
 }
 
 resource "aws_api_gateway_resource" "like" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   parent_id   = aws_api_gateway_resource.recipe.id
   path_part   = "like"
@@ -224,6 +253,7 @@ resource "aws_api_gateway_resource" "like" {
 # OPTIONS method + integration for CORS
 ##############################################
 resource "aws_api_gateway_method" "recipes_options" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipes.id
   http_method   = "OPTIONS"
@@ -231,6 +261,7 @@ resource "aws_api_gateway_method" "recipes_options" {
 }
 
 resource "aws_api_gateway_integration" "recipes_options_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipes.id
   http_method             = aws_api_gateway_method.recipes_options.http_method
@@ -240,6 +271,7 @@ resource "aws_api_gateway_integration" "recipes_options_integration" {
 }
 
 resource "aws_api_gateway_method_response" "recipes_options_response" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   resource_id = aws_api_gateway_resource.recipes.id
   http_method = aws_api_gateway_method.recipes_options.http_method
@@ -257,6 +289,7 @@ resource "aws_api_gateway_method_response" "recipes_options_response" {
 }
 
 resource "aws_api_gateway_integration_response" "recipes_options_integration_response" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.app_api.id
   resource_id = aws_api_gateway_resource.recipes.id
   http_method = aws_api_gateway_method.recipes_options.http_method
@@ -272,6 +305,7 @@ resource "aws_api_gateway_integration_response" "recipes_options_integration_res
 # Methods and Integrations for /recipe/{id}
 ##############################################
 resource "aws_api_gateway_method" "recipe_get" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipe_id.id
   http_method   = "GET"
@@ -279,6 +313,7 @@ resource "aws_api_gateway_method" "recipe_get" {
 }
 
 resource "aws_api_gateway_integration" "recipe_get_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipe_id.id
   http_method             = aws_api_gateway_method.recipe_get.http_method
@@ -288,6 +323,7 @@ resource "aws_api_gateway_integration" "recipe_get_integration" {
 }
 
 resource "aws_api_gateway_method" "recipe_put" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipe_id.id
   http_method   = "PUT"
@@ -295,6 +331,7 @@ resource "aws_api_gateway_method" "recipe_put" {
 }
 
 resource "aws_api_gateway_integration" "recipe_put_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipe_id.id
   http_method             = aws_api_gateway_method.recipe_put.http_method
@@ -304,6 +341,7 @@ resource "aws_api_gateway_integration" "recipe_put_integration" {
 }
 
 resource "aws_api_gateway_method" "recipe_delete" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.recipe_id.id
   http_method   = "DELETE"
@@ -311,6 +349,7 @@ resource "aws_api_gateway_method" "recipe_delete" {
 }
 
 resource "aws_api_gateway_integration" "recipe_delete_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.recipe_id.id
   http_method             = aws_api_gateway_method.recipe_delete.http_method
@@ -323,6 +362,7 @@ resource "aws_api_gateway_integration" "recipe_delete_integration" {
 # Methods and Integrations for /recipe/comment
 ##############################################
 resource "aws_api_gateway_method" "comment_post" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.comment.id
   http_method   = "POST"
@@ -330,6 +370,7 @@ resource "aws_api_gateway_method" "comment_post" {
 }
 
 resource "aws_api_gateway_integration" "comment_post_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.comment.id
   http_method             = aws_api_gateway_method.comment_post.http_method
@@ -342,6 +383,7 @@ resource "aws_api_gateway_integration" "comment_post_integration" {
 # Methods and Integrations for /recipe/comment/{comment_id}
 ##############################################
 resource "aws_api_gateway_method" "comment_put" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.comment_id.id
   http_method   = "PUT"
@@ -349,6 +391,7 @@ resource "aws_api_gateway_method" "comment_put" {
 }
 
 resource "aws_api_gateway_integration" "comment_put_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.comment_id.id
   http_method             = aws_api_gateway_method.comment_put.http_method
@@ -358,6 +401,7 @@ resource "aws_api_gateway_integration" "comment_put_integration" {
 }
 
 resource "aws_api_gateway_method" "comment_delete" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.comment_id.id
   http_method   = "DELETE"
@@ -365,6 +409,7 @@ resource "aws_api_gateway_method" "comment_delete" {
 }
 
 resource "aws_api_gateway_integration" "comment_delete_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.comment_id.id
   http_method             = aws_api_gateway_method.comment_delete.http_method
@@ -377,6 +422,7 @@ resource "aws_api_gateway_integration" "comment_delete_integration" {
 # Methods and Integrations for /recipe/like
 ##############################################
 resource "aws_api_gateway_method" "like_post" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.app_api.id
   resource_id   = aws_api_gateway_resource.like.id
   http_method   = "POST"
@@ -384,6 +430,7 @@ resource "aws_api_gateway_method" "like_post" {
 }
 
 resource "aws_api_gateway_integration" "like_post_integration" {
+  count = var.enable_app_api ? 1 : 0
   rest_api_id             = aws_api_gateway_rest_api.app_api.id
   resource_id             = aws_api_gateway_resource.like.id
   http_method             = aws_api_gateway_method.like_post.http_method

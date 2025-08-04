@@ -10,5 +10,3 @@ db_subnet_ids = [
 allowed_cidrs = [
   "174.29.251.165/32"
 ]
-
-db_username = "mrb_admin"

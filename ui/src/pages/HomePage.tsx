@@ -8,8 +8,7 @@ export const HomePage: React.FC = () => {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex justify-center">
-      <div className="w-full max-w-6xl">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
       <header className="flex items-center justify-between px-10 py-5 bg-white shadow-md w-full">
         <div className="flex items-center gap-4 min-w-0">
@@ -41,7 +40,7 @@ export const HomePage: React.FC = () => {
         </div>
       </header>
       {/* Main content */}
-      <main className="p-8">
+      <main className="w-full">
         {selectedRecipeId ? (
           <RecipeDetail recipeId={selectedRecipeId} onBack={() => setSelectedRecipeId(null)} />
         ) : (
@@ -49,6 +48,5 @@ export const HomePage: React.FC = () => {
         )}
       </main>
     </div>
-  </div>
   );
 };

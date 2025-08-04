@@ -49,10 +49,10 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
       {recipes.length === 0 && !loading && !error && (
         <p className="text-gray-500">No recipes found.</p>
       )}
-      <div className="grid grid-cols-5 gap-4 w-full">
-        {recipes.map((recipe) => (
+      <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(275px, 1fr))' }}>
+        {recipes.map((recipe, idx) => (
           <RecipeCard
-            key={recipe.id}
+            key={recipe.id || idx}
             recipe={recipe}
             onClick={onSelectRecipe}
           />

@@ -1,8 +1,5 @@
 ###############################################################################
-# Output - Private Subnet IDs (used by Lambda to attach to the VPC)
+# Output - (removed private_subnet_ids output)
 ###############################################################################
 
-output "private_subnet_ids" {
-  description = "List of private subnet IDs for Lambda or RDS"
-  value       = module.network.private_subnets
-}
+# The output for private subnet IDs has been removed as per the latest configuration changes.

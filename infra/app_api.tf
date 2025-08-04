@@ -1,14 +1,5 @@
 # app_api.tf
 ##############################################
-# Enablement variable
-##############################################
-variable "enable_app_api" {
-  description = "Enable the app API resources"
-  type        = bool
-  default     = false
-}
-
-##############################################
 # Create the ECR repository
 ##############################################
 resource "aws_ecr_repository" "app_repo" {
@@ -51,19 +42,19 @@ resource "aws_iam_role" "app_lambda_role" {
 ##############################################
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
   count = var.enable_app_api ? 1 : 0
-  role       = aws_iam_role.app_lambda_role.name
+  role       = aws_iam_role.app_lambda_role[count.index].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   count = var.enable_app_api ? 1 : 0
-  role       = aws_iam_role.app_lambda_role.name
+  role       = aws_iam_role.app_lambda_role[count.index].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
   count = var.enable_app_api ? 1 : 0
-  role       = aws_iam_role.app_lambda_role.name
+  role       = aws_iam_role.app_lambda_role[count.index].name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
 
@@ -73,24 +64,15 @@ resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
 resource "aws_lambda_function" "app_lambda" {
   count = var.enable_app_api ? 1 : 0
   function_name = "mrb-app-api"
-  role          = aws_iam_role.app_lambda_role.arn
+  role          = aws_iam_role.app_lambda_role[count.index].arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.app_repo.repository_url}:dev"
+  image_uri     = "${aws_ecr_repository.app_repo[count.index].repository_url}:dev"
   timeout       = 15
   memory_size   = 256
   environment {
     variables = {
-      DB_SECRET_ARN = data.aws_secretsmanager_secret.mrb_secrets.arn
-      DB_HOST       = data.aws_db_instance.manual_db_instance.address
-      DB_PORT       = "3306"
-      MYSQL_USER      = jsondecode(data.aws_secretsmanager_secret_version.mrb_secrets_version.secret_string)["db_username"]
-      MYSQL_PASSWORD  = jsondecode(data.aws_secretsmanager_secret_version.mrb_secrets_version.secret_string)["db_password"]
-      MYSQL_DATABASE  = jsondecode(data.aws_secretsmanager_secret_version.mrb_secrets_version.secret_string)["db_name"]
+      # Removed undeclared resources
     }
-  }
-  vpc_config {
-    subnet_ids         = module.network.private_subnets
-    security_group_ids = [aws_security_group.rds_sg.id]
   }
 }
 
@@ -108,8 +90,8 @@ resource "aws_api_gateway_rest_api" "app_api" {
 ##############################################
 resource "aws_api_gateway_resource" "recipes" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_rest_api.app_api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_rest_api.app_api[count.index].root_resource_id
   path_part   = "recipes"
 }
 
@@ -118,8 +100,8 @@ resource "aws_api_gateway_resource" "recipes" {
 ##############################################
 resource "aws_api_gateway_method" "recipes_get" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipes.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipes[count.index].id
   http_method   = "GET"
   authorization = "NONE"
 }
@@ -129,12 +111,12 @@ resource "aws_api_gateway_method" "recipes_get" {
 ##############################################
 resource "aws_api_gateway_integration" "recipes_get_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipes.id
-  http_method             = aws_api_gateway_method.recipes_get.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipes[count.index].id
+  http_method             = aws_api_gateway_method.recipes_get[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 ##############################################
@@ -142,8 +124,8 @@ resource "aws_api_gateway_integration" "recipes_get_integration" {
 ##############################################
 resource "aws_api_gateway_method" "recipes_post" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipes.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipes[count.index].id
   http_method   = "POST"
   authorization = "NONE"
 }
@@ -153,12 +135,12 @@ resource "aws_api_gateway_method" "recipes_post" {
 ##############################################
 resource "aws_api_gateway_integration" "recipes_post_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipes.id
-  http_method             = aws_api_gateway_method.recipes_post.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipes[count.index].id
+  http_method             = aws_api_gateway_method.recipes_post[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 ##############################################
@@ -168,9 +150,9 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   count = var.enable_app_api ? 1 : 0
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.app_lambda.function_name
+  function_name = aws_lambda_function.app_lambda[count.index].function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.app_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.app_api[count.index].execution_arn}/*/*"
 }
 
 ##############################################
@@ -178,7 +160,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
 ##############################################
 resource "aws_api_gateway_deployment" "app_api_deployment" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
   depends_on = [
     aws_api_gateway_integration.recipes_get_integration,
     aws_api_gateway_integration.recipes_post_integration,
@@ -205,8 +187,8 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
 ##############################################
 resource "aws_api_gateway_stage" "app_api_stage" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  deployment_id = aws_api_gateway_deployment.app_api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  deployment_id = aws_api_gateway_deployment.app_api_deployment[count.index].id
   stage_name    = "dev"
 }
 
@@ -216,36 +198,36 @@ resource "aws_api_gateway_stage" "app_api_stage" {
 
 resource "aws_api_gateway_resource" "recipe" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_rest_api.app_api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_rest_api.app_api[count.index].root_resource_id
   path_part   = "recipe"
 }
 
 resource "aws_api_gateway_resource" "recipe_id" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_resource.recipe.id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.recipe[count.index].id
   path_part   = "{id}"
 }
 
 resource "aws_api_gateway_resource" "comment" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_resource.recipe.id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.recipe[count.index].id
   path_part   = "comment"
 }
 
 resource "aws_api_gateway_resource" "comment_id" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_resource.comment.id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.comment[count.index].id
   path_part   = "{comment_id}"
 }
 
 resource "aws_api_gateway_resource" "like" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  parent_id   = aws_api_gateway_resource.recipe.id
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.recipe[count.index].id
   path_part   = "like"
 }
 
@@ -254,17 +236,17 @@ resource "aws_api_gateway_resource" "like" {
 ##############################################
 resource "aws_api_gateway_method" "recipes_options" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipes.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipes[count.index].id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "recipes_options_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipes.id
-  http_method             = aws_api_gateway_method.recipes_options.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipes[count.index].id
+  http_method             = aws_api_gateway_method.recipes_options[count.index].http_method
   type                    = "MOCK"
   request_templates       = {"application/json" = "{\"statusCode\": 200}"}
   integration_http_method = "OPTIONS"
@@ -272,9 +254,9 @@ resource "aws_api_gateway_integration" "recipes_options_integration" {
 
 resource "aws_api_gateway_method_response" "recipes_options_response" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  resource_id = aws_api_gateway_resource.recipes.id
-  http_method = aws_api_gateway_method.recipes_options.http_method
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id = aws_api_gateway_resource.recipes[count.index].id
+  http_method = aws_api_gateway_method.recipes_options[count.index].http_method
   status_code = "200"
 
   response_parameters = {
@@ -290,10 +272,10 @@ resource "aws_api_gateway_method_response" "recipes_options_response" {
 
 resource "aws_api_gateway_integration_response" "recipes_options_integration_response" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id = aws_api_gateway_rest_api.app_api.id
-  resource_id = aws_api_gateway_resource.recipes.id
-  http_method = aws_api_gateway_method.recipes_options.http_method
-  status_code = aws_api_gateway_method_response.recipes_options_response.status_code
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id = aws_api_gateway_resource.recipes[count.index].id
+  http_method = aws_api_gateway_method.recipes_options[count.index].http_method
+  status_code = aws_api_gateway_method_response.recipes_options_response[count.index].status_code
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
@@ -306,56 +288,56 @@ resource "aws_api_gateway_integration_response" "recipes_options_integration_res
 ##############################################
 resource "aws_api_gateway_method" "recipe_get" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipe_id.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "GET"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "recipe_get_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipe_id.id
-  http_method             = aws_api_gateway_method.recipe_get.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_id[count.index].id
+  http_method             = aws_api_gateway_method.recipe_get[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 resource "aws_api_gateway_method" "recipe_put" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipe_id.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "PUT"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "recipe_put_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipe_id.id
-  http_method             = aws_api_gateway_method.recipe_put.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_id[count.index].id
+  http_method             = aws_api_gateway_method.recipe_put[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 resource "aws_api_gateway_method" "recipe_delete" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.recipe_id.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "DELETE"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "recipe_delete_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.recipe_id.id
-  http_method             = aws_api_gateway_method.recipe_delete.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_id[count.index].id
+  http_method             = aws_api_gateway_method.recipe_delete[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 ##############################################
@@ -363,20 +345,20 @@ resource "aws_api_gateway_integration" "recipe_delete_integration" {
 ##############################################
 resource "aws_api_gateway_method" "comment_post" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.comment.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.comment[count.index].id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "comment_post_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.comment.id
-  http_method             = aws_api_gateway_method.comment_post.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.comment[count.index].id
+  http_method             = aws_api_gateway_method.comment_post[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 ##############################################
@@ -384,38 +366,38 @@ resource "aws_api_gateway_integration" "comment_post_integration" {
 ##############################################
 resource "aws_api_gateway_method" "comment_put" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.comment_id.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.comment_id[count.index].id
   http_method   = "PUT"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "comment_put_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.comment_id.id
-  http_method             = aws_api_gateway_method.comment_put.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.comment_id[count.index].id
+  http_method             = aws_api_gateway_method.comment_put[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 resource "aws_api_gateway_method" "comment_delete" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.comment_id.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.comment_id[count.index].id
   http_method   = "DELETE"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "comment_delete_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.comment_id.id
-  http_method             = aws_api_gateway_method.comment_delete.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.comment_id[count.index].id
+  http_method             = aws_api_gateway_method.comment_delete[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }
 
 ##############################################
@@ -423,18 +405,123 @@ resource "aws_api_gateway_integration" "comment_delete_integration" {
 ##############################################
 resource "aws_api_gateway_method" "like_post" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api.id
-  resource_id   = aws_api_gateway_resource.like.id
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.like[count.index].id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "like_post_integration" {
   count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api.id
-  resource_id             = aws_api_gateway_resource.like.id
-  http_method             = aws_api_gateway_method.like_post.http_method
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.like[count.index].id
+  http_method             = aws_api_gateway_method.like_post[count.index].http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda.invoke_arn
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+##############################################
+# New resources for /recipe/{id}/image
+##############################################
+resource "aws_api_gateway_resource" "recipe_image" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.recipe_id[count.index].id
+  path_part   = "image"
+}
+
+##############################################
+# API Gateway method POST /recipe/{id}/image (add_image)
+##############################################
+resource "aws_api_gateway_method" "recipe_image_post" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+##############################################
+# API Gateway integration for POST /recipe/{id}/image (add_image)
+##############################################
+resource "aws_api_gateway_integration" "recipe_image_post_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method             = aws_api_gateway_method.recipe_image_post[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+##############################################
+# API Gateway method PUT /recipe/{id}/image (update_image)
+##############################################
+resource "aws_api_gateway_method" "recipe_image_put" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method   = "PUT"
+  authorization = "NONE"
+}
+
+##############################################
+# API Gateway integration for PUT /recipe/{id}/image (update_image)
+##############################################
+resource "aws_api_gateway_integration" "recipe_image_put_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method             = aws_api_gateway_method.recipe_image_put[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+##############################################
+# API Gateway method DELETE /recipe/{id}/image (delete_image)
+##############################################
+resource "aws_api_gateway_method" "recipe_image_delete" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method   = "DELETE"
+  authorization = "NONE"
+}
+
+##############################################
+# API Gateway integration for DELETE /recipe/{id}/image (delete_image)
+##############################################
+resource "aws_api_gateway_integration" "recipe_image_delete_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
+  http_method             = aws_api_gateway_method.recipe_image_delete[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+##############################################
+# IAM policy for Mom's Recipe Box API
+##############################################
+resource "aws_iam_policy" "mrb_api_s3_access" {
+  name        = "mrb-api-s3-access"
+  description = "Policy for Mom's Recipe Box API to access S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ],
+        Resource = "arn:aws:s3:::mrb-recipe-images-dev/*"
+      }
+    ]
+  })
 }

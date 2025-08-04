@@ -6,8 +6,8 @@ if (-not $current) {
     $env:AWS_PROFILE = "terraform"
     Write-Host "Switched to: terraform (was unset)"
 } elseif ($current -eq "terraform") {
-    $env:AWS_PROFILE = "default"
-    Write-Host "Switched to: default"
+    $env:AWS_PROFILE = "mrb-api"
+    Write-Host "Switched to: mrb-api"
 } else {
     $env:AWS_PROFILE = "terraform"
     Write-Host "Switched to: terraform"

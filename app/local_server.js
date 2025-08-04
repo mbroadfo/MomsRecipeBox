@@ -85,6 +85,11 @@ const server = http.createServer(async (req, res) => {
       if (recipeIdMatch) {
         pathParameters.id = recipeIdMatch[1];
       }
+      // /recipes/{id}/image
+      const recipeImageMatch = cleanPath.match(/^\/recipes\/[\w-]+\/image$/);
+      if (recipeImageMatch) {
+        pathParameters.id = recipeImageMatch[1];
+      }
 
       const event = {
         httpMethod: req.method,

@@ -4,6 +4,7 @@
   "type": "module",
   "main": "local_server.js",
   "dependencies": {
+    "aws-sdk": "^2.1234.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "mongodb": "^5.9.0"

@@ -166,6 +166,62 @@ paths:
       responses:
         '200':
           description: Like toggled
+  /recipes/{id}/image:
+    post:
+      summary: Upload an image for a recipe
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageBase64:
+                  type: string
+                contentType:
+                  type: string
+      responses:
+        '200':
+          description: Image uploaded successfully
+    put:
+      summary: Update an image for a recipe
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageBase64:
+                  type: string
+                contentType:
+                  type: string
+      responses:
+        '200':
+          description: Image updated successfully
+    delete:
+      summary: Delete an image for a recipe
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Image deleted successfully
 
 components:
   schemas:

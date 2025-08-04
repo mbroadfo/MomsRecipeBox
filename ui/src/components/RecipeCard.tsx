@@ -22,9 +22,23 @@ interface RecipeCardProps {
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   const imageUrl = recipe.image_url || fallbackImage;
 
-  // Dummy favorites/comments for demo
-  const favorites = recipe.favorites ?? Math.floor(Math.random() * 200);
-  const comments = recipe.comments ?? Math.floor(Math.random() * 50);
+  // Calculate favorites/likes and comments from recipe data
+  // Supports array or number fields
+  const favorites = Array.isArray((recipe as any).favorites)
+    ? (recipe as any).favorites.length
+    : typeof recipe.favorites === 'number'
+      ? recipe.favorites
+      : Array.isArray((recipe as any).likes)
+        ? (recipe as any).likes.length
+        : typeof (recipe as any).likes === 'number'
+          ? (recipe as any).likes
+          : 0;
+
+  const comments = Array.isArray((recipe as any).comments)
+    ? (recipe as any).comments.length
+    : typeof recipe.comments === 'number'
+      ? recipe.comments
+      : 0;
 
   return (
     <div

@@ -22,12 +22,18 @@ export const HomePage: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
 
 
-  // Responsive drawer styles
-  const drawerBase = "fixed top-0 left-0 h-full bg-white shadow-lg z-30 transition-transform duration-300";
-  const drawerWidth = "w-72";
-  const drawerClosed = "-translate-x-full";
-  const drawerOpenClass = "translate-x-0";
+  // Avatar dropdown state
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
+  // Sorting options
+  const sortingOptions = [
+    { value: 'newest', label: 'Newest' },
+    { value: 'popular', label: 'Most Popular' },
+    { value: 'favorites', label: 'Most Favorited' },
+    { value: 'az', label: 'A-Z' },
+    { value: 'updated', label: 'Recently Updated' },
+  ];
+  const [sort, setSort] = useState<string>('newest');
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -54,14 +60,31 @@ export const HomePage: React.FC = () => {
           </span>
         </div>
         <div className="relative flex items-center">
-          <span style={{ display: 'inline-block', width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #e53e3e 60%, #3182ce 100%)', marginLeft: '16px', marginRight: '16px' }}>
-            <svg viewBox="0 0 24 24" width="32" height="32" style={{ display: 'block', margin: 'auto', marginTop: '6px' }} fill="#fff">
-              <circle cx="12" cy="9" r="4" />
-              <path d="M4 20c0-3.313 3.134-6 7-6s7 2.687 7 6" />
-            </svg>
-          </span>
+          <div className="relative">
+            <span
+              style={{ display: 'inline-block', width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #e53e3e 60%, #3182ce 100%)', marginLeft: '16px', marginRight: '16px', cursor: 'pointer' }}
+              onClick={() => setAvatarMenuOpen((open) => !open)}
+              tabIndex={0}
+              aria-label="User menu"
+            >
+              <svg viewBox="0 0 24 24" width="32" height="32" style={{ display: 'block', margin: 'auto', marginTop: '6px' }} fill="#fff">
+                <circle cx="12" cy="9" r="4" />
+                <path d="M4 20c0-3.313 3.134-6 7-6s7 2.687 7 6" />
+              </svg>
+            </span>
+            {avatarMenuOpen && (
+              <div className="absolute mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50" style={{ right: '0.5rem', minWidth: '10.5rem', whiteSpace: 'nowrap' }}>
+                <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => {/* TODO: Edit profile logic */ setAvatarMenuOpen(false); }}>Edit Profile</button>
+                <div className="border-t border-gray-200 my-1"></div>
+                <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => {/* TODO: Logout logic */ setAvatarMenuOpen(false); }}>Logout</button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
+
+      {/* Add vertical spacing between header and main layout */}
+      <div className="h-6"></div>
 
       {/* Main layout: drawer + content */}
       <div className="flex w-full min-h-[calc(100vh-6rem)]">{/* 6rem header height */}
@@ -69,21 +92,21 @@ export const HomePage: React.FC = () => {
         <aside
           className={`
             transition-all duration-300
-            bg-white shadow-lg z-30
+            bg-gray-100 shadow-lg z-30
             ${drawerOpen ? 'w-72' : 'w-0'}
             overflow-hidden
-            md:w-64 md:static md:shadow-none md:bg-transparent
+            md:w-64 md:static md:shadow-none md:bg-gray-100
           `}
           style={{ minWidth: drawerOpen ? '18rem' : '0', maxWidth: '18rem' }}
           aria-hidden={!drawerOpen && window.innerWidth < 768}
         >
           {drawerOpen && (
             <div
-              className="pl-8 pr-6 pt-6 pb-6 bg-white rounded-xl shadow-md"
+              className="pl-8 pr-6 pt-6 pb-6 bg-gray-100 rounded-xl shadow-md"
               style={{ margin: '1rem', minHeight: 'calc(100vh - 7rem)' }}
             >
               <h2 className="font-bold text-xl mb-4">Filter Recipes</h2>
-              <form className="flex flex-col gap-3">
+              <form className="flex flex-col gap-3 mb-6">
                 <label className="flex items-center gap-2">
                   <input type="radio" name="filter" value="all" checked={filter === 'all'} onChange={() => setFilter('all')} />
                   All
@@ -101,11 +124,19 @@ export const HomePage: React.FC = () => {
                   My Favorites
                 </label>
               </form>
-              <div className="mt-8">
-                <h2 className="font-bold text-xl mb-4">Sort By</h2>
-                {/* Sorting controls placeholder */}
-                <div className="text-gray-400 italic">(Sorting controls coming soon)</div>
-              </div>
+              <div
+                className="mx-auto"
+                style={{ borderTop: '1px solid #e5e7eb', opacity: 0.85, width: '100%', marginTop: '2.5rem', marginBottom: '2.5rem' }}
+              ></div>
+              <h2 className="font-bold text-xl mb-4">Sort By</h2>
+              <form className="flex flex-col gap-3">
+                {sortingOptions.map(opt => (
+                  <label key={opt.value} className="flex items-center gap-2">
+                    <input type="radio" name="sort" value={opt.value} checked={sort === opt.value} onChange={() => setSort(opt.value)} />
+                    {opt.label}
+                  </label>
+                ))}
+              </form>
             </div>
           )}
         </aside>
@@ -115,7 +146,7 @@ export const HomePage: React.FC = () => {
           {selectedRecipeId ? (
             <RecipeDetail recipeId={selectedRecipeId} onBack={() => setSelectedRecipeId(null)} />
           ) : (
-            <RecipeList onSelectRecipe={setSelectedRecipeId} filter={filter} />
+            <RecipeList onSelectRecipe={setSelectedRecipeId} filter={filter} sort={sort} maxColumns={5} />
           )}
         </main>
       </div>

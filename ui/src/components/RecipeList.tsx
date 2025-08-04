@@ -7,14 +7,18 @@ interface Recipe {
   title: string;
   subtitle?: string;
   image_url?: string;
+  favorites?: number;
+  comments?: number;
 }
 
 interface RecipeListProps {
   onSelectRecipe: (id: string) => void;
   filter?: string;
+  sort?: string;
+  maxColumns?: number;
 }
 
-export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter = 'all' }) => {
+export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter = 'all', sort = 'newest', maxColumns = 5 }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -43,7 +47,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   }, []);
 
   // Simple filter logic placeholder
-  const filteredRecipes = recipes.filter((recipe) => {
+  let filteredRecipes = recipes.filter((recipe) => {
     switch (filter) {
       case 'mine':
         // TODO: Replace with real user filtering
@@ -59,6 +63,30 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
     }
   });
 
+  // Sorting logic
+  filteredRecipes = [...filteredRecipes];
+  switch (sort) {
+    case 'az':
+      filteredRecipes.sort((a, b) => a.title.localeCompare(b.title));
+      break;
+    case 'favorites':
+      filteredRecipes.sort((a, b) => (b.favorites ?? 0) - (a.favorites ?? 0));
+      break;
+    case 'popular':
+      filteredRecipes.sort((a, b) => (b.comments ?? 0) - (a.comments ?? 0));
+      break;
+    case 'updated':
+      // TODO: Add updated date to Recipe and sort by it
+      break;
+    case 'newest':
+    default:
+      // TODO: Add created date to Recipe and sort by it
+      break;
+  }
+
+  // Limit max columns in grid
+  const gridTemplate = `repeat(${maxColumns}, minmax(275px, 1fr))`;
+
   return (
     <>
       {loading && <p>Loading recipes...</p>}
@@ -66,7 +94,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
       {filteredRecipes.length === 0 && !loading && !error && (
         <p className="text-gray-500">No recipes found.</p>
       )}
-      <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(275px, 1fr))' }}>
+      <div className="grid gap-8" style={{ gridTemplateColumns: gridTemplate }}>
         {filteredRecipes.map((recipe, idx) => (
           <RecipeCard
             key={recipe.id || idx}

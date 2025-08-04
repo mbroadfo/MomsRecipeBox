@@ -19,11 +19,12 @@ export async function handler(event, context) {
 
     // Routing logic
     // Recipes
-    if (event.httpMethod === 'GET' && event.path.startsWith('/recipes')) {
-      return await listRecipes(event);
-    }
     if (event.httpMethod === 'GET' && event.path.match(/^\/recipes\/[\w-]+$/)) {
-      return await getRecipe(event);
+      console.log("Routing to getRecipe handler for path:", event.path);
+      return await getRecipe(event); // Ensure this matches the correct handler
+    }
+    if (event.httpMethod === 'GET' && event.path === '/recipes') {
+      return await listRecipes(event);
     }
     if (event.httpMethod === 'POST' && event.path === '/recipes') {
       return await createRecipe(db, JSON.parse(event.body));

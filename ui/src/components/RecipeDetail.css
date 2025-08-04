@@ -1,0 +1,78 @@
+/* RecipeDetail.css */
+
+.recipe-detail {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.recipe-detail__header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.recipe-detail__image {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-detail__title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.recipe-detail__description {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.recipe-detail__ingredients ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.recipe-detail__notes {
+  background-color: #fffbe6;
+  border-left: 4px solid #ffd700;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.recipe-detail__comments ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.recipe-detail__comments li {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.recipe-detail__footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.recipe-detail__save-button,
+.recipe-detail__rate-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.recipe-detail__save-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.recipe-detail__rate-button {
+  background-color: #28a745;
+  color: white;
+}

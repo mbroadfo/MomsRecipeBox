@@ -1,11 +1,11 @@
 // File: ui/src/pages/HomePage.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import defaultLogo from '../assets/default.png';
 import { RecipeList } from '../components/RecipeList';
-import { RecipeDetail } from '../components/RecipeDetail';
 
 export const HomePage: React.FC = () => {
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState<boolean>(window.innerWidth >= 768);
   // Responsive drawer: open by default on desktop, closed on mobile
   useEffect(() => {
@@ -143,11 +143,12 @@ export const HomePage: React.FC = () => {
 
         {/* Main content */}
         <main className="flex-1 w-full">
-          {selectedRecipeId ? (
-            <RecipeDetail recipeId={selectedRecipeId} onBack={() => setSelectedRecipeId(null)} />
-          ) : (
-            <RecipeList onSelectRecipe={setSelectedRecipeId} filter={filter} sort={sort} maxColumns={5} />
-          )}
+          <RecipeList
+            onSelectRecipe={(id) => navigate(`/recipe/${id}`)}
+            filter={filter}
+            sort={sort}
+            maxColumns={5}
+          />
         </main>
       </div>
     </div>

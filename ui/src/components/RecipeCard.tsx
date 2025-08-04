@@ -42,7 +42,15 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
 
   return (
     <div
-      onClick={() => onClick(recipe.id.toString())}
+      onClick={() => {
+        const recipeId = (recipe as any)._id;
+        if (recipeId) {
+          console.log('RecipeCard clicked:', recipeId);
+          onClick(recipeId);
+        } else {
+          console.warn('RecipeCard clicked with missing _id:', recipe);
+        }
+      }}
       className="bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"
       style={{
         height: '400px',

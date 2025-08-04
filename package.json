@@ -1,8 +1,10 @@
 {
   "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "dotenv": "^17.2.1",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
-    "mongodb": "^6.18.0"
+    "mongodb": "^6.18.0",
+    "react-router-dom": "^7.7.1"
   }
 }

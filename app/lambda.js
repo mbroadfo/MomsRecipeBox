@@ -64,6 +64,7 @@ export async function handler(event, context) {
 
     // Image management
     if (event.httpMethod === 'POST' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
+      console.log("Routing to uploadImage handler for path:", event.path);
       return await uploadImage(event);
     }
     if (event.httpMethod === 'PUT' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {

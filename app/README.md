@@ -1,3 +1,5 @@
+# MomsRecipeBox - API Tier (2025)
+
 ## Quick Reference: Rebuilding the App Tier
 
 For best results after making changes to the app-tier (code, dependencies, Dockerfile), use the following workflow:
@@ -15,8 +17,6 @@ docker compose up -d
 
 This ensures a clean environment and that all changes are reflected in the running containers. For rapid iteration on code only, you may use `docker compose restart app` instead.
 
-# MomsRecipeBox - API Tier (2025)
-
 This directory contains the ESM-based, containerized backend for the MomsRecipeBox API. All route handlers are modular, use centralized MongoDB logic, and follow RESTful conventions.
 
 ## Directory Overview
@@ -27,6 +27,7 @@ This directory contains the ESM-based, containerized backend for the MomsRecipeB
 - `local_server.js` — Custom HTTP server for local development and Swagger UI.
 - `Dockerfile` — AWS Lambda Node.js 18 base image for containerization.
 - `docs/swagger.yaml` — OpenAPI definitions for all endpoints.
+- `tests/` — End-to-end test scripts for API validation, including recipe and image operations.
 
 ## Handler Structure
 
@@ -55,6 +56,14 @@ export default async function handler(event) {
 | `delete_comment.js`   | DELETE | /comments/{id}                | Delete a comment by ID             |
 | `post_like.js`        | POST   | /recipes/{id}/like            | Like or unlike a recipe            |
 
+### Image API Endpoints
+
+| File Name             | Method | Route                          | Description                       |
+|-----------------------|--------|-------------------------------|-----------------------------------|
+| `upload_image.js`     | POST   | /recipes/{id}/image           | Upload/replace a recipe image (PNG/JPG) |
+| `get_image.js`        | GET    | /recipes/{id}/image           | Retrieve a recipe's image         |
+| `delete_image.js`     | DELETE | /recipes/{id}/image           | Remove an image from a recipe     |
+
 ## Key Features & Principles
 
 - **ESM Only:** All code uses modern ES modules (`import/export`).
@@ -63,20 +72,21 @@ export default async function handler(event) {
 - **Containerized:** Runs in AWS Lambda base image, local dev via Docker Compose.
 - **Swagger UI:** Available at `/api-docs` (see `local_server.js`).
 - **Graceful Error Handling:** Handlers ensure missing collections or invalid queries are handled gracefully.
-- **No Legacy Code:** All obsolete files and logic (e.g., recipes.js, SQL, Express) have been removed.
+- **Image Support:** APIs for uploading, retrieving, and deleting recipe images (PNG/JPG formats).
 
 ## Local Development & Testing
 
-- Start the app tier with `Start-MrbApp.ps1` (PowerShell) or via Docker Compose.
+- Start the app tier with `scripts/restart_app.ps1` (PowerShell) or via Docker Compose.
 - API endpoints and contracts are defined in `docs/swagger.yaml`.
 
 ### Full Lifecycle Testing
 
-The API is validated end-to-end using a PowerShell script:
+The API is validated end-to-end using PowerShell scripts:
 
-**Script:** `app/tests/Post-TestRecipe.ps1`
+**Recipe Lifecycle Test:** `app/tests/Post-TestRecipe.ps1`
 
 **What it does:**
+
 - Creates a recipe
 - Fetches the recipe
 - Adds a comment
@@ -85,20 +95,35 @@ The API is validated end-to-end using a PowerShell script:
 - Deletes the comment
 - Deletes the recipe
 
+**Image API Test:** `app/tests/Run-ImageTests.ps1`
+
+**What it does:**
+
+- Creates a test recipe
+- Uploads a PNG image to the recipe
+- Retrieves the image to verify
+- Updates with a JPG image
+- Deletes the image
+- Cleans up test data and resources
+
 **How to run:**
 
 ```powershell
 cd app/tests
 ./Post-TestRecipe.ps1
+# or
+./Run-ImageTests.ps1
 ```
 
-This script will output the result of each API operation and report any failures. Ensure the app tier is running before executing the test.
+These scripts will output the result of each API operation and report any failures. Ensure the app tier is running before executing the tests.
 
 ## Contributing
 
 - Add new handlers in `handlers/` following the established conventions.
 - Use ESM imports and centralized DB logic.
 - Update `swagger.yaml` for any new endpoints.
+- Add appropriate tests for new functionality in the `tests/` directory.
+- For image-related APIs, use dedicated test assets rather than production images.
 
 ---
 

@@ -7,9 +7,21 @@ servers:
   - url: http://localhost:3000
   - url: https://sar6jpcqz1.execute-api.us-west-2.amazonaws.com/dev
 
+tags:
+  - name: recipes
+    description: Recipe management operations
+  - name: comments
+    description: Recipe comment operations
+  - name: likes
+    description: Recipe like operations
+  - name: images
+    description: Recipe image operations
+
 paths:
   /recipes:
     post:
+      tags:
+        - recipes
       summary: Create a new recipe
       requestBody:
         required: true
@@ -21,6 +33,8 @@ paths:
         '201':
           description: Recipe created
     get:
+      tags:
+        - recipes
       summary: Get a list of recipes
       parameters:
       - in: query
@@ -53,6 +67,8 @@ paths:
 
   /recipes/{id}:
     get:
+      tags:
+        - recipes
       summary: Get a specific recipe by ID
       parameters:
       - in: path
@@ -68,6 +84,8 @@ paths:
         '200':
           description: A single recipe
     put:
+      tags:
+        - recipes
       summary: Update a specific recipe by ID
       parameters:
       - in: path
@@ -85,6 +103,8 @@ paths:
         '200':
           description: Recipe updated
     delete:
+      tags:
+        - recipes
       summary: Delete a recipe by ID
       parameters:
       - in: path
@@ -98,6 +118,8 @@ paths:
 
   /recipes/{id}/comments:
     post:
+      tags:
+        - comments
       summary: Post a comment on a recipe
       parameters:
       - in: path
@@ -117,6 +139,8 @@ paths:
 
   /comments/{comment_id}:
     put:
+      tags:
+        - comments
       summary: Update a comment
       parameters:
       - in: path
@@ -134,6 +158,8 @@ paths:
         '200':
           description: Comment updated
     delete:
+      tags:
+        - comments
       summary: Delete a comment
       parameters:
       - in: path
@@ -147,6 +173,8 @@ paths:
 
   /recipes/{id}/like:
     post:
+      tags:
+        - likes
       summary: Toggle like for a recipe
       parameters:
       - in: path
@@ -168,6 +196,8 @@ paths:
           description: Like toggled
   /recipes/{id}/image:
     post:
+      tags:
+        - images
       summary: Upload an image for a recipe (stored as {id}.png)
       description: Upload an image using multipart form data. This is an alternative to the PUT method.
       parameters:
@@ -212,6 +242,8 @@ paths:
         '500':
           description: Internal server error
     put:
+      tags:
+        - images
       summary: Update an image for a recipe
       description: Upload or update an image using base64 encoding. Supports PNG and JPEG formats.
       parameters:
@@ -262,6 +294,8 @@ paths:
         '500':
           description: Internal server error
     delete:
+      tags:
+        - images
       summary: Delete an image for a recipe
       description: Delete a recipe's image. This will revert the recipe to use the default image.
       parameters:
@@ -287,6 +321,8 @@ paths:
         '500':
           description: Internal server error
     get:
+      tags:
+        - images
       summary: Get an image for a recipe
       description: Retrieve an image for a recipe. If no image exists for the recipe, returns the default image.
       parameters:

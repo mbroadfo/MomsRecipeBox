@@ -169,12 +169,14 @@ paths:
   /recipes/{id}/image:
     post:
       summary: Upload an image for a recipe (stored as {id}.png)
+      description: Upload an image using multipart form data. This is an alternative to the PUT method.
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: string
+          description: Recipe ID
       requestBody:
         required: true
         content:
@@ -185,19 +187,40 @@ paths:
                 file:
                   type: string
                   format: binary
+                  description: The image file to upload
       responses:
         '200':
           description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Image updated successfully!
+                  key:
+                    type: string
+                    example: 60f1e5b0e6b3a123456789ab.png
+                  contentType:
+                    type: string
+                    example: image/png
+        '400':
+          description: Bad request - invalid input
+        '404':
+          description: Recipe not found
         '500':
           description: Internal server error
     put:
       summary: Update an image for a recipe
+      description: Upload or update an image using base64 encoding. Supports PNG and JPEG formats.
       parameters:
       - in: path
         name: id
         required: true
         schema:
           type: string
+        description: Recipe ID
       requestBody:
         required: true
         content:
@@ -207,30 +230,78 @@ paths:
               properties:
                 imageBase64:
                   type: string
+                  description: Base64-encoded image data
                 contentType:
                   type: string
+                  description: Content type of the image (image/png or image/jpeg)
+                  enum: [image/png, image/jpeg]
+            example:
+              imageBase64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+              contentType: "image/png"
       responses:
         '200':
           description: Image updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Image updated successfully!
+                  key:
+                    type: string
+                    example: 60f1e5b0e6b3a123456789ab.png
+                  contentType:
+                    type: string
+                    example: image/png
+        '400':
+          description: Bad request - invalid input
+        '404':
+          description: Recipe not found
+        '500':
+          description: Internal server error
     delete:
       summary: Delete an image for a recipe
+      description: Delete a recipe's image. This will revert the recipe to use the default image.
       parameters:
       - in: path
         name: id
         required: true
         schema:
           type: string
+        description: Recipe ID
       responses:
         '200':
           description: Image deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Image deleted successfully!
+        '404':
+          description: Recipe or image not found
+        '500':
+          description: Internal server error
     get:
       summary: Get an image for a recipe
+      description: Retrieve an image for a recipe. If no image exists for the recipe, returns the default image.
       parameters:
       - in: path
         name: id
         required: true
         schema:
           type: string
+        description: Recipe ID
+      - in: header
+        name: Accept
+        schema:
+          type: string
+          enum: [image/png, image/jpeg]
+        description: Preferred image format (optional)
       responses:
         '200':
           description: Image fetched successfully
@@ -248,7 +319,9 @@ paths:
                 type: string
                 format: binary
         '404':
-          description: Image not found
+          description: Recipe not found
+        '500':
+          description: Internal server error
 
 components:
   schemas:

@@ -6,9 +6,16 @@ import axios from 'axios';
 import { promisify } from 'util';
 
 const BASE_URL = 'http://localhost:3000';
-const TEST_PNG_PATH = path.resolve('../689128b722f836aa43e5e6aa.png');
-const TEST_JPG_PATH = path.resolve('../689128b722f836aa43e5e6ab.jpg');
-const TEST_OUTPUT_DIR = path.resolve('./test_output');
+// Use absolute paths to ensure files are found correctly regardless of working directory
+// Get the current file URL and convert to a directory path (ESM equivalent of __dirname)
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Use test images from assets folder
+const TEST_PNG_PATH = path.join(__dirname, 'assets', 'TestImage1.png');
+const TEST_JPG_PATH = path.join(__dirname, 'assets', 'TestImage2.jpg');
+const TEST_OUTPUT_DIR = path.join(__dirname, 'test_output');
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
@@ -40,8 +47,9 @@ let recipeId;
 let testResults = {
   createRecipe: { success: false, details: null },
   uploadPngImage: { success: false, details: null },
-  getImage: { success: false, details: null },
+  getPngImage: { success: false, details: null },
   updateToJpgImage: { success: false, details: null },
+  getJpgImage: { success: false, details: null },
   deleteImage: { success: false, details: null },
   cleanupRecipe: { success: false, details: null },
 };
@@ -99,7 +107,7 @@ async function uploadPngImage() {
 }
 
 async function getImage(filename = 'test_get_image.png') {
-  logStep('STEP 3: Retrieving image from recipe');
+  logStep('STEP 3: Retrieving PNG image from recipe');
   try {
     const response = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
       responseType: 'arraybuffer',
@@ -116,14 +124,14 @@ async function getImage(filename = 'test_get_image.png') {
     const isValidSize = stats.size > 1000; // More than 1KB
     
     if (isValidSize) {
-      console.log(`✅ Image retrieved successfully and saved to ${outputPath}`);
-      console.log(`Image size: ${stats.size} bytes`);
-      testResults.getImage.success = true;
-      testResults.getImage.details = { 
+      console.log('✅ Image retrieved successfully');
+      console.log(`- Saved to: ${outputPath}`);
+      console.log(`- Size: ${stats.size} bytes`);
+      testResults.getPngImage = { success: true, details: { 
         path: outputPath, 
         size: stats.size, 
         contentType: response.headers['content-type']
-      };
+      }};
       return true;
     } else {
       console.error(`❌ Retrieved image is too small (${stats.size} bytes)`);
@@ -154,12 +162,39 @@ async function updateToJpgImage() {
     console.log(`✅ JPG image updated successfully`);
     console.log(`Response:`, response.data);
     
-    // Verify by retrieving and checking the updated image
-    const getResult = await getImage('test_updated_image.jpg');
+    // Add a separate step for retrieving the JPG image
+    logStep('STEP 5: Retrieving JPG image from recipe');
     
-    testResults.updateToJpgImage.success = getResult;
-    testResults.updateToJpgImage.details = response.data;
-    return getResult;
+    const getJpgResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
+      responseType: 'arraybuffer',
+      headers: {
+        'Accept': 'image/jpeg'
+      }
+    });
+    
+    const jpgOutputPath = path.join(TEST_OUTPUT_DIR, 'test_updated_image.jpg');
+    await writeFile(jpgOutputPath, getJpgResponse.data);
+    
+    const stats = fs.statSync(jpgOutputPath);
+    const isValidSize = stats.size > 1000;
+    
+    if (isValidSize) {
+      console.log('✅ Image retrieved successfully');
+      console.log(`- Saved to: ${jpgOutputPath}`);
+      console.log(`- Size: ${stats.size} bytes`);
+      testResults.getJpgImage = { success: true, details: { 
+        path: jpgOutputPath, 
+        size: stats.size, 
+        contentType: getJpgResponse.headers['content-type']
+      }};
+    } else {
+      console.error(`❌ Retrieved JPG image is too small (${stats.size} bytes)`);
+      testResults.getJpgImage = { success: false, details: { error: 'Image too small or invalid' } };
+      return false;
+    }
+    
+    testResults.updateToJpgImage = { success: true, details: response.data };
+    return true;
   } catch (error) {
     console.error('❌ Failed to update to JPG image:', error.message);
     if (error.response) {
@@ -171,7 +206,7 @@ async function updateToJpgImage() {
 }
 
 async function deleteImage() {
-  logStep('STEP 5: Deleting image from recipe');
+  logStep('STEP 6: Deleting image from recipe');
   try {
     const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}/image`);
     
@@ -192,13 +227,14 @@ async function deleteImage() {
     // Check if the returned image is different from our original
     const stats = fs.statSync(outputPath);
     
-    console.log(`Retrieved default image size: ${stats.size} bytes`);
-    testResults.deleteImage.success = true;
-    testResults.deleteImage.details = { 
+    console.log('✅ Image deleted successfully');
+    console.log(`- Retrieved default image saved to: ${outputPath}`);
+    console.log(`- Size: ${stats.size} bytes`);
+    testResults.deleteImage = { success: true, details: { 
       path: outputPath, 
       size: stats.size,
       responseData: response.data
-    };
+    }};
     return true;
   } catch (error) {
     console.error('❌ Failed to delete image:', error.message);
@@ -211,13 +247,12 @@ async function deleteImage() {
 }
 
 async function cleanupRecipe() {
-  logStep('STEP 6: Cleaning up test recipe');
+  logStep('STEP 7: Cleaning up test recipe');
   try {
     const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}`);
     console.log(`✅ Recipe deleted successfully`);
     console.log(`Response:`, response.data);
-    testResults.cleanupRecipe.success = true;
-    testResults.cleanupRecipe.details = response.data;
+    testResults.cleanupRecipe = { success: true, details: response.data };
     return true;
   } catch (error) {
     console.error('❌ Failed to delete test recipe:', error.message);
@@ -235,6 +270,7 @@ async function generateTestReport() {
   const totalTests = Object.keys(testResults).length;
   const passedTests = Object.values(testResults).filter(r => r.success).length;
   const failedTests = totalTests - passedTests;
+  const allTestsPassed = failedTests === 0;
   
   console.log(`\n📊 TEST SUMMARY`);
   console.log(`Total tests: ${totalTests}`);
@@ -249,20 +285,23 @@ async function generateTestReport() {
     console.log(`${status}: ${test}`);
   });
   
-  // Save report to file
-  const reportPath = path.join(TEST_OUTPUT_DIR, 'image_test_report.json');
-  fs.writeFileSync(reportPath, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    summary: {
-      total: totalTests,
-      passed: passedTests,
-      failed: failedTests,
-      successRate: `${Math.round((passedTests / totalTests) * 100)}%`
-    },
-    results: testResults
-  }, null, 2));
-  
-  console.log(`\nDetailed report saved to: ${reportPath}`);
+  // Clean up the test_output directory completely if all tests passed
+  if (allTestsPassed) {
+    try {
+      // Remove all test artifacts
+      if (fs.existsSync(TEST_OUTPUT_DIR)) {
+        const files = fs.readdirSync(TEST_OUTPUT_DIR);
+        for (const file of files) {
+          fs.unlinkSync(path.join(TEST_OUTPUT_DIR, file));
+        }
+        // Optionally remove the directory itself
+        fs.rmdirSync(TEST_OUTPUT_DIR);
+        console.log('🧹 Cleaned up all test artifacts');
+      }
+    } catch (error) {
+      console.error('⚠️ Error cleaning up test output:', error.message);
+    }
+  }
 }
 
 async function runAllTests() {
@@ -274,6 +313,7 @@ async function runAllTests() {
     await uploadPngImage();
     await getImage();
     await updateToJpgImage();
+    // Note: getJpgImage is now called inside updateToJpgImage
     await deleteImage();
     await cleanupRecipe();
   }

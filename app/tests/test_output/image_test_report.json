@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-08-08T17:45:01.444Z",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "successRate": "100%"
+  },
+  "results": {
+    "createRecipe": {
+      "success": true,
+      "details": {
+        "id": "68963798931630a06d0534c3"
+      }
+    },
+    "uploadPngImage": {
+      "success": true,
+      "details": {
+        "message": "Image updated successfully!",
+        "key": "68963798931630a06d0534c3.png",
+        "contentType": "image/png"
+      }
+    },
+    "getImage": {
+      "success": true,
+      "details": {
+        "path": "C:\\Users\\Mike\\Documents\\Code\\MomsRecipeBox\\app\\tests\\test_output\\test_updated_image.jpg",
+        "size": 39851,
+        "contentType": "image/jpeg"
+      }
+    },
+    "updateToJpgImage": {
+      "success": true,
+      "details": {
+        "message": "Image updated successfully!",
+        "key": "68963798931630a06d0534c3.jpg",
+        "contentType": "image/jpeg"
+      }
+    },
+    "deleteImage": {
+      "success": true,
+      "details": {
+        "path": "C:\\Users\\Mike\\Documents\\Code\\MomsRecipeBox\\app\\tests\\test_output\\test_default_image.png",
+        "size": 12464,
+        "responseData": {
+          "message": "Image deleted successfully!"
+        }
+      }
+    },
+    "cleanupRecipe": {
+      "success": true,
+      "details": {
+        "message": "Recipe deleted"
+      }
+    }
+  }
+}

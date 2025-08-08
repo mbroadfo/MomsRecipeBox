@@ -2,20 +2,12 @@
 node_modules
 npm-debug.log
 
-# Ignore Docker files from the root
-../docker-compose.yml
+# Ignore Environment files
 ../.env
-../.env.local
-
-# Ignore database tier
-../db
-../db-init
-../mongodata
-../mongo-express
+../.env.*
 
 # Ignore Git & editor files
 .git
-.gitignore
 .vscode
 .idea
 .DS_Store

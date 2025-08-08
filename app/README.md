@@ -4,7 +4,7 @@
 
 For best results after making changes to the app-tier (code, dependencies, Dockerfile), use the following workflow:
 
-```powershell
+```bash
 # Stop and remove all containers, networks, and volumes
 docker compose down --remove-orphans -v
 
@@ -60,7 +60,8 @@ export default async function handler(event) {
 
 | File Name             | Method | Route                          | Description                       |
 |-----------------------|--------|-------------------------------|-----------------------------------|
-| `upload_image.js`     | POST   | /recipes/{id}/image           | Upload/replace a recipe image (PNG/JPG) |
+| `upload_image.js`     | PUT    | /recipes/{id}/image           | Upload a recipe image via multipart/form-data |
+| `update_image.js`     | PUT    | /recipes/{id}/image           | Upload/update a recipe image via base64 JSON |
 | `get_image.js`        | GET    | /recipes/{id}/image           | Retrieve a recipe's image         |
 | `delete_image.js`     | DELETE | /recipes/{id}/image           | Remove an image from a recipe     |
 
@@ -72,18 +73,18 @@ export default async function handler(event) {
 - **Containerized:** Runs in AWS Lambda base image, local dev via Docker Compose.
 - **Swagger UI:** Available at `/api-docs` (see `local_server.js`).
 - **Graceful Error Handling:** Handlers ensure missing collections or invalid queries are handled gracefully.
-- **Image Support:** APIs for uploading, retrieving, and deleting recipe images (PNG/JPG formats).
+- **Flexible Image Support:** APIs for uploading images via multipart/form-data or base64 JSON, retrieving, and deleting recipe images (PNG/JPG formats).
 
 ## Local Development & Testing
 
-- Start the app tier with `scripts/restart_app.ps1` (PowerShell) or via Docker Compose.
+- Start the app tier via Docker Compose with `docker compose up app`.
 - API endpoints and contracts are defined in `docs/swagger.yaml`.
 
 ### Full Lifecycle Testing
 
-The API is validated end-to-end using PowerShell scripts:
+The API is validated end-to-end using Node.js test scripts (following the `test_*.js` naming convention). These tests cover the complete lifecycle of recipes and images.
 
-**Recipe Lifecycle Test:** `app/tests/Post-TestRecipe.ps1`
+**Recipe Lifecycle Test:**
 
 **What it does:**
 
@@ -95,7 +96,7 @@ The API is validated end-to-end using PowerShell scripts:
 - Deletes the comment
 - Deletes the recipe
 
-**Image API Test:** `app/tests/Run-ImageTests.ps1`
+**Image API Test:**
 
 **What it does:**
 
@@ -108,21 +109,31 @@ The API is validated end-to-end using PowerShell scripts:
 
 **How to run:**
 
-```powershell
+```bash
+# Navigate to the tests directory
 cd app/tests
-./Post-TestRecipe.ps1
-# or
-./Run-ImageTests.ps1
+
+# Install test dependencies if it's your first time running tests
+npm install
+
+# Run all tests
+npm test
+
+# Run only recipe tests (runs test_recipes.js)
+npm run test:recipes
+
+# Run only image tests (runs test_images.js)
+npm run test:images
 ```
 
-These scripts will output the result of each API operation and report any failures. Ensure the app tier is running before executing the tests.
+These tests will output the result of each API operation and report any failures. Ensure the app tier is running before executing the tests.
 
 ## Contributing
 
 - Add new handlers in `handlers/` following the established conventions.
 - Use ESM imports and centralized DB logic.
 - Update `swagger.yaml` for any new endpoints.
-- Add appropriate tests for new functionality in the `tests/` directory.
+- Add appropriate tests for new functionality in the `tests/` directory, following the `test_*.js` naming convention.
 - For image-related APIs, use dedicated test assets rather than production images.
 
 ---

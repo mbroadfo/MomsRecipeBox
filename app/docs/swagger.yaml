@@ -195,57 +195,11 @@ paths:
         '200':
           description: Like toggled
   /recipes/{id}/image:
-    post:
-      tags:
-        - images
-      summary: Upload an image for a recipe (stored as {id}.png)
-      description: Upload an image using multipart form data. This is an alternative to the PUT method.
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-          description: Recipe ID
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: The image file to upload
-      responses:
-        '200':
-          description: Image uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Image updated successfully!
-                  key:
-                    type: string
-                    example: 60f1e5b0e6b3a123456789ab.png
-                  contentType:
-                    type: string
-                    example: image/png
-        '400':
-          description: Bad request - invalid input
-        '404':
-          description: Recipe not found
-        '500':
-          description: Internal server error
     put:
       tags:
         - images
-      summary: Update an image for a recipe
-      description: Upload or update an image using base64 encoding. Supports PNG and JPEG formats.
+      summary: Upload or update an image for a recipe
+      description: Upload or update an image using base64 encoding. Supports PNG and JPEG formats. Use this method for both initial upload and updates.
       parameters:
       - in: path
         name: id

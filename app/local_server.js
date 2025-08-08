@@ -175,8 +175,23 @@ const server = http.createServer(async (req, res) => {
         console.debug(`📥 Event received: ${req.method} ${req.url}`);
 
         // Remove query string for path matching
-        const cleanPath = req.url.split('?')[0];
+        const urlParts = req.url.split('?');
+        const cleanPath = urlParts[0];
         console.debug(`Routing to handler for path: ${cleanPath}`);
+        
+        // Parse query parameters
+        let queryStringParameters = {};
+        if (urlParts.length > 1) {
+          const queryString = urlParts[1];
+          queryString.split('&').forEach(param => {
+            const [key, value] = param.split('=');
+            if (key && value) {
+              queryStringParameters[key] = decodeURIComponent(value);
+            }
+          });
+          console.debug('Query string parameters:', queryStringParameters);
+        }
+        
         let pathParameters = {};
         // /comments/{id}
         const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
@@ -218,6 +233,7 @@ const server = http.createServer(async (req, res) => {
           headers: req.headers,
           body: body || null,
           pathParameters,
+          queryStringParameters,
         };
 
         const context = {};

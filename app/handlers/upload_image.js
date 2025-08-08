@@ -6,6 +6,8 @@ import formidable from 'formidable';
 import { Readable } from 'stream';
 import url from 'url';
 
+// Note: This handler is used for both uploading new images and updating existing ones via PUT method
+
 const s3 = new AWS.S3();
 
 // For local development

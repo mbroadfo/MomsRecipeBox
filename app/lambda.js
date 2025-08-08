@@ -63,12 +63,16 @@ export async function handler(event, context) {
     }
 
     // Image management
-    if (event.httpMethod === 'POST' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
-      console.log("Routing to uploadImage handler for path:", event.path);
-      return await uploadImage(event);
-    }
     if (event.httpMethod === 'PUT' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
-      return await updateImage(event);
+      console.log("Routing to uploadImage handler for path:", event.path);
+      const contentType = event.headers['content-type'] || '';
+      // For multipart/form-data, use uploadImage handler
+      if (contentType.startsWith('multipart/form-data')) {
+        return await uploadImage(event);
+      } else {
+        // For application/json with base64 image, use updateImage handler
+        return await updateImage(event);
+      }
     }
     if (event.httpMethod === 'DELETE' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
       return await deleteImage(event);

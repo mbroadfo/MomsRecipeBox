@@ -86,6 +86,8 @@ async function uploadPngImage() {
     const imageBuffer = await readFile(TEST_PNG_PATH);
     const base64Image = imageBuffer.toString('base64');
     
+    // Using the PUT endpoint which is the standard method for image uploads
+    // In a real implementation, we would create a FormData object and append the file
     const response = await axios.put(`${BASE_URL}/recipes/${recipeId}/image`, {
       imageBase64: base64Image,
       contentType: 'image/png'

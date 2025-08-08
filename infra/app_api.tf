@@ -170,7 +170,10 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
     aws_api_gateway_integration.comment_post_integration,
     aws_api_gateway_integration.comment_put_integration,
     aws_api_gateway_integration.comment_delete_integration,
-    aws_api_gateway_integration.like_post_integration
+    aws_api_gateway_integration.like_post_integration,
+    aws_api_gateway_integration.recipe_image_get_integration,
+    aws_api_gateway_integration.recipe_image_put_integration,
+    aws_api_gateway_integration.recipe_image_delete_integration
   ]
 
   triggers = {
@@ -431,29 +434,7 @@ resource "aws_api_gateway_resource" "recipe_image" {
   path_part   = "image"
 }
 
-##############################################
-# API Gateway method POST /recipe/{id}/image (add_image)
-##############################################
-resource "aws_api_gateway_method" "recipe_image_post" {
-  count = var.enable_app_api ? 1 : 0
-  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
-  resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
-  http_method   = "POST"
-  authorization = "NONE"
-}
-
-##############################################
-# API Gateway integration for POST /recipe/{id}/image (add_image)
-##############################################
-resource "aws_api_gateway_integration" "recipe_image_post_integration" {
-  count = var.enable_app_api ? 1 : 0
-  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
-  resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
-  http_method             = aws_api_gateway_method.recipe_image_post[count.index].http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
-}
+# POST image endpoint has been removed in favor of using PUT for both upload and update
 
 ##############################################
 # API Gateway method PUT /recipe/{id}/image (update_image)

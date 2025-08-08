@@ -9,6 +9,64 @@ const PORT = process.env.PORT || 3000;
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
+// Centralized response handler function
+function handleResponse(res, result) {
+  console.debug('Response status:', result.statusCode);
+  console.debug('Response headers:', JSON.stringify(result.headers, null, 2));
+  console.debug('isBase64Encoded:', result.isBase64Encoded);
+  console.debug('Body type:', typeof result.body);
+  console.debug('Body is Buffer?', Buffer.isBuffer(result.body));
+  console.debug('Body length:', result.body ? (Buffer.isBuffer(result.body) ? result.body.length : (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0);
+  
+  // Handle base64 encoded responses (for binary data like images)
+  if (result.isBase64Encoded && typeof result.body === 'string') {
+    console.debug('Handling base64 encoded response');
+    const buffer = Buffer.from(result.body, 'base64');
+    console.debug(`Decoded base64 buffer, length: ${buffer.length} bytes`);
+    console.debug('Buffer first 16 bytes:', buffer.slice(0, 16).toString('hex'));
+    
+    // Ensure Content-Disposition is set for inline viewing
+    const headers = { ...result.headers };
+    if (!headers['Content-Disposition']) {
+      headers['Content-Disposition'] = 'inline';
+    }
+    
+    // Set proper headers for binary data
+    res.writeHead(result.statusCode, {
+      ...headers,
+      'Content-Type': headers['Content-Type'] || 'application/octet-stream',
+      'Content-Length': buffer.length
+    });
+    
+    // Write the binary buffer directly to the response
+    res.end(buffer);
+  } 
+  // Handle raw binary responses (non-base64)
+  else if (!result.isBase64Encoded && Buffer.isBuffer(result.body)) {
+    console.debug(`Handling raw binary response, length: ${result.body.length} bytes`);
+    console.debug('Buffer first 16 bytes:', result.body.slice(0, 16).toString('hex'));
+    
+    // Ensure Content-Disposition is set for inline viewing
+    const headers = { ...result.headers };
+    if (!headers['Content-Disposition']) {
+      headers['Content-Disposition'] = 'inline';
+    }
+    
+    res.writeHead(result.statusCode, {
+      ...headers,
+      'Content-Type': headers['Content-Type'] || 'application/octet-stream',
+      'Content-Length': result.body.length
+    });
+    
+    res.end(result.body);
+  } 
+  // Handle regular string/JSON responses
+  else {
+    res.writeHead(result.statusCode || 200, result.headers || { 'Content-Type': 'application/json' });
+    res.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body));
+  }
+}
+
 
 const server = http.createServer(async (req, res) => {
   // Serve Swagger YAML
@@ -83,7 +141,7 @@ const server = http.createServer(async (req, res) => {
     pathParameters.id = recipeImageMatch[1];
   }
 
-  // Patch: Set content-length header for multipart/form-data if missing
+  // Handle the request differently based on content type
   if (
     req.headers['content-type'] &&
     req.headers['content-type'].startsWith('multipart/form-data')
@@ -97,9 +155,15 @@ const server = http.createServer(async (req, res) => {
       pathParameters,
     };
     const context = {};
-    const result = await handler(event, context);
-    res.writeHead(result.statusCode || 200, result.headers || { 'Content-Type': 'application/json' });
-    res.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body));
+    
+    try {
+      const result = await handler(event, context);
+      handleResponse(res, result);
+    } catch (err) {
+      console.error(err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    }
   } else {
     let body = '';
     req.on('data', chunk => {
@@ -159,13 +223,15 @@ const server = http.createServer(async (req, res) => {
         const context = {};
 
         const result = await handler(event, context);
-
-        res.writeHead(result.statusCode || 200, result.headers || { 'Content-Type': 'application/json' });
-        res.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body));
+        handleResponse(res, result);
       } catch (err) {
-        console.error(err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal Server Error' }));
+        console.error('Error processing request:', err);
+        const errorResult = {
+          statusCode: 500,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Internal Server Error', message: err.message })
+        };
+        handleResponse(res, errorResult);
       }
     });
   }

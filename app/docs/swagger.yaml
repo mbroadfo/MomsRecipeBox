@@ -168,7 +168,7 @@ paths:
           description: Like toggled
   /recipes/{id}/image:
     post:
-      summary: Upload an image for a recipe
+      summary: Upload an image for a recipe (stored as {id}.png)
       parameters:
         - in: path
           name: id
@@ -235,7 +235,15 @@ paths:
         '200':
           description: Image fetched successfully
           content:
-            application/octet-stream:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
               schema:
                 type: string
                 format: binary

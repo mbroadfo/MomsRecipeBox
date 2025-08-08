@@ -4,8 +4,19 @@ import fs from 'fs';
 import path from 'path';
 import formidable from 'formidable';
 import { Readable } from 'stream';
+import url from 'url';
 
 const s3 = new AWS.S3();
+
+// For local development
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const LOCAL_IMAGES_DIR = path.join(__dirname, '..', 'local_images');
+
+// Create the local images directory if it doesn't exist
+if (!fs.existsSync(LOCAL_IMAGES_DIR)) {
+  fs.mkdirSync(LOCAL_IMAGES_DIR, { recursive: true });
+  console.log(`Created local images directory: ${LOCAL_IMAGES_DIR}`);
+}
 
 function eventToStream(event) {
   return new Readable({
@@ -20,7 +31,9 @@ export async function handler(event) {
   const { id } = event.pathParameters;
 
   const bucketName = process.env.RECIPE_IMAGES_BUCKET;
-  const key = `${id}/image`;
+  // We'll determine the extension from the file content type instead of hardcoding to PNG
+  let fileExtension = 'png'; // Default extension if we can't determine
+  let key = `${id}.${fileExtension}`;
 
   try {
     // Determine if we're running locally with a raw request object
@@ -103,6 +116,9 @@ export async function handler(event) {
     const fileSize = fileStats.size;
     console.log(`File size: ${fileSize} bytes`);
 
+    // Maximum allowed file size (5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    
     // Get the file buffer, either from the file path or directly from the file object
     let fileBuffer;
     try {
@@ -127,30 +143,107 @@ export async function handler(event) {
       }
     }
     
-    // Attempt to resize image to max resolution
-    let resizedBuffer;
-    try {
-      resizedBuffer = await sharp(fileBuffer).resize({ width: 1280, height: 720, fit: 'inside' }).toBuffer();
-    } catch (sharpError) {
-      console.error('Error resizing image:', sharpError.message);
-      // For testing purposes, just use the original buffer
-      resizedBuffer = fileBuffer;
+    // Check file size limit
+    if (fileBuffer.length > MAX_FILE_SIZE) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          message: `Image is too large. Please reduce to under ${Math.floor(MAX_FILE_SIZE / (1024 * 1024))}MB.`,
+          currentSize: `${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB`,
+          maxSize: `${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(2)}MB`
+        }),
+      };
+    }
+    
+    // Determine MIME type with fallback to detect from file extension or default to image/png
+    let contentType = file.type;
+    
+    // If content type is missing or generic, try to determine from file name
+    if (!contentType || contentType === 'application/octet-stream') {
+      const fileName = file.originalFilename || file.name || 'image.png';
+      const ext = path.extname(fileName).toLowerCase();
+      
+      // Map common extensions to MIME types
+      const mimeMap = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
+      
+      contentType = mimeMap[ext] || 'image/png';
+      console.log(`Determined content type ${contentType} from extension ${ext}`);
     }
 
-    // Determine MIME type
-    const contentType = file.type;
+    console.log(`Using content type: ${contentType} for upload`);
+    
+    // No image processing - preserve original format
+    let processedBuffer = fileBuffer;
+    let metadata;
+    try {
+      // Get image metadata just for informational purposes
+      metadata = await sharp(fileBuffer).metadata();
+      console.log(`Original image: ${metadata.width}x${metadata.height}, format: ${metadata.format}`);
+      
+      // Set the file extension based on the detected format or content type
+      if (metadata.format) {
+        fileExtension = metadata.format.toLowerCase();
+        console.log(`Using detected format for extension: ${fileExtension}`);
+      } else if (contentType) {
+        // Try to get extension from content type
+        const formatFromContentType = contentType.split('/')[1];
+        if (formatFromContentType) {
+          fileExtension = formatFromContentType.split('+')[0]; // Handle cases like "image/svg+xml"
+          console.log(`Using content type for extension: ${fileExtension}`);
+        }
+      }
+      
+      // Set the key with the proper extension
+      key = `${id}.${fileExtension}`;
+      console.log(`File will be stored with key: ${key}`);
+      
+      // No processing - use original file buffer
+      console.log(`Using original image without processing: ${fileBuffer.length} bytes`);
+      
+    } catch (processingError) {
+      console.error('Error analyzing image:', processingError.message);
+      // Continue with original file
+      console.log('Using original image without metadata');
+    }
 
-    await s3.putObject({
-      Bucket: bucketName,
-      Key: key,
-      Body: resizedBuffer,
-      ContentType: contentType,
-    }).promise();
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Image uploaded successfully!' }),
-    };
+    // Always upload to S3, regardless of environment
+    console.log(`Uploading to S3: bucket=${bucketName}, key=${key}, contentType=${contentType}`);
+    try {
+      await s3.putObject({
+        Bucket: bucketName,
+        Key: key,
+        Body: fileBuffer, // Upload the original file without processing
+        ContentType: contentType,
+        CacheControl: 'max-age=31536000',
+        Metadata: {
+          'size': fileBuffer.length.toString(),
+          'width': (metadata?.width || 0).toString(),
+          'height': (metadata?.height || 0).toString(),
+          'format': metadata?.format || 'unknown'
+        }
+      }).promise();
+      
+      console.log(`Successfully uploaded image to S3: ${bucketName}/${key}`);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ 
+          message: 'Image uploaded successfully to S3!',
+          bucket: bucketName,
+          key: key,
+          contentType: contentType,
+          size: `${(fileBuffer.length / 1024).toFixed(2)}KB`
+        }),
+      };
+    } catch (s3Error) {
+      console.error('Error uploading to S3:', s3Error);
+      throw s3Error; // Rethrow to be caught by the outer try/catch
+    }
   } catch (error) {
     console.error(error);
     return {

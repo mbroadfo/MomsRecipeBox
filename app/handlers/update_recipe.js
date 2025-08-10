@@ -24,34 +24,27 @@ const handler = async (event) => {
     };
   }
 
-  const {
-    visibility,
-    status,
-    title,
-    subtitle,
-    description,
-    image_url,
-    tags = [],
-    sections = [],
-    ingredients = [],
-  } = body;
+  // Create an update object that only includes fields that are present in the request body
+  const updateFields = {};
+  
+  // Only add fields to updateFields if they exist in the request body
+  if ('visibility' in body) updateFields.visibility = body.visibility;
+  if ('status' in body) updateFields.status = body.status;
+  if ('title' in body) updateFields.title = body.title;
+  if ('subtitle' in body) updateFields.subtitle = body.subtitle;
+  if ('description' in body) updateFields.description = body.description;
+  if ('image_url' in body) updateFields.image_url = body.image_url;
+  if ('tags' in body) updateFields.tags = body.tags;
+  if ('sections' in body) updateFields.sections = body.sections;
+  if ('ingredients' in body) updateFields.ingredients = body.ingredients;
+  
+  // Add updated_at timestamp
+  updateFields.updated_at = new Date();
 
   try {
     const updateResult = await collection.updateOne(
       { _id: new ObjectId(recipeId) },
-      {
-        $set: {
-          visibility,
-          status,
-          title,
-          subtitle,
-          description,
-          image_url,
-          tags,
-          sections,
-          ingredients,
-        },
-      }
+      { $set: updateFields }
     );
 
     if (updateResult.matchedCount === 0) {

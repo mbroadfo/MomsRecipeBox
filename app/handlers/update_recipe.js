@@ -1,4 +1,3 @@
-
 import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
 
@@ -37,7 +36,13 @@ const handler = async (event) => {
   if ('tags' in body) updateFields.tags = body.tags;
   if ('sections' in body) updateFields.sections = body.sections;
   if ('ingredients' in body) updateFields.ingredients = body.ingredients;
-  
+  if ('author' in body) updateFields.author = body.author;
+  if ('source' in body) updateFields.source = body.source;
+  if ('yield' in body) updateFields.yield = body.yield;
+  if ('time' in body) updateFields.time = body.time; // expect object { total?, prep?, cook? }
+  if ('instructions' in body) updateFields.instructions = body.instructions; // array of steps
+  if ('notes' in body) updateFields.notes = body.notes;
+
   // Add updated_at timestamp
   updateFields.updated_at = new Date();
 

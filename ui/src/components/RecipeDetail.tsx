@@ -1,5 +1,5 @@
 // File: ui/src/components/RecipeDetail.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './RecipeDetail.css';
 
 interface RecipeDetailProps {
@@ -30,6 +30,9 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipeId, onBack }) 
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [isSmallImage, setIsSmallImage] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,6 +86,89 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipeId, onBack }) 
         </svg>
       </button>
     );
+  };
+
+  // Derive image bucket base URL from current image_url when available
+  const getImageBase = () => {
+    if (!recipe?.image_url) return '';
+    try {
+      const url = new URL(recipe.image_url);
+      // Strip last path segment
+      const parts = url.pathname.split('/');
+      parts.pop();
+      return `${url.origin}${parts.join('/')}/`;
+    } catch {
+      return '';
+    }
+  };
+
+  const handleSelectNewImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    try {
+      await uploadImage(file);
+    } catch (err: any) {
+      setUploadError(err.message || 'Image upload failed');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File) => {
+    if (!recipe) return;
+    setUploadingImage(true);
+    try {
+      // Read file as base64 (strip data URL prefix)
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+            // result is like data:image/png;base64,AAAA
+          const commaIdx = result.indexOf(',');
+          resolve(commaIdx >= 0 ? result.substring(commaIdx + 1) : result);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+
+      // Step 1: Upload image to S3 via API
+      const putImgResp = await fetch(`/api/recipes/${recipeId}/image`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, contentType: file.type })
+      });
+      if (!putImgResp.ok) {
+        const txt = await putImgResp.text();
+        throw new Error(`Image API error ${putImgResp.status}: ${txt}`);
+      }
+      const imgData = await putImgResp.json();
+      const key = imgData.key; // e.g. <id>.png
+      // Construct URL (assumes same bucket as existing images)
+      const base = getImageBase();
+      const newUrl = base ? `${base}${key}` : recipe.image_url?.replace(/[^/]+$/, key) || key;
+
+      // Step 2: Persist image_url to recipe (PUT recipe)
+      const putRecipeResp = await fetch(`/api/recipes/${recipeId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: newUrl })
+      });
+      if (!putRecipeResp.ok) {
+        const txt = await putRecipeResp.text();
+        throw new Error(`Recipe update error ${putRecipeResp.status}: ${txt}`);
+      }
+
+      // Update local state
+      setRecipe(r => r ? { ...r, image_url: newUrl } : r);
+      setIsSmallImage(false); // re-evaluate size after new load
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   return (
@@ -185,22 +271,39 @@ export const RecipeDetail: React.FC<RecipeDetailProps> = ({ recipeId, onBack }) 
             )}
           </ul>
         </div>
+
+        {uploadError && <div style={{ color: '#b91c1c', fontSize: '0.8rem', marginTop: '-0.75rem', marginBottom: '1.25rem' }}>{uploadError}</div>}
       </div>
 
       <div className="recipe-right">
         <div className={`recipe-image-wrapper ${isSmallImage ? 'small-image' : ''}`}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          <button
+            type="button"
+            className="image-upload-trigger"
+            onClick={handleSelectNewImage}
+            disabled={uploadingImage}
+            aria-label="Upload new recipe image"
+          >
+            {uploadingImage ? 'Uploading...' : 'Change Image'}
+          </button>
           {recipe.image_url ? (
             <img
-              src={recipe.image_url}
+              src={recipe.image_url + (uploadingImage ? '' : '')}
               alt={recipe.title}
               onLoad={(e) => {
                 const { naturalWidth, naturalHeight } = e.currentTarget;
-                // Mark as small if width less than 500px or height less than 500px
                 if (naturalWidth < 500 || naturalHeight < 500) setIsSmallImage(true);
               }}
             />
           ) : (
-            <img src={"/fallback-image.png"} alt={recipe.title} />
+            <img src={'/fallback-image.png'} alt={recipe.title} />
           )}
         </div>
       </div>

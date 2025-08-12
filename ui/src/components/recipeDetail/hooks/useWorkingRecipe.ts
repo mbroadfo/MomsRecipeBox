@@ -15,7 +15,7 @@ export interface WorkingRecipe {
   tags: string[];
   yield?: string;
   time: { total?: string; prep?: string; cook?: string; [k: string]: any };
-  ingredients: IngredientGroup[]; // at least one group
+  ingredients: IngredientGroup[]; // will always be length 1 now
   steps: string[]; // flattened instructions
   notes?: string;
   extraSections: CanonicalSection[]; // any non-Instructions sections
@@ -26,12 +26,19 @@ export interface WorkingRecipe {
 const asArray = <T,>(v: any): T[] => Array.isArray(v) ? v : [];
 
 function normalizeIngredients(raw: any): IngredientGroup[] {
+  // Always flatten to a single group (remove grouping concept)
   if (!raw) return [{ items: [] }];
   if (Array.isArray(raw)) {
-    return [{ items: raw.map((i: any) => ({ name: i.name || i, quantity: i.quantity })) }];
+    return [{ items: raw.map((i: any) => ({ name: (i && i.name) || i || '', quantity: i && i.quantity })) }];
   }
   if (typeof raw === 'object') {
-    return Object.entries(raw).map(([group, arr]: any) => ({ group, items: asArray<any>(arr).map((i: any) => (typeof i === 'string' ? { name: i } : { name: i.name || '', quantity: i.quantity })) }));
+    const items: IngredientItem[] = [];
+    Object.values(raw).forEach((arr: any) => {
+      asArray<any>(arr).forEach(i => {
+        if (typeof i === 'string') items.push({ name: i }); else items.push({ name: i.name || '', quantity: i.quantity });
+      });
+    });
+    return [{ items }];
   }
   return [{ items: [] }];
 }
@@ -91,23 +98,27 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
   const addTag = (t: string) => setTagList([...working.tags, t]);
   const removeTag = (t: string) => setTagList(working.tags.filter(x => x !== t));
 
-  const updateIngredient = (groupIdx: number, itemIdx: number, field: 'name' | 'quantity', value: string) => {
+  const updateIngredient = (_groupIdx: number, itemIdx: number, field: 'name' | 'quantity', value: string) => {
     setWorking(w => ({
       ...w,
-      ingredients: w.ingredients.map((g, gi) => gi === groupIdx ? { ...g, items: g.items.map((it, ii) => ii === itemIdx ? { ...it, [field]: value } : it) } : g)
+      ingredients: [{ items: w.ingredients[0].items.map((it, ii) => ii === itemIdx ? { ...it, [field]: value } : it) }]
     }));
   };
-  const addIngredient = (groupIdx: number) => setWorking(w => ({ ...w, ingredients: w.ingredients.map((g, gi) => gi === groupIdx ? { ...g, items: [...g.items, { name: '', quantity: '' }] } : g) }));
-  const removeIngredient = (groupIdx: number, itemIdx: number) => setWorking(w => ({ ...w, ingredients: w.ingredients.map((g, gi) => gi === groupIdx ? { ...g, items: g.items.filter((_, ii) => ii !== itemIdx) } : g) }));
-  const addGroup = () => setWorking(w => ({ ...w, ingredients: [...w.ingredients, { group: '', items: [] }] }));
-  const setGroupName = (groupIdx: number, name: string) => setWorking(w => ({ ...w, ingredients: w.ingredients.map((g, gi) => gi === groupIdx ? { ...g, group: name } : g) }));
-  const removeGroup = (groupIdx: number) => setWorking(w => ({ ...w, ingredients: w.ingredients.filter((_, gi) => gi !== groupIdx) }));
+  const addIngredient = (_groupIdx: number) => setWorking(w => ({ ...w, ingredients: [{ items: [...w.ingredients[0].items, { name: '', quantity: '' }] }] }));
+  const removeIngredient = (_groupIdx: number, itemIdx: number) => setWorking(w => ({ ...w, ingredients: [{ items: w.ingredients[0].items.filter((_, ii) => ii !== itemIdx) }] }));
+  const moveIngredientItem = (_groupIdx: number, fromIdx: number, toIdx: number) => setWorking(w => {
+    if (fromIdx === toIdx) return w;
+    const items = [...w.ingredients[0].items];
+    if (fromIdx < 0 || fromIdx >= items.length || toIdx < 0 || toIdx >= items.length) return w;
+    const [m] = items.splice(fromIdx,1);
+    items.splice(toIdx,0,m);
+    return { ...w, ingredients: [{ items }] };
+  });
 
   const updateStep = (idx: number, value: string) => setWorking(w => ({ ...w, steps: w.steps.map((s, i) => i === idx ? value : s) }));
   const addStep = () => setWorking(w => ({ ...w, steps: [...w.steps, ''] }));
   const removeStep = (idx: number) => setWorking(w => ({ ...w, steps: w.steps.filter((_, i) => i !== idx) }));
 
-  // extra sections
   const updateSection = (idx: number, content: string) => setWorking(w => ({ ...w, extraSections: w.extraSections.map((s, i) => i === idx ? { ...s, content } : s) }));
   const addSection = (type: string) => setWorking(w => ({ ...w, extraSections: [...w.extraSections, { type, content: '' }] }));
   const removeSection = (idx: number) => setWorking(w => ({ ...w, extraSections: w.extraSections.filter((_, i) => i !== idx) }));
@@ -116,7 +127,7 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
     working,
     patch,
     addTag, removeTag,
-    updateIngredient, addIngredient, removeIngredient, addGroup, setGroupName, removeGroup,
+    updateIngredient, addIngredient, removeIngredient, moveIngredientItem,
     updateStep, addStep, removeStep,
     updateSection, addSection, removeSection,
     setWorking
@@ -126,18 +137,8 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
 // Reverse mapping for save
 export function buildSavePayload(w: WorkingRecipe) {
   const origin = (w as any)._stepsOrigin || 'instructions';
-  const ingredients = (() => {
-    const multi = w.ingredients.filter(g => g.group && g.group.trim() !== '').length > 0 || w.ingredients.length > 1;
-    if (!multi) {
-      return w.ingredients[0].items.filter(i => i.name.trim());
-    }
-    const obj: Record<string, any[]> = {};
-    w.ingredients.forEach(g => {
-      const key = g.group && g.group.trim() ? g.group.trim() : 'Ingredients';
-      obj[key] = g.items.filter(i => i.name.trim()).map(i => ({ name: i.name.trim(), quantity: i.quantity?.trim() }));
-    });
-    return obj;
-  })();
+  // Always save as a flat array of items
+  const ingredients = w.ingredients[0].items.filter(i => i.name.trim()).map(i => ({ name: i.name.trim(), quantity: i.quantity?.trim() }));
 
   const base: any = {
     title: w.title,
@@ -154,7 +155,6 @@ export function buildSavePayload(w: WorkingRecipe) {
   };
 
   if (origin === 'sections') {
-    // rebuild sections with Instructions + extras
     base.sections = [
       ...w.steps.filter(s => s.trim()).map((content, i) => ({ section_type: 'Instructions', content, position: i + 1 })),
       ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.steps.length + i + 1 }))

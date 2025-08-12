@@ -22,7 +22,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
   const { recipe, loading, error, refresh } = useRecipe(recipeId);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, addGroup, setGroupName, removeGroup } = useWorkingRecipe(recipe, editMode);
+  const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, moveIngredientItem } = useWorkingRecipe(recipe, editMode);
   const { uploading, error: uploadError, upload } = useImageUpload(recipeId, (url) => { patch({ image_url: url }); });
   // UI-only grouped instructions state (not persisted as groups; flattened into steps on save)
   const [instGroups, setInstGroups] = useState<{ id: string; title: string; steps: string[] }[] | null>(null);
@@ -97,9 +97,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
             update={updateIngredient}
             addItem={addIngredient}
             removeItem={removeIngredient}
-            addGroup={addGroup}
-            setGroupName={setGroupName}
-            removeGroup={removeGroup}
+            moveItem={moveIngredientItem}
           />
         ) : (
           <IngredientsView groups={working.ingredients} />

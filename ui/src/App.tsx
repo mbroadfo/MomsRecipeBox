@@ -9,7 +9,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/recipe/:id" element={<RecipeDetailWrapper />} />
+        <Route path="/recipe/:id" element={<RecipeDetailRouteWrapper />} />
       </Routes>
     </BrowserRouter>
   );
@@ -17,10 +17,10 @@ const App: React.FC = () => {
 
 // Wrapper to extract recipeId from route params and pass to RecipeDetail
 import { useParams, useNavigate } from 'react-router-dom';
-const RecipeDetailWrapper: React.FC = () => {
+const RecipeDetailRouteWrapper: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  if (!id) return <div>Recipe not found</div>;
+  if (!id) return <div style={{ padding:'2rem' }}>Recipe not found</div>;
   return <RecipeDetail recipeId={id} onBack={() => navigate(-1)} />;
 };
 

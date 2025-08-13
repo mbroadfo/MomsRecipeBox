@@ -198,6 +198,7 @@
   left: 0;
   top: 0.55rem;
 }
+.ingredients-list li.ingredient-group-label:before { display:none; }
 
 .ol-steps {
   counter-reset: step;

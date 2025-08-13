@@ -29,13 +29,21 @@ function normalizeIngredients(raw: any): IngredientGroup[] {
   // Always flatten to a single group (remove grouping concept)
   if (!raw) return [{ items: [] }];
   if (Array.isArray(raw)) {
-    return [{ items: raw.map((i: any) => ({ name: (i && i.name) || i || '', quantity: i && i.quantity })) }];
+    return [{
+      items: raw.map((i: any) => {
+        if (typeof i === 'string') return { name: i };
+        if (i && typeof i === 'object') {
+          return { name: typeof i.name === 'string' ? i.name : '', quantity: typeof i.quantity === 'string' ? i.quantity : '' };
+        }
+        return { name: '' };
+      })
+    }];
   }
   if (typeof raw === 'object') {
     const items: IngredientItem[] = [];
     Object.values(raw).forEach((arr: any) => {
       asArray<any>(arr).forEach(i => {
-        if (typeof i === 'string') items.push({ name: i }); else items.push({ name: i.name || '', quantity: i.quantity });
+        if (typeof i === 'string') items.push({ name: i }); else if (i && typeof i === 'object') items.push({ name: typeof i.name === 'string' ? i.name : '', quantity: typeof i.quantity === 'string' ? i.quantity : '' }); else items.push({ name: '' });
       });
     });
     return [{ items }];
@@ -138,7 +146,14 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
 export function buildSavePayload(w: WorkingRecipe) {
   const origin = (w as any)._stepsOrigin || 'instructions';
   // Always save as a flat array of items
-  const ingredients = w.ingredients[0].items.filter(i => i.name.trim()).map(i => ({ name: i.name.trim(), quantity: i.quantity?.trim() }));
+  const ingredients = w.ingredients[0].items
+    .filter(i => (i.name && i.name.trim()) || (i.quantity && i.quantity.trim()))
+    .map(i => {
+      const obj: any = {};
+      if (i.name && i.name.trim()) obj.name = i.name.trim();
+      if (i.quantity && i.quantity.trim()) obj.quantity = i.quantity.trim();
+      return obj;
+    });
 
   const base: any = {
     title: w.title,

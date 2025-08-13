@@ -22,7 +22,7 @@ export const IngredientsEditor: React.FC<Props> = ({ groups, update, addItem, re
         render={(it, ii) => (
           <div style={{ display:'flex', gap:'.6rem', alignItems:'center' }}>
             <input value={it.quantity||''} onChange={e=>update(0, ii, 'quantity', e.target.value)} placeholder="Qty" style={{ width:'110px', border:'1px solid #cbd5e1', borderRadius:'.5rem', padding:'.45rem .6rem', fontSize:'.8rem' }} />
-            <input value={it.name} onChange={e=>update(0, ii, 'name', e.target.value)} placeholder="Ingredient" style={{ flex:1, border:'1px solid #cbd5e1', borderRadius:'.5rem', padding:'.45rem .6rem', fontSize:'.8rem' }} />
+            <input value={it.name} onChange={e=>update(0, ii, 'name', e.target.value)} placeholder="Enter ingredient or leave blank for group" style={{ flex:1, border:'1px solid #cbd5e1', borderRadius:'.5rem', padding:'.45rem .6rem', fontSize:'.8rem' }} />
             <button type="button" onClick={()=>removeItem(0, ii)} style={{ background:'#dc2626', color:'#fff', fontSize:'.65rem', fontWeight:600 }}>Del</button>
           </div>
         )}

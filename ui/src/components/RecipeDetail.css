@@ -36,7 +36,7 @@
 /* new scroll area inside left */
 .recipe-left-scroll {
   overflow-y: auto;
-  padding-top: 4.5rem; /* space below sticky header height */
+  padding-top: 1rem; /* reduced from 4.5rem (72px) now that header occupies layout space */
   /* adopt previous scrollbar styles */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;

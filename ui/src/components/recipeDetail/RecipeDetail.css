@@ -38,7 +38,7 @@
 /* Scrollable content area below fixed header */
 .recipe-left-scroll {
   overflow-y: auto;
-  padding-top: 5rem; /* clear header (minHeight ~4rem + spacing) */
+  padding-top: 0.6rem; /* reduced from 4rem */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent; /* slate-300 */
   flex: 1 1 auto;
@@ -67,7 +67,7 @@
 
 /* Typography & Sections */
 .recipe-title { /* ...existing code... */ }
-.subtitle { font-size: 1.35rem; font-weight: 500; color: #475569; /* slate-600 */ margin: 1rem 0 1.75rem 0; }
+.subtitle { font-size: 1.35rem; font-weight: 500; color: #475569; margin: 0.4rem 0 1.4rem 0; }
 .meta-row { /* ...existing code... */ }
 .badge-row { /* ...existing code... */ }
 .badge { /* ...existing code... */ }

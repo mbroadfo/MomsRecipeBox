@@ -27,15 +27,25 @@
 .recipe-left {
   flex: 0 0 65%;
   max-width: 65%;
-  padding: 2.25rem 3rem 4rem 3rem; /* top/right/bottom/left */
-  overflow-y: auto; /* Scroll only left side */
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent; /* slate-300 */
+  /* remove big top padding; header now outside scroll area */
+  padding: 0 3rem 4rem 3rem;
+  display: flex;
+  flex-direction: column;
 }
-.recipe-left::-webkit-scrollbar { width: 10px; }
-.recipe-left::-webkit-scrollbar-track { background: transparent; }
-.recipe-left::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
-.recipe-left::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* new scroll area inside left */
+.recipe-left-scroll {
+  overflow-y: auto;
+  padding-top: 4.5rem; /* space below sticky header height */
+  /* adopt previous scrollbar styles */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  flex: 1 1 auto;
+}
+.recipe-left-scroll::-webkit-scrollbar { width: 10px; }
+.recipe-left-scroll::-webkit-scrollbar-track { background: transparent; }
+.recipe-left-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+.recipe-left-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 .recipe-right {
   flex: 0 0 35%;
@@ -236,6 +246,9 @@
   border-radius: 50%;
   box-shadow: 0 4px 10px -2px rgba(37,99,235,0.4);
 }
+.ol-steps li.instruction-header { background: none; border: none; box-shadow: none; padding: 0; line-height: 1.15; }
+.ol-steps li.instruction-header:before { counter-increment: none; content: none; display: none; }
+.instruction-header-text { font-size: .95rem; font-weight: 700; letter-spacing: .04em; /* removed uppercase to preserve user case */ color:#1e293b; font-family: 'Inter', system-ui, sans-serif; }
 
 .note-box {
   background: #fefce8; /* yellow-50 */

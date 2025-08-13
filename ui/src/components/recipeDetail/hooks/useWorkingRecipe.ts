@@ -175,7 +175,7 @@ export function buildSavePayload(w: WorkingRecipe) {
       ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.steps.length + i + 1 }))
     ];
   } else if (origin === 'steps') {
-    base.steps = w.steps.filter(s => s.trim());
+    base.steps = w.steps.filter(s => s.trim()); // keep # markers so headers persist
   } else {
     base.instructions = w.steps.filter(s => s.trim());
   }

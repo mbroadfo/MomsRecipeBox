@@ -44,47 +44,49 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
 
   return (
     <div className="recipe-page">
-      <div className="recipe-left">
+      <div className="recipe-left">{/* flex column; header separated from scroll area */}
         <Header
           title={working.title}
           editing={editMode}
           saving={saving}
-            onTitleChange={v => patch({ title: v })}
+          onTitleChange={v => patch({ title: v })}
           onEdit={startEdit}
           onSave={save}
           onCancel={cancelEdit}
           onBack={onBack}
         />
-        <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
-        <Meta source={working.source as any} author={working.author} editing={editMode} onChange={patch} />
-        <Tags tags={working.tags} editing={editMode} add={addTag} remove={removeTag} />
-        <YieldTime yieldValue={working.yield} time={working.time} editing={editMode} onChange={patch} />
-        {editMode ? (
-          <IngredientsEditor
-            groups={working.ingredients}
-            update={updateIngredient}
-            addItem={addIngredient}
-            removeItem={removeIngredient}
-            moveItem={moveIngredientItem}
-          />
-        ) : (
-          <IngredientsView groups={working.ingredients} />
-        )}
-        {editMode ? (
-          <StepsEditor
-            steps={working.steps}
-            update={(i,v)=>patch({ steps: working.steps.map((s,si)=>si===i?v:s) })}
-            add={()=>patch({ steps:[...working.steps,''] })}
-            remove={(i)=>patch({ steps: working.steps.filter((_,si)=>si!==i) })}
-            move={(from,to)=>patch({ steps: (()=>{ const arr=[...working.steps]; const [m]=arr.splice(from,1); arr.splice(to,0,m); return arr; })() })}
-          />
-        ) : (
-          <InstructionsView steps={working.steps} />
-        )}
-        <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
-        <Rating />
-        {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
-        {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
+        <div className="recipe-left-scroll">{/* new scroll container */}
+          <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
+          <Meta source={working.source as any} author={working.author} editing={editMode} onChange={patch} />
+          <Tags tags={working.tags} editing={editMode} add={addTag} remove={removeTag} />
+          <YieldTime yieldValue={working.yield} time={working.time} editing={editMode} onChange={patch} />
+          {editMode ? (
+            <IngredientsEditor
+              groups={working.ingredients}
+              update={updateIngredient}
+              addItem={addIngredient}
+              removeItem={removeIngredient}
+              moveItem={moveIngredientItem}
+            />
+          ) : (
+            <IngredientsView groups={working.ingredients} />
+          )}
+          {editMode ? (
+            <StepsEditor
+              steps={working.steps}
+              update={(i,v)=>patch({ steps: working.steps.map((s,si)=>si===i?v:s) })}
+              add={()=>patch({ steps:[...working.steps,''] })}
+              remove={(i)=>patch({ steps: working.steps.filter((_,si)=>si!==i) })}
+              move={(from,to)=>patch({ steps: (()=>{ const arr=[...working.steps]; const [m]=arr.splice(from,1); arr.splice(to,0,m); return arr; })() })}
+            />
+          ) : (
+            <InstructionsView steps={working.steps} />
+          )}
+          <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
+          <Rating />
+          {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
+          {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
+        </div>
       </div>
       <div className="recipe-right">
         <ImagePane url={working.image_url} uploading={uploading} onUpload={f => upload(f, working.image_url)} />

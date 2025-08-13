@@ -4,7 +4,13 @@ A React + TypeScript + Vite frontend for browsing, viewing, and editing recipes.
 
 ## Overview
 
-The application renders recipes with a modern, two‑column layout (content + image pane) and provides an in‑place editing experience covering titles, metadata, tags, yield/time, ingredients (grouped), instructions, and notes. Image uploads and instruction grouping are supported without altering the current backend API contract.
+The application renders recipes with a modern, two‑column layout (content + image pane) and a sticky action header (title + Edit/Save/Cancel) that remains visible while the left column scrolls independently. In‑place editing covers title, metadata, tags, yield/time, ingredients (single flat list with implicit section labels), instructions (with lightweight headers), notes, and image upload. Lightweight grouping is achieved purely in the UI:
+
+- Ingredient group labels: leave the ingredient name blank and supply a quantity/value (e.g. "SAUCE"). That row renders as an uppercase section label and is persisted as an empty name + quantity so round‑trips cleanly.
+- Instruction headers: prefix a line with `#` (e.g. `#Preparation`). Header lines are styled, excluded from step numbering, and persisted verbatim so reordering & edits remain stable.
+- Drag & drop reordering for ingredients and instruction steps via a custom ghost‑drag list (`ReorderableList`) without external DnD libraries.
+
+No backend schema changes were required; headers and labels are encoded within the existing flat arrays.
 
 ## Tech Stack
 
@@ -54,7 +60,8 @@ ui/
           IngredientsView.tsx
           IngredientsEditor.tsx
           InstructionsView.tsx
-          GroupedInstructionsEditor.tsx
+          StepsEditor.tsx             # Flat steps + hash headers + drag
+          ReorderableList.tsx         # Generic vertical ghost DnD
           Notes.tsx
           Rating.tsx
           Comments.tsx
@@ -109,24 +116,27 @@ The normalization layer absorbs backend variations (`instructions`, `steps`, or 
 
 ## Recipe Detail Architecture
 
-- Container: Coordinates fetch, edit mode, save, image updates.
-- Hooks: Encapsulate data concerns (fetch, normalization, upload side effects).
-- Parts: Stateless UI blocks; receive data + callbacks.
-- Wrapper: Stable public import path.
+- Sticky header: houses title (contentEditable) and action buttons; content scrolls beneath with internal top padding so nothing hides.
+- Ingredient list: single normalized array; implicit group headers rendered when `name` is empty and `quantity` populated.
+- Instructions: simple string array; lines starting with `#` treated as headers (must have non‑empty text after `#`). Headers are skipped in numbering.
+- Drag & drop: `ReorderableList` supplies positional reordering for both ingredients and steps.
 
 ## Editing Workflow
 
 1. Enter edit mode → working state instantiated.
-2. Modify ingredients (grouped), tags, metadata, steps, notes.
-3. Instruction groups (UI only) allow conceptual grouping while preserving flat save format.
+2. Modify flat ingredients list (add, delete, reorder, create header rows via blank name).
+3. Modify steps; add headers by typing `#Header` in a step row; reorder freely.
 4. Save issues PUT (partial update). Cancel discards unsaved edits.
 
-## Instruction Grouping (UI Only)
+## Instruction Headers (Lightweight UI Semantics)
 
-- Groups flatten into `steps` immediately on any change.
-- Reordering via up/down controls for groups and steps.
-- Steps can move between groups via selector.
-- Backend payload remains a flat `instructions[]` array.
+| Action | How |
+|--------|-----|
+| Add header | Create / edit a step, start with `#` followed by text (e.g. `#The Day Of`) |
+| Remove header styling | Delete the leading `#` |
+| Reorder | Drag like any other step; numbering auto‑recalculates excluding headers |
+
+All lines (including headers) persist in the same `steps` array; backend remains unaware of header semantics.
 
 ## Image Upload Flow
 
@@ -189,8 +199,9 @@ Image fallback logic ensures broken URLs revert to the local default asset.
 | Editing State | useWorkingRecipe + container | Hold mutable edits, patch helpers |
 | Image Upload | useImageUpload + ImagePane | File selection & update image_url |
 | Layout Orchestration | RecipeDetailContainer | Compose parts, save/cancel logic |
-| Ingredients | IngredientsEditor / IngredientsView | Edit vs display grouped ingredients |
-| Instructions | GroupedInstructionsEditor / InstructionsView | Grouped UI vs flat display |
+| Ingredients | IngredientsEditor / IngredientsView | Flat list + implicit headers |
+| Instructions | StepsEditor / InstructionsView | Hash header detection + display |
+| Drag & Drop infra | ReorderableList | Generic vertical list reordering |
 | Metadata | Header, Subtitle, Meta, YieldTime, Tags | Structured fields editing/display |
 | Notes | Notes | View/edit notes field |
 | Rating | Rating | Local-only rating UX |
@@ -219,12 +230,12 @@ Image fallback logic ensures broken URLs revert to the local default asset.
 
 | Extension | Hook / Area | Notes |
 |-----------|-------------|-------|
-| Add persistent instruction grouping | useWorkingRecipe/buildSavePayload | Introduce sections[] emission while retaining instructions[] |
-| Add user-based filters | RecipeList/HomePage | Replace placeholder filters with authenticated context |
+| Persist instruction headers | useWorkingRecipe/buildSavePayload | Emit structured sections if backend extended |
+| Add user-based filters | RecipeList/HomePage | Replace placeholder filters |
 | Add pagination or infinite scroll | RecipeList | Add query params & intersection observer |
 | Add search | RecipeList | Debounced text input -> backend query |
-| Persist rating | New hook + backend field | Mirror pattern of image upload |
-| Add custom sections (Nutrition, Equipment) | New parts + normalization | Store temporarily in extraSections until persisted |
+| Persist rating | New hook + backend field | Mirror image upload pattern |
+| Add custom sections (Nutrition, Equipment) | New parts + normalization | Use `extraSections` |
 
 ## Accessibility Notes
 

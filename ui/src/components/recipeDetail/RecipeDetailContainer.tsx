@@ -11,7 +11,6 @@ import { IngredientsView } from './parts/IngredientsView';
 import { IngredientsEditor } from './parts/IngredientsEditor';
 import { InstructionsView } from './parts/InstructionsView';
 import { Notes } from './parts/Notes';
-import { Rating } from './parts/Rating';
 import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { StepsEditor } from './parts/StepsEditor';
@@ -24,6 +23,37 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
   const [saving, setSaving] = useState(false);
   const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, moveIngredientItem } = useWorkingRecipe(recipe, editMode);
   const { uploading, error: uploadError, upload } = useImageUpload(recipeId, (url) => { patch({ image_url: url }); });
+
+  const [liked, setLiked] = useState(() => {
+    // derive initial liked from recipe likes/favorites arrays or fields
+    const raw: any = recipe;
+    const userId = (window as any).currentUser?.id || (window as any).currentUserId; // placeholder user context
+    if (!userId) return false;
+    if (Array.isArray(raw?.likes)) return raw.likes.includes(userId);
+    if (Array.isArray(raw?.favorites)) return raw.favorites.includes(userId);
+    return false;
+  });
+
+  const toggleLike = async () => {
+    // optimistic UI update
+    setLiked((l: boolean) => !l);
+    try {
+      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+      const resp = await fetch(`/api/recipes/${recipeId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      });
+      if (!resp.ok) throw new Error('Like toggle failed');
+      const data = await resp.json();
+      if (typeof data.liked === 'boolean') setLiked(data.liked);
+      // could expose data.likes for counters if needed
+    } catch (e) {
+      // rollback optimistic change on failure
+      setLiked((l: boolean) => !l);
+      console.error(e);
+    }
+  };
 
   const startEdit = () => setEditMode(true);
   const cancelEdit = () => { setEditMode(false); };
@@ -54,6 +84,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
           onSave={save}
           onCancel={cancelEdit}
           onBack={onBack}
+          liked={liked}
+          onToggleLike={toggleLike}
         />
         <div className="recipe-left-scroll">{/* new scroll container */}
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
@@ -83,7 +115,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
             <InstructionsView steps={working.steps} />
           )}
           <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
-          <Rating />
           {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
           {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
         </div>

@@ -4,7 +4,7 @@ A React + TypeScript + Vite frontend for browsing, viewing, and editing recipes.
 
 ## Overview
 
-The application renders recipes with a modern, two‑column layout (content + image pane) and a sticky action header (title + Edit/Save/Cancel) that remains visible while the left column scrolls independently. In‑place editing covers title, metadata, tags, yield/time, ingredients (single flat list with implicit section labels), instructions (with lightweight headers), notes, and image upload. Lightweight grouping is achieved purely in the UI:
+The application renders recipes with a modern, two‑column layout (content + image pane) and a sticky action header (title + Edit/Save/Cancel plus back + like controls) that remains visible while the left column scrolls independently. In‑place editing covers title, metadata, tags, yield/time, ingredients (single flat list with implicit section labels), instructions (with lightweight headers), notes, and image upload. Lightweight grouping is achieved purely in the UI:
 
 - Ingredient group labels: leave the ingredient name blank and supply a quantity/value (e.g. "SAUCE"). That row renders as an uppercase section label and is persisted as an empty name + quantity so round‑trips cleanly.
 - Instruction headers: prefix a line with `#` (e.g. `#Preparation`). Header lines are styled, excluded from step numbering, and persisted verbatim so reordering & edits remain stable.
@@ -63,7 +63,6 @@ ui/
           StepsEditor.tsx             # Flat steps + hash headers + drag
           ReorderableList.tsx         # Generic vertical ghost DnD
           Notes.tsx
-          Rating.tsx
           Comments.tsx
           ImagePane.tsx
         RecipeDetail.css              # Imports shared styles
@@ -84,8 +83,6 @@ The UI assumes an API providing (illustrative):
 No environment variables are required by default; configure proxy or CORS at the dev server or reverse proxy layer if API is remote.
 
 ## Canonical Working Recipe (Frontend)
-
-Internal normalized shape (WorkingRecipe):
 
 ```ts
 interface WorkingRecipe {
@@ -116,7 +113,7 @@ The normalization layer absorbs backend variations (`instructions`, `steps`, or 
 
 ## Recipe Detail Architecture
 
-- Sticky header: houses title (contentEditable) and action buttons; content scrolls beneath with internal top padding so nothing hides.
+- Sticky header: houses title (contentEditable), action buttons, back navigation, and like heart; content scrolls beneath with internal top padding so nothing hides.
 - Ingredient list: single normalized array; implicit group headers rendered when `name` is empty and `quantity` populated.
 - Instructions: simple string array; lines starting with `#` treated as headers (must have non‑empty text after `#`). Headers are skipped in numbering.
 - Drag & drop: `ReorderableList` supplies positional reordering for both ingredients and steps.
@@ -202,9 +199,8 @@ Image fallback logic ensures broken URLs revert to the local default asset.
 | Ingredients | IngredientsEditor / IngredientsView | Flat list + implicit headers |
 | Instructions | StepsEditor / InstructionsView | Hash header detection + display |
 | Drag & Drop infra | ReorderableList | Generic vertical list reordering |
-| Metadata | Header, Subtitle, Meta, YieldTime, Tags | Structured fields editing/display |
+| Metadata | Header, Subtitle, Meta, YieldTime, Tags | Structured fields editing/display + like control |
 | Notes | Notes | View/edit notes field |
-| Rating | Rating | Local-only rating UX |
 | Comments | Comments | Render comment list |
 | Navigation | HomePage, App (Routes) | High-level routing & layout |
 
@@ -234,7 +230,7 @@ Image fallback logic ensures broken URLs revert to the local default asset.
 | Add user-based filters | RecipeList/HomePage | Replace placeholder filters |
 | Add pagination or infinite scroll | RecipeList | Add query params & intersection observer |
 | Add search | RecipeList | Debounced text input -> backend query |
-| Persist rating | New hook + backend field | Mirror image upload pattern |
+| Persist like state | New hook + backend field | Mirror image upload pattern |
 | Add custom sections (Nutrition, Equipment) | New parts + normalization | Use `extraSections` |
 
 ## Accessibility Notes

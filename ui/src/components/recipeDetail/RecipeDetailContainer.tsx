@@ -25,13 +25,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
   const { uploading, error: uploadError, upload } = useImageUpload(recipeId, (url) => { patch({ image_url: url }); });
 
   const [liked, setLiked] = useState(() => {
-    // derive initial liked from recipe likes/favorites arrays or fields
     const raw: any = recipe;
-    const userId = (window as any).currentUser?.id || (window as any).currentUserId; // placeholder user context
-    if (!userId) return false;
-    if (Array.isArray(raw?.likes)) return raw.likes.includes(userId);
-    if (Array.isArray(raw?.favorites)) return raw.favorites.includes(userId);
-    return false;
+    return !!raw?.liked; // backend could supply liked later when auth added
   });
 
   const toggleLike = async () => {

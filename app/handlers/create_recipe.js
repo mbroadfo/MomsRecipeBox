@@ -14,7 +14,7 @@ export default async function createRecipe(db, body) {
     created_at: new Date(),
     updated_at: new Date(),
     comments: [],
-    likes: []
+    likes_count: 0 // denormalized count field (updated by like handler)
   };
 
   const result = await db.collection('recipes').insertOne(recipe);

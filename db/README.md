@@ -1,51 +1,78 @@
-
-
 # MomsRecipeBox - DB Tier (MongoDB)
 
-This directory contains the database initialization and connectivity scripts for the MomsRecipeBox project. The DB tier uses MongoDB for all data storage and seeding.
+This directory contains database initialization scripts and recipe seed data for local development.
+
+## Data Model (Recent Update)
+
+- Recipes collection now includes a denormalized integer field: `likes_count` (defaults to 0 on creation) used for fast favorite counts.
+- New `favorites` collection introduced (one document per user/recipe pair) powering scalable like toggling.
+  - Suggested indexes (created lazily by handler):
+    - `{ recipeId: 1, userId: 1 }` unique
+    - `{ userId: 1, createdAt: -1 }`
+    - `{ recipeId: 1 }`
 
 ## Files & Structure
 
-- `init_mrb_db.js` — Seeds the MongoDB database with an admin user and recipes from JSON files.
-- `recipes/` — Contains recipe data as individual `.json` files for seeding.
-- `test_mongo.js` — Simple connectivity test to verify MongoDB is accessible.
+- `init_mrb_db.js` — Seeds MongoDB with recipes from `recipes/` JSON files.
+- `recipes/` — Individual recipe documents for seeding.
+- (Future) Migration scripts can adjust older documents missing `likes_count` (handler backfills on read if absent).
 
 ## Environment Variables
 
-Set these in your `.env` file:
+Set in `.env` (and consumed by Docker / app):
 
+```bash
+MONGODB_URI=<full-connection-string OR constructed in docker-compose>
+MONGODB_DB_NAME=<db-name>
+MONGODB_ROOT_USER=<root-user>
+MONGODB_ROOT_PASSWORD=<root-password>
 ```
-MONGODB_URI=<your-mongodb-connection-string>
-MONGODB_DB_NAME=<your-db-name>
-MONGODB_ADMIN_USER=<admin-username>
-MONGODB_ADMIN_PASSWORD=<admin-password>
-```
+
+For local Docker Compose, `docker-compose.yml` builds URI from individual parts.
 
 ## Seeding the Database
 
-To initialize the database, run:
-
-```bash
+```powershell
 node init_mrb_db.js
 ```
 
-This will:
-- Create the admin user (using credentials from `.env`)
-- Load all recipes from the `recipes/` directory
-- Insert them into the `recipes` collection
+The script will:
+
+- Connect using `MONGODB_URI`.
+- Load all JSON files in `recipes/` and insert if not already present.
+- (Optional enhancement) Could upsert to avoid duplicates.
+
+## Favorites Backfill (If Migrating)
+
+Legacy recipes that had an embedded `likes` array should be migrated:
+
+```js
+// Example one-off script snippet
+const bulk = [];
+const cursor = db.collection('recipes').find({ likes: { $exists: true } });
+while (await cursor.hasNext()) {
+  const r = await cursor.next();
+  const count = Array.isArray(r.likes) ? r.likes.length : 0;
+  bulk.push({ updateOne: { filter: { _id: r._id }, update: { $set: { likes_count: count }, $unset: { likes: '' } } } });
+}
+if (bulk.length) await db.collection('recipes').bulkWrite(bulk);
+```
+
+The active application code tolerates missing `likes_count` by recomputing from `favorites`.
 
 ## Connectivity Test
 
-To verify MongoDB is up and accessible:
+(If you add a simple connectivity script):
 
-```bash
+```powershell
 node test_mongo.js
 ```
 
 ## Notes
 
-- The admin password is stored in plaintext for local/dev. For production, update `init_mrb_db.js` to hash passwords before storing.
+- Passwords in plain text acceptable for local dev only; use secrets management for production.
+- Ensure indexes for `favorites` are created (handler does this lazily).
 
 ---
 
-For questions or to contribute, contact the MomsRecipeBox dev team.
+For questions or contributions, coordinate with the API tier to keep schema expectations aligned.

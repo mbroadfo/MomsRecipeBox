@@ -36,6 +36,17 @@ const handler = async (event) => {
 
     console.log('Recipe found:', recipeId);
 
+    // Compute likes info
+    const favoritesColl = db.collection('favorites');
+    const likesCount = typeof recipe.likes_count === 'number'
+      ? recipe.likes_count
+      : await favoritesColl.countDocuments({ recipeId: recipe._id });
+    // TODO: extract userId from auth; fallback to body param not available here
+    const userId = undefined;
+    const liked = false; // cannot know without user context
+    recipe.likes_count = likesCount;
+    recipe.liked = liked;
+
     // Handle expand parameter if needed
     if (event.queryStringParameters && event.queryStringParameters.expand === 'true') {
       try {

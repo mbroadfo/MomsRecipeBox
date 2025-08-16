@@ -1,141 +1,133 @@
 # MomsRecipeBox - API Tier (2025)
 
+## Update Summary (Recent Changes)
+
+- Added scalable favorites model (`favorites` collection + denormalized `likes_count`).
+- New handler: `toggle_favorite.js` replaces legacy like handler for `POST /recipes/{id}/like`.
+- Removed obsolete `post_like.js` (favorites model fully migrated).
+- `create_recipe.js` initializes `likes_count: 0` on new recipes.
+- `get_recipe.js` ensures `likes_count` present and adds placeholder `liked` field (per-user like pending auth integration).
+- Added end-to-end test `test_favorites.js` validating multi-user toggle & count integrity.
+
 ## Quick Reference: Rebuilding the App Tier
 
-For best results after making changes to the app-tier (code, dependencies, Dockerfile), use the following workflow:
-
-```bash
-# Stop and remove all containers, networks, and volumes
+```powershell
+# Stop & clean
 docker compose down --remove-orphans -v
 
-# Rebuild the app container from scratch
+# Rebuild only app
 docker compose build --no-cache app
 
-# Start all services in detached mode
+# Start services
 docker compose up -d
 ```
 
-This ensures a clean environment and that all changes are reflected in the running containers. For rapid iteration on code only, you may use `docker compose restart app` instead.
+For rapid iteration on code only (no dependency changes):
 
-This directory contains the ESM-based, containerized backend for the MomsRecipeBox API. All route handlers are modular, use centralized MongoDB logic, and follow RESTful conventions.
+```powershell
+docker compose restart app
+```
 
 ## Directory Overview
 
-- `handlers/` — Each file is a Lambda-style handler for a single HTTP endpoint (see below).
-- `app.js` — Centralized MongoDB connection logic (`getDb`).
-- `lambda.js` — Entrypoint for AWS Lambda and local server, routes requests to handlers.
-- `local_server.js` — Custom HTTP server for local development and Swagger UI.
-- `Dockerfile` — AWS Lambda Node.js 18 base image for containerization.
-- `docs/swagger.yaml` — OpenAPI definitions for all endpoints.
-- `tests/` — End-to-end test scripts for API validation, including recipe and image operations.
+- `handlers/` — Lambda-style handlers (one per endpoint).
+- `toggle_favorite.js` — Favorites/like toggle (authoritative).
+- `app.js` — MongoDB connection helper (`getDb`).
+- `lambda.js` — Router / Lambda entry (routes `/recipes/:id/like` to `toggle_favorite`).
+- `local_server.js` — Local HTTP server + Swagger UI support.
+- `docs/swagger.yaml` — OpenAPI definitions.
+- `tests/` — E2E scripts (`test_recipes.js`, `test_images.js`, `test_favorites.js`).
 
-## Handler Structure
+## Favorites / Likes Model
 
-Each handler exports an async function and receives an `event` object:
+| Aspect        | Implementation |
+| ------------- | -------------- |
+| Storage       | `favorites` collection (document per user+recipe) |
+| Uniqueness    | Compound unique index `{ recipeId:1, userId:1 }` |
+| Count display | `likes_count` field on `recipes` (denormalized) |
+| Toggle logic  | Insert/delete favorite + `$inc` `likes_count` safely |
+| Response      | `{ liked, likes }` from `toggle_favorite.js` |
+
+`get_recipe.js` backfills `likes_count` if missing (migration safety) by counting favorites.
+
+## RESTful Routes & Handlers (Excerpt)
+
+| File                  | Method | Route                      | Description |
+|-----------------------|--------|---------------------------|-------------|
+| `list_recipes.js`     | GET    | /recipes                  | List all recipes |
+| `get_recipe.js`       | GET    | /recipes/{id}             | Get recipe (with `likes_count`) |
+| `create_recipe.js`    | POST   | /recipes                  | Create recipe (`likes_count:0`) |
+| `update_recipe.js`    | PUT    | /recipes/{id}             | Update recipe |
+| `delete_recipe.js`    | DELETE | /recipes/{id}             | Delete recipe |
+| `toggle_favorite.js`  | POST   | /recipes/{id}/like        | Toggle favorite (returns `{ liked, likes }`) |
+| `post_comment.js`     | POST   | /recipes/{id}/comments    | Add comment |
+| `update_comment.js`   | PUT    | /comments/{id}            | Update comment |
+| `delete_comment.js`   | DELETE | /comments/{id}            | Delete comment |
+| `upload_image.js`     | PUT    | /recipes/{id}/image       | Upload image (multipart) |
+| `update_image.js`     | PUT    | /recipes/{id}/image       | Update image (base64 JSON) |
+| `get_image.js`        | GET    | /recipes/{id}/image       | Retrieve image |
+| `delete_image.js`     | DELETE | /recipes/{id}/image       | Delete image |
+
+## Handler Pattern
 
 ```js
 export default async function handler(event) {
-  // Extract path parameters, body, etc.
-  // Validate input
-  // Use centralized getDb() for database access
-  // Return { statusCode, body }
+  // validate input
+  // const db = await getDb();
+  // perform operation
+  return { statusCode: 200, body: JSON.stringify(payload) };
 }
 ```
 
-## RESTful Routes & Handlers
+## Testing
 
-| File Name             | Method | Route                          | Description                       |
-|-----------------------|--------|-------------------------------|-----------------------------------|
-| `list_recipes.js`     | GET    | /recipes                      | List all recipes                   |
-| `get_recipe.js`       | GET    | /recipes/{id}                 | Get a recipe by ID                 |
-| `create_recipe.js`    | POST   | /recipes                      | Create a new recipe                |
-| `update_recipe.js`    | PUT    | /recipes/{id}                 | Update an existing recipe          |
-| `delete_recipe.js`    | DELETE | /recipes/{id}                 | Delete a recipe and its comments   |
-| `post_comment.js`     | POST   | /recipes/{id}/comments        | Add a comment to a recipe          |
-| `update_comment.js`   | PUT    | /comments/{id}                | Update a comment                   |
-| `delete_comment.js`   | DELETE | /comments/{id}                | Delete a comment by ID             |
-| `post_like.js`        | POST   | /recipes/{id}/like            | Like or unlike a recipe            |
+From `app/tests`:
 
-### Image API Endpoints
-
-| File Name             | Method | Route                          | Description                       |
-|-----------------------|--------|-------------------------------|-----------------------------------|
-| `upload_image.js`     | PUT    | /recipes/{id}/image           | Upload a recipe image via multipart/form-data |
-| `update_image.js`     | PUT    | /recipes/{id}/image           | Upload/update a recipe image via base64 JSON |
-| `get_image.js`        | GET    | /recipes/{id}/image           | Retrieve a recipe's image         |
-| `delete_image.js`     | DELETE | /recipes/{id}/image           | Remove an image from a recipe     |
-
-## Key Features & Principles
-
-- **ESM Only:** All code uses modern ES modules (`import/export`).
-- **Centralized DB Logic:** All handlers use `getDb()` from `app.js`.
-- **RESTful API:** All endpoints use path parameters, not query strings.
-- **Containerized:** Runs in AWS Lambda base image, local dev via Docker Compose.
-- **Swagger UI:** Available at `/api-docs` (see `local_server.js`).
-- **Graceful Error Handling:** Handlers ensure missing collections or invalid queries are handled gracefully.
-- **Flexible Image Support:** APIs for uploading images via multipart/form-data or base64 JSON, retrieving, and deleting recipe images (PNG/JPG formats).
-
-## Local Development & Testing
-
-- Start the app tier via Docker Compose with `docker compose up app`.
-- API endpoints and contracts are defined in `docs/swagger.yaml`.
-
-### Full Lifecycle Testing
-
-The API is validated end-to-end using Node.js test scripts (following the `test_*.js` naming convention). These tests cover the complete lifecycle of recipes and images.
-
-**Recipe Lifecycle Test:**
-
-**What it does:**
-
-- Creates a recipe
-- Fetches the recipe
-- Adds a comment
-- Updates the recipe
-- Likes/unlikes the recipe
-- Deletes the comment
-- Deletes the recipe
-
-**Image API Test:**
-
-**What it does:**
-
-- Creates a test recipe
-- Uploads a PNG image to the recipe
-- Retrieves the image to verify
-- Updates with a JPG image
-- Deletes the image
-- Cleans up test data and resources
-
-**How to run:**
-
-```bash
-# Navigate to the tests directory
-cd app/tests
-
-# Install test dependencies if it's your first time running tests
-npm install
-
-# Run all tests
-npm test
-
-# Run only recipe tests (runs test_recipes.js)
-npm run test:recipes
-
-# Run only image tests (runs test_images.js)
-npm run test:images
+```powershell
+npm install        # first time
+npm test           # runs recipe + image tests
+node test_favorites.js  # run favorites test only
 ```
 
-These tests will output the result of each API operation and report any failures. Ensure the app tier is running before executing the tests.
+`test_favorites.js` sequence:
 
-## Contributing
+1. Create recipe → expects 201.
+2. User A like → `{ liked:true, likes:1 }`.
+3. User A unlike → `{ liked:false }`.
+4. User A like again → `{ liked:true }`.
+5. User B like → `{ liked:true, likes:2 }`.
+6. Fetch recipe → `likes_count === 2`.
 
-- Add new handlers in `handlers/` following the established conventions.
-- Use ESM imports and centralized DB logic.
-- Update `swagger.yaml` for any new endpoints.
-- Add appropriate tests for new functionality in the `tests/` directory, following the `test_*.js` naming convention.
-- For image-related APIs, use dedicated test assets rather than production images.
+## Implementation Notes
+
+- Idempotent index creation inside `toggle_favorite.js` (cheap after first run).
+- Race handling: duplicate insert (code 11000) treated as liked; count remains correct.
+- Future enhancement: derive `userId` from Auth0 JWT; remove need for explicit `user_id` body field.
+- `liked` per-user state currently always `false` on GET (no auth context); UI initializes heart off unless toggled.
+
+## Image Handling
+
+Supports both multipart and base64 JSON payloads. `local_server.js` inspects `Content-Type` and dispatches to appropriate handler for unified `/recipes/{id}/image` route.
+
+## Error Handling
+
+All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary responses (images) set appropriate headers + optional inline disposition.
+
+## Deployment Considerations
+
+- Container built from AWS Lambda Node.js 18 base image — can deploy as Lambda function URL / API Gateway integration.
+- For production, enforce auth middleware (e.g., verify JWT, extract `sub` -> `userId`).
+- Add rate limiting / input validation (e.g., `zod`) for robustness.
+
+## TODO / Next Steps
+
+| Area        | Action |
+|-------------|--------|
+| Auth        | Integrate Auth0 verification & user context extraction |
+| Favorites   | Add listing & filtering endpoints (e.g., user favorites feed) |
+| Metrics     | Expose like/favorite analytics endpoint (optional) |
+| Caching     | Consider caching hot recipe data + counts (Redis) if needed |
 
 ---
 
-For questions or to contribute, contact the MomsRecipeBox dev team or refer to `swagger.yaml` in the `/docs` folder for endpoint definitions.
+For questions or contributions, update `swagger.yaml` and add tests to cover new behavior.

@@ -8,11 +8,11 @@ import deleteRecipe from './handlers/delete_recipe.js';
 import postComment from './handlers/post_comment.js';
 import updateComment from './handlers/update_comment.js';
 import deleteComment from './handlers/delete_comment.js';
-import postLike from './handlers/post_like.js';
 import { handler as deleteImage } from './handlers/delete_image.js';
 import { handler as uploadImage } from './handlers/upload_image.js';
 import { handler as updateImage } from './handlers/update_image.js';
 import { handler as getImage } from './handlers/get_image.js';
+import toggleFavorite from './handlers/toggle_favorite.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -59,7 +59,7 @@ export async function handler(event, context) {
 
     // Likes
     if (event.httpMethod === 'POST' && event.path.match(/^\/recipes\/[\w-]+\/like$/)) {
-      return await postLike(event);
+      return await toggleFavorite(event);
     }
 
     // Image management

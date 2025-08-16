@@ -1,73 +1,141 @@
 # MomsRecipeBox
 
-A secure, multi-family recipe sharing platform with flexible deployment options. This repository contains infrastructure, database, and automation scripts to support both local and cloud development environments.
+A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend API (Node.js Lambda-style + MongoDB), modern React/Vite UI, and supporting automation scripts.
 
 ---
 
 ## 📦 Architecture Overview
 
-| Tier         | Local Dev            | Cloud Deployment        |
-| ------------ | -------------------- | ----------------------- |
-| Database     | Docker Compose       | RDS via Terraform & SSM |
-| App Backend  | (TBD: Node/.NET)     | AWS Lambda (TBD)        |
-| Web Frontend | (TBD: React/Vite)    | S3 + CloudFront (TBD)   |
-| AI Assistant | (Future Integration) | (Future Integration)    |
+| Tier         | Local Development                      | Cloud Deployment (Infra/Terraform)        |
+| ------------ | -------------------------------------- | ----------------------------------------- |
+| Database     | MongoDB (Docker Compose)               | Aurora / (Future: DocumentDB or Atlas)    |
+| App Backend  | Node.js 18 (Lambda-style in container) | AWS Lambda (container image) + API GW     |
+| Web Frontend | React 19 + Vite (dev server)           | S3 (static hosting) + CloudFront          |
+| Images       | Local FS / S3 mock (future)            | S3 bucket (recipe images)                 |
+| Favorites    | MongoDB `favorites` collection         | Managed DB (same)                         |
 
 ---
 
-## ⚡ Quick Start: Local Development
+## ⭐ New: Favorites (Likes) Model
 
-Use Docker Compose and PowerShell to launch a fully-functional local database environment.
+Recent changes introduced a scalable favorites system:
 
-### Start the Local Database
+- Separate `favorites` collection with documents: `{ _id, recipeId: ObjectId, userId: string, createdAt }`.
+- Denormalized `likes_count` integer on each `recipes` document (created at 0, atomically $inc on toggle).
+- Endpoint: `POST /recipes/:id/like` now handled by `toggle_favorite.js` returning `{ liked, likes }`.
+- Old embedded `likes` array & handler `post_like.js` are deprecated (left temporarily for reference).
+- `get_recipe.js` now injects `likes_count` (and placeholder `liked: false` until auth context added).
 
-```powershell
-.\Start-MrbDatabase.ps1
-```
-
-### Run Full Lifecycle Test
-
-```powershell
-.\Reset-MrbDatabase.ps1 -Force
-```
-
-This will:
-
-* Stop and reset the Docker container
-* Recreate persistent volumes
-* Load the schema and sample data
-* Run the full recipe lifecycle test script
+Benefits: O(1) toggle, indexable queries (e.g., user favorites), race-safe up/down counts, avoids unbounded array growth in recipe documents.
 
 ---
 
-## 📂 Repo Structure
+## ⚡ Quick Start (Local)
+
+```powershell
+# Start MongoDB + API container
+docker compose up -d
+
+# (Optional) rebuild after backend code changes
+docker compose build --no-cache app; docker compose up -d app
+```
+
+API exposed at `http://localhost:3000`.
+
+---
+
+## 🗂 Repo Structure (High-Level)
 
 ```text
-/db
-  init.sql                  -- Schema definition
-  tests/
-    test_recipe_lifecycle.sql -- Functional test case
-  README.md                 -- Bastion + cloud connection instructions
-infra/
-  terraform/                -- Cloud infra setup (RDS, Bastion)
-scripts/
-  Start-MrbDatabase.ps1     -- Local DB start
-  Stop-MrbDatabase.ps1      -- Local DB stop
-  Reset-MrbDatabase.ps1     -- Local DB reset and test
+/infra        Terraform IaC (RDS/Aurora, S3, Lambdas, etc.)
+/db           Seed scripts & JSON recipe fixtures (MongoDB)
+/app          Backend API (handlers, lambda-style router, tests)
+/ui           React/Vite frontend (editing & viewing recipes)
+/scripts      PowerShell helper scripts / automation
 ```
 
 ---
 
-## ☁️ Cloud Mode (Optional)
+## 🧪 Testing
 
-The `/db/README.md` contains full instructions for using Bastion + Session Manager to connect securely to an RDS instance.
+Backend end-to-end tests live in `app/tests` and use native `fetch` + `assert`:
 
-Use Terraform variables to enable or disable cloud resources as needed.
+- `test_recipes.js` – CRUD & comment lifecycle
+- `test_images.js` – Image upload/update/delete lifecycle
+- `test_favorites.js` – Multi-user favorite (like) toggle & count validation (NEW)
+
+Run:
+
+```powershell
+cd app/tests
+npm install   # first time
+node test_favorites.js
+npm test      # runs recipe + image tests
+```
 
 ---
 
-## 📍 Next Steps
+## 🔌 Key Backend Endpoints (Excerpt)
 
-* Build App Tier APIs
-* Begin frontend prototyping
-* Plan AI/ML integration for smart recipe tagging or suggestions
+| Method | Route                       | Description                                |
+| ------ | --------------------------- | ------------------------------------------ |
+| GET    | /recipes                    | List recipes                               |
+| POST   | /recipes                    | Create recipe (`likes_count` starts at 0)  |
+| GET    | /recipes/{id}               | Get recipe (includes `likes_count`)        |
+| POST   | /recipes/{id}/like          | Toggle favorite (returns `{ liked, likes }`)|
+| PUT    | /recipes/{id}               | Update recipe                              |
+| DELETE | /recipes/{id}               | Delete recipe                              |
+| POST   | /recipes/{id}/comments      | Add comment                                |
+| PUT    | /comments/{id}              | Update comment                             |
+| DELETE | /comments/{id}              | Delete comment                             |
+| (img)  | PUT/GET/DELETE /recipes/{id}/image | Image management (multipart & base64) |
+
+---
+
+## 🖥 Frontend Highlights
+
+- Sticky header with in-place editable title & heart (like) toggle.
+- Optimistic like updates calling new `/recipes/:id/like` endpoint.
+- Lightweight instruction headers (`#Heading`) & ingredient group labels (blank name row technique).
+- Custom drag & drop reordering without external DnD libs.
+
+---
+
+## 🔒 Upcoming / TODO
+
+- Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo).
+- Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now).
+- Clean removal of deprecated `post_like.js` after full migration.
+- Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering.
+
+---
+
+## ☁️ Cloud Mode
+
+Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc.). Adjust variables in `Terraform.tfvars`. Bastion / Session Manager support for secure DB connectivity (see infra README details).
+
+---
+
+## 🛠 Contributing
+
+1. Add or modify handlers under `/app/handlers` (return `{ statusCode, body }`).
+2. Update `docs/swagger.yaml` (OpenAPI spec) for new/changed endpoints.
+3. Add tests in `/app/tests` (name `test_*.js`).
+4. Reflect data model changes here and in tier-specific READMEs.
+
+---
+
+## 📄 License
+
+(Add project license here.)
+
+---
+
+## ✨ Recent Changes Summary
+
+- Implemented favorites model (`favorites` collection + `likes_count`).
+- Added `toggle_favorite.js`; routing updated in `lambda.js`.
+- Updated `create_recipe.js` to initialize `likes_count`.
+- Enhanced `get_recipe.js` to include `likes_count` & placeholder `liked` field.
+- Added `test_favorites.js` (multi-user toggle test).
+- UI: Heart like button moved into sticky header; removed legacy star rating.

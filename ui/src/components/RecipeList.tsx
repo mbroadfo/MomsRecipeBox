@@ -3,11 +3,12 @@ import React, { useEffect, useState } from 'react';
 import RecipeCard from './RecipeCard';
 
 interface Recipe {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
-  subtitle?: string;
+  likes_count?: number;
+  liked?: boolean;
   image_url?: string;
-  favorites?: number;
   comments?: number;
 }
 
@@ -24,19 +25,14 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch('/api/recipes')
+    const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+    fetch(`/api/recipes?user_id=${encodeURIComponent(userId)}`)
       .then((res) => res.json())
       .then((data) => {
-        // Try common response shapes
-        if (Array.isArray(data)) {
-          setRecipes(data);
-        } else if (Array.isArray(data.items)) {
-          setRecipes(data.items);
-        } else if (Array.isArray(data.recipes)) {
-          setRecipes(data.recipes);
-        } else {
-          setRecipes([]);
-        }
+        if (Array.isArray(data.recipes)) setRecipes(data.recipes as any);
+        else if (Array.isArray(data)) setRecipes(data as any);
+        else if (Array.isArray((data as any).items)) setRecipes((data as any).items as any);
+        else setRecipes([]);
         setError(null);
       })
       .catch((err) => {
@@ -48,16 +44,14 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
 
   // Simple filter logic placeholder
   let filteredRecipes = recipes.filter((recipe) => {
+    const rid = (recipe as any).id || (recipe as any)._id || '';
     switch (filter) {
       case 'mine':
-        // TODO: Replace with real user filtering
-        return recipe.id.startsWith('mine');
+        return rid.startsWith('mine');
       case 'families':
-        // TODO: Replace with real family filtering
-        return recipe.id.startsWith('family');
+        return rid.startsWith('family');
       case 'favorites':
-        // TODO: Replace with real favorites filtering
-        return recipe.id.startsWith('fav');
+        return !!recipe.liked;
       default:
         return true;
     }
@@ -66,11 +60,8 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   // Sorting logic
   filteredRecipes = [...filteredRecipes];
   switch (sort) {
-    case 'az':
-      filteredRecipes.sort((a, b) => a.title.localeCompare(b.title));
-      break;
     case 'favorites':
-      filteredRecipes.sort((a, b) => (b.favorites ?? 0) - (a.favorites ?? 0));
+      filteredRecipes.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
       break;
     case 'popular':
       filteredRecipes.sort((a, b) => (b.comments ?? 0) - (a.comments ?? 0));
@@ -97,8 +88,8 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
       <div className="grid gap-8" style={{ gridTemplateColumns: gridTemplate }}>
         {filteredRecipes.map((recipe, idx) => (
           <RecipeCard
-            key={recipe.id || idx}
-            recipe={recipe}
+            key={(recipe as any)._id || recipe.id || idx}
+            recipe={recipe as any}
             onClick={onSelectRecipe}
           />
         ))}

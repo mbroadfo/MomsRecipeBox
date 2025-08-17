@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRecipe } from './hooks/useRecipe';
 import { useWorkingRecipe, buildSavePayload } from './hooks/useWorkingRecipe';
 import { useImageUpload } from './hooks/useImageUpload';
@@ -26,11 +26,17 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
 
   const [liked, setLiked] = useState(() => {
     const raw: any = recipe;
-    return !!raw?.liked; // backend could supply liked later when auth added
+    return !!raw?.liked;
   });
 
+  // Sync liked state when a fresh recipe payload arrives (e.g., after navigation or refresh())
+  useEffect(() => {
+    if (recipe && Object.prototype.hasOwnProperty.call(recipe, 'liked')) {
+      setLiked(!!(recipe as any).liked);
+    }
+  }, [recipe?._id, (recipe as any)?.liked]);
+
   const toggleLike = async () => {
-    // optimistic UI update
     setLiked((l: boolean) => !l);
     try {
       const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
@@ -42,9 +48,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
       if (!resp.ok) throw new Error('Like toggle failed');
       const data = await resp.json();
       if (typeof data.liked === 'boolean') setLiked(data.liked);
-      // could expose data.likes for counters if needed
+      // Refresh recipe to sync liked & likes_count
+      await refresh();
     } catch (e) {
-      // rollback optimistic change on failure
       setLiked((l: boolean) => !l);
       console.error(e);
     }

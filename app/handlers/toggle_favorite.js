@@ -17,45 +17,53 @@ export const handler = async (event) => {
     const recipesColl = db.collection('recipes');
     const favoritesColl = db.collection('favorites');
 
+    console.log('[toggle_favorite] recipeId:', recipeId, 'userId:', userId);
+
     // Ensure indexes (idempotent) - runs fast after first time
     await favoritesColl.createIndex({ recipeId: 1, userId: 1 }, { unique: true });
     await favoritesColl.createIndex({ recipeId: 1 });
     await favoritesColl.createIndex({ userId: 1, createdAt: -1 });
 
     const _rid = new ObjectId(recipeId);
-    const exists = await recipesColl.findOne({ _id: _rid }, { projection: { _id: 1 } });
+    const exists = await recipesColl.findOne({ _id: _rid }, { projection: { _id: 1, likes_count: 1 } });
     if (!exists) return { statusCode: 404, body: JSON.stringify({ message: 'Recipe not found' }) };
+
+    const beforeCountDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
+    console.log('[toggle_favorite] Before toggle likes_count:', beforeCountDoc?.likes_count);
 
     const existing = await favoritesColl.findOne({ recipeId: _rid, userId });
     let liked;
     if (existing) {
+      console.log('[toggle_favorite] Existing favorite found. Removing.');
       await favoritesColl.deleteOne({ _id: existing._id });
       await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: -1 } });
       liked = false;
     } else {
       try {
+        console.log('[toggle_favorite] No existing favorite. Inserting.');
         await favoritesColl.insertOne({ recipeId: _rid, userId, createdAt: new Date() });
         await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: 1 } });
         liked = true;
       } catch (e) {
         if (e?.code === 11000) {
-          // Duplicate insert race - treat as liked
+          console.log('[toggle_favorite] Duplicate key race, treating as liked');
           liked = true;
         } else throw e;
       }
     }
 
-    // Retrieve current count from recipe document (fallback to aggregate if missing)
     let recipeDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
     let likes = recipeDoc?.likes_count;
     if (typeof likes !== 'number') {
+      console.log('[toggle_favorite] likes_count missing, recomputing');
       likes = await favoritesColl.countDocuments({ recipeId: _rid });
       await recipesColl.updateOne({ _id: _rid }, { $set: { likes_count: likes } });
     }
+    console.log('[toggle_favorite] After toggle likes_count:', likes, 'liked:', liked);
 
     return { statusCode: 200, body: JSON.stringify({ liked, likes }) };
   } catch (err) {
-    console.error(err);
+    console.error('[toggle_favorite] Error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };

@@ -2,16 +2,13 @@ import React from 'react';
 import fallbackImage from '../assets/default.png';
 
 interface Recipe {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
-  subtitle?: string;
-  summary?: string;
-  description?: string;
-  author?: string;
-  tags?: string[];
+  likes_count?: number;
+  liked?: boolean;
   image_url?: string;
-  favorites?: number;
-  comments?: number;
+  comments?: number | any[];
 }
 
 interface RecipeCardProps {
@@ -22,34 +19,18 @@ interface RecipeCardProps {
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   const imageUrl = recipe.image_url || fallbackImage;
 
-  // Calculate favorites/likes and comments from recipe data
-  // Supports array or number fields
-  const favorites = Array.isArray((recipe as any).favorites)
-    ? (recipe as any).favorites.length
-    : typeof recipe.favorites === 'number'
-      ? recipe.favorites
-      : Array.isArray((recipe as any).likes)
-        ? (recipe as any).likes.length
-        : typeof (recipe as any).likes === 'number'
-          ? (recipe as any).likes
-          : 0;
+  const favorites = typeof recipe.likes_count === 'number'
+    ? recipe.likes_count
+    : 0;
 
-  const comments = Array.isArray((recipe as any).comments)
-    ? (recipe as any).comments.length
-    : typeof recipe.comments === 'number'
-      ? recipe.comments
-      : 0;
+  const comments = Array.isArray(recipe.comments) ? recipe.comments.length : (recipe.comments as number) || 0;
+  const liked = !!recipe.liked;
 
   return (
     <div
       onClick={() => {
-        const recipeId = (recipe as any)._id;
-        if (recipeId) {
-          console.log('RecipeCard clicked:', recipeId);
-          onClick(recipeId);
-        } else {
-          console.warn('RecipeCard clicked with missing _id:', recipe);
-        }
+        const recipeId = (recipe as any)._id || recipe.id;
+        if (recipeId) onClick(recipeId);
       }}
       className="bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"
       style={{
@@ -57,8 +38,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
         margin: '16px',
         padding: '18px',
         boxSizing: 'border-box',
-        border: '1px solid #e5e7eb', // Tailwind gray-200
-        borderRadius: '16px', // rounded-2xl
+        border: '1px solid #e5e7eb',
+        borderRadius: '16px',
       }}
     >
       {/* Image section */}
@@ -93,14 +74,13 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
       </div>
       {/* Favorites and comments section */}
       <div className="mt-2 flex items-center text-gray-700 text-base font-bold">
-        <span className="flex items-center gap-3 mr-8">
-          <svg width="20" height="20" fill="#e53e3e" stroke="#e53e3e" strokeWidth="2" viewBox="0 0 24 24">
+        <span className="flex items-center gap-2 mr-6">
+          <svg width="20" height="20" fill={liked ? '#e53e3e' : 'none'} stroke="#e53e3e" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 1.01 4.5 2.09C13.09 4.01 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
           </svg>
           <span>{favorites}</span>
         </span>
-        <span className="inline-block" style={{ width: '32px' }}></span>
-        <span className="flex items-center gap-3">
+        <span className="flex items-center gap-2">
           <svg width="20" height="20" fill="#3182ce" stroke="#3182ce" strokeWidth="2" viewBox="0 0 24 24">
             <rect x="3" y="7" width="18" height="10" rx="2" />
             <rect x="7" y="11" width="2" height="2" rx="1" fill="#fff" />

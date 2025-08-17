@@ -16,79 +16,64 @@ import toggleFavorite from './handlers/toggle_favorite.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
-  console.log("📥 Event received:", event.httpMethod, event.path);
+  console.log('📥 Event received:', event.httpMethod, event.path);
+  const originalPath = event.path || '';
+  const pathOnly = originalPath.split('?')[0];
 
   try {
     const db = await getDb();
 
-    // Routing logic
-    // Image management
-    if (event.httpMethod === 'GET' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
-      console.log("Routing to getImage handler for path:", event.path);
+    // Image (GET)
+    if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       return await getImage(event);
     }
-
-    // Recipes
-    if (event.httpMethod === 'GET' && event.path.match(/^\/recipes\/[\w-]+$/)) {
-      console.log("Routing to getRecipe handler for path:", event.path);
-      return await getRecipe(event); // Ensure this matches the correct handler
+    // Recipe detail
+    if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
+      return await getRecipe(event);
     }
-    if (event.httpMethod === 'GET' && event.path === '/recipes') {
+    // Recipe list (supports query string)
+    if (event.httpMethod === 'GET' && pathOnly === '/recipes') {
       return await listRecipes(event);
     }
-    if (event.httpMethod === 'POST' && event.path === '/recipes') {
+    // Create
+    if (event.httpMethod === 'POST' && pathOnly === '/recipes') {
       return await createRecipe(db, JSON.parse(event.body));
     }
-    if (event.httpMethod === 'PUT' && event.path.match(/^\/recipes\/[\w-]+$/)) {
+    // Update
+    if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
       return await updateRecipe(event);
     }
-    if (event.httpMethod === 'DELETE' && event.path.match(/^\/recipes\/[\w-]+$/)) {
+    // Delete
+    if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
       return await deleteRecipe(event);
     }
-
     // Comments
-    if (event.httpMethod === 'POST' && event.path.match(/^\/recipes\/[\w-]+\/comments$/)) {
+    if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/comments$/.test(pathOnly)) {
       return await postComment(event);
     }
-    if (event.httpMethod === 'PUT' && event.path.match(/^\/comments\/[\w-]+$/)) {
+    if (event.httpMethod === 'PUT' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
       return await updateComment(event);
     }
-    if (event.httpMethod === 'DELETE' && event.path.match(/^\/comments\/[\w-]+$/)) {
+    if (event.httpMethod === 'DELETE' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
       return await deleteComment(event);
     }
-
     // Likes
-    if (event.httpMethod === 'POST' && event.path.match(/^\/recipes\/[\w-]+\/like$/)) {
+    if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/like$/.test(pathOnly)) {
       return await toggleFavorite(event);
     }
-
-    // Image management
-    if (event.httpMethod === 'PUT' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
-      console.log("Routing to uploadImage handler for path:", event.path);
+    // Image update/delete
+    if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       const contentType = event.headers['content-type'] || '';
-      // For multipart/form-data, use uploadImage handler
-      if (contentType.startsWith('multipart/form-data')) {
-        return await uploadImage(event);
-      } else {
-        // For application/json with base64 image, use updateImage handler
-        return await updateImage(event);
-      }
+      if (contentType.startsWith('multipart/form-data')) return await uploadImage(event);
+      return await updateImage(event);
     }
-    if (event.httpMethod === 'DELETE' && event.path.match(/^\/recipes\/[\w-]+\/image$/)) {
+    if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       return await deleteImage(event);
     }
 
-    // Default 404
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ error: 'Not Found' }),
-    };
-
+    return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };
   } catch (err) {
-    console.error("❌ Error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Internal Server Error' }),
-    };
+    console.error('❌ Error:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
   }
 }

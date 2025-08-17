@@ -94,6 +94,31 @@
   -webkit-background-clip: text;
   color: transparent;
 }
+
+/* Style for recipe title in edit mode - use solid color instead of gradient */
+.recipe-title-edit {
+  font-size: clamp(2.25rem, 2.4vw + 1.2rem, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.05;
+  /* No gradient or background-clip here */
+}
+
+/* Add placeholder for empty contentEditable */
+.recipe-title-edit:empty:before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  opacity: 0.7;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Focus state */
+.recipe-title-edit:focus {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+}
 .subtitle {
   font-size: 1.35rem;
   font-weight: 500;

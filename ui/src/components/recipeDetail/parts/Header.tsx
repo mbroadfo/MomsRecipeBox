@@ -15,15 +15,12 @@ interface Props {
 
 export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange, onEdit, onSave, onCancel, onBack, liked, onToggleLike }) => {
   const h1Ref = useRef<HTMLHeadingElement | null>(null);
-  // Keep caret at end when entering edit mode
+  
+  // Reset the ref when editing changes
   useEffect(() => {
-    if (editing && h1Ref.current) {
-      const range = document.createRange();
-      range.selectNodeContents(h1Ref.current);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+    if (!editing) {
+      // Clear the ref when not editing so it will reinitialize on next edit
+      h1Ref.current = null;
     }
   }, [editing]);
 
@@ -60,16 +57,61 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
       </div>
       <div style={{ background:'#f1f5f9d9', backdropFilter:'blur(8px)', padding:'0.65rem 3rem 0.85rem 2.25rem', borderBottom:'1px solid #e2e8f0', display:'flex', alignItems:'flex-start', gap:'1.5rem', height:'5.2rem', boxSizing:'border-box', boxShadow:'0 4px 12px -4px rgba(15,23,42,0.08)', borderRadius:'0 0 1rem 1rem' }}>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', justifyContent:'flex-start' }}>
-          <h1
-            ref={h1Ref}
-            className="recipe-title"
-            style={{ margin:'0 0 .15rem', fontSize:'1.9rem', lineHeight:1.12, fontWeight:800, outline:'none', cursor: editing ? 'text' : 'default', userSelect:'text', overflow:'hidden', textOverflow:'ellipsis' }}
-            contentEditable={editing}
-            suppressContentEditableWarning
-            data-placeholder="Recipe title"
-            onInput={e => editing && onTitleChange((e.target as HTMLElement).innerText)}
-            aria-label="Title"
-          >{title}</h1>
+          {editing ? (
+            <h1
+              ref={(el) => {
+                if (el && !h1Ref.current) {
+                  h1Ref.current = el;
+                  
+                  // Initialize the content of the element when first rendered
+                  el.textContent = title || '';
+                  
+                  // Focus and set cursor at the end
+                  el.focus();
+                  const range = document.createRange();
+                  range.selectNodeContents(el);
+                  range.collapse(false);
+                  const sel = window.getSelection();
+                  sel?.removeAllRanges();
+                  sel?.addRange(range);
+                }
+              }}
+              className="recipe-title-edit"
+              style={{ 
+                margin:'0 0 .15rem', 
+                fontSize:'1.9rem', 
+                lineHeight:1.12, 
+                fontWeight:800, 
+                outline:'none',
+                cursor:'text', 
+                userSelect:'text', 
+                border: '1px dashed rgba(37, 99, 235, 0.5)', 
+                borderRadius: '4px',
+                padding: '4px 8px',
+                color: '#1e3a8a', // Use a solid color instead of transparent
+                background: 'rgba(255, 255, 255, 0.9)',
+                minHeight: '2.5rem',
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.15)'
+              }}
+              contentEditable={true}
+              suppressContentEditableWarning
+              data-placeholder="Recipe title"
+              data-no-autofill="true"
+              data-form-type="other"
+              data-lpignore="true"
+              onInput={(e) => {
+                // Simply update the title value without messing with the DOM
+                onTitleChange((e.target as HTMLElement).innerText);
+              }}
+              aria-label="Title"
+            />
+          ) : (
+            <h1
+              className="recipe-title"
+              style={{ margin:'0 0 .15rem', fontSize:'1.9rem', lineHeight:1.12, fontWeight:800, outline:'none', cursor:'default', userSelect:'text', overflow:'hidden', textOverflow:'ellipsis' }}
+              aria-label="Title"
+            >{title}</h1>
+          )}
         </div>
         <div style={{ display:'flex', gap:'.6rem', flexWrap:'wrap', alignSelf:'center' }}>
           {!editing && <button onClick={onEdit} style={{ background: '#2563eb', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem', boxShadow:'0 2px 4px rgba(37,99,235,0.35)' }}>Edit</button>}

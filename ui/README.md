@@ -2,23 +2,40 @@
 
 A React + TypeScript + Vite frontend for browsing, viewing, and editing recipes.
 
-## Recent Updates (Favorites Integration)
+## Key Features
 
-- Replaced legacy star rating component with a single heart (like) toggle.
-- Heart button relocated to sticky header next to navigation; accessible label + dynamic text (Like/Liked).
-- Backend integration now hits `POST /recipes/:id/like` (favorites model) and performs optimistic UI update.
-- `liked` initial state derives from backend `recipe.liked` (currently placeholder until auth-driven value provided).
-- Future: Display `likes_count` in header or card meta once per-user like state is fully exposed on list endpoints.
+- Modern two-column layout with responsive design
+- In-place recipe editing with a user-friendly interface
+- Full editing capabilities for all recipe components (title, ingredients, instructions, etc.)
+- Recipe favoriting with heart icon toggle
+- Image upload and management
+- Tag management
+- Comments system
 
 ## Overview
 
-The application renders recipes with a modern, two‑column layout (content + image pane) and a sticky action header (title + Edit/Save/Cancel plus back + like controls) that remains visible while the left column scrolls independently. In‑place editing covers title, metadata, tags, yield/time, ingredients (single flat list with implicit section labels), instructions (with lightweight headers), notes, and image upload. Lightweight grouping is achieved purely in the UI:
+The application renders recipes with a modern, two-column layout (content + image pane) and a sticky action header. The header contains the recipe title, Edit/Save/Cancel buttons, back navigation, and like controls. It remains visible while the left column scrolls independently.
 
-- Ingredient group labels: leave the ingredient name blank and supply a quantity/value (e.g. "SAUCE"). That row renders as an uppercase section label and is persisted as an empty name + quantity so round‑trips cleanly.
-- Instruction headers: prefix a line with `#` (e.g. `#Preparation`). Header lines are styled, excluded from step numbering, and persisted verbatim so reordering & edits remain stable.
-- Drag & drop reordering for ingredients and instruction steps via a custom ghost‑drag list (`ReorderableList`) without external DnD libraries.
+### Recipe Editing Features
 
-No backend schema changes were required for headers or group labels; semantics are encoded in flat arrays.
+The in-place editing interface allows modification of:
+
+- Recipe title: Editable heading with clear visual indicators when in edit mode
+- Subtitle and metadata: Author and source information
+- Tags: Add/remove recipe categorization tags
+- Yield and preparation time
+- Ingredients: Organized list with support for grouping
+- Instructions: Step-by-step directions with support for section headers
+- Notes: Additional information or tips
+- Image: Upload and manage the recipe's main image
+
+### UI Organization Features
+
+Lightweight content grouping is implemented in the UI:
+
+- **Ingredient group labels**: Leave the ingredient name blank and supply a quantity/value (e.g. "SAUCE"). This row renders as an uppercase section label and persists as an empty name + quantity.
+- **Instruction headers**: Prefix a line with `#` (e.g. `#Preparation`). Header lines are styled differently and excluded from step numbering.
+- **Drag & drop reordering**: Both ingredients and instruction steps can be reordered via a custom ghost-drag list implementation (`ReorderableList`) without external dependencies.
 
 ## Tech Stack
 
@@ -46,85 +63,104 @@ npm run build --prefix ui   # Type check + bundle
 npm run preview --prefix ui # Serve production bundle locally
 ```
 
-## Favorites (Like) Toggle Flow
+## Recipe Interaction Features
 
-1. User clicks heart → UI flips local `liked` state immediately (optimistic).
-2. POST `/api/recipes/:id/like` with `{ user_id }` (temporary until auth integrated).
-3. Response `{ liked, likes }` reconciles final state (rollback on failure).
-4. Optional future enhancement: update local `likes_count` display when added.
+### Favorites (Like) Toggle System
 
-Error handling: If the API call fails, the optimistic toggle is reverted and error logged.
+The recipe favoriting system uses an optimistic UI approach:
 
-## Project Structure (UI)
+1. User clicks the heart icon → UI immediately updates the liked state
+2. A POST request is sent to `/api/recipes/:id/like` with the user ID
+3. The response confirms the final state (liked or not)
+4. Error handling reverts the optimistic toggle if the API call fails
+
+This approach provides immediate feedback while still ensuring data consistency.
+
+## Project Structure
+
+The UI codebase follows a modular architecture with clear separation of concerns:
 
 ```text
 ui/
   src/
     components/
-      RecipeDetail.tsx                # Public entry (wrapper)
+      RecipeDetail.tsx                # Public entry point wrapper
       recipeDetail/
-        RecipeDetailContainer.tsx     # Orchestrator (heart toggle + optimistic update)
+        RecipeDetailContainer.tsx     # Main container component managing state
         hooks/
-          useRecipe.ts                # Fetch + refresh
-          useWorkingRecipe.ts         # Normalization + editable state
-          useImageUpload.ts           # Image upload flow
-        parts/                        # Presentational units
-          Header.tsx                  # Sticky header + like heart
-          Tags.tsx
-          Subtitle.tsx
-          Meta.tsx
-          YieldTime.tsx
-          IngredientsView.tsx
-          IngredientsEditor.tsx
-          InstructionsView.tsx
-          StepsEditor.tsx
-          ReorderableList.tsx
-          Notes.tsx
-          Comments.tsx
-          ImagePane.tsx
-        RecipeDetail.css
+          useRecipe.ts                # Recipe data fetching and refresh
+          useWorkingRecipe.ts         # Editing state management
+          useImageUpload.ts           # Image upload functionality
+        parts/                        # Modular UI components
+          Header.tsx                  # Sticky header with title editor and like button
+          Tags.tsx                    # Tags management
+          Subtitle.tsx                # Recipe subtitle
+          Meta.tsx                    # Author and source info
+          YieldTime.tsx               # Servings and preparation time
+          IngredientsView.tsx         # Ingredients display mode
+          IngredientsEditor.tsx       # Ingredients edit mode
+          InstructionsView.tsx        # Instructions display mode
+          StepsEditor.tsx             # Instructions edit mode
+          ReorderableList.tsx         # Drag-and-drop reordering component
+          Notes.tsx                   # Recipe notes
+          Comments.tsx                # Comments section
+          ImagePane.tsx               # Image display and upload
+        RecipeDetail.css              # Component-specific styles
     pages/
-      HomePage.tsx
+      HomePage.tsx                    # Main recipe listing page
 ```
 
-## Environment & API
+This structure enables easy maintenance and feature development through component isolation.
 
-Illustrative endpoints consumed:
+## Development Environment
 
-- `GET /api/recipes/:id`
-- `PUT /api/recipes/:id`
-- `PUT /api/recipes/:id/image`
-- `POST /api/recipes/:id/like` (favorites)
+The application is configured to work with a local API server by default:
 
-## Accessibility / UX Notes
+- Default API URL: `http://localhost:3000`
+- Default development server: `http://localhost:5173`
 
-- Heart button includes `aria-label` reflecting state (e.g., "Like recipe" vs "Unlike recipe").
-- ContentEditable title retains keyboard focus; ensure custom key handling avoids accidental form submissions.
+You can configure the API endpoint by adjusting the Vite proxy settings in `vite.config.ts` if your backend runs on a different port or host.
 
-## Extensibility (Upcoming)
+## Key Implementation Details
 
-| Feature | Path |
-|---------|------|
-| Show likes count | Header / RecipeCard adjustments |
-| Filter by favorites | HomePage filter set + backend list param |
-| Auth-driven liked state | `useRecipe` augment with user context |
-| Undo toast on failures | Global notification system |
+### Recipe Title Editing
 
-## Testing Suggestions
+The recipe title uses a specialized editing approach:
 
-- Unit: Heart toggle optimistic logic (simulate success & failure).
-- Integration: RecipeDetailContainer end-to-end (mock fetch responses).
-- Visual: Snapshot tests for header states (liked / unliked / editing).
+- In display mode: Shows the title with a gradient text effect
+- In edit mode: Uses a contentEditable h1 element with solid color text and visual editing indicators
+- Includes special attributes to prevent password manager interference
+- Maintains cursor position for natural text editing
 
-## Performance
+### Accessibility Features
 
-- Optimistic UI avoids extra fetch round-trip before updating heart state.
-- Minimal rerenders: heart state isolated in container.
+- Heart button includes appropriate `aria-label` reflecting state (e.g., "Like recipe" vs "Unlike recipe")
+- ContentEditable elements have proper focus management and keyboard navigation
+- Form elements use semantic HTML with appropriate ARIA attributes
 
-## Security Considerations
+### Performance Optimizations
 
-- Until auth integration, `user_id` is a placeholder; do not rely on UI-provided IDs in production.
-- Sanitize user-edited fields server-side before persistence (title, notes, etc.).
+- Optimistic UI updates for immediate user feedback
+- Efficient re-rendering through focused state updates
+- Lazy-loading of recipe content
+
+### Security Considerations
+
+- Input sanitization for user-provided content
+- Protection against HTML injection in contentEditable fields
+- Server-side validation for all data submissions
+
+## API Integration
+
+The UI interacts with the following API endpoints:
+
+- `GET /api/recipes/:id` - Fetch recipe details
+- `PUT /api/recipes/:id` - Update recipe content
+- `PUT /api/recipes/:id/image` - Upload/update recipe image
+- `POST /api/recipes/:id/like` - Toggle recipe favorite status
+- `POST /api/recipes/:id/comments` - Add comments
+- `PUT /api/recipes/:id/comments/:commentId` - Update comments
+- `DELETE /api/recipes/:id/comments/:commentId` - Delete comments
 
 ## License
 

@@ -37,14 +37,22 @@ const handler = async (event) => {
       recipe.liked = false;
     }
 
-    if (event.queryStringParameters && event.queryStringParameters.expand === 'true') {
-      try {
-        const comments = await db.collection('comments').find({ recipeId: recipe._id }).toArray();
-        recipe.comments = comments || [];
-      } catch {
-        recipe.comments = [];
-      }
-    } else {
+    // Always fetch comments from the comments collection
+    try {
+      // Get comments from the comments collection
+      const comments = await db.collection('comments')
+        .find({ recipeId: new ObjectId(recipeId) })
+        .sort({ created_at: -1 }) // Sort by newest first
+        .toArray();
+      
+      // Convert ObjectId to string for JSON serialization
+      recipe.comments = comments.map(comment => ({
+        ...comment,
+        _id: comment._id.toString(),
+        recipeId: comment.recipeId.toString()
+      }));
+    } catch (error) {
+      console.error('Error retrieving comments:', error);
       recipe.comments = [];
     }
 

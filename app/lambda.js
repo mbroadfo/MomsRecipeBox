@@ -13,6 +13,7 @@ import { handler as uploadImage } from './handlers/upload_image.js';
 import { handler as updateImage } from './handlers/update_image.js';
 import { handler as getImage } from './handlers/get_image.js';
 import toggleFavorite from './handlers/toggle_favorite.js';
+import getComment from './handlers/get_comment.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -56,6 +57,9 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'DELETE' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
       return await deleteComment(event);
+    }
+    if (event.httpMethod === 'GET' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
+      return await getComment(event);
     }
     // Likes
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/like$/.test(pathOnly)) {

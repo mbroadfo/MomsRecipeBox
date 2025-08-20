@@ -1,13 +1,8 @@
-# MomsRecipeBox - API Tier (2025)
+# MomsRecipeBox - API Tier
 
-## Update Summary (Recent Changes)
+## Overview
 
-- Added scalable favorites model (`favorites` collection + denormalized `likes_count`).
-- New handler: `toggle_favorite.js` replaces legacy like handler for `POST /recipes/{id}/like`.
-- Removed obsolete `post_like.js` (favorites model fully migrated).
-- `create_recipe.js` initializes `likes_count: 0` on new recipes.
-- `get_recipe.js` ensures `likes_count` present and adds placeholder `liked` field (per-user like pending auth integration).
-- Added end-to-end test `test_favorites.js` validating multi-user toggle & count integrity.
+MomsRecipeBox API Tier provides a RESTful backend service for storing, retrieving, and managing recipes along with their associated comments, images, and favorites. The application follows a modular architecture with dedicated handlers for each endpoint, making it easy to maintain and extend functionality.
 
 ## Quick Reference: Rebuilding the App Tier
 
@@ -28,15 +23,52 @@ For rapid iteration on code only (no dependency changes):
 docker compose restart app
 ```
 
-## Directory Overview
+## Directory Structure
 
-- `handlers/` — Lambda-style handlers (one per endpoint).
-- `toggle_favorite.js` — Favorites/like toggle (authoritative).
-- `app.js` — MongoDB connection helper (`getDb`).
-- `lambda.js` — Router / Lambda entry (routes `/recipes/:id/like` to `toggle_favorite`).
-- `local_server.js` — Local HTTP server + Swagger UI support.
-- `docs/swagger.yaml` — OpenAPI definitions.
-- `tests/` — E2E scripts (`test_recipes.js`, `test_images.js`, `test_favorites.js`).
+- `handlers/` — Lambda-style handlers (one per endpoint)
+- `models/` — Schema definitions and data validation
+- `app.js` — MongoDB connection helper (`getDb`)
+- `lambda.js` — Router / Lambda entry
+- `local_server.js` — Local HTTP server + Swagger UI support
+- `docs/` — API documentation including `swagger.yaml`
+- `tests/` — End-to-end test scripts
+- `utils/` — Utility functions
+
+## Data Models and Implementation
+
+### Comments System
+
+Comments are stored as separate documents in a dedicated `comments` collection, providing better scalability, performance, and flexibility compared to embedded comments.
+
+| Aspect        | Implementation |
+| ------------- | -------------- |
+| Storage       | `comments` collection (document per comment) |
+| References    | `recipeId` field linking to recipe |
+| Structure     | `{ _id, recipeId, user_id, content, created_at, updated_at }` |
+| Indexes       | `recipeId` for efficient retrieval by recipe |
+| API           | Standalone endpoints for CRUD operations |
+
+Example comment document:
+
+```javascript
+{
+  _id: ObjectId("5f8d0f3e1c9d440000d1f3f5"),
+  recipeId: ObjectId("5f8d0f3e1c9d440000d1f3f4"),
+  user_id: "auth0|123456789",
+  content: "This recipe looks delicious!",
+  created_at: ISODate("2025-08-19T10:30:00.000Z"),
+  updated_at: ISODate("2025-08-19T11:15:00.000Z")
+}
+```
+
+When retrieving a recipe, the `get_recipe.js` handler automatically includes associated comments from the collection in the recipe response. This design allows for:
+
+- Better performance when dealing with large numbers of comments
+- Independent access to comments without loading the entire recipe
+- Easier comment management and moderation
+- Simplified pagination and filtering capabilities
+
+MongoDB indexes are created on the `recipeId` field for efficient retrieval of all comments for a specific recipe.
 
 ## Favorites / Likes Model
 
@@ -50,18 +82,19 @@ docker compose restart app
 
 `get_recipe.js` backfills `likes_count` if missing (migration safety) by counting favorites.
 
-## RESTful Routes & Handlers (Excerpt)
+## API Endpoints
 
 | File                  | Method | Route                      | Description |
 |-----------------------|--------|---------------------------|-------------|
 | `list_recipes.js`     | GET    | /recipes                  | List all recipes |
-| `get_recipe.js`       | GET    | /recipes/{id}             | Get recipe (with `likes_count`) |
-| `create_recipe.js`    | POST   | /recipes                  | Create recipe (`likes_count:0`) |
+| `get_recipe.js`       | GET    | /recipes/{id}             | Get recipe (with comments & likes) |
+| `create_recipe.js`    | POST   | /recipes                  | Create recipe |
 | `update_recipe.js`    | PUT    | /recipes/{id}             | Update recipe |
 | `delete_recipe.js`    | DELETE | /recipes/{id}             | Delete recipe |
 | `toggle_favorite.js`  | POST   | /recipes/{id}/like        | Toggle favorite (returns `{ liked, likes }`) |
-| `post_comment.js`     | POST   | /recipes/{id}/comments    | Add comment |
-| `update_comment.js`   | PUT    | /comments/{id}            | Update comment |
+| `post_comment.js`     | POST   | /recipes/{id}/comments    | Add comment to a recipe |
+| `get_comment.js`      | GET    | /comments/{id}            | Get individual comment |
+| `update_comment.js`   | PUT    | /comments/{id}            | Update comment content |
 | `delete_comment.js`   | DELETE | /comments/{id}            | Delete comment |
 | `upload_image.js`     | PUT    | /recipes/{id}/image       | Upload image (multipart) |
 | `update_image.js`     | PUT    | /recipes/{id}/image       | Update image (base64 JSON) |
@@ -85,48 +118,63 @@ From `app/tests`:
 
 ```powershell
 npm install        # first time
-npm test           # runs recipe + image tests
-node test_favorites.js  # run favorites test only
+npm test           # runs all tests
+node test_recipes.js      # run recipe tests only
+node test_comments.js     # run comments test suite
+node test_favorites.js    # run favorites test only
+node test_images.js       # run image tests only
 ```
 
-`test_favorites.js` sequence:
+### Comments Test Flow
 
-1. Create recipe → expects 201.
-2. User A like → `{ liked:true, likes:1 }`.
-3. User A unlike → `{ liked:false }`.
-4. User A like again → `{ liked:true }`.
-5. User B like → `{ liked:true, likes:2 }`.
-6. Fetch recipe → `likes_count === 2`.
+The `test_comments.js` script tests all comment functionality:
 
-## Implementation Notes
+1. Create recipe for testing
+2. POST comment to a recipe
+3. GET comment by ID
+4. GET recipe with comments
+5. PUT (update) comment
+6. DELETE comment
 
-- Idempotent index creation inside `toggle_favorite.js` (cheap after first run).
-- Race handling: duplicate insert (code 11000) treated as liked; count remains correct.
-- Future enhancement: derive `userId` from Auth0 JWT; remove need for explicit `user_id` body field.
-- `liked` per-user state currently always `false` on GET (no auth context); UI initializes heart off unless toggled.
+### Favorites Test Flow
+
+The `test_favorites.js` script validates the favorites functionality:
+
+1. Create recipe
+2. User A like → `{ liked:true, likes:1 }`
+3. User A unlike → `{ liked:false }`
+4. User A like again → `{ liked:true }`
+5. User B like → `{ liked:true, likes:2 }`
+6. Fetch recipe → `likes_count === 2`
 
 ## Image Handling
 
-Supports both multipart and base64 JSON payloads. `local_server.js` inspects `Content-Type` and dispatches to appropriate handler for unified `/recipes/{id}/image` route.
+The API supports both multipart form data and base64-encoded JSON payloads for image uploads. The `local_server.js` inspects the `Content-Type` header and routes the request to the appropriate handler for the unified `/recipes/{id}/image` endpoint.
 
 ## Error Handling
 
-All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary responses (images) set appropriate headers + optional inline disposition.
+All handlers include robust error handling and return appropriate HTTP status codes (400/404/500) with JSON error messages. Binary responses (like images) set the appropriate headers and content disposition.
 
-## Deployment Considerations
+## Deployment Options
 
-- Container built from AWS Lambda Node.js 18 base image — can deploy as Lambda function URL / API Gateway integration.
-- For production, enforce auth middleware (e.g., verify JWT, extract `sub` -> `userId`).
-- Add rate limiting / input validation (e.g., `zod`) for robustness.
+- The container is built from AWS Lambda Node.js 18 base image and can be deployed as a Lambda function URL or with API Gateway integration
+- For local development, the application uses an Express-like HTTP server
 
-## TODO / Next Steps
+## Security Considerations
 
-| Area        | Action |
-|-------------|--------|
+- For production deployment, enforce authentication middleware (e.g., verify JWT, extract user ID)
+- Add rate limiting and input validation for increased robustness
+- Implement proper access control for comment operations
+
+## Future Enhancements
+
+| Area        | Potential Improvements |
+|-------------|------------------------|
 | Auth        | Integrate Auth0 verification & user context extraction |
+| Comments    | Add pagination and filtering capabilities for recipes with many comments |
 | Favorites   | Add listing & filtering endpoints (e.g., user favorites feed) |
-| Metrics     | Expose like/favorite analytics endpoint (optional) |
-| Caching     | Consider caching hot recipe data + counts (Redis) if needed |
+| Metrics     | Expose like/comment analytics endpoint |
+| Caching     | Consider caching hot recipe data + counts (Redis) |
 
 ---
 

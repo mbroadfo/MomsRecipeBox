@@ -39,7 +39,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
   const toggleLike = async () => {
     setLiked((l: boolean) => !l);
     try {
-      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+      // Always use Admin as the user ID
+      const userId = 'Admin';
       const resp = await fetch(`/api/recipes/${recipeId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +117,13 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
             <InstructionsView steps={working.steps} />
           )}
           <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
-          {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
+          {Array.isArray((recipe as any).comments) && (
+            <Comments 
+              comments={(recipe as any).comments} 
+              recipeId={recipeId}
+              onCommentsChange={refresh} 
+            />
+          )}
           {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
         </div>
       </div>

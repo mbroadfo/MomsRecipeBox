@@ -29,8 +29,7 @@ export function useRecipe(id: string) {
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      // Always use Admin as the user ID
-      const userId = 'Admin';
+      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
       const data = await fetch(`/api/recipes/${id}?user_id=${encodeURIComponent(userId)}`).then(r => {
         if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
         return r.json();

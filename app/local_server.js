@@ -10,21 +10,13 @@ const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 // Centralized response handler function
-function handleResponse(res, result, event = {}) {
-  // Extract user ID if present in query params
-  const userId = event.queryStringParameters?.user_id || 'anonymous';
-  const method = event.httpMethod || 'UNKNOWN';
-  const reqPath = event.path || 'unknown path';
-  
-  // Log request completion with user ID and response status (green for successful responses)
-  const colorCode = result.statusCode < 400 ? '\x1b[32m' : '\x1b[31m';
-  console.log(`${colorCode}<-- [${userId}] ${method} ${reqPath} → ${result.statusCode}\x1b[0m`);
-  
-  // For debugging binary responses only
-  if (result.isBase64Encoded || Buffer.isBuffer(result.body)) {
-    const bodyLength = result.body ? (Buffer.isBuffer(result.body) ? result.body.length : (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0;
-    console.debug(`📷 Binary response, length: ${bodyLength} bytes`);
-  }
+function handleResponse(res, result) {
+  console.debug('Response status:', result.statusCode);
+  console.debug('Response headers:', JSON.stringify(result.headers, null, 2));
+  console.debug('isBase64Encoded:', result.isBase64Encoded);
+  console.debug('Body type:', typeof result.body);
+  console.debug('Body is Buffer?', Buffer.isBuffer(result.body));
+  console.debug('Body length:', result.body ? (Buffer.isBuffer(result.body) ? result.body.length : (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0);
   
   // Handle base64 encoded responses (for binary data like images)
   if (result.isBase64Encoded && typeof result.body === 'string') {
@@ -75,6 +67,7 @@ function handleResponse(res, result, event = {}) {
   }
 }
 
+
 const server = http.createServer(async (req, res) => {
   // Serve Swagger YAML
   if (req.url === '/api-docs/swagger.yaml') {
@@ -118,11 +111,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Extract path parameters from URL
   // Remove query string for path matching
   const cleanPath = req.url.split('?')[0];
+  console.debug(`Routing to handler for path: ${cleanPath}`);
   let pathParameters = {};
-  
   // /comments/{id}
   const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
   if (commentMatch) {
@@ -143,7 +135,7 @@ const server = http.createServer(async (req, res) => {
   if (recipeIdMatch) {
     pathParameters.id = recipeIdMatch[1];
   }
-  // /recipes/{id}/image
+  // /recipes/{id}/image - fix capture group
   const recipeImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/image$/);
   if (recipeImageMatch) {
     pathParameters.id = recipeImageMatch[1];
@@ -165,28 +157,10 @@ const server = http.createServer(async (req, res) => {
     const context = {};
     
     try {
-      // Extract user ID if present in query params
-      const urlParts = req.url.split('?');
-      let queryStringParameters = {};
-      if (urlParts.length > 1) {
-        const queryString = urlParts[1];
-        queryString.split('&').forEach(param => {
-          const [key, value] = param.split('=');
-          if (key && value) {
-            queryStringParameters[key] = decodeURIComponent(value);
-          }
-        });
-      }
-      event.queryStringParameters = queryStringParameters;
-      
-      // Log the incoming request with ANSI colors (blue)
-      const userId = queryStringParameters.user_id || 'anonymous';
-      console.log(`\x1b[34m--> [${userId}] ${req.method} ${req.url}\x1b[0m`);
-      
       const result = await handler(event, context);
-      handleResponse(res, result, event);
+      handleResponse(res, result);
     } catch (err) {
-      console.error('\x1b[31m❌ Error:\x1b[0m', err);
+      console.error(err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Internal Server Error' }));
     }
@@ -198,8 +172,14 @@ const server = http.createServer(async (req, res) => {
 
     req.on('end', async () => {
       try {
-        // Parse query parameters
+        console.debug(`📥 Event received: ${req.method} ${req.url}`);
+
+        // Remove query string for path matching
         const urlParts = req.url.split('?');
+        const cleanPath = urlParts[0];
+        console.debug(`Routing to handler for path: ${cleanPath}`);
+        
+        // Parse query parameters
         let queryStringParameters = {};
         if (urlParts.length > 1) {
           const queryString = urlParts[1];
@@ -209,12 +189,36 @@ const server = http.createServer(async (req, res) => {
               queryStringParameters[key] = decodeURIComponent(value);
             }
           });
+          console.debug('Query string parameters:', queryStringParameters);
         }
         
-        // Log the incoming request with ANSI colors (blue)
-        const userId = queryStringParameters.user_id || 'anonymous';
-        console.log(`\x1b[34m--> [${userId}] ${req.method} ${req.url}\x1b[0m`);
-        
+        let pathParameters = {};
+        // /comments/{id}
+        const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
+        if (commentMatch) {
+          pathParameters.comment_id = commentMatch[1];
+        }
+        // /recipes/{id}/comments
+        const recipeCommentMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/comments$/);
+        if (recipeCommentMatch) {
+          pathParameters.id = recipeCommentMatch[1];
+        }
+        // /recipes/{id}/like
+        const recipeLikeMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/like$/);
+        if (recipeLikeMatch) {
+          pathParameters.id = recipeLikeMatch[1];
+        }
+        // /recipes/{id}
+        const recipeIdMatch = cleanPath.match(/^\/recipes\/([\w-]+)$/);
+        if (recipeIdMatch) {
+          pathParameters.id = recipeIdMatch[1];
+        }
+        // /recipes/{id}/image - fix capture group
+        const recipeImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/image$/);
+        if (recipeImageMatch) {
+          pathParameters.id = recipeImageMatch[1];
+        }
+
         // Patch: Set content-length header for multipart/form-data if missing
         if (
           req.headers['content-type'] &&
@@ -223,7 +227,6 @@ const server = http.createServer(async (req, res) => {
         ) {
           req.headers['content-length'] = Buffer.byteLength(body);
         }
-        
         const event = {
           httpMethod: req.method,
           path: req.url,
@@ -236,9 +239,9 @@ const server = http.createServer(async (req, res) => {
         const context = {};
 
         const result = await handler(event, context);
-        handleResponse(res, result, event);
+        handleResponse(res, result);
       } catch (err) {
-        console.error('\x1b[31m❌ Error processing request:\x1b[0m', err);
+        console.error('Error processing request:', err);
         const errorResult = {
           statusCode: 500,
           headers: { 'Content-Type': 'application/json' },
@@ -251,5 +254,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\x1b[36m🚀 Local server running at http://localhost:${PORT}\x1b[0m`);
+  console.log(`🚀 Local server running at http://localhost:${PORT}`);
 });

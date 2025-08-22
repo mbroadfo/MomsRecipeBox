@@ -17,7 +17,7 @@ export const handler = async (event) => {
     const recipesColl = db.collection('recipes');
     const favoritesColl = db.collection('favorites');
 
-    console.log('\x1b[36m[toggle_favorite]\x1b[0m recipeId: \x1b[33m%s\x1b[0m userId: \x1b[33m%s\x1b[0m', recipeId, userId);
+    console.log('[toggle_favorite] recipeId:', recipeId, 'userId:', userId);
 
     // Ensure indexes (idempotent) - runs fast after first time
     await favoritesColl.createIndex({ recipeId: 1, userId: 1 }, { unique: true });
@@ -29,24 +29,24 @@ export const handler = async (event) => {
     if (!exists) return { statusCode: 404, body: JSON.stringify({ message: 'Recipe not found' }) };
 
     const beforeCountDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
-    console.log('\x1b[36m[toggle_favorite]\x1b[0m Before toggle likes_count: \x1b[33m%s\x1b[0m', beforeCountDoc?.likes_count);
+    console.log('[toggle_favorite] Before toggle likes_count:', beforeCountDoc?.likes_count);
 
     const existing = await favoritesColl.findOne({ recipeId: _rid, userId });
     let liked;
     if (existing) {
-      console.log('\x1b[36m[toggle_favorite]\x1b[0m Existing favorite found. \x1b[31mRemoving\x1b[0m.');
+      console.log('[toggle_favorite] Existing favorite found. Removing.');
       await favoritesColl.deleteOne({ _id: existing._id });
       await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: -1 } });
       liked = false;
     } else {
       try {
-        console.log('\x1b[36m[toggle_favorite]\x1b[0m No existing favorite. \x1b[32mInserting\x1b[0m.');
+        console.log('[toggle_favorite] No existing favorite. Inserting.');
         await favoritesColl.insertOne({ recipeId: _rid, userId, createdAt: new Date() });
         await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: 1 } });
         liked = true;
       } catch (e) {
         if (e?.code === 11000) {
-          console.log('\x1b[36m[toggle_favorite]\x1b[0m Duplicate key race, treating as liked');
+          console.log('[toggle_favorite] Duplicate key race, treating as liked');
           liked = true;
         } else throw e;
       }
@@ -55,18 +55,15 @@ export const handler = async (event) => {
     let recipeDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
     let likes = recipeDoc?.likes_count;
     if (typeof likes !== 'number') {
-      console.log('\x1b[36m[toggle_favorite]\x1b[0m \x1b[33mlikes_count missing, recomputing\x1b[0m');
+      console.log('[toggle_favorite] likes_count missing, recomputing');
       likes = await favoritesColl.countDocuments({ recipeId: _rid });
       await recipesColl.updateOne({ _id: _rid }, { $set: { likes_count: likes } });
     }
-    console.log('\x1b[36m[toggle_favorite]\x1b[0m After toggle likes_count: \x1b[33m%s\x1b[0m liked: \x1b[%sm%s\x1b[0m', 
-      likes, 
-      liked ? '32' : '31', 
-      liked ? 'true' : 'false');
+    console.log('[toggle_favorite] After toggle likes_count:', likes, 'liked:', liked);
 
     return { statusCode: 200, body: JSON.stringify({ liked, likes }) };
   } catch (err) {
-    console.error('\x1b[31m[toggle_favorite] Error:\x1b[0m', err);
+    console.error('[toggle_favorite] Error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };

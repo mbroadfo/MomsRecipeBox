@@ -17,9 +17,7 @@ import getComment from './handlers/get_comment.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
-  // Get user ID from query params if available
-  const userId = event.queryStringParameters?.user_id || 'anonymous';
-  console.log('\x1b[35m📥 Event received: ' + event.httpMethod + ' ' + event.path + ' [' + userId + ']\x1b[0m');
+  console.log('📥 Event received:', event.httpMethod, event.path);
   const originalPath = event.path || '';
   const pathOnly = originalPath.split('?')[0];
 
@@ -79,7 +77,7 @@ export async function handler(event, context) {
 
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };
   } catch (err) {
-    console.error('\x1b[31m❌ Error:\x1b[0m', err);
+    console.error('❌ Error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
   }
 }

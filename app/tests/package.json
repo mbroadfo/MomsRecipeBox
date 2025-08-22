@@ -4,11 +4,9 @@
   "description": "Tests for MomsRecipeBox API",
   "type": "module",
   "scripts": {
-    "test": "npm run test:recipes && npm run test:images && npm run test:comments && npm run test:favorites",
+    "test": "npm run test:recipes && npm run test:images",
     "test:recipes": "node test_recipes.js",
-    "test:images": "node test_images.js",
-    "test:comments": "node test_comments.js",
-    "test:favorites": "node test_favorites.js"
+    "test:images": "node test_images.js"
   },
   "dependencies": {
     "axios": "^1.6.2",

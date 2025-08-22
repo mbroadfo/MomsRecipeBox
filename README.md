@@ -103,7 +103,7 @@ npm test      # runs recipe + image tests
 
 ## 🔒 Upcoming / TODO
 
-- Implement proper authentication (currently using hardcoded "Admin" user).
+- Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo).
 - Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now).
 - Clean removal of deprecated `post_like.js` after full migration.
 - Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering.

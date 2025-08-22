@@ -37,23 +37,42 @@ const handler = async (event) => {
       recipe.liked = false;
     }
 
-    // Always fetch comments from the comments collection
+    // Use existing embedded comments if they exist, otherwise initialize empty array
+    if (!recipe.comments) {
+      recipe.comments = [];
+    }
+    
+    // Make a copy of embedded comments before we potentially override them
+    const embeddedComments = [...recipe.comments];
+
+    // Try to fetch comments from the comments collection
     try {
-      // Get comments from the comments collection
+      // Get comments from the comments collection without checking if it exists first
+      // This is safer as it will just return an empty array if collection doesn't exist
       const comments = await db.collection('comments')
         .find({ recipeId: new ObjectId(recipeId) })
         .sort({ created_at: -1 }) // Sort by newest first
-        .toArray();
+        .toArray()
+        .catch(err => {
+          console.log('Comments collection may not exist yet:', err.message);
+          return []; // Return empty array if collection doesn't exist
+        });
       
-      // Convert ObjectId to string for JSON serialization
-      recipe.comments = comments.map(comment => ({
-        ...comment,
-        _id: comment._id.toString(),
-        recipeId: comment.recipeId.toString()
-      }));
+      // If we got comments from the collection, use those instead
+      if (comments && comments.length > 0) {
+        recipe.comments = comments.map(comment => ({
+          ...comment,
+          _id: comment._id.toString(),
+          recipeId: comment.recipeId.toString()
+        }));
+      } else {
+        // If no comments in collection but we have embedded comments, keep using those
+        recipe.comments = embeddedComments;
+      }
     } catch (error) {
       console.error('Error retrieving comments:', error);
-      recipe.comments = [];
+      // Revert to embedded comments if there was an error
+      recipe.comments = embeddedComments;
     }
 
     return { statusCode: 200, body: JSON.stringify(recipe) };

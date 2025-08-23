@@ -2,12 +2,19 @@
 
 ## Update Summary (Recent Changes)
 
-- Added scalable favorites model (`favorites` collection + denormalized `likes_count`).
-- New handler: `toggle_favorite.js` replaces legacy like handler for `POST /recipes/{id}/like`.
-- Removed obsolete `post_like.js` (favorites model fully migrated).
-- `create_recipe.js` initializes `likes_count: 0` on new recipes.
-- `get_recipe.js` ensures `likes_count` present and adds placeholder `liked` field (per-user like pending auth integration).
-- Added end-to-end test `test_favorites.js` validating multi-user toggle & count integrity.
+- **Test Suite Organization** (Aug 2025):
+  - Split tests into separate files for better maintainability
+  - Created dedicated `test_comments.js` for comment API testing
+  - Updated `test_recipes.js` to focus solely on recipe operations
+  - Added all test modules to main test script in package.json
+
+- **Favorites Implementation** (Earlier):
+  - Added scalable favorites model (`favorites` collection + denormalized `likes_count`)
+  - New handler: `toggle_favorite.js` replaces legacy like handler for `POST /recipes/{id}/like`
+  - Removed obsolete `post_like.js` (favorites model fully migrated)
+  - `create_recipe.js` initializes `likes_count: 0` on new recipes
+  - `get_recipe.js` ensures `likes_count` present and adds placeholder `liked` field (per-user like pending auth integration)
+  - Added end-to-end test `test_favorites.js` validating multi-user toggle & count integrity
 
 ## Quick Reference: Rebuilding the App Tier
 
@@ -36,7 +43,7 @@ docker compose restart app
 - `lambda.js` — Router / Lambda entry (routes `/recipes/:id/like` to `toggle_favorite`).
 - `local_server.js` — Local HTTP server + Swagger UI support.
 - `docs/swagger.yaml` — OpenAPI definitions.
-- `tests/` — E2E scripts (`test_recipes.js`, `test_images.js`, `test_favorites.js`).
+- `tests/` — E2E scripts (`test_recipes.js`, `test_images.js`, `test_comments.js`, `test_favorites.js`).
 
 ## Favorites / Likes Model
 
@@ -85,18 +92,28 @@ From `app/tests`:
 
 ```powershell
 npm install        # first time
-npm test           # runs recipe + image tests
-node test_favorites.js  # run favorites test only
+npm test           # runs all tests (recipes, images, comments, favorites)
+npm run test:recipes   # run recipe tests only
+npm run test:images    # run image tests only
+npm run test:comments  # run comment tests only
+npm run test:favorites # run favorites tests only
 ```
 
-`test_favorites.js` sequence:
+### Test Modules
+
+- `test_recipes.js` - Tests basic recipe CRUD and like operations
+- `test_comments.js` - Tests comment functionality (create, read, update, delete)
+- `test_images.js` - Tests image upload, retrieval, update, and deletion
+- `test_favorites.js` - Tests the favorites/likes functionality
+
+#### Favorites Test Sequence
 
 1. Create recipe → expects 201.
 2. User A like → `{ liked:true, likes:1 }`.
 3. User A unlike → `{ liked:false }`.
 4. User A like again → `{ liked:true }`.
 5. User B like → `{ liked:true, likes:2 }`.
-6. Fetch recipe → `likes_count === 2`.
+6. Fetch recipe → `likes_count === 2 }`.
 
 ## Implementation Notes
 

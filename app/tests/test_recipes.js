@@ -1,6 +1,30 @@
 /**
- * test_recipes.js - Full lifecycle test for MomsRecipeBox recipe API
- * Tests Create, Read, Update, Comment, Like and Delete operations
+ * test_recipes.js - Full lifecycle test for MomsRecipeBox recipe     // Step 4: Update the recipe
+        // Step 6: Like the recipe
+    console.log('\n===== Liking recipe =====');
+    const likeResponse = await axios.post(
+      `${BASE_URL}/recipes/${recipeId}/like`,
+      likeToggle
+    );
+    console.log('Like toggled:');
+    console.log(JSON.stringify(likeResponse.data, null, 2));
+    
+    // Step 7: Unlike the recipeg('\n===== Updating recipe =====');
+    const updatedRecipe = {
+      ...testRecipe,
+      title: "Updated Recipe Title",
+      description: "This recipe has been updated via API test",
+      tags: [...testRecipe.tags, 'updated']
+    };
+    const updateRecipeResponse = await axios.put(
+      `${BASE_URL}/recipes/${recipeId}`,
+      updatedRecipe
+    );
+    console.log('Recipe updated:');
+    console.log(JSON.stringify(updateRecipeResponse.data, null, 2));
+    
+    // Step 5: Verify the recipe was updatedeate, Read, Update, Like and Delete operations for recipes
+ * (Comments tests have been moved to test_comments.js)
  */
 
 import axios from 'axios';
@@ -27,17 +51,6 @@ const testRecipe = {
     { name: 'Sugar', quantity: '1 cup', position: 2 },
     { name: 'Salt', quantity: '1 tsp', position: 3 }
   ]
-};
-
-// Comment data
-const testComment = {
-  user_id: 'auth0|testuser',
-  content: 'This is a test comment'
-};
-
-// Updated comment data
-const updatedComment = {
-  content: 'This comment has been updated'
 };
 
 // Like toggle data
@@ -72,33 +85,14 @@ async function runTests() {
     assert.strictEqual(listResponse.status, 200, 'Expected 200 status code for list recipes');
     assert.ok(Array.isArray(listResponse.data.recipes), 'Expected recipes array in response');
     
-    // Step 3: Fetch the created recipe with comments expanded
-    console.log('\n===== Fetching recipe with expanded comments =====');
+    // Step 3: Fetch the created recipe
+    console.log('\n===== Fetching recipe =====');
     const getResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`);
     console.log('Recipe retrieved successfully:');
     console.log(JSON.stringify(getResponse.data, null, 2));
     assert.strictEqual(getResponse.data._id, recipeId, 'Recipe ID mismatch');
     
-    // Step 4: Post a comment on the recipe
-    console.log('\n===== Posting comment =====');
-    const commentResponse = await axios.post(
-      `${BASE_URL}/recipes/${recipeId}/comments`,
-      testComment
-    );
-    console.log('Comment posted:');
-    console.log(JSON.stringify(commentResponse.data, null, 2));
-    const commentId = commentResponse.data._id;
-    
-    // Step 5: Update the comment
-    console.log('\n===== Updating comment =====');
-    const updateCommentResponse = await axios.put(
-      `${BASE_URL}/comments/${commentId}`,
-      updatedComment
-    );
-    console.log('Comment updated:');
-    console.log(JSON.stringify(updateCommentResponse.data, null, 2));
-    
-    // Step 6: Update the recipe
+    // Step 4: Update the recipe
     console.log('\n===== Updating recipe =====');
     const updatedRecipe = {
       ...testRecipe,
@@ -113,7 +107,7 @@ async function runTests() {
     console.log('Recipe updated:');
     console.log(JSON.stringify(updateRecipeResponse.data, null, 2));
     
-    // Step 7: Verify the recipe was updated
+    // Step 5: Verify the recipe was updated
     console.log('\n===== Verifying recipe update =====');
     const updatedGetResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`);
     console.log('Updated recipe retrieved:');
@@ -122,7 +116,7 @@ async function runTests() {
     assert.strictEqual(updatedGetResponse.data.description, "This recipe has been updated via API test", 'Recipe description not updated correctly');
     assert.ok(updatedGetResponse.data.tags.includes('updated'), 'Updated tag not found in recipe');
     
-    // Step 8: Like the recipe
+    // Step 6: Like the recipe
     console.log('\n===== Liking recipe =====');
     const likeResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/like`,
@@ -131,7 +125,7 @@ async function runTests() {
     console.log('Like toggled:');
     console.log(JSON.stringify(likeResponse.data, null, 2));
     
-    // Step 9: Unlike the recipe
+    // Step 7: Unlike the recipe
     console.log('\n===== Unliking recipe =====');
     const unlikeResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/like`,
@@ -140,13 +134,7 @@ async function runTests() {
     console.log('Like toggled again:');
     console.log(JSON.stringify(unlikeResponse.data, null, 2));
     
-    // Step 10: Delete the comment
-    console.log('\n===== Deleting comment =====');
-    const deleteCommentResponse = await axios.delete(`${BASE_URL}/comments/${commentId}`);
-    console.log('Comment deleted:');
-    console.log(JSON.stringify(deleteCommentResponse.data, null, 2));
-    
-    // Step 11: Delete the recipe
+    // Step 8: Delete the recipe
     console.log('\n===== Deleting recipe =====');
     const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`);
     console.log('Recipe deleted:');

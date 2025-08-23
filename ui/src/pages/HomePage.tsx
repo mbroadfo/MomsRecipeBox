@@ -143,6 +143,39 @@ export const HomePage: React.FC = () => {
 
         {/* Main content */}
         <main className="flex-1 w-full">
+          <div className="flex justify-between items-center px-6 py-4">
+            <h2 className="text-2xl font-bold">Recipes</h2>
+            <button 
+              onClick={() => {
+                const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+                fetch('/api/recipes', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    title: 'New Recipe',
+                    description: '',
+                    owner_id: userId,
+                    visibility: 'private',
+                    ingredients: [],
+                    steps: []
+                  })
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data._id) {
+                    navigate(`/recipe/${data._id}`);
+                  }
+                })
+                .catch(err => {
+                  console.error('Error creating recipe:', err);
+                  alert('Failed to create new recipe');
+                });
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Add Recipe
+            </button>
+          </div>
           <RecipeList
             onSelectRecipe={(id) => navigate(`/recipe/${id}`)}
             filter={filter}

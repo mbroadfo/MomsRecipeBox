@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRecipe } from './hooks/useRecipe';
 import { useWorkingRecipe, buildSavePayload } from './hooks/useWorkingRecipe';
 import { useImageUpload } from './hooks/useImageUpload';
@@ -18,6 +19,7 @@ import '../RecipeDetail.css';
 
 interface Props { recipeId: string; onBack: () => void; }
 export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => {
+  const navigate = useNavigate();
   const { recipe, loading, error, refresh } = useRecipe(recipeId);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,6 +71,16 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
       setEditMode(false);
     } catch (e: any) { alert(e.message); } finally { setSaving(false); }
   };
+  
+  const deleteRecipe = async () => {
+    try {
+      const resp = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+      if (!resp.ok) throw new Error(`Delete failed (${resp.status})`);
+      navigate('/');
+    } catch (e: any) { 
+      alert(e.message); 
+    }
+  };
 
   if (loading) return <p style={{ padding: '2rem' }}>Loading...</p>;
   if (error || !recipe) return <p style={{ padding: '2rem' }}>Error loading recipe.</p>;
@@ -87,6 +99,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, onBack }) => 
           onBack={onBack}
           liked={liked}
           onToggleLike={toggleLike}
+          onDelete={deleteRecipe}
         />
         <div className="recipe-left-scroll">{/* new scroll container */}
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />

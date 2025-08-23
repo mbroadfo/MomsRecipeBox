@@ -11,9 +11,11 @@ interface Props {
   onBack: () => void;
   liked: boolean;
   onToggleLike: () => void;
+  onDelete?: () => void;
+
 }
 
-export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange, onEdit, onSave, onCancel, onBack, liked, onToggleLike }) => {
+export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange, onEdit, onSave, onCancel, onBack, liked, onToggleLike, onDelete }) => {
   const h1Ref = useRef<HTMLHeadingElement | null>(null);
   
   // Reset the ref when editing changes
@@ -117,6 +119,16 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
           {!editing && <button onClick={onEdit} style={{ background: '#2563eb', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem', boxShadow:'0 2px 4px rgba(37,99,235,0.35)' }}>Edit</button>}
           {editing && <button onClick={onSave} disabled={saving} style={{ background: '#047857', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}>{saving ? 'Saving...' : 'Save'}</button>}
           {editing && <button onClick={onCancel} disabled={saving} style={{ background: '#334155', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}>Cancel</button>}
+          {!editing && onDelete && <button 
+            onClick={() => {
+              if (window.confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
+                onDelete();
+              }
+            }} 
+            style={{ background: '#dc2626', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}
+          >
+            Delete
+          </button>}
         </div>
       </div>
     </div>

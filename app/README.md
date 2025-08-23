@@ -1,20 +1,8 @@
 # MomsRecipeBox - API Tier (2025)
 
-## Update Summary (Recent Changes)
+## Overview
 
-- **Test Suite Organization** (Aug 2025):
-  - Split tests into separate files for better maintainability
-  - Created dedicated `test_comments.js` for comment API testing
-  - Updated `test_recipes.js` to focus solely on recipe operations
-  - Added all test modules to main test script in package.json
-
-- **Favorites Implementation** (Earlier):
-  - Added scalable favorites model (`favorites` collection + denormalized `likes_count`)
-  - New handler: `toggle_favorite.js` replaces legacy like handler for `POST /recipes/{id}/like`
-  - Removed obsolete `post_like.js` (favorites model fully migrated)
-  - `create_recipe.js` initializes `likes_count: 0` on new recipes
-  - `get_recipe.js` ensures `likes_count` present and adds placeholder `liked` field (per-user like pending auth integration)
-  - Added end-to-end test `test_favorites.js` validating multi-user toggle & count integrity
+MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, and image handling. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda.
 
 ## Quick Reference: Rebuilding the App Tier
 
@@ -35,27 +23,29 @@ For rapid iteration on code only (no dependency changes):
 docker compose restart app
 ```
 
-## Directory Overview
+## Directory Structure
 
-- `handlers/` — Lambda-style handlers (one per endpoint).
-- `toggle_favorite.js` — Favorites/like toggle (authoritative).
-- `app.js` — MongoDB connection helper (`getDb`).
-- `lambda.js` — Router / Lambda entry (routes `/recipes/:id/like` to `toggle_favorite`).
-- `local_server.js` — Local HTTP server + Swagger UI support.
-- `docs/swagger.yaml` — OpenAPI definitions.
-- `tests/` — E2E scripts (`test_recipes.js`, `test_images.js`, `test_comments.js`, `test_favorites.js`).
+- `handlers/` — Lambda-style handlers (one per endpoint)
+- `app.js` — MongoDB connection helper (`getDb`)
+- `lambda.js` — Router / Lambda entry
+- `local_server.js` — Local HTTP server + Swagger UI
+- `docs/swagger.yaml` — OpenAPI definitions
+- `tests/` — End-to-end test modules for all API features
+- `models/` — Data schemas and validation logic
 
-## Favorites / Likes Model
+## Favorites / Likes System
+
+The API implements a scalable favorites system with the following characteristics:
 
 | Aspect        | Implementation |
 | ------------- | -------------- |
 | Storage       | `favorites` collection (document per user+recipe) |
 | Uniqueness    | Compound unique index `{ recipeId:1, userId:1 }` |
 | Count display | `likes_count` field on `recipes` (denormalized) |
-| Toggle logic  | Insert/delete favorite + `$inc` `likes_count` safely |
-| Response      | `{ liked, likes }` from `toggle_favorite.js` |
+| Toggle logic  | Insert/delete favorite + `$inc` `likes_count` atomically |
+| Response      | `{ liked, likes }` from like toggle endpoint |
 
-`get_recipe.js` backfills `likes_count` if missing (migration safety) by counting favorites.
+The implementation ensures consistency between the favorites collection and the denormalized count on recipes.
 
 ## RESTful Routes & Handlers (Excerpt)
 
@@ -88,43 +78,30 @@ export default async function handler(event) {
 
 ## Testing
 
-From `app/tests`:
+The API comes with a comprehensive test suite covering all major functionality. Run tests from the `app/tests` directory:
 
 ```powershell
 npm install        # first time
-npm test           # runs all tests (recipes, images, comments, favorites)
-npm run test:recipes   # run recipe tests only
-npm run test:images    # run image tests only
-npm run test:comments  # run comment tests only
-npm run test:favorites # run favorites tests only
+npm test           # runs all tests
 ```
 
-### Test Modules
+You can also run specific test modules:
 
-- `test_recipes.js` - Tests basic recipe CRUD and like operations
-- `test_comments.js` - Tests comment functionality (create, read, update, delete)
-- `test_images.js` - Tests image upload, retrieval, update, and deletion
-- `test_favorites.js` - Tests the favorites/likes functionality
+```powershell
+npm run test:recipes   # recipe CRUD operations
+npm run test:comments  # comment functionality
+npm run test:images    # image handling
+npm run test:favorites # favorites/likes system
+```
 
-#### Favorites Test Sequence
+Each test module (`test_recipes.js`, `test_comments.js`, `test_images.js`, `test_favorites.js`) covers its respective functionality with end-to-end tests against a running API server.
 
-1. Create recipe → expects 201.
-2. User A like → `{ liked:true, likes:1 }`.
-3. User A unlike → `{ liked:false }`.
-4. User A like again → `{ liked:true }`.
-5. User B like → `{ liked:true, likes:2 }`.
-6. Fetch recipe → `likes_count === 2 }`.
+## Technical Details
 
-## Implementation Notes
-
-- Idempotent index creation inside `toggle_favorite.js` (cheap after first run).
-- Race handling: duplicate insert (code 11000) treated as liked; count remains correct.
-- Future enhancement: derive `userId` from Auth0 JWT; remove need for explicit `user_id` body field.
-- `liked` per-user state currently always `false` on GET (no auth context); UI initializes heart off unless toggled.
-
-## Image Handling
-
-Supports both multipart and base64 JSON payloads. `local_server.js` inspects `Content-Type` and dispatches to appropriate handler for unified `/recipes/{id}/image` route.
+- **Favorites System**: Uses idempotent index creation and handles race conditions (duplicate inserts) with proper error handling to maintain count integrity.
+- **Authentication**: Currently accepts user ID in request body. Designed to integrate with Auth0 JWT tokens.
+- **Comments**: Implemented as a separate collection with references to recipes for scalability.
+- **Images**: Supports both multipart form uploads and base64 JSON payloads. The `local_server.js` inspects `Content-Type` and dispatches to the appropriate handler for the unified `/recipes/{id}/image` route.
 
 ## Error Handling
 
@@ -136,14 +113,17 @@ All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary 
 - For production, enforce auth middleware (e.g., verify JWT, extract `sub` -> `userId`).
 - Add rate limiting / input validation (e.g., `zod`) for robustness.
 
-## TODO / Next Steps
+## Features & Roadmap
 
-| Area        | Action |
-|-------------|--------|
-| Auth        | Integrate Auth0 verification & user context extraction |
-| Favorites   | Add listing & filtering endpoints (e.g., user favorites feed) |
-| Metrics     | Expose like/favorite analytics endpoint (optional) |
-| Caching     | Consider caching hot recipe data + counts (Redis) if needed |
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Recipe Management | Complete | Create, read, update, delete recipes with ingredients and instructions |
+| Comments | Complete | Add, update, delete, and retrieve comments on recipes |
+| Image Handling | Complete | Upload, update, retrieve, and delete images for recipes |
+| Favorites System | Complete | Like/unlike recipes with proper count management |
+| Auth Integration | Planned | Full Auth0 JWT integration for secure user identification |
+| User Favorites Feed | Planned | Endpoint to list all recipes favorited by a user |
+| Analytics | Planned | Endpoints to expose recipe popularity and engagement metrics |
 
 ---
 

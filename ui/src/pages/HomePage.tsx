@@ -146,33 +146,24 @@ export const HomePage: React.FC = () => {
           <div className="flex justify-between items-center px-6 py-4">
             <h2 className="text-2xl font-bold">Recipes</h2>
             <button 
-              onClick={() => {
-                const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
-                fetch('/api/recipes', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    title: 'New Recipe',
-                    description: '',
-                    owner_id: userId,
-                    visibility: 'private',
-                    ingredients: [],
-                    steps: []
-                  })
-                })
-                .then(res => res.json())
-                .then(data => {
-                  if (data._id) {
-                    navigate(`/recipe/${data._id}`);
-                  }
-                })
-                .catch(err => {
-                  console.error('Error creating recipe:', err);
-                  alert('Failed to create new recipe');
-                });
+              onClick={() => navigate('/recipe/new')}
+              style={{ 
+                backgroundColor: '#2563eb', 
+                color: 'white', 
+                padding: '0.75rem 1.5rem',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                fontSize: '1rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
               Add Recipe
             </button>
           </div>

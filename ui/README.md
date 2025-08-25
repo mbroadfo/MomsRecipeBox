@@ -1,6 +1,34 @@
 # Mom's Recipe Box UI
 
-A React + TypeScript + Vite frontend for browsing, viewing, and editing recipes.
+A React + TypeScript + Vite frontend for## Recipe Interaction Features
+
+### Favorites (Like) System
+
+The recipe favoriting system uses an optimistic UI approach:
+
+1. User clicks the heart icon → UI immediately updates the liked state
+2. A POST request is sent to `/api/recipes/:id/like` with the user ID
+3. The response confirms the final state (liked or not)
+4. Error handling reverts the optimistic toggle if the API call fails
+
+This approach provides immediate feedback while still ensuring data consistency.
+
+### Image Upload and Display
+
+The image handling system uses several optimizations for a smooth user experience:
+
+1. Images are uploaded via base64 encoding for simplified processing
+2. Cache busting ensures immediate image updates without page refreshes
+3. A timestamp parameter is added to image URLs to force browser cache invalidation
+4. Images are displayed with proper metadata management for S3 compatibility
+
+### Navigation
+
+The application provides consistent navigation:
+
+1. The "Back to List" button always returns users to the recipe list view
+2. Clear visual indicators show the current navigation state
+3. Intuitive button placement and labeling improves user experienceiewing, and editing recipes.
 
 ## Key Features
 
@@ -8,7 +36,8 @@ A React + TypeScript + Vite frontend for browsing, viewing, and editing recipes.
 - In-place recipe editing with a user-friendly interface
 - Full editing capabilities for all recipe components (title, ingredients, instructions, etc.)
 - Recipe favoriting with heart icon toggle
-- Image upload and management
+- Image upload and management with real-time display updates
+- Consistent "Back to List" navigation for improved user experience
 - Tag management
 - Comments system
 

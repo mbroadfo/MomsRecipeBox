@@ -11,11 +11,10 @@ interface Props {
   onBack: () => void;
   liked: boolean;
   onToggleLike: () => void;
-  onDelete?: () => void;
 
 }
 
-export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange, onEdit, onSave, onCancel, onBack, liked, onToggleLike, onDelete }) => {
+export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange, onEdit, onSave, onCancel, onBack, liked, onToggleLike }) => {
   const h1Ref = useRef<HTMLHeadingElement | null>(null);
   
   // Reset the ref when editing changes
@@ -28,8 +27,17 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
 
   return (
     <div style={{ position:'sticky', top:0, zIndex:50 }}>
+      <style>{`
+        h1[data-placeholder]:empty:before {
+          content: attr(data-placeholder);
+          color: #94a3b8;
+          font-style: italic;
+        }
+      `}</style>
       <div style={{ padding:'0.45rem 3rem 0.2rem 2.25rem', display:'flex', alignItems:'center', gap:'.85rem' }}>
-        <button onClick={onBack} className="back-button" style={{ margin:0 }}>← Back</button>
+        <button onClick={onBack} className="back-button" style={{ margin:0, display:'flex', alignItems:'center', gap:'0.25rem' }}>
+          <span style={{ fontSize:'1.1rem' }}>←</span> Back to List
+        </button>
         <button
           type="button"
           onClick={onToggleLike}
@@ -68,11 +76,12 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
                   // Initialize the content of the element when first rendered
                   el.textContent = title || '';
                   
-                  // Focus and set cursor at the end
+                  // Focus and set cursor at the beginning if empty or at the end if there's content
                   el.focus();
                   const range = document.createRange();
                   range.selectNodeContents(el);
-                  range.collapse(false);
+                  // If title is empty, collapse to start position for easier typing
+                  range.collapse(!title);
                   const sel = window.getSelection();
                   sel?.removeAllRanges();
                   sel?.addRange(range);
@@ -97,7 +106,7 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
               }}
               contentEditable={true}
               suppressContentEditableWarning
-              data-placeholder="Recipe title"
+              data-placeholder="Enter recipe title"
               data-no-autofill="true"
               data-form-type="other"
               data-lpignore="true"
@@ -119,16 +128,6 @@ export const Header: React.FC<Props> = ({ title, editing, saving, onTitleChange,
           {!editing && <button onClick={onEdit} style={{ background: '#2563eb', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem', boxShadow:'0 2px 4px rgba(37,99,235,0.35)' }}>Edit</button>}
           {editing && <button onClick={onSave} disabled={saving} style={{ background: '#047857', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}>{saving ? 'Saving...' : 'Save'}</button>}
           {editing && <button onClick={onCancel} disabled={saving} style={{ background: '#334155', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}>Cancel</button>}
-          {!editing && onDelete && <button 
-            onClick={() => {
-              if (window.confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
-                onDelete();
-              }
-            }} 
-            style={{ background: '#dc2626', color: '#fff', fontSize: '.68rem', fontWeight: 600, padding:'.55rem .85rem', borderRadius:'.6rem' }}
-          >
-            Delete
-          </button>}
         </div>
       </div>
     </div>

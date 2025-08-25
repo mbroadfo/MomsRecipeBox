@@ -2,7 +2,7 @@
 
 ## Overview
 
-MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, and image handling. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda.
+MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, and image handling. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda. The API includes comprehensive image handling with proper metadata management and cache control for optimal user experience.
 
 ## Quick Reference: Rebuilding the App Tier
 
@@ -101,7 +101,7 @@ Each test module (`test_recipes.js`, `test_comments.js`, `test_images.js`, `test
 - **Favorites System**: Uses idempotent index creation and handles race conditions (duplicate inserts) with proper error handling to maintain count integrity.
 - **Authentication**: Currently accepts user ID in request body. Designed to integrate with Auth0 JWT tokens.
 - **Comments**: Implemented as a separate collection with references to recipes for scalability.
-- **Images**: Supports both multipart form uploads and base64 JSON payloads. The `local_server.js` inspects `Content-Type` and dispatches to the appropriate handler for the unified `/recipes/{id}/image` route.
+- **Images**: Supports both multipart form uploads and base64 JSON payloads. The `local_server.js` inspects `Content-Type` and dispatches to the appropriate handler for the unified `/recipes/{id}/image` route. All metadata values are properly converted to strings for S3 compatibility.
 
 ## Error Handling
 

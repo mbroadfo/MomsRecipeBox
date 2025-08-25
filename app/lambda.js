@@ -12,12 +12,13 @@ import { handler as deleteImage } from './handlers/delete_image.js';
 import { handler as uploadImage } from './handlers/upload_image.js';
 import { handler as updateImage } from './handlers/update_image.js';
 import { handler as getImage } from './handlers/get_image.js';
+import { handler as copyImage } from './handlers/copy_image.js';
 import toggleFavorite from './handlers/toggle_favorite.js';
 import getComment from './handlers/get_comment.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
-  console.log('📥 Event received:', event.httpMethod, event.path);
+  // No need to log event here, local_server already logs it
   const originalPath = event.path || '';
   const pathOnly = originalPath.split('?')[0];
 
@@ -73,6 +74,10 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       return await deleteImage(event);
+    }
+    // Copy image (for new recipes)
+    if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/copy-image$/.test(pathOnly)) {
+      return await copyImage(event);
     }
 
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };

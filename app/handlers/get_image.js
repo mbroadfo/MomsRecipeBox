@@ -1,49 +1,75 @@
 import AWS from 'aws-sdk';
+import { getDb } from '../app.js';
 const s3 = new AWS.S3();
 
 export async function handler(event) {
-  console.log("GET IMAGE HANDLER CALLED");
-  console.log("Event:", JSON.stringify(event, null, 2));
   const { id } = event.pathParameters;
-
   const bucketName = process.env.RECIPE_IMAGES_BUCKET;
   
-  // Try common extensions, starting with png
-  const extensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
   let foundObject = null;
   let key = null;
+  let format = null;
 
-  console.debug(`Attempting to fetch image for id: ${id} from bucket: ${bucketName}`);
   try {
-    // Try each extension until we find a match
-    for (const ext of extensions) {
-      const testKey = `${id}.${ext}`;
-      console.debug(`Trying key: ${testKey}`);
+    // First, try to get format info from the recipe document
+    try {
+      const db = await getDb();
+      const recipe = await db.collection('recipes').findOne(
+        { _id: id },
+        { projection: { imageMetadata: 1 } }
+      );
       
+      if (recipe && recipe.imageMetadata && recipe.imageMetadata.format) {
+        format = recipe.imageMetadata.format;
+        console.log(`Found image format in recipe metadata: ${format}`);
+      }
+    } catch (dbError) {
+      console.log(`Could not retrieve image format from database: ${dbError.message}`);
+      // Continue without metadata
+    }
+    
+    // If we found format in metadata, try that first
+    if (format) {
+      key = `${id}.${format}`;
       try {
-        const image = await s3.getObject({
+        foundObject = await s3.getObject({
           Bucket: bucketName,
-          Key: testKey,
+          Key: key,
         }).promise();
-        
-        console.debug(`Found image with key: ${testKey}`);
-        foundObject = image;
-        key = testKey;
-        break;
+        console.log(`Successfully retrieved image with key: ${key}`);
       } catch (error) {
-        console.debug(`No image found with key: ${testKey}`);
-        // Continue trying other extensions
+        console.log(`Image not found with metadata-provided key ${key}, will try other formats`);
+        format = null; // Reset to try other formats
+      }
+    }
+    
+    // If no format from metadata or that key didn't work, try common extensions
+    if (!foundObject) {
+      const extensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+      for (const ext of extensions) {
+        const testKey = `${id}.${ext}`;
+        
+        try {
+          const image = await s3.getObject({
+            Bucket: bucketName,
+            Key: testKey,
+          }).promise();
+          
+          foundObject = image;
+          key = testKey;
+          console.log(`Found image with key: ${testKey}`);
+          break;
+        } catch (error) {
+          // Continue trying other extensions
+        }
       }
     }
     
     if (!foundObject) {
-      throw new Error(`No image found for ID: ${id} with any of the tried extensions`);
+      throw new Error(`No image found for ID: ${id}`);
     }
     
     const image = foundObject;
-
-    // Log the original content type
-    console.debug(`Image retrieved. Original Content-Type: ${image.ContentType}, Size: ${image.Body.length} bytes`);
     
     // Force image content type based on analysis of the image data
     // If it's application/octet-stream or undefined, determine from file signature or default to image/png
@@ -74,8 +100,6 @@ export async function handler(event) {
         contentType = 'image/png'; // Default to PNG for small files
       }
     }
-    
-    console.debug(`Using Content-Type: ${contentType} for response`);
 
     // For local server testing, return raw binary data
     if (process.env.APP_MODE === 'local') {
@@ -85,13 +109,15 @@ export async function handler(event) {
           'Content-Type': contentType,
           'Content-Disposition': `inline; filename="${id}.${contentType.split('/')[1] || 'png'}"`,
           'Cache-Control': 'max-age=31536000',
+          'Access-Control-Allow-Origin': '*', // Allow cross-origin requests
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: image.Body,
         isBase64Encoded: false,
       };
       
-      console.log("Returning raw binary image response with headers:", JSON.stringify(response.headers, null, 2));
-      console.log("Response is binary with length:", response.body ? response.body.length : 0);
+      console.log(`Returning image for ${id} (${image.Body.length} bytes)`);
       return response;
     }
     
@@ -102,17 +128,18 @@ export async function handler(event) {
         'Content-Type': contentType,
         'Content-Disposition': `inline; filename="${id}.${contentType.split('/')[1] || 'png'}"`,
         'Cache-Control': 'max-age=31536000',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
       body: image.Body.toString('base64'),
       isBase64Encoded: true,
     };
     
-    console.log("Returning image response with headers:", JSON.stringify(response.headers, null, 2));
-    console.log("Response is Base64 encoded with length:", response.body ? response.body.length : 0);
+    console.log(`Returning base64 encoded image for ${id} (${image.Body.length} bytes)`);
     return response;
   } catch (error) {
-    console.error(`Image not found for key: ${key}. Falling back to default image.`);
-    console.debug(`Looking for default image with key: default.png in bucket: ${bucketName}`);
+    console.log(`Image not found for recipe ${id}, falling back to default image`);
 
     try {
       const defaultImage = await s3.getObject({
@@ -122,7 +149,6 @@ export async function handler(event) {
 
       // Ensure we have a proper content type for the default image
       const contentType = defaultImage.ContentType || 'image/png';
-      console.debug(`Default image retrieved. Content-Type: ${contentType}, Size: ${defaultImage.Body.length} bytes`);
 
       // For local server, return raw binary
       if (process.env.APP_MODE === 'local') {
@@ -132,6 +158,9 @@ export async function handler(event) {
             'Content-Type': contentType,
             'Content-Disposition': 'inline; filename="default.png"',
             'Cache-Control': 'max-age=31536000',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET',
+            'Access-Control-Allow-Headers': 'Content-Type',
           },
           body: defaultImage.Body,
           isBase64Encoded: false,
@@ -145,6 +174,9 @@ export async function handler(event) {
           'Content-Type': contentType,
           'Content-Disposition': 'inline; filename="default.png"',
           'Cache-Control': 'max-age=31536000',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: defaultImage.Body.toString('base64'),
         isBase64Encoded: true,
@@ -152,8 +184,11 @@ export async function handler(event) {
     } catch (defaultError) {
       console.error(`Default image not found: ${defaultError.message}`);
       return {
-        statusCode: 500,
-        body: JSON.stringify({ message: 'Failed to fetch image.', error: defaultError.message }),
+        statusCode: 404,
+        body: JSON.stringify({ 
+          message: 'Image not found and default image unavailable',
+          recipeId: id
+        }),
       };
     }
   }

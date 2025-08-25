@@ -88,14 +88,19 @@ npm test      # runs recipe + image tests
 | POST   | /recipes/{id}/comments      | Add comment                                |
 | PUT    | /comments/{id}              | Update comment                             |
 | DELETE | /comments/{id}              | Delete comment                             |
-| (img)  | PUT/GET/DELETE /recipes/{id}/image | Image management (multipart & base64) |
+| GET    | /recipes/{id}/image         | Get recipe image (with cache control)      |
+| PUT    | /recipes/{id}/image         | Upload/update image (multipart & base64) with proper S3 metadata |
+| DELETE | /recipes/{id}/image         | Delete recipe image                        |
+| POST   | /recipes/{id}/copy-image    | Copy image between recipe IDs              |
 
 ---
 
 ## 🖥 Frontend Highlights
 
 - Sticky header with in-place editable title & heart (like) toggle.
+- "Back to List" navigation that consistently returns to the recipe list.
 - Optimistic like updates calling new `/recipes/:id/like` endpoint.
+- Real-time image updates with automatic cache busting for instant visibility after upload.
 - Lightweight instruction headers (`#Heading`) & ingredient group labels (blank name row technique).
 - Custom drag & drop reordering without external DnD libs.
 
@@ -107,6 +112,8 @@ npm test      # runs recipe + image tests
 - Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now).
 - Clean removal of deprecated `post_like.js` after full migration.
 - Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering.
+- Add more robust image format handling and resizing options.
+- Improve image metadata handling in database.
 
 ---
 
@@ -131,11 +138,12 @@ Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc
 
 ---
 
-## ✨ Recent Changes Summary
+## ✨ Key Features
 
-- Implemented favorites model (`favorites` collection + `likes_count`).
-- Added `toggle_favorite.js`; routing updated in `lambda.js`.
-- Updated `create_recipe.js` to initialize `likes_count`.
-- Enhanced `get_recipe.js` to include `likes_count` & placeholder `liked` field.
-- Added `test_favorites.js` (multi-user toggle test).
-- UI: Heart like button moved into sticky header; removed legacy star rating.
+- **Recipe Management**: Full CRUD operations with a rich editing interface.
+- **Image Handling**: Upload, retrieve, update, and delete images with instant feedback.
+- **Favorites/Likes**: Toggle favorite status with optimistic UI updates and proper database storage.
+- **Comments**: Add, update, delete, and retrieve comments on recipes.
+- **Navigation**: Consistent "Back to List" navigation throughout the application.
+- **Responsive Design**: Works across desktop and mobile devices with appropriate layouts.
+- **Real-time UI Updates**: Immediate visual feedback for all user actions including image uploads.

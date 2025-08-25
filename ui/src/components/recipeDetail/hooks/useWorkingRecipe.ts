@@ -88,7 +88,7 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     steps,
     notes: r.notes || '',
     extraSections: extractExtraSections(r),
-    image_url: r.image_url,
+    image_url: r._id && r.image_url ? `/api/recipes/${r._id}/image` : r.image_url,
     original: r
   };
   // store origin of steps in hidden property for reverse mapping
@@ -103,6 +103,7 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
   // mutation helpers
   const patch = (p: Partial<WorkingRecipe>) => setWorking(w => ({ ...w, ...p }));
   const setTagList = (tags: string[]) => patch({ tags });
+  // Add tags but keep them in original case for display purposes
   const addTag = (t: string) => setTagList([...working.tags, t]);
   const removeTag = (t: string) => setTagList(working.tags.filter(x => x !== t));
 
@@ -155,13 +156,16 @@ export function buildSavePayload(w: WorkingRecipe) {
       return obj;
     });
 
+  // Normalize tags to lowercase for storage
+  const normalizedTags = w.tags.map(tag => tag.toLowerCase());
+
   const base: any = {
     title: w.title,
     subtitle: w.subtitle,
     author: w.author,
     source: w.source,
     description: w.description,
-    tags: w.tags,
+    tags: normalizedTags,
     yield: w.yield,
     time: w.time,
     notes: w.notes,

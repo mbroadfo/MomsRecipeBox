@@ -9,6 +9,8 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        {/* The "new" route must come before the :id route to prevent treating "new" as an ID */}
+        <Route path="/recipe/new" element={<NewRecipeWrapper />} />
         <Route path="/recipe/:id" element={<RecipeDetailRouteWrapper />} />
       </Routes>
     </BrowserRouter>
@@ -21,7 +23,15 @@ const RecipeDetailRouteWrapper: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   if (!id) return <div style={{ padding:'2rem' }}>Recipe not found</div>;
-  return <RecipeDetail recipeId={id} onBack={() => navigate(-1)} />;
+  // Always navigate to the recipe list when "Back to List" is clicked
+  return <RecipeDetail recipeId={id} onBack={() => navigate('/')} />;
+};
+
+// Wrapper for creating a new recipe
+const NewRecipeWrapper: React.FC = () => {
+  const navigate = useNavigate();
+  // Always navigate to the recipe list when "Back to List" is clicked
+  return <RecipeDetail isNew={true} onBack={() => navigate('/')} />;
 };
 
 export default App;

@@ -11,19 +11,21 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 // Centralized response handler function
 function handleResponse(res, result) {
-  console.debug('Response status:', result.statusCode);
-  console.debug('Response headers:', JSON.stringify(result.headers, null, 2));
-  console.debug('isBase64Encoded:', result.isBase64Encoded);
-  console.debug('Body type:', typeof result.body);
-  console.debug('Body is Buffer?', Buffer.isBuffer(result.body));
-  console.debug('Body length:', result.body ? (Buffer.isBuffer(result.body) ? result.body.length : (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0);
+  // Only log minimal info about the response
+  const isImage = result.headers && result.headers['Content-Type'] && result.headers['Content-Type'].startsWith('image/');
+  const bodyLength = result.body ? 
+    (Buffer.isBuffer(result.body) ? result.body.length : 
+      (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0;
+  
+  if (isImage) {
+    console.log(`Response: ${result.statusCode} Image (${bodyLength} bytes)`);
+  } else {
+    console.log(`Response: ${result.statusCode} ${bodyLength} bytes`);
+  }
   
   // Handle base64 encoded responses (for binary data like images)
   if (result.isBase64Encoded && typeof result.body === 'string') {
-    console.debug('Handling base64 encoded response');
     const buffer = Buffer.from(result.body, 'base64');
-    console.debug(`Decoded base64 buffer, length: ${buffer.length} bytes`);
-    console.debug('Buffer first 16 bytes:', buffer.slice(0, 16).toString('hex'));
     
     // Ensure Content-Disposition is set for inline viewing
     const headers = { ...result.headers };
@@ -43,9 +45,6 @@ function handleResponse(res, result) {
   } 
   // Handle raw binary responses (non-base64)
   else if (!result.isBase64Encoded && Buffer.isBuffer(result.body)) {
-    console.debug(`Handling raw binary response, length: ${result.body.length} bytes`);
-    console.debug('Buffer first 16 bytes:', result.body.slice(0, 16).toString('hex'));
-    
     // Ensure Content-Disposition is set for inline viewing
     const headers = { ...result.headers };
     if (!headers['Content-Disposition']) {
@@ -113,7 +112,7 @@ const server = http.createServer(async (req, res) => {
 
   // Remove query string for path matching
   const cleanPath = req.url.split('?')[0];
-  console.debug(`Routing to handler for path: ${cleanPath}`);
+  console.log(`📥 ${req.method} ${cleanPath}`);
   let pathParameters = {};
   // /comments/{id}
   const commentMatch = cleanPath.match(/^\/comments\/([\w-]+)$/);
@@ -139,6 +138,11 @@ const server = http.createServer(async (req, res) => {
   const recipeImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/image$/);
   if (recipeImageMatch) {
     pathParameters.id = recipeImageMatch[1];
+  }
+  // /recipes/{id}/copy-image - for copying from temp to permanent
+  const recipeCopyImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/copy-image$/);
+  if (recipeCopyImageMatch) {
+    pathParameters.id = recipeCopyImageMatch[1];
   }
 
   // Handle the request differently based on content type
@@ -177,7 +181,6 @@ const server = http.createServer(async (req, res) => {
         // Remove query string for path matching
         const urlParts = req.url.split('?');
         const cleanPath = urlParts[0];
-        console.debug(`Routing to handler for path: ${cleanPath}`);
         
         // Parse query parameters
         let queryStringParameters = {};
@@ -189,7 +192,7 @@ const server = http.createServer(async (req, res) => {
               queryStringParameters[key] = decodeURIComponent(value);
             }
           });
-          console.debug('Query string parameters:', queryStringParameters);
+          // Don't log query parameters
         }
         
         let pathParameters = {};
@@ -217,6 +220,11 @@ const server = http.createServer(async (req, res) => {
         const recipeImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/image$/);
         if (recipeImageMatch) {
           pathParameters.id = recipeImageMatch[1];
+        }
+        // /recipes/{id}/copy-image - for copying from temp to permanent
+        const recipeCopyImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/copy-image$/);
+        if (recipeCopyImageMatch) {
+          pathParameters.id = recipeCopyImageMatch[1];
         }
 
         // Patch: Set content-length header for multipart/form-data if missing

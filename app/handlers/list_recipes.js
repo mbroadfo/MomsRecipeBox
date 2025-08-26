@@ -11,6 +11,17 @@ const handler = async (event) => {
     if (owner_id) query.owner_id = owner_id;
     if (visibility) query.visibility = visibility;
     if (tags) query.tags = { $in: tags.split(',') };
+    
+    // Handle visibility - show public recipes, private recipes owned by the current user,
+    // and recipes with undefined visibility (backward compatibility)
+    if (!query.visibility) {
+      query.$or = [
+        { visibility: 'public' },
+        { visibility: 'private', owner_id: user_id },
+        { visibility: { $exists: false } },
+        { visibility: null }
+      ];
+    }
 
     const recipes = await db.collection('recipes')
       .find(query, { projection: { title: 1, image_url: 1, likes_count: 1, created_at: 1, updated_at: 1 } })

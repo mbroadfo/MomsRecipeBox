@@ -17,7 +17,9 @@ export function useNewRecipe() {
     time: '',
     ingredients: [],
     steps: [],
-    notes: ''
+    notes: '',
+    visibility: 'private', // Default to private for new recipes
+    owner_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'
   };
   
   // Using const declaration to avoid unused variable warning
@@ -62,8 +64,8 @@ export function useNewRecipe() {
         description: recipeData.description || "",
         author: recipeData.author || "",
         source: recipeData.source || "",
-        owner_id: userId,
-        visibility: 'private',
+        owner_id: recipeData.owner_id || userId,
+        visibility: recipeData.visibility || 'private',
         tags: normalizedTags,
         yield: recipeData.yield || "",
         time: recipeData.time || {},

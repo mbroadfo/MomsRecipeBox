@@ -20,6 +20,8 @@ export interface WorkingRecipe {
   notes?: string;
   extraSections: CanonicalSection[]; // any non-Instructions sections
   image_url?: string;
+  visibility?: string; // 'private', 'family', 'public'
+  owner_id?: string; // User ID of recipe owner
   original: RawRecipe | null; // keep reference for reverse mapping
 }
 
@@ -71,7 +73,10 @@ function extractExtraSections(r: RawRecipe): CanonicalSection[] {
 export function toWorking(r: RawRecipe | null): WorkingRecipe {
   if (!r) {
     return {
-      title: '', subtitle: '', author: '', source: '', description: '', tags: [], yield: '', time: {}, ingredients: [{ items: [] }], steps: [], notes: '', extraSections: [], image_url: undefined, original: null
+      title: '', subtitle: '', author: '', source: '', description: '', tags: [], yield: '', time: {}, 
+      ingredients: [{ items: [] }], steps: [], notes: '', extraSections: [], image_url: undefined, 
+      visibility: 'private', owner_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
+      original: null
     };
   }
   const { steps, from } = normalizeSteps(r);
@@ -89,6 +94,8 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     notes: r.notes || '',
     extraSections: extractExtraSections(r),
     image_url: r._id && r.image_url ? `/api/recipes/${r._id}/image` : r.image_url,
+    visibility: r.visibility || 'private',
+    owner_id: r.owner_id || (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
     original: r
   };
   // store origin of steps in hidden property for reverse mapping
@@ -170,7 +177,9 @@ export function buildSavePayload(w: WorkingRecipe) {
     time: w.time,
     notes: w.notes,
     image_url: w.image_url,
-    ingredients
+    ingredients,
+    visibility: w.visibility || 'private',
+    owner_id: w.owner_id || (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'
   };
 
   if (origin === 'sections') {

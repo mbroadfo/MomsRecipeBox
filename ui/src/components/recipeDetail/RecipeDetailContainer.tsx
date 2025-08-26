@@ -147,7 +147,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         time: working.time,
         ingredients: working.ingredients,
         steps: working.steps,
-        notes: working.notes
+        notes: working.notes,
+        visibility: working.visibility,
+        owner_id: working.owner_id
       });
       
       // Build save payload
@@ -277,6 +279,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           onBack={handleBack}
           liked={liked}
           onToggleLike={toggleLike}
+          visibility={working.visibility}
+          owner_id={working.owner_id}
+          onVisibilityChange={patch}
         />
         <div className="recipe-left-scroll">{/* new scroll container */}
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />

@@ -1,6 +1,17 @@
 # Mom's Recipe Box UI
 
-A React + TypeScript + Vite frontend for## Recipe Interaction Features
+A React + TypeScript + Vite frontend for## UI Components and Features
+
+### Streamlined Header Design
+
+The recipe header provides an efficient, consolidated interface:
+
+- **Left Section**: Back button and Like toggle with status indication
+- **Center Section**: Visibility controls with color-coded status indicators
+- **Right Section**: Edit/Save/Cancel buttons and owner badge with profile access
+- **Title Area**: Spacious area for the recipe title, with in-place editing capability
+
+This consolidated design maximizes usable space while keeping all key functions accessible.
 
 ### Favorites (Like) System
 
@@ -35,15 +46,18 @@ The application provides consistent navigation:
 - Modern two-column layout with responsive design
 - In-place recipe editing with a user-friendly interface
 - Full editing capabilities for all recipe components (title, ingredients, instructions, etc.)
+- Recipe visibility controls (Private, Family, Public)
+- Recipe ownership management with user profile integration
 - Recipe favoriting with heart icon toggle
 - Image upload and management with real-time display updates
+- Streamlined header with consolidated action buttons
 - Consistent "Back to List" navigation for improved user experience
 - Tag management
 - Comments system
 
 ## Overview
 
-The application renders recipes with a modern, two-column layout (content + image pane) and a sticky action header. The header contains the recipe title, Edit/Save/Cancel buttons, back navigation, and like controls. It remains visible while the left column scrolls independently.
+The application renders recipes with a modern, two-column layout (content + image pane) and a sticky action header. The header contains the recipe title, visibility controls, action buttons (Edit/Save/Cancel), back navigation, like controls, and user profile access. It remains visible while the left column scrolls independently.
 
 ### Recipe Editing Features
 
@@ -57,6 +71,23 @@ The in-place editing interface allows modification of:
 - Instructions: Step-by-step directions with support for section headers
 - Notes: Additional information or tips
 - Image: Upload and manage the recipe's main image
+- Visibility: Control who can see your recipes
+
+### Recipe Visibility System
+
+The application provides a comprehensive recipe visibility system:
+
+- **Visibility Badge**: A color-coded badge in the header shows the current visibility status
+  - Private (gray): Only visible to the owner
+  - Family (blue): Visible to the owner and family members
+  - Public (green): Visible to everyone
+
+- **One-Click Visibility Changes**: In edit mode, clicking the visibility badge cycles through available options
+  - Private → Family → Public → Private
+
+- **Owner Information**: The owner's ID is displayed in a badge next to the Edit button, which can be clicked to access profile options
+
+- **Default Settings**: New recipes are automatically set to "Private" and assigned to the current user
 
 ### UI Organization Features
 
@@ -92,7 +123,7 @@ npm run build --prefix ui   # Type check + bundle
 npm run preview --prefix ui # Serve production bundle locally
 ```
 
-## Recipe Interaction Features
+## Additional Interaction Features
 
 ### Favorites (Like) Toggle System
 

@@ -7,7 +7,8 @@ export interface RawRecipe {
   description?: string;
   author?: string;
   source?: string | { [k: string]: any };
-  visibility?: string;
+  visibility?: string; // 'private', 'family', 'public'
+  owner_id?: string;  // User ID of recipe owner
   status?: string;
   image_url?: string;
   tags?: string[];

@@ -106,14 +106,34 @@ npm test      # runs recipe + image tests
 
 ---
 
-## 🔒 Upcoming / TODO
+## � Interactive Ingredients & Shopping List
 
-- Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo).
-- Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now).
-- Clean removal of deprecated `post_like.js` after full migration.
-- Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering.
-- Add more robust image format handling and resizing options.
-- Improve image metadata handling in database.
+New ingredient functionality enhances the recipe detail view:
+
+- **Checkboxes**: Replaced bullet points with interactive checkboxes for each ingredient
+- **State Persistence**: Checked ingredient states are saved to localStorage and persist across page refreshes
+- **Professional Button Bar**: Four-button control panel for ingredient management:
+  - **Select All**: Quickly check all ingredients in the recipe
+  - **Clear All**: Uncheck all ingredients at once
+  - **Add Selected to Shopping List**: Add checked ingredients to shopping list (UI prepared for future backend integration)
+  - **Go to Shopping List**: Navigate to shopping list page (placeholder for future implementation)
+- **Visual Feedback**: Checked ingredients show with strike-through text and animated checkmarks
+- **Responsive Design**: Button bar adapts to all screen sizes with horizontal scrolling on mobile
+
+This feature creates a more interactive cooking experience and prepares for a future shopping list implementation that will sync across devices.
+
+---
+
+## �🔒 Upcoming / TODO
+
+- Implement backend shopping list persistence and synchronization
+- Add shopping list view page with categories and organization
+- Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo)
+- Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now)
+- Clean removal of deprecated `post_like.js` after full migration
+- Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering
+- Add more robust image format handling and resizing options
+- Improve image metadata handling in database
 
 ---
 
@@ -143,6 +163,7 @@ Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc
 - **Recipe Management**: Full CRUD operations with a rich editing interface.
 - **Image Handling**: Upload, retrieve, update, and delete images with instant feedback.
 - **Favorites/Likes**: Toggle favorite status with optimistic UI updates and proper database storage.
+- **Interactive Ingredients**: Checkboxes for ingredients with shopping list functionality.
 - **Comments**: Add, update, delete, and retrieve comments on recipes.
 - **Navigation**: Consistent "Back to List" navigation throughout the application.
 - **Responsive Design**: Works across desktop and mobile devices with appropriate layouts.

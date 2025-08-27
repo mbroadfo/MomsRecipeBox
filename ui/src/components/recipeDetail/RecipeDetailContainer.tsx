@@ -297,7 +297,10 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
               moveItem={moveIngredientItem}
             />
           ) : (
-            <IngredientsView groups={working.ingredients} />
+            <IngredientsView 
+              groups={working.ingredients} 
+              recipeId={recipeId || working?.original?._id}
+            />
           )}
           {editMode ? (
             <StepsEditor

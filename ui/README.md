@@ -46,6 +46,7 @@ The application provides consistent navigation:
 - Modern two-column layout with responsive design
 - In-place recipe editing with a user-friendly interface
 - Full editing capabilities for all recipe components (title, ingredients, instructions, etc.)
+- Interactive ingredients with checkboxes and shopping list functionality
 - Recipe visibility controls (Private, Family, Public)
 - Recipe ownership management with user profile integration
 - Recipe favoriting with heart icon toggle
@@ -72,6 +73,26 @@ The in-place editing interface allows modification of:
 - Notes: Additional information or tips
 - Image: Upload and manage the recipe's main image
 - Visibility: Control who can see your recipes
+
+### Interactive Ingredients System
+
+The ingredients section features a modern, interactive interface:
+
+- **Checkbox Interface**: Each ingredient displays with an animated checkbox instead of a traditional bullet point
+- **Selection Management**: Professional button bar with four actions:
+  - **Select All**: Check all ingredients at once
+  - **Clear All**: Uncheck all selected ingredients
+  - **Add Selected to Shopping List**: Add checked items to a shopping list (with visual confirmation)
+  - **Go to Shopping List**: Navigation button for future shopping list implementation
+- **Visual Feedback**:
+  - Checked ingredients show strike-through text styling
+  - Animated checkmark appears when an ingredient is selected
+  - Toast notifications provide feedback when adding to shopping list
+- **Persistence**: Selected ingredients are saved to localStorage per recipe and persist across page refreshes
+- **Accessibility**: All interactive elements are keyboard accessible with proper ARIA attributes
+- **Responsive Design**: Button bar adapts to screen sizes with horizontal scrolling on mobile devices
+
+This feature enhances the cooking workflow by allowing users to track ingredients while following recipes and prepares for future shopping list functionality.
 
 ### Recipe Visibility System
 
@@ -157,7 +178,7 @@ ui/
           Subtitle.tsx                # Recipe subtitle
           Meta.tsx                    # Author and source info
           YieldTime.tsx               # Servings and preparation time
-          IngredientsView.tsx         # Ingredients display mode
+          IngredientsView.tsx         # Interactive ingredients with checkboxes and shopping list buttons
           IngredientsEditor.tsx       # Ingredients edit mode
           InstructionsView.tsx        # Instructions display mode
           StepsEditor.tsx             # Instructions edit mode
@@ -165,7 +186,7 @@ ui/
           Notes.tsx                   # Recipe notes
           Comments.tsx                # Comments section
           ImagePane.tsx               # Image display and upload
-        RecipeDetail.css              # Component-specific styles
+        RecipeDetail.css              # Component-specific styles including interactive ingredient styling
     pages/
       HomePage.tsx                    # Main recipe listing page
 ```

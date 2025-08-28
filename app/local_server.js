@@ -144,6 +144,11 @@ const server = http.createServer(async (req, res) => {
   if (recipeCopyImageMatch) {
     pathParameters.id = recipeCopyImageMatch[1];
   }
+  // /shopping-list/item/{itemId} - for shopping list item operations
+  const shoppingListItemMatch = cleanPath.match(/^\/shopping-list\/item\/([\w-]+)$/);
+  if (shoppingListItemMatch) {
+    pathParameters.itemId = shoppingListItemMatch[1];
+  }
 
   // Handle the request differently based on content type
   if (
@@ -225,6 +230,11 @@ const server = http.createServer(async (req, res) => {
         const recipeCopyImageMatch = cleanPath.match(/^\/recipes\/([\w-]+)\/copy-image$/);
         if (recipeCopyImageMatch) {
           pathParameters.id = recipeCopyImageMatch[1];
+        }
+        // /shopping-list/item/{itemId} - for shopping list item operations
+        const shoppingListItemMatch = cleanPath.match(/^\/shopping-list\/item\/([\w-]+)$/);
+        if (shoppingListItemMatch) {
+          pathParameters.itemId = shoppingListItemMatch[1];
         }
 
         // Patch: Set content-length header for multipart/form-data if missing

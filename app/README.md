@@ -2,7 +2,7 @@
 
 ## Overview
 
-MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, and image handling. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda. The API includes comprehensive image handling with proper metadata management and cache control for optimal user experience.
+MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, image handling, and shopping lists. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda. The API includes comprehensive image handling with proper metadata management and cache control for optimal user experience.
 
 ## Quick Reference: Rebuilding the App Tier
 
@@ -47,23 +47,47 @@ The API implements a scalable favorites system with the following characteristic
 
 The implementation ensures consistency between the favorites collection and the denormalized count on recipes.
 
+## Shopping List System
+
+The API includes a comprehensive shopping list system with the following features:
+
+| Aspect        | Implementation |
+| ------------- | -------------- |
+| Storage       | `shopping_lists` collection (one document per user) |
+| Item Structure| Array of items with ingredient, recipe reference, checked status |
+| Operations    | Add items, update status, delete items, clear list, mark all as checked |
+| Item Context  | Each item maintains reference to source recipe (id and title) |
+| Response      | Shopping list operations return appropriate success/error messages |
+
+The shopping list implementation allows users to:
+
+- Add multiple ingredients from recipes to their shopping list
+- Mark items as checked when purchased
+- Remove individual items or clear the entire list
+- Track which recipe each ingredient came from
+
 ## RESTful Routes & Handlers (Excerpt)
 
-| File                  | Method | Route                      | Description |
-|-----------------------|--------|---------------------------|-------------|
-| `list_recipes.js`     | GET    | /recipes                  | List all recipes |
-| `get_recipe.js`       | GET    | /recipes/{id}             | Get recipe (with `likes_count`) |
-| `create_recipe.js`    | POST   | /recipes                  | Create recipe (`likes_count:0`) |
-| `update_recipe.js`    | PUT    | /recipes/{id}             | Update recipe |
-| `delete_recipe.js`    | DELETE | /recipes/{id}             | Delete recipe |
-| `toggle_favorite.js`  | POST   | /recipes/{id}/like        | Toggle favorite (returns `{ liked, likes }`) |
-| `post_comment.js`     | POST   | /recipes/{id}/comments    | Add comment |
-| `update_comment.js`   | PUT    | /comments/{id}            | Update comment |
-| `delete_comment.js`   | DELETE | /comments/{id}            | Delete comment |
-| `upload_image.js`     | PUT    | /recipes/{id}/image       | Upload image (multipart) |
-| `update_image.js`     | PUT    | /recipes/{id}/image       | Update image (base64 JSON) |
-| `get_image.js`        | GET    | /recipes/{id}/image       | Retrieve image |
-| `delete_image.js`     | DELETE | /recipes/{id}/image       | Delete image |
+| File                          | Method | Route                      | Description |
+|-------------------------------|--------|----------------------------|-------------|
+| `list_recipes.js`             | GET    | /recipes                   | List all recipes |
+| `get_recipe.js`               | GET    | /recipes/{id}              | Get recipe (with `likes_count`) |
+| `create_recipe.js`            | POST   | /recipes                   | Create recipe (`likes_count:0`) |
+| `update_recipe.js`            | PUT    | /recipes/{id}              | Update recipe |
+| `delete_recipe.js`            | DELETE | /recipes/{id}              | Delete recipe |
+| `toggle_favorite.js`          | POST   | /recipes/{id}/like         | Toggle favorite (returns `{ liked, likes }`) |
+| `post_comment.js`             | POST   | /recipes/{id}/comments     | Add comment |
+| `update_comment.js`           | PUT    | /comments/{id}             | Update comment |
+| `delete_comment.js`           | DELETE | /comments/{id}             | Delete comment |
+| `upload_image.js`             | PUT    | /recipes/{id}/image        | Upload image (multipart) |
+| `update_image.js`             | PUT    | /recipes/{id}/image        | Update image (base64 JSON) |
+| `get_image.js`                | GET    | /recipes/{id}/image        | Retrieve image |
+| `delete_image.js`             | DELETE | /recipes/{id}/image        | Delete image |
+| `get_shopping_list.js`        | GET    | /shopping-list             | Get user's shopping list |
+| `add_shopping_list_items.js`  | POST   | /shopping-list/add         | Add items to shopping list |
+| `update_shopping_list_item.js`| PUT    | /shopping-list/item/{id}   | Update shopping list item |
+| `delete_shopping_list_item.js`| DELETE | /shopping-list/item/{id}   | Delete shopping list item |
+| `clear_shopping_list.js`      | POST   | /shopping-list/clear       | Clear shopping list or mark all as checked |
 
 ## Handler Pattern
 
@@ -92,9 +116,10 @@ npm run test:recipes   # recipe CRUD operations
 npm run test:comments  # comment functionality
 npm run test:images    # image handling
 npm run test:favorites # favorites/likes system
+npm run test:shopping  # shopping list functionality
 ```
 
-Each test module (`test_recipes.js`, `test_comments.js`, `test_images.js`, `test_favorites.js`) covers its respective functionality with end-to-end tests against a running API server.
+Each test module (`test_recipes.js`, `test_comments.js`, `test_images.js`, `test_favorites.js`, `test_shopping_list.js`) covers its respective functionality with end-to-end tests against a running API server.
 
 ## Technical Details
 
@@ -121,6 +146,7 @@ All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary 
 | Comments | Complete | Add, update, delete, and retrieve comments on recipes |
 | Image Handling | Complete | Upload, update, retrieve, and delete images for recipes |
 | Favorites System | Complete | Like/unlike recipes with proper count management |
+| Shopping List | Complete | Add, update, delete shopping list items; mark as checked or clear list |
 | Auth Integration | Planned | Full Auth0 JWT integration for secure user identification |
 | User Favorites Feed | Planned | Endpoint to list all recipes favorited by a user |
 | Analytics | Planned | Endpoints to expose recipe popularity and engagement metrics |

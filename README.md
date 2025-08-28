@@ -1,6 +1,8 @@
 # MomsRecipeBox
 
-A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend API (Node.js Lambda-style + MongoDB), modern React/Vite UI, and supporting automation scripts.
+A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend A## 🔒 Upcoming / TODO
+
+- Add shopping list view page with categories and organizationNode.js Lambda-style + MongoDB), modern React/Vite UI, and supporting automation scripts.
 
 ---
 
@@ -62,15 +64,16 @@ Backend end-to-end tests live in `app/tests` and use native `fetch` + `assert`:
 
 - `test_recipes.js` – CRUD & comment lifecycle
 - `test_images.js` – Image upload/update/delete lifecycle
-- `test_favorites.js` – Multi-user favorite (like) toggle & count validation (NEW)
+- `test_favorites.js` – Multi-user favorite (like) toggle & count validation
+- `test_shopping_list.js` – Shopping list operations & validation (NEW)
 
 Run:
 
 ```powershell
 cd app/tests
 npm install   # first time
-node test_favorites.js
-npm test      # runs recipe + image tests
+node test_shopping_list.js  # Run just shopping list tests
+npm test      # runs all tests
 ```
 
 ---
@@ -92,6 +95,11 @@ npm test      # runs recipe + image tests
 | PUT    | /recipes/{id}/image         | Upload/update image (multipart & base64) with proper S3 metadata |
 | DELETE | /recipes/{id}/image         | Delete recipe image                        |
 | POST   | /recipes/{id}/copy-image    | Copy image between recipe IDs              |
+| GET    | /shopping-list              | Get user's shopping list                   |
+| POST   | /shopping-list/add          | Add items to shopping list                 |
+| PUT    | /shopping-list/item/{id}    | Update shopping list item                  |
+| DELETE | /shopping-list/item/{id}    | Delete shopping list item                  |
+| POST   | /shopping-list/clear        | Clear shopping list or mark all as checked |
 
 ---
 

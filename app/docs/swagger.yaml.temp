@@ -1,0 +1,31 @@
+  /shopping-list/clear:
+    post:
+      tags:
+        - shopping-list
+      summary: Clear a user's shopping list or mark all items as checked
+      description: Remove all items from a user's shopping list or mark all as checked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: User ID
+                action:
+                  type: string
+                  enum: [delete_all, check_all]
+                  description: Action to perform (delete all items or mark all as checked)
+      responses:
+        '200':
+          description: Shopping list cleared or all items marked as checked
+        '400':
+          description: Missing required parameters
+        '404':
+          description: Shopping list not found
+        '500':
+          description: Internal server error

@@ -15,6 +15,12 @@ import { handler as getImage } from './handlers/get_image.js';
 import { handler as copyImage } from './handlers/copy_image.js';
 import toggleFavorite from './handlers/toggle_favorite.js';
 import getComment from './handlers/get_comment.js';
+// Shopping List handlers
+import { handler as addShoppingListItems } from './handlers/add_shopping_list_items.js';
+import { handler as getShoppingList } from './handlers/get_shopping_list.js';
+import { handler as updateShoppingListItem } from './handlers/update_shopping_list_item.js';
+import { handler as deleteShoppingListItem } from './handlers/delete_shopping_list_item.js';
+import { handler as clearShoppingList } from './handlers/clear_shopping_list.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -78,6 +84,27 @@ export async function handler(event, context) {
     // Copy image (for new recipes)
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/copy-image$/.test(pathOnly)) {
       return await copyImage(event);
+    }
+    
+    // Shopping List routes
+    if (event.httpMethod === 'GET' && pathOnly === '/shopping-list') {
+      return await getShoppingList(event);
+    }
+    if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/add') {
+      return await addShoppingListItems(event);
+    }
+    if (event.httpMethod === 'PUT' && /^\/shopping-list\/item\/[\w-]+$/.test(pathOnly)) {
+      const itemId = pathOnly.split('/').pop();
+      event.pathParameters = { itemId };
+      return await updateShoppingListItem(event);
+    }
+    if (event.httpMethod === 'DELETE' && /^\/shopping-list\/item\/[\w-]+$/.test(pathOnly)) {
+      const itemId = pathOnly.split('/').pop();
+      event.pathParameters = { itemId };
+      return await deleteShoppingListItem(event);
+    }
+    if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/clear') {
+      return await clearShoppingList(event);
     }
 
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };

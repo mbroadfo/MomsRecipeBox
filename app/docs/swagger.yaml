@@ -16,6 +16,8 @@ tags:
     description: Recipe like operations
   - name: images
     description: Recipe image operations
+  - name: shopping-list
+    description: Shopping list operations
 
 paths:
   /recipes:
@@ -313,8 +315,251 @@ paths:
         '500':
           description: Internal server error
 
+  /shopping-list:
+    get:
+      tags:
+        - shopping-list
+      summary: Get a user's shopping list
+      description: Retrieves the shopping list for a specific user
+      parameters:
+      - in: query
+        name: user_id
+        required: true
+        schema:
+          type: string
+        description: User ID
+      responses:
+        '200':
+          description: Shopping list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+        '400':
+          description: Missing required parameters
+        '500':
+          description: Internal server error
+# The DELETE method on /shopping-list is not used
+# Use /shopping-list/clear for clearing the shopping list
+
+  /shopping-list/add:
+    post:
+      tags:
+        - shopping-list
+      summary: Add items to a shopping list
+      description: Add one or more ingredients to a user's shopping list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - items
+              properties:
+                user_id:
+                  type: string
+                  description: User ID
+                items:
+                  type: array
+                  description: List of ingredients to add
+                  items:
+                    type: object
+                    required:
+                      - ingredient
+                    properties:
+                      ingredient:
+                        type: string
+                        description: Full ingredient text
+                      recipe_id:
+                        type: string
+                        description: ID of the source recipe
+                      recipe_title:
+                        type: string
+                        description: Title of the source recipe
+                      category:
+                        type: string
+                        description: Optional grocery department category
+            example:
+              user_id: "user123"
+              items:
+                - ingredient: "2 tbsp olive oil"
+                  recipe_id: "5f8a7b6c5d4e3c2b1a0987654"
+                  recipe_title: "Mediterranean Pasta"
+                - ingredient: "1 onion, diced"
+                  recipe_id: "5f8a7b6c5d4e3c2b1a0987654"
+                  recipe_title: "Mediterranean Pasta"
+      responses:
+        '200':
+          description: Items added successfully
+        '400':
+          description: Missing required parameters
+        '500':
+          description: Internal server error
+
+  /shopping-list/item/{itemId}:
+    put:
+      tags:
+        - shopping-list
+      summary: Update a shopping list item
+      description: Update the status of an item in a shopping list (e.g., mark as checked)
+      parameters:
+      - in: path
+        name: itemId
+        required: true
+        schema:
+          type: string
+        description: Shopping list item ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - checked
+              properties:
+                user_id:
+                  type: string
+                  description: User ID
+                checked:
+                  type: boolean
+                  description: Whether the item is checked
+      responses:
+        '200':
+          description: Item updated successfully
+        '400':
+          description: Missing required parameters
+        '404':
+          description: Item not found
+        '500':
+          description: Internal server error
+    delete:
+      tags:
+        - shopping-list
+      summary: Remove an item from a shopping list
+      description: Delete a specific item from a user's shopping list
+      parameters:
+      - in: path
+        name: itemId
+        required: true
+        schema:
+          type: string
+        description: Shopping list item ID
+      - in: query
+        name: user_id
+        required: true
+        schema:
+          type: string
+        description: User ID
+      responses:
+        '200':
+          description: Item removed successfully
+        '404':
+          description: Item not found
+        '500':
+          description: Internal server error
+
+  /shopping-list/clear:
+    post:
+      tags:
+        - shopping-list
+      summary: Clear a user's shopping list or mark all items as checked
+      description: Remove all items from a user's shopping list or mark all as checked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: User ID
+                action:
+                  type: string
+                  enum: [delete_all, check_all]
+                  description: Action to perform (delete all items or mark all as checked)
+      responses:
+        '200':
+          description: Shopping list cleared or all items marked as checked
+        '400':
+          description: Missing required parameters
+        '404':
+          description: Shopping list not found
+        '500':
+          description: Internal server error
+
 components:
   schemas:
+    ShoppingList:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Shopping list ID
+        user_id:
+          type: string
+          description: User ID
+        items:
+          type: array
+          description: List of shopping items
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+                description: Unique identifier for the item
+              ingredient:
+                type: string
+                description: Full ingredient text
+              recipe_id:
+                type: string
+                description: ID of the source recipe
+              recipe_title:
+                type: string
+                description: Title of the source recipe
+              added_at:
+                type: string
+                format: date-time
+                description: When the item was added
+              checked:
+                type: boolean
+                description: Whether the item has been checked off
+              category:
+                type: string
+                description: Optional grocery department category
+        created_at:
+          type: string
+          format: date-time
+          description: When the shopping list was created
+        updated_at:
+          type: string
+          format: date-time
+          description: When the shopping list was last updated
+      example:
+        _id: "60f1e5b0e6b3a123456789ab"
+        user_id: "user123"
+        items:
+          - item_id: "item1"
+            ingredient: "2 tbsp olive oil"
+            recipe_id: "5f8a7b6c5d4e3c2b1a0987654"
+            recipe_title: "Mediterranean Pasta"
+            added_at: "2025-08-27T10:30:00Z"
+            checked: false
+          - item_id: "item2"
+            ingredient: "1 onion, diced"
+            recipe_id: "5f8a7b6c5d4e3c2b1a0987654"
+            recipe_title: "Mediterranean Pasta"
+            added_at: "2025-08-27T10:30:00Z"
+            checked: true
+        created_at: "2025-08-27T10:30:00Z"
+        updated_at: "2025-08-27T10:35:00Z"
+    
     RecipeInput:
       type: object
       required:

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import defaultLogo from '../assets/default.png';
 import { RecipeList } from '../components/RecipeList';
+import ShoppingListIcon from '../components/shoppingList/ShoppingListIcon';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -60,6 +61,9 @@ export const HomePage: React.FC = () => {
           </span>
         </div>
         <div className="relative flex items-center">
+          {/* Shopping List Icon */}
+          <ShoppingListIcon className="mr-2" />
+
           <div className="relative">
             <span
               style={{ display: 'inline-block', width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #e53e3e 60%, #3182ce 100%)', marginLeft: '16px', marginRight: '16px', cursor: 'pointer' }}

@@ -19,5 +19,6 @@ The backend shopping list functionality includes:
 - **Item Status**: Track whether items have been checked off
 - **Bulk Operations**: Add multiple items at once, mark all as checked, or clear entire list
 - **Complete API**: Full set of endpoints for managing shopping lists
+- **Field Naming Compatibility**: Support for both legacy and new field naming conventions (`ingredient`/`name`, `recipe_id`/`recipeId`) ensuring backward compatibility
 
 This feature creates a more interactive cooking experience with shopping list functionality that syncs across devices.

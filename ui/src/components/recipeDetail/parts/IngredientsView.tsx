@@ -1,7 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { IngredientGroup } from '../hooks/useWorkingRecipe';
+import { useNavigate } from 'react-router-dom';
+import { addToShoppingList } from '../../../utils/api';
+import { showToast } from '../../../components/Toast';
 
-export const IngredientsView: React.FC<{ groups: IngredientGroup[], recipeId?: string }> = ({ groups, recipeId }) => {
+export const IngredientsView: React.FC<{ 
+  groups: IngredientGroup[], 
+  recipeId?: string,
+  recipeTitle?: string
+}> = ({ 
+  groups, 
+  recipeId, 
+  recipeTitle = "Recipe" 
+}) => {
+  const navigate = useNavigate();
   const list = groups[0] || { items: [] } as IngredientGroup;
   
   // Initialize checked items from localStorage if available
@@ -64,49 +76,57 @@ export const IngredientsView: React.FC<{ groups: IngredientGroup[], recipeId?: s
     setCheckedItems({});
   }, []);
 
-  const handleAddToShoppingList = useCallback(() => {
-    const selectedIngredients = list.items.filter((_, index) => checkedItems[index]);
-    console.log('Adding to shopping list:', selectedIngredients);
+  const handleAddToShoppingList = useCallback(async () => {
+    // Convert checked ingredients to the format expected by the API
+    const selectedIngredients = list.items
+      .filter((_, index) => checkedItems[index])
+      .map((item) => {
+        const rawName: any = (item as any).name;
+        const rawQty: any = (item as any).quantity;
+        const name = typeof rawName === 'string' ? rawName.trim() : '';
+        const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
+        
+        // Format the ingredient name with quantity if available
+        const formattedName = qty ? `${qty} ${name}`.trim() : name;
+        
+        return {
+          name: formattedName,
+          recipeId: recipeId || '',
+          recipeTitle,
+          checked: false
+        };
+      });
     
-    // Create and show toast notification
-    const toast = document.createElement('div');
-    toast.className = 'ingredients-toast';
-    toast.innerHTML = `
-      <div class="ingredients-toast-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      </div>
-      <div class="ingredients-toast-message">
-        Added ${selectedIngredients.length} ingredient${selectedIngredients.length === 1 ? '' : 's'} to your shopping list!
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Trigger animation
-    setTimeout(() => {
-      toast.classList.add('show');
-    }, 10);
-    
-    // Remove toast after animation
-    setTimeout(() => {
-      toast.classList.remove('show');
-      toast.classList.add('hide');
-      
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 500);
-    }, 3000);
-    
-    // TODO: Implement actual shopping list functionality
-  }, [checkedItems, list.items]);
+    // Directly add to shopping list if we have ingredients
+    if (selectedIngredients.length > 0) {
+      console.log('[IngredientsView] Adding to shopping list:', selectedIngredients);
+      setIsAddingToList(true);
+      try {
+        const result = await addToShoppingList(selectedIngredients);
+        console.log('[IngredientsView] Shopping list API result:', result);
+        
+        // Use the new toast function with string literals
+        showToast(`${selectedIngredients.length} items added to shopping list`, 'success', 3000);
+        
+        // Clear checked items after successfully adding to shopping list
+        setCheckedItems({});
+      } catch (error) {
+        console.error('Error adding items to shopping list:', error);
+        
+        // Use the new toast function for errors with string literals
+        showToast('Failed to add items to shopping list', 'error', 3000);
+      } finally {
+        setIsAddingToList(false);
+      }
+    }
+  }, [checkedItems, list.items, recipeId, recipeTitle]);
 
   const handleGoToShoppingList = useCallback(() => {
-    // TODO: Navigate to shopping list page
-    alert('Shopping list page will be implemented soon!');
-  }, []);
+    navigate('/shopping-list');
+  }, [navigate]);
+  
+  // We'll use a loading state to disable the button during API calls
+  const [isAddingToList, setIsAddingToList] = useState(false);
 
   return (
     <div className="section-block">
@@ -140,15 +160,24 @@ export const IngredientsView: React.FC<{ groups: IngredientGroup[], recipeId?: s
           <button 
             className="ingredient-button primary"
             onClick={handleAddToShoppingList}
-            disabled={checkedCount === 0}
+            disabled={checkedCount === 0 || isAddingToList}
             title="Add selected ingredients to shopping list"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            <svg 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <circle cx="8" cy="21" r="1"></circle>
+              <circle cx="19" cy="21" r="1"></circle>
+              <path d="M2 2h2l3.6 12h10.8l3.6-9H5.5"></path>
             </svg>
-            <span>Add Selected {checkedCount > 0 ? `(${checkedCount})` : ''}</span>
+            <span>{isAddingToList ? 'Adding...' : `Add Selected ${checkedCount > 0 ? `(${checkedCount})` : ''}`}</span>
           </button>
           <button 
             className="ingredient-button"
@@ -163,6 +192,8 @@ export const IngredientsView: React.FC<{ groups: IngredientGroup[], recipeId?: s
           </button>
         </div>
       </div>
+      
+      {/* We now handle adding directly in the handleAddToShoppingList function */}
       
       <ul className="ingredients-list">
         {list.items.map((it, ii) => {

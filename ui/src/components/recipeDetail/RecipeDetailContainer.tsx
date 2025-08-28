@@ -300,6 +300,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             <IngredientsView 
               groups={working.ingredients} 
               recipeId={recipeId || working?.original?._id}
+              recipeTitle={working.title || "Recipe"}
             />
           )}
           {editMode ? (

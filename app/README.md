@@ -58,6 +58,7 @@ The API includes a comprehensive shopping list system with the following feature
 | Operations    | Add items, update status, delete items, clear list, mark all as checked |
 | Item Context  | Each item maintains reference to source recipe (id and title) |
 | Response      | Shopping list operations return appropriate success/error messages |
+| Field Naming  | Supports dual field naming patterns (`ingredient`/`name`, `recipe_id`/`recipeId`) for compatibility |
 
 The shopping list implementation allows users to:
 
@@ -65,6 +66,7 @@ The shopping list implementation allows users to:
 - Mark items as checked when purchased
 - Remove individual items or clear the entire list
 - Track which recipe each ingredient came from
+- Field naming compatibility ensures both frontend and backend work seamlessly regardless of naming conventions
 
 ## RESTful Routes & Handlers (Excerpt)
 

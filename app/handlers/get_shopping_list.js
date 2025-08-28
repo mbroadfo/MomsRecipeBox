@@ -24,6 +24,7 @@ async function handler(event, context) {
     const shoppingList = await shoppingListsColl.findOne({ user_id });
 
     if (!shoppingList) {
+      console.log(`No shopping list found for user ${user_id}, returning empty list`);
       return {
         statusCode: 200,
         body: JSON.stringify({ 
@@ -36,6 +37,27 @@ async function handler(event, context) {
       };
     }
 
+    // Format items to ensure consistency
+    if (shoppingList.items && Array.isArray(shoppingList.items)) {
+      console.log(`Found ${shoppingList.items.length} items in shopping list for user ${user_id}`);
+      
+      // Make sure each item has both _id and item_id for frontend compatibility
+      shoppingList.items = shoppingList.items.map((item, index) => {
+        const mappedItem = {
+          ...item,
+          _id: item._id || item.item_id,
+          item_id: item.item_id || item._id,
+          // Ensure name property exists for frontend
+          name: item.name || item.ingredient
+        };
+        
+        console.log(`Shopping list item ${index}: ${JSON.stringify(mappedItem)}`);
+        return mappedItem;
+      });
+    }
+    
+    console.log(`Found shopping list for user ${user_id}:`, JSON.stringify(shoppingList, null, 2));
+    
     return {
       statusCode: 200,
       body: JSON.stringify({

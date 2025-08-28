@@ -114,7 +114,7 @@ npm test      # runs all tests
 
 ---
 
-## � Interactive Ingredients & Shopping List
+## 🛒 Interactive Ingredients & Shopping List
 
 New ingredient functionality enhances the recipe detail view:
 
@@ -123,25 +123,34 @@ New ingredient functionality enhances the recipe detail view:
 - **Professional Button Bar**: Four-button control panel for ingredient management:
   - **Select All**: Quickly check all ingredients in the recipe
   - **Clear All**: Uncheck all ingredients at once
-  - **Add Selected to Shopping List**: Add checked ingredients to shopping list (UI prepared for future backend integration)
-  - **Go to Shopping List**: Navigate to shopping list page (placeholder for future implementation)
+  - **Add Selected to Shopping List**: Add checked ingredients to shopping list
+  - **Go to Shopping List**: Navigate to shopping list page
 - **Visual Feedback**: Checked ingredients show with strike-through text and animated checkmarks
 - **Responsive Design**: Button bar adapts to all screen sizes with horizontal scrolling on mobile
 
-This feature creates a more interactive cooking experience and prepares for a future shopping list implementation that will sync across devices.
+The shopping list feature is now fully implemented with:
+
+- **Per-user Storage**: Shopping lists are stored per user with MongoDB
+- **Recipe Context**: Each item maintains a link to its source recipe
+- **Item Status**: Track whether items have been checked off
+- **Bulk Operations**: Add multiple items at once, mark all as checked, or clear entire list
+- **Field Compatibility**: Support for both naming conventions (`ingredient`/`name`, `recipe_id`/`recipeId`) ensuring frontend/backend compatibility
+- **Data Normalization**: Automatic field mapping to ensure items display correctly regardless of how they were stored
+
+This feature creates a more interactive cooking experience with shopping list functionality that syncs across devices.
 
 ---
 
-## �🔒 Upcoming / TODO
+## 🔒 Upcoming / TODO
 
-- Implement backend shopping list persistence and synchronization
-- Add shopping list view page with categories and organization
+- Add shopping list categories and better organization
 - Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo)
 - Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now)
 - Clean removal of deprecated `post_like.js` after full migration
 - Favorites listing endpoint (`GET /users/{id}/favorites`) & filtering
 - Add more robust image format handling and resizing options
 - Improve image metadata handling in database
+- Standardize field naming conventions between frontend and backend
 
 ---
 
@@ -172,6 +181,7 @@ Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc
 - **Image Handling**: Upload, retrieve, update, and delete images with instant feedback.
 - **Favorites/Likes**: Toggle favorite status with optimistic UI updates and proper database storage.
 - **Interactive Ingredients**: Checkboxes for ingredients with shopping list functionality.
+- **Shopping List**: Full-featured shopping list with item tracking, checking off items, and recipe context.
 - **Comments**: Add, update, delete, and retrieve comments on recipes.
 - **Navigation**: Consistent "Back to List" navigation throughout the application.
 - **Responsive Design**: Works across desktop and mobile devices with appropriate layouts.

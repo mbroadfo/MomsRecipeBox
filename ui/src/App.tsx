@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { RecipeDetail } from './components/RecipeDetail';
+import ShoppingListPage from './components/shoppingList/ShoppingListPage';
 
 const App: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const App: React.FC = () => {
         {/* The "new" route must come before the :id route to prevent treating "new" as an ID */}
         <Route path="/recipe/new" element={<NewRecipeWrapper />} />
         <Route path="/recipe/:id" element={<RecipeDetailRouteWrapper />} />
+        <Route path="/shopping-list" element={<ShoppingListPage />} />
       </Routes>
     </BrowserRouter>
   );

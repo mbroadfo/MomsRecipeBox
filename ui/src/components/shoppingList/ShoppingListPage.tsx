@@ -20,29 +20,11 @@ const ShoppingListPage: React.FC = () => {
   
   // Always call hooks at the top level, before any conditional returns
   const itemsByRecipe = getItemsByRecipe();
-  
-  // Use a separate state for triggering categorization
-  const [triggerCategorization, setTriggerCategorization] = useState(0);
-  
-  // Call the ingredient categorization hook with current items and trigger counter
-  // The hook will only fetch categories when the trigger counter changes
   const { 
     categories: categorizedItems, 
     isLoading: isCategorizing, 
     isAiCategorized 
-  } = useIngredientCategories(shoppingList?.items || [], triggerCategorization);
-  
-  // Handle view mode change
-  const handleViewModeChange = (mode: 'recipe' | 'category') => {
-    setViewMode(mode);
-    // If switching to category view, trigger categorization
-    if (mode === 'category') {
-      // Only trigger if we have items to categorize
-      if (shoppingList?.items && shoppingList.items.length > 0) {
-        setTriggerCategorization(prev => prev + 1);
-      }
-    }
-  };
+  } = useIngredientCategories(shoppingList?.items || []);
 
   if (loading) {
     return (
@@ -132,7 +114,7 @@ const ShoppingListPage: React.FC = () => {
         <div className="shopping-list-actions">
           <div className="view-toggle-container">
             <button 
-              onClick={() => handleViewModeChange('recipe')}
+              onClick={() => setViewMode('recipe')}
               className={`view-toggle-button ${viewMode === 'recipe' ? 'active' : ''}`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -141,7 +123,7 @@ const ShoppingListPage: React.FC = () => {
               By Recipe
             </button>
             <button 
-              onClick={() => handleViewModeChange('category')}
+              onClick={() => setViewMode('category')}
               className={`view-toggle-button ${viewMode === 'category' ? 'active' : ''}`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -247,61 +229,51 @@ const ShoppingListPage: React.FC = () => {
           })
         ) : (
           // Category View
-          isCategorizing ? (
-            // Show loading indicator while categorizing
-            <div className="categorizing-loading-state">
-              <div className="loader"></div>
-              <p>Organizing ingredients into categories...</p>
-              <small>Using AI to categorize your shopping list</small>
-            </div>
-          ) : (
-            // Display categorized items when ready
-            Object.entries(categorizedItems).map(([categoryKey, category]) => {
-              const isCollapsed = collapsedGroups[categoryKey] || false;
-              
-              return (
-                <div key={categoryKey} className="recipe-group">
-                  <div 
-                    className="recipe-group-header category-header"
-                    onClick={() => setCollapsedGroups(prev => ({
-                      ...prev, 
-                      [categoryKey]: !isCollapsed
-                    }))}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <svg 
-                        className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                      {category.icon}
-                      <span className="recipe-title-text">{category.name}</span>
-                    </div>
-                    <span className="recipe-group-item-count">{category.items.length}</span>
+          Object.entries(categorizedItems).map(([categoryKey, category]) => {
+            const isCollapsed = collapsedGroups[categoryKey] || false;
+            
+            return (
+              <div key={categoryKey} className="recipe-group">
+                <div 
+                  className="recipe-group-header category-header"
+                  onClick={() => setCollapsedGroups(prev => ({
+                    ...prev, 
+                    [categoryKey]: !isCollapsed
+                  }))}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <svg 
+                      className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    {category.icon}
+                    <span className="recipe-title-text">{category.name}</span>
                   </div>
-                  <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
-                    {category.items.map(item => (
-                      <ShoppingListItemRow
-                        key={item._id}
-                        item={item}
-                        onToggleChecked={toggleItemChecked}
-                        onDelete={deleteItem}
-                        showRecipeTitle={true}
-                      />
-                    ))}
-                  </ul>
+                  <span className="recipe-group-item-count">{category.items.length}</span>
                 </div>
-              );
-            })
-          )
+                <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
+                  {category.items.map(item => (
+                    <ShoppingListItemRow
+                      key={item._id}
+                      item={item}
+                      onToggleChecked={toggleItemChecked}
+                      onDelete={deleteItem}
+                      showRecipeTitle={true}
+                    />
+                  ))}
+                </ul>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

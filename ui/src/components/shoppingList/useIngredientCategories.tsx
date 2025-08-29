@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { ShoppingListItem } from './useShoppingList';
 import type { ReactNode } from 'react';
-import { categorizeIngredients } from '../../utils/api';
 
 // Common ingredient categories with their keywords
 const CATEGORIES = {
@@ -180,28 +179,16 @@ const CATEGORIES = {
   }
 };
 
-export const useIngredientCategories = (items: ShoppingListItem[], trigger: number = 0) => {
+export const useIngredientCategories = (items: ShoppingListItem[]) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
   const [aiCategorized, setAiCategorized] = useState(false);
-  const [lastCategorizedItems, setLastCategorizedItems] = useState<string[]>([]);
-  const [shouldCategorize, setShouldCategorize] = useState(false);
-  
-  // Only set shouldCategorize to true when trigger changes
-  useEffect(() => {
-    if (trigger > 0) {
-      setShouldCategorize(true);
-    }
-  }, [trigger]);
   
   // Call the API to get AI-based categorizations
   useEffect(() => {
-    // Create a separate function to avoid naming conflict with imported function
-    async function fetchIngredientCategories() {
-      if (!items || items.length === 0 || !shouldCategorize) {
-        return;
-      }
+    async function categorizeIngredients() {
+      if (!items || items.length === 0) return;
       
       try {
         setLoading(true);
@@ -211,32 +198,28 @@ export const useIngredientCategories = (items: ShoppingListItem[], trigger: numb
         // Skip API call if no valid ingredients
         if (ingredientNames.length === 0) {
           setLoading(false);
-          setShouldCategorize(false); // Reset the trigger flag
           return;
         }
         
-        // Check if we've already categorized these exact items to avoid duplicate API calls
-        const itemsKey = ingredientNames.sort().join(',');
-        const lastItemsKey = lastCategorizedItems.sort().join(',');
+        // Call our new API endpoint
+        const response = await fetch('/shopping-list/categorize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ingredients: ingredientNames }),
+          credentials: 'include'
+        });
         
-        // Only make a new API call if the items have changed
-        if (itemsKey === lastItemsKey && Object.keys(aiCategorizations).length > 0) {
-          setLoading(false);
-          return;
+        if (!response.ok) {
+          throw new Error('Failed to categorize ingredients');
         }
         
-        // Call our API function which uses the correct endpoint
-        const data = await categorizeIngredients(ingredientNames);
+        const data = await response.json();
         
         if (data.success && data.categories) {
           setAiCategorizations(data.categories);
-          // Only consider it AI categorized if the method is "ai"
-          setAiCategorized(data.method === 'ai');
-          
-          // Remember which items we've categorized
-          setLastCategorizedItems(ingredientNames);
-        } else {
-          console.warn('API response missing success or categories');
+          setAiCategorized(true);
         }
       } catch (err) {
         console.error('Error categorizing ingredients:', err);
@@ -244,17 +227,14 @@ export const useIngredientCategories = (items: ShoppingListItem[], trigger: numb
         setAiCategorized(false);
       } finally {
         setLoading(false);
-        setShouldCategorize(false); // Reset the trigger flag after API call completes
       }
     }
     
-    fetchIngredientCategories();
-  }, [items, lastCategorizedItems, aiCategorizations, shouldCategorize]);
+    categorizeIngredients();
+  }, [items]);
 
   // Use the AI categorizations when available, fallback to keyword matching
   const categorizedItems = useMemo(() => {
-    // If trigger was activated but API call hasn't happened yet and we're still loading,
-    // we should still return something for initial render
     const categorizedItems: Record<string, {
       name: string;
       icon: ReactNode;
@@ -327,7 +307,7 @@ export const useIngredientCategories = (items: ShoppingListItem[], trigger: numb
   // Return both the categorized items and metadata
   return {
     categories: categorizedItems,
-    isLoading: loading && shouldCategorize, // Only show loading if we're actively categorizing
+    isLoading: loading,
     isAiCategorized: aiCategorized,
     error
   };

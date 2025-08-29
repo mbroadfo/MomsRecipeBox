@@ -219,34 +219,3 @@ export const clearShoppingList = async (action: 'delete' | 'check' = 'delete') =
   });
   return handleResponse(response);
 };
-
-/**
- * Response from the ingredients categorization API
- */
-export interface CategorizeIngredientsResponse {
-  success: boolean;
-  categories: Record<string, string>;
-  method?: 'ai' | 'fallback';
-  fallbackReason?: string;
-}
-
-/**
- * Categorize ingredients using AI
- * @param ingredients Array of ingredient names to categorize
- * @returns Object with categories mapping and method information
- */
-export const categorizeIngredients = async (ingredients: string[]): Promise<CategorizeIngredientsResponse> => {
-  try {
-    const response = await fetch('/api/shopping-list/categorize', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ingredients })
-    });
-    return handleResponse(response);
-  } catch (error) {
-    console.error('Error categorizing ingredients:', error);
-    throw error;
-  }
-};

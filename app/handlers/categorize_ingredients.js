@@ -1,12 +1,18 @@
 import axios from 'axios';
+import { isAuthenticated } from '../utils/auth_middleware.js';
 
 /**
  * API endpoint for categorizing ingredients using OpenAI
  */
 export async function handler(event) {
   try {
-    // TODO: Add proper authentication when auth system is ready
-    // For now, allow all requests to this endpoint
+    // Check if the user is authenticated
+    if (!isAuthenticated(event)) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ success: false, message: "Unauthorized" })
+      };
+    }
     
     const { ingredients } = JSON.parse(event.body);
     
@@ -21,38 +27,15 @@ export async function handler(event) {
     }
     
     // Call OpenAI API to categorize ingredients
-    try {
-      const categories = await categorizeIngredientsWithAI(ingredients);
-      
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          categories,
-          method: "ai" // Indicate that AI was used for categorization
-        })
-      };
-    } catch (aiError) {
-      // If AI categorization fails, log the error but don't fail the request
-      // Instead, return fallback categorizations
-      console.warn("AI categorization failed, using keyword fallback:", aiError.message);
-      
-      // Use fallback keyword-based categorization
-      const fallbackCategories = ingredients.reduce((acc, ingredient) => {
-        acc[ingredient] = "Other"; // Default to "Other" category
-        return acc;
-      }, {});
-      
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          categories: fallbackCategories,
-          method: "fallback", // Indicate that fallback was used
-          fallbackReason: aiError.message
-        })
-      };
-    }
+    const categories = await categorizeIngredientsWithAI(ingredients);
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        categories
+      })
+    };
   } catch (error) {
     console.error("Error in categorize_ingredients:", error);
     
@@ -95,17 +78,8 @@ async function categorizeIngredientsWithAI(ingredients) {
     }
     
     const prompt = `
-    Categorize each ingredient into one of the following grocery store aisle categories:
+    Categorize each ingredient into one of the following categories:
     ${categories.join(', ')}
-    
-    Important categorization guidelines:
-    - Categorize based on where you would typically find the item in a grocery store
-    - "Baking" includes items like flour, sugar, baking powder, chocolate chips, vanilla extract
-    - "Snacks & Sweets" includes ready-to-eat items like cookies, candies, potato chips
-    - "Canned & Packaged" includes jarred sauces, canned vegetables, boxed mixes
-    - "Produce" includes fresh fruits and vegetables
-    - "Dairy & Eggs" includes milk, cheese, yogurt, butter, and eggs
-    - "Meat & Seafood" includes all fresh and packaged meats and seafood
     
     Return a JSON object where keys are ingredient names and values are their categories.
     
@@ -134,8 +108,7 @@ async function categorizeIngredientsWithAI(ingredients) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        timeout: 10000 // 10 second timeout
+        }
       }
     );
     

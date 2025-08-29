@@ -170,7 +170,14 @@ export const useShoppingList = () => {
     }
     
     try {
-      await deleteShoppingListItem(itemId);
+      const response = await deleteShoppingListItem(itemId);
+      
+      // Log success but not the entire response object
+      if (response && response.success) {
+        console.log(`Item ${itemId} deleted successfully`);
+      }
+      
+      return response;
     } catch (err: any) {
       setError(err);
       console.error('Error deleting shopping list item:', err);
@@ -202,7 +209,15 @@ export const useShoppingList = () => {
     }
     
     try {
-      await clearShoppingList(action);
+      const response = await clearShoppingList(action);
+      
+      // Don't log the entire response, just acknowledge success
+      if (response && response.success) {
+        console.log(`Shopping list ${action === 'delete' ? 'cleared' : 'marked as checked'} successfully`);
+      } else {
+        console.warn('Unexpected response from clearShoppingList:', 
+          response ? (response.message || 'No success message') : 'No response');
+      }
     } catch (err: any) {
       setError(err);
       console.error('Error clearing shopping list:', err);

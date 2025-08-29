@@ -22,9 +22,14 @@ const ShoppingListPage: React.FC = () => {
   const itemsByRecipe = getItemsByRecipe();
   const { 
     categories: categorizedItems, 
-    isLoading: isCategorizing, 
     isAiCategorized 
   } = useIngredientCategories(shoppingList?.items || []);
+  
+  // Check if any items are selected/checked
+  const hasCheckedItems = shoppingList?.items?.some(item => item.checked) || false;
+  
+  // Create a separate list of purchased items
+  const purchasedItems = shoppingList?.items?.filter(item => item.checked) || [];
 
   if (loading) {
     return (
@@ -112,74 +117,70 @@ const ShoppingListPage: React.FC = () => {
         <p className="shopping-list-subtitle">Organize your ingredients efficiently</p>
         
         <div className="shopping-list-actions">
-          <div className="view-toggle-container">
-            <button 
-              onClick={() => setViewMode('recipe')}
-              className={`view-toggle-button ${viewMode === 'recipe' ? 'active' : ''}`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
-              </svg>
-              By Recipe
-            </button>
-            <button 
-              onClick={() => setViewMode('category')}
-              className={`view-toggle-button ${viewMode === 'category' ? 'active' : ''}`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 3h18v18H3z"/>
-                <path d="M3 9h18"/>
-                <path d="M3 15h18"/>
-                <path d="M9 3v18"/>
-                <path d="M15 3v18"/>
-              </svg>
-              By Category
-              {isAiCategorized && (
-                <span className="ai-badge" title="AI-powered categorization">AI</span>
-              )}
-            </button>
-          </div>
-          
-          <div className="shopping-list-buttons">
-            <button
-              onClick={() => clearList('check')}
-              className="shopping-list-button btn-secondary"
-              disabled={loading}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              Mark All Complete
-            </button>
-            <button
-              onClick={() => clearList('delete')}
-              className="shopping-list-button btn-danger"
-              disabled={loading}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-              </svg>
-              Clear List
-            </button>
-            <button 
-              className="shopping-list-button btn-secondary"
-              onClick={() => window.history.back()}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              Back to Recipes
-            </button>
+          <div className="shopping-list-top-row">
+            <div className="view-toggle-container">
+              <button 
+                onClick={() => setViewMode('recipe')}
+                className={`view-toggle-button ${viewMode === 'recipe' ? 'active' : ''}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
+                </svg>
+                By Recipe
+              </button>
+              <button 
+                onClick={() => setViewMode('category')}
+                className={`view-toggle-button ${viewMode === 'category' ? 'active' : ''}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 3h18v18H3z"/>
+                  <path d="M3 9h18"/>
+                  <path d="M3 15h18"/>
+                  <path d="M9 3v18"/>
+                  <path d="M15 3v18"/>
+                </svg>
+                By Category
+                {isAiCategorized && (
+                  <span className="ai-badge" title="AI-powered categorization">AI</span>
+                )}
+              </button>
+            </div>
+            
+            <div className="shopping-list-buttons">
+              {/* Always show Clear All button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearList('delete').catch(err => {
+                    console.error("Error clearing shopping list:", err);
+                  });
+                }}
+                className="shopping-list-button btn-danger"
+                disabled={loading}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                Clear All
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="shopping-list-content">
+        {/* Regular Unpurchased Items First */}
         {viewMode === 'recipe' ? (
-          // Recipe View
-          Object.entries(itemsByRecipe).map(([recipeId, items]) => {
+          // Recipe View - Show only unchecked items
+          Object.entries(itemsByRecipe).map(([recipeId, allItems]) => {
+            // Filter out checked items since they're now in the purchased section
+            const items = allItems.filter(item => !item.checked);
+            
+            // Skip if no unchecked items in this recipe
+            if (items.length === 0) return null;
+            
             const recipeName = items[0].recipeTitle || 'Other Items';
             const isCollapsed = collapsedGroups[recipeId] || false;
             
@@ -220,7 +221,6 @@ const ShoppingListPage: React.FC = () => {
                       key={item._id}
                       item={item}
                       onToggleChecked={toggleItemChecked}
-                      onDelete={deleteItem}
                     />
                   ))}
                 </ul>
@@ -228,8 +228,14 @@ const ShoppingListPage: React.FC = () => {
             );
           })
         ) : (
-          // Category View
+          // Category View - Show only unchecked items
           Object.entries(categorizedItems).map(([categoryKey, category]) => {
+            // Filter out checked items since they're now in the purchased section
+            const items = category.items.filter(item => !item.checked);
+            
+            // Skip if no unchecked items in this category
+            if (items.length === 0) return null;
+            
             const isCollapsed = collapsedGroups[categoryKey] || false;
             
             return (
@@ -258,15 +264,14 @@ const ShoppingListPage: React.FC = () => {
                     {category.icon}
                     <span className="recipe-title-text">{category.name}</span>
                   </div>
-                  <span className="recipe-group-item-count">{category.items.length}</span>
+                  <span className="recipe-group-item-count">{items.length}</span>
                 </div>
                 <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
-                  {category.items.map(item => (
+                  {items.map(item => (
                     <ShoppingListItemRow
                       key={item._id}
                       item={item}
                       onToggleChecked={toggleItemChecked}
-                      onDelete={deleteItem}
                       showRecipeTitle={true}
                     />
                   ))}
@@ -274,6 +279,77 @@ const ShoppingListPage: React.FC = () => {
               </div>
             );
           })
+        )}
+        
+        
+        {/* Purchased Items Section - Only show if there are checked items */}
+        {hasCheckedItems && (
+          <div className="purchased-items-group">
+            {/* Clear Purchased button above the purchased items section */}
+            <div className="purchased-items-actions">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Only clear the checked items
+                  const checkedIds = shoppingList?.items
+                    .filter(item => item.checked)
+                    .map(item => item._id) || [];
+                    
+                  // Delete each checked item with proper error handling
+                  const deletePromises = checkedIds.map(id => 
+                    deleteItem(id).catch(err => {
+                      console.error(`Error deleting item ${id}:`, err);
+                    })
+                  );
+                  
+                  // Handle all deletions together
+                  Promise.all(deletePromises).catch(err => {
+                    console.error("Error clearing purchased items:", err);
+                  });
+                }}
+                className="shopping-list-button btn-danger"
+                disabled={loading}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                Clear Purchased
+              </button>
+            </div>
+            
+            <div className="recipe-group purchased-items-container">
+              <div className="recipe-group-header purchased-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg 
+                    width="18" 
+                    height="18" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <span className="recipe-title-text">Purchased Items</span>
+                </div>
+                <span className="recipe-group-item-count">{purchasedItems.length}</span>
+              </div>
+              <ul className="recipe-group-list">
+                {purchasedItems.map(item => (
+                  <ShoppingListItemRow
+                    key={item._id}
+                    item={item}
+                    onToggleChecked={toggleItemChecked}
+                    showRecipeTitle={true}
+                  />
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -283,14 +359,12 @@ const ShoppingListPage: React.FC = () => {
 interface ShoppingListItemRowProps {
   item: ShoppingListItem;
   onToggleChecked: (id: string, checked: boolean) => void;
-  onDelete: (id: string) => void;
   showRecipeTitle?: boolean;
 }
 
 const ShoppingListItemRow: React.FC<ShoppingListItemRowProps> = ({ 
   item, 
   onToggleChecked,
-  onDelete,
   showRecipeTitle = false
 }) => {
   return (
@@ -312,30 +386,6 @@ const ShoppingListItemRow: React.FC<ShoppingListItemRowProps> = ({
             </span>
           )}
         </div>
-      </div>
-      <div className="item-actions">
-        <button
-          onClick={() => onDelete(item._id)}
-          className="action-button action-button-delete"
-          aria-label="Delete item"
-        >
-          <svg 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M3 6h18"></path>
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-            <line x1="10" y1="11" x2="10" y2="17"></line>
-            <line x1="14" y1="11" x2="14" y2="17"></line>
-          </svg>
-        </button>
       </div>
     </li>
   );

@@ -184,12 +184,12 @@ export const addToShoppingList = async (items: Array<{
  */
 export const updateShoppingListItem = async (itemId: string, checked: boolean) => {
   const userId = getCurrentUserId();
-  const response = await fetch(`/api/shopping-list/items/${itemId}?user_id=${encodeURIComponent(userId)}`, {
+  const response = await fetch(`/api/shopping-list/item/${itemId}?user_id=${encodeURIComponent(userId)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ checked })
+    body: JSON.stringify({ user_id: userId, checked })
   });
   return handleResponse(response);
 };
@@ -201,7 +201,7 @@ export const updateShoppingListItem = async (itemId: string, checked: boolean) =
  */
 export const deleteShoppingListItem = async (itemId: string) => {
   const userId = getCurrentUserId();
-  const response = await fetch(`/api/shopping-list/items/${itemId}?user_id=${encodeURIComponent(userId)}`, {
+  const response = await fetch(`/api/shopping-list/item/${itemId}?user_id=${encodeURIComponent(userId)}`, {
     method: 'DELETE'
   });
   return handleResponse(response);
@@ -214,8 +214,16 @@ export const deleteShoppingListItem = async (itemId: string) => {
  */
 export const clearShoppingList = async (action: 'delete' | 'check' = 'delete') => {
   const userId = getCurrentUserId();
-  const response = await fetch(`/api/shopping-list?user_id=${encodeURIComponent(userId)}&action=${action}`, {
-    method: 'DELETE'
+  const actionParam = action === 'delete' ? 'delete_all' : 'check_all';
+  const response = await fetch(`/api/shopping-list/clear`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      action: actionParam
+    })
   });
   return handleResponse(response);
 };

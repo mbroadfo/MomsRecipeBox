@@ -202,7 +202,7 @@ export const useIngredientCategories = (items: ShoppingListItem[]) => {
         }
         
         // Call our new API endpoint
-        const response = await fetch('/shopping-list/categorize', {
+        const response = await fetch('/api/shopping-list/categorize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

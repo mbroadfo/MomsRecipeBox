@@ -2,7 +2,9 @@
 
 A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend A## 🔒 Upcoming / TODO
 
-- Add shopping list view page with categories and organizationNode.js Lambda-style + MongoDB), modern React/Vite UI, and supporting automation scripts.
+- Add additional shopping list features like recipe suggestions and historical tracking
+- Enhance the Node.js Lambda-style + MongoDB backend with more features
+- Continue improving the modern React/Vite UI and supporting automation scripts
 
 ---
 
@@ -128,22 +130,34 @@ New ingredient functionality enhances the recipe detail view:
 - **Visual Feedback**: Checked ingredients show with strike-through text and animated checkmarks
 - **Responsive Design**: Button bar adapts to all screen sizes with horizontal scrolling on mobile
 
-The shopping list feature is now fully implemented with:
+The shopping list feature is fully implemented with an enhanced user interface:
 
 - **Per-user Storage**: Shopping lists are stored per user with MongoDB
 - **Recipe Context**: Each item maintains a link to its source recipe
 - **Item Status**: Track whether items have been checked off
-- **Bulk Operations**: Add multiple items at once, mark all as checked, or clear entire list
+- **Bulk Operations**: Add multiple items at once, clear all, or clear purchased items
 - **Field Compatibility**: Support for both naming conventions (`ingredient`/`name`, `recipe_id`/`recipeId`) ensuring frontend/backend compatibility
 - **Data Normalization**: Automatic field mapping to ensure items display correctly regardless of how they were stored
 
-This feature creates a more interactive cooking experience with shopping list functionality that syncs across devices.
+### Shopping List UI Enhancements
+
+The shopping list interface now features:
+
+- **Dual View Modes**: Toggle between organizing items "By Recipe" or "By Category"
+- **AI-Powered Categorization**: Intelligent grouping of items into grocery store categories
+- **Clear All Button**: Always visible at the top for easy access
+- **Purchased Items Section**: Items checked off appear in a dedicated "Purchased Items" section below unpurchased items
+- **Clear Purchased Button**: Dedicated button above purchased items to remove only checked items
+- **Collapsible Groups**: Expandable/collapsible recipe and category groups for better organization
+- **Responsive Design**: Optimized layout for both desktop and mobile devices
+- **Simplified Item Management**: Clean interface with checkbox toggles for purchased state
+
+This feature creates a more interactive cooking experience with shopping list functionality that syncs across devices and provides an efficient shopping experience.
 
 ---
 
 ## 🔒 Upcoming / TODO
 
-- Add shopping list categories and better organization
 - Derive `userId` for favorites from Auth0 token (currently passed explicitly in tests / demo)
 - Surface `likes_count` & per-user `liked` state in recipe list & detail (UI shows only heart state now)
 - Clean removal of deprecated `post_like.js` after full migration
@@ -181,7 +195,7 @@ Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc
 - **Image Handling**: Upload, retrieve, update, and delete images with instant feedback.
 - **Favorites/Likes**: Toggle favorite status with optimistic UI updates and proper database storage.
 - **Interactive Ingredients**: Checkboxes for ingredients with shopping list functionality.
-- **Shopping List**: Full-featured shopping list with item tracking, checking off items, and recipe context.
+- **Shopping List**: Enhanced shopping list with recipe/category organization, AI categorization, and purchased items tracking.
 - **Comments**: Add, update, delete, and retrieve comments on recipes.
 - **Navigation**: Consistent "Back to List" navigation throughout the application.
 - **Responsive Design**: Works across desktop and mobile devices with appropriate layouts.

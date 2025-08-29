@@ -35,16 +35,19 @@
 }
 
 .shopping-list-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
   margin-top: 1rem;
+}
+
+.shopping-list-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .view-toggle-container {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .view-toggle-button {
@@ -99,7 +102,6 @@
 
 .shopping-list-buttons {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
@@ -327,6 +329,31 @@
 
 .category-header {
   background: linear-gradient(90deg, #0f766e, #0d9488);
+}
+
+.purchased-header {
+  background: linear-gradient(90deg, #4d7c0f, #65a30d);
+}
+
+.purchased-items-group {
+  margin-top: 1.5rem;
+  order: 999; /* Show at the bottom */
+  grid-column: 1 / -1; /* Span the full width */
+  display: flex;
+  flex-direction: column;
+}
+
+.purchased-items-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.purchased-items-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 0; /* Change from margin: 0 auto to margin: 0 0 */
 }
 
 .recipe-group-chevron {

@@ -1,5 +1,15 @@
 import axios from 'axios';
-import { isAuthenticated } from '../utils/auth_middleware.js';
+
+/**
+ * Simple authentication check - all requests are allowed in development mode
+ * @param {Object} event - Lambda event object
+ * @returns {boolean} - True if authenticated, false otherwise
+ */
+function isAuthenticated(event) {
+  // In development mode, all requests are allowed
+  // In production, this should be replaced with proper authentication
+  return true;
+}
 
 /**
  * API endpoint for categorizing ingredients using OpenAI

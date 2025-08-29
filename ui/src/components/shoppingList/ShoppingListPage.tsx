@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useShoppingList } from './useShoppingList';
+import { useIngredientCategories } from './useIngredientCategories';
 import type { ShoppingListItem } from './useShoppingList';
+import './ShoppingListPage.css';
 
 const ShoppingListPage: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'recipe' | 'category'>('recipe');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  
   const { 
     shoppingList, 
     loading, 
@@ -12,13 +17,39 @@ const ShoppingListPage: React.FC = () => {
     deleteItem,
     clearList
   } = useShoppingList();
+  
+  // Always call hooks at the top level, before any conditional returns
+  const itemsByRecipe = getItemsByRecipe();
+  
+  // Use a separate state for triggering categorization
+  const [triggerCategorization, setTriggerCategorization] = useState(0);
+  
+  // Call the ingredient categorization hook with current items and trigger counter
+  // The hook will only fetch categories when the trigger counter changes
+  const { 
+    categories: categorizedItems, 
+    isLoading: isCategorizing, 
+    isAiCategorized 
+  } = useIngredientCategories(shoppingList?.items || [], triggerCategorization);
+  
+  // Handle view mode change
+  const handleViewModeChange = (mode: 'recipe' | 'category') => {
+    setViewMode(mode);
+    // If switching to category view, trigger categorization
+    if (mode === 'category') {
+      // Only trigger if we have items to categorize
+      if (shoppingList?.items && shoppingList.items.length > 0) {
+        setTriggerCategorization(prev => prev + 1);
+      }
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-700">Loading shopping list...</p>
+      <div className="shopping-list-page">
+        <div className="loading-state">
+          <div className="loader"></div>
+          <p>Loading your shopping list...</p>
         </div>
       </div>
     );
@@ -26,32 +57,43 @@ const ShoppingListPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-md my-4">
-        <h3 className="text-red-800 font-medium">Error loading shopping list</h3>
-        <p className="text-red-600">{error.message}</p>
-        <button 
-          className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded"
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
+      <div className="shopping-list-page">
+        <div className="shopping-list-header">
+          <h1 className="shopping-list-title">Shopping List</h1>
+          <p className="shopping-list-subtitle">Plan your grocery trips with ease</p>
+        </div>
+        
+        <div className="error-state">
+          <h3 className="error-title">Error loading shopping list</h3>
+          <p className="error-message">{error.message}</p>
+          <button 
+            className="shopping-list-button btn-primary"
+            onClick={() => window.location.reload()}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38" />
+            </svg>
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
-  // We no longer need to get the currentUserId since we removed the debug display
-  
   if (!shoppingList || !shoppingList.items || shoppingList.items.length === 0) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Shopping List</h1>
-        <div className="text-center p-12 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
-          <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-gray-200 rounded-full p-4">
+      <div className="shopping-list-page">
+        <div className="shopping-list-header">
+          <h1 className="shopping-list-title">Shopping List</h1>
+          <p className="shopping-list-subtitle">Plan your grocery trips with ease</p>
+        </div>
+        
+        <div className="empty-state">
+          <div className="empty-icon">
             <svg 
               width="32" 
               height="32" 
               viewBox="0 0 24 24" 
-              className="text-gray-600"
               fill="none" 
               stroke="currentColor" 
               strokeWidth="1.5" 
@@ -63,15 +105,17 @@ const ShoppingListPage: React.FC = () => {
               <path d="M2 2h2l3.6 12h10.8l3.6-9H5.5"></path>
             </svg>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-3">Your shopping list is empty</h2>
-          <p className="text-gray-600 mb-8 max-w-sm mx-auto">
-            Select ingredients from your favorite recipes to add them to your shopping list
+          <h2 className="empty-title">Your shopping list is empty</h2>
+          <p className="empty-description">
+            Browse your favorite recipes and select ingredients to add them to your shopping list
           </p>
-          {/* No debugging info needed in production */}
           <button
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-md font-medium"
+            className="shopping-list-button btn-primary"
             onClick={() => window.history.back()}
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
             Browse Recipes
           </button>
         </div>
@@ -79,51 +123,187 @@ const ShoppingListPage: React.FC = () => {
     );
   }
 
-  const itemsByRecipe = getItemsByRecipe();
-
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Shopping List</h1>
-        <div className="space-x-2">
-          <button
-            onClick={() => clearList('check')}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            disabled={loading}
-          >
-            Mark All Complete
-          </button>
-          <button
-            onClick={() => clearList('delete')}
-            className="px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200"
-            disabled={loading}
-          >
-            Clear List
-          </button>
+    <div className="shopping-list-page">
+      <div className="shopping-list-header">
+        <h1 className="shopping-list-title">Shopping List</h1>
+        <p className="shopping-list-subtitle">Organize your ingredients efficiently</p>
+        
+        <div className="shopping-list-actions">
+          <div className="view-toggle-container">
+            <button 
+              onClick={() => handleViewModeChange('recipe')}
+              className={`view-toggle-button ${viewMode === 'recipe' ? 'active' : ''}`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
+              </svg>
+              By Recipe
+            </button>
+            <button 
+              onClick={() => handleViewModeChange('category')}
+              className={`view-toggle-button ${viewMode === 'category' ? 'active' : ''}`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3h18v18H3z"/>
+                <path d="M3 9h18"/>
+                <path d="M3 15h18"/>
+                <path d="M9 3v18"/>
+                <path d="M15 3v18"/>
+              </svg>
+              By Category
+              {isAiCategorized && (
+                <span className="ai-badge" title="AI-powered categorization">AI</span>
+              )}
+            </button>
+          </div>
+          
+          <div className="shopping-list-buttons">
+            <button
+              onClick={() => clearList('check')}
+              className="shopping-list-button btn-secondary"
+              disabled={loading}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              Mark All Complete
+            </button>
+            <button
+              onClick={() => clearList('delete')}
+              className="shopping-list-button btn-danger"
+              disabled={loading}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+              Clear List
+            </button>
+            <button 
+              className="shopping-list-button btn-secondary"
+              onClick={() => window.history.back()}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Back to Recipes
+            </button>
+          </div>
         </div>
       </div>
 
-      {Object.entries(itemsByRecipe).map(([recipeId, items]) => {
-        const recipeName = items[0].recipeTitle || 'Other Items';
-        
-        return (
-          <div key={recipeId} className="mb-8">
-            <h2 className="text-xl font-semibold mb-3 pb-2 border-b border-gray-200">
-              {recipeName}
-            </h2>
-            <ul className="space-y-2">
-              {items.map(item => (
-                <ShoppingListItemRow
-                  key={item._id}
-                  item={item}
-                  onToggleChecked={toggleItemChecked}
-                  onDelete={deleteItem}
-                />
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+      <div className="shopping-list-content">
+        {viewMode === 'recipe' ? (
+          // Recipe View
+          Object.entries(itemsByRecipe).map(([recipeId, items]) => {
+            const recipeName = items[0].recipeTitle || 'Other Items';
+            const isCollapsed = collapsedGroups[recipeId] || false;
+            
+            return (
+              <div key={recipeId} className="recipe-group">
+                <div 
+                  className="recipe-group-header" 
+                  onClick={() => setCollapsedGroups(prev => ({
+                    ...prev, 
+                    [recipeId]: !isCollapsed
+                  }))}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <svg 
+                      className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
+                    </svg>
+                    <span className="recipe-title-text">{recipeName}</span>
+                  </div>
+                  <span className="recipe-group-item-count">{items.length}</span>
+                </div>
+                <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
+                  {items.map(item => (
+                    <ShoppingListItemRow
+                      key={item._id}
+                      item={item}
+                      onToggleChecked={toggleItemChecked}
+                      onDelete={deleteItem}
+                    />
+                  ))}
+                </ul>
+              </div>
+            );
+          })
+        ) : (
+          // Category View
+          isCategorizing ? (
+            // Show loading indicator while categorizing
+            <div className="categorizing-loading-state">
+              <div className="loader"></div>
+              <p>Organizing ingredients into categories...</p>
+              <small>Using AI to categorize your shopping list</small>
+            </div>
+          ) : (
+            // Display categorized items when ready
+            Object.entries(categorizedItems).map(([categoryKey, category]) => {
+              const isCollapsed = collapsedGroups[categoryKey] || false;
+              
+              return (
+                <div key={categoryKey} className="recipe-group">
+                  <div 
+                    className="recipe-group-header category-header"
+                    onClick={() => setCollapsedGroups(prev => ({
+                      ...prev, 
+                      [categoryKey]: !isCollapsed
+                    }))}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <svg 
+                        className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                      {category.icon}
+                      <span className="recipe-title-text">{category.name}</span>
+                    </div>
+                    <span className="recipe-group-item-count">{category.items.length}</span>
+                  </div>
+                  <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
+                    {category.items.map(item => (
+                      <ShoppingListItemRow
+                        key={item._id}
+                        item={item}
+                        onToggleChecked={toggleItemChecked}
+                        onDelete={deleteItem}
+                        showRecipeTitle={true}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              );
+            })
+          )
+        )}
+      </div>
     </div>
   );
 };
@@ -132,44 +312,59 @@ interface ShoppingListItemRowProps {
   item: ShoppingListItem;
   onToggleChecked: (id: string, checked: boolean) => void;
   onDelete: (id: string) => void;
+  showRecipeTitle?: boolean;
 }
 
 const ShoppingListItemRow: React.FC<ShoppingListItemRowProps> = ({ 
   item, 
   onToggleChecked,
-  onDelete 
+  onDelete,
+  showRecipeTitle = false
 }) => {
   return (
-    <li className="flex items-center justify-between p-3 bg-white rounded-md shadow-sm hover:bg-gray-50 transition-colors">
-      <div className="flex items-center space-x-3">
+    <li className={`recipe-group-item ${item.checked ? 'item-checked' : ''}`}>
+      <div className="item-content">
         <input
           type="checkbox"
           checked={item.checked}
           onChange={() => onToggleChecked(item._id, !item.checked)}
-          className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+          className="item-checkbox"
         />
-        <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-          {item.name || item.ingredient || '[No Name]'}
-        </span>
+        <div className="item-text">
+          <span className="item-name">
+            {item.name || item.ingredient || '[No Name]'}
+          </span>
+          {showRecipeTitle && item.recipeTitle && (
+            <span className="item-recipe-title">
+              from {item.recipeTitle}
+            </span>
+          )}
+        </div>
       </div>
-      <button
-        onClick={() => onDelete(item._id)}
-        className="text-gray-400 hover:text-red-600"
-        aria-label="Delete item"
-      >
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-5 w-5" 
-          viewBox="0 0 20 20" 
-          fill="currentColor"
+      <div className="item-actions">
+        <button
+          onClick={() => onDelete(item._id)}
+          className="action-button action-button-delete"
+          aria-label="Delete item"
         >
-          <path 
-            fillRule="evenodd" 
-            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" 
-            clipRule="evenodd" 
-          />
-        </svg>
-      </button>
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+      </div>
     </li>
   );
 };

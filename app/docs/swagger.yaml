@@ -482,8 +482,8 @@ paths:
                   description: User ID
                 action:
                   type: string
-                  enum: [delete_all, check_all]
-                  description: Action to perform (delete all items or mark all as checked)
+                  enum: [delete_all, check_all, delete_purchased]
+                  description: Action to perform (delete all items, mark all as checked, or delete purchased items)
       responses:
         '200':
           description: Shopping list cleared or all items marked as checked

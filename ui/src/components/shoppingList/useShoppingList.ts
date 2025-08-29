@@ -188,19 +188,28 @@ export const useShoppingList = () => {
   }, [shoppingList, loadShoppingList]);
 
   // Clear shopping list
-  const clearList = useCallback(async (action: 'delete' | 'check' = 'delete') => {
+  const clearList = useCallback(async (action: 'delete' | 'check' | 'delete_purchased' = 'delete') => {
     setLoading(true);
     setError(null);
     
     // Optimistic update
     if (shoppingList) {
       if (action === 'delete') {
+        // Clear all items
         setShoppingList({
           ...shoppingList,
           items: []
         });
       } else if (action === 'check') {
+        // Mark all items as checked
         const updatedItems = shoppingList.items.map(item => ({ ...item, checked: true }));
+        setShoppingList({
+          ...shoppingList,
+          items: updatedItems
+        });
+      } else if (action === 'delete_purchased') {
+        // Remove only purchased (checked) items
+        const updatedItems = shoppingList.items.filter(item => !item.checked);
         setShoppingList({
           ...shoppingList,
           items: updatedItems
@@ -211,12 +220,9 @@ export const useShoppingList = () => {
     try {
       const response = await clearShoppingList(action);
       
-      // Don't log the entire response, just acknowledge success
-      if (response && response.success) {
-        console.log(`Shopping list ${action === 'delete' ? 'cleared' : 'marked as checked'} successfully`);
-      } else {
-        console.warn('Unexpected response from clearShoppingList:', 
-          response ? (response.message || 'No success message') : 'No response');
+      // Process the response
+      if (!(response && response.success)) {
+        console.warn('Unexpected response from clearShoppingList');
       }
     } catch (err: any) {
       setError(err);

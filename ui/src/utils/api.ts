@@ -81,20 +81,15 @@ export const getRecipes = async () => {
  */
 export const getShoppingList = async () => {
   const userId = getCurrentUserId();
-  console.log(`Fetching shopping list for user: ${userId}`);
   try {
     const url = `/api/shopping-list?user_id=${encodeURIComponent(userId)}`;
-    console.log(`Making request to: ${url}`);
     
     const response = await fetch(url);
-    console.log(`Response status: ${response.status}`);
     
     const data = await handleResponse(response);
-    console.log('Shopping list data from API:', data);
     
     // If we don't have an items array but have success=true, initialize an empty one
     if (data && data.success === true && !data.items) {
-      console.warn('Shopping list response missing items array, adding empty array');
       data.items = [];
     }
     
@@ -119,8 +114,6 @@ export const addToShoppingList = async (items: Array<{
   unit?: string;
 }>) => {
   const userId = getCurrentUserId();
-  console.log(`Adding items to shopping list for user: ${userId}`, items);
-  
   try {
     const payload = {
       user_id: userId,
@@ -133,8 +126,6 @@ export const addToShoppingList = async (items: Array<{
       }))
     };
     
-    console.log('[API] Sending shopping list payload:', payload);
-    
     const response = await fetch('/api/shopping-list/add', {
       method: 'POST',
       headers: {
@@ -144,18 +135,15 @@ export const addToShoppingList = async (items: Array<{
     });
     
     const data = await handleResponse(response);
-    console.log('Add to shopping list response:', data);
     
     // For successful responses, check for different response formats
     if (data) {
       // If we have a shopping_list object in the response, return that
       if (data.shopping_list) {
-        console.log('Full shopping list received in shopping_list property:', data.shopping_list);
         return data.shopping_list;
       } 
       // If we have a success message but need to fetch the full list
       else if (data.success === true) {
-        console.log('Items added successfully, but need to fetch the full list');
         // Return the success message with a flag indicating we need to refresh
         return {
           ...data,
@@ -164,7 +152,6 @@ export const addToShoppingList = async (items: Array<{
       } 
       // If we have the full list already
       else if (data.items && Array.isArray(data.items)) {
-        console.log('Full shopping list received in response');
         return data;
       }
     }
@@ -208,13 +195,25 @@ export const deleteShoppingListItem = async (itemId: string) => {
 };
 
 /**
- * Clear the shopping list (delete all items or mark all as checked)
- * @param action The action to perform ('delete' or 'check')
+ * Clear the shopping list (delete all items, mark all as checked, or delete purchased items)
+ * @param action The action to perform ('delete', 'check', or 'delete_purchased')
  * @returns Success message
  */
-export const clearShoppingList = async (action: 'delete' | 'check' = 'delete') => {
+export const clearShoppingList = async (action: 'delete' | 'check' | 'delete_purchased' = 'delete') => {
   const userId = getCurrentUserId();
-  const actionParam = action === 'delete' ? 'delete_all' : 'check_all';
+  let actionParam: string;
+  
+  // Map friendly action names to API parameters
+  if (action === 'delete') {
+    actionParam = 'delete_all';
+  } else if (action === 'check') {
+    actionParam = 'check_all';
+  } else if (action === 'delete_purchased') {
+    actionParam = 'delete_purchased';
+  } else {
+    actionParam = action;
+  }
+  
   const response = await fetch(`/api/shopping-list/clear`, {
     method: 'POST',
     headers: {

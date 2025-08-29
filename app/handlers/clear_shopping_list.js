@@ -18,6 +18,7 @@ async function handler(event, context) {
 
     const { user_id, action = 'delete_all' } = body;
     const cleared_only = action === 'check_all';
+    const delete_purchased_only = action === 'delete_purchased';
     
     // Connect to the shopping_lists collection
     const shoppingListsColl = await getCollection('shopping_lists');
@@ -32,6 +33,33 @@ async function handler(event, context) {
         { 
           $set: { 
             'items.$[].checked': true,
+            updated_at: timestamp
+          } 
+        }
+      );
+    } else if (delete_purchased_only) {
+      // Get the current shopping list
+      const currentList = await shoppingListsColl.findOne(
+        { user_id },
+        { projection: { items: 1 } }
+      );
+      
+      if (!currentList) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ message: 'Shopping list not found' })
+        };
+      }
+      
+      // Filter out purchased items
+      const updatedItems = currentList.items.filter(item => !item.checked);
+      
+      // Update the shopping list with only the unchecked items
+      result = await shoppingListsColl.updateOne(
+        { user_id },
+        { 
+          $set: { 
+            items: updatedItems,
             updated_at: timestamp
           } 
         }
@@ -75,7 +103,9 @@ async function handler(event, context) {
         success: true,
         message: cleared_only ? 
           'All shopping list items marked as checked' : 
-          'Shopping list cleared successfully',
+          (delete_purchased_only ? 
+            'Purchased items removed successfully' : 
+            'Shopping list cleared successfully'),
         cleared_at: timestamp
       })
     };

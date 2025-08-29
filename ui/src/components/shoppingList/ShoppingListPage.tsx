@@ -31,7 +31,6 @@ const ShoppingListPage: React.FC = () => {
     error, 
     getItemsByRecipe,
     toggleItemChecked,
-    deleteItem,
     clearList
   } = useShoppingList();
   
@@ -134,22 +133,11 @@ const ShoppingListPage: React.FC = () => {
   };
 
   const handleClearPurchased = () => {
-    // Execute directly without confirmation
-    const checkedIds = shoppingList?.items
-      .filter(item => item.checked)
-      .map(item => item._id) || [];
-      
-    // Delete each checked item with proper error handling
-    const deletePromises = checkedIds.map(id => 
-      deleteItem(id).catch(err => {
-        console.error(`Error deleting item ${id}:`, err);
-      })
-    );
-    
-    // Handle all deletions together
-    Promise.all(deletePromises).catch(err => {
-      console.error("Error clearing purchased items:", err);
-    });
+    // Execute directly without confirmation - now uses a single API call
+    clearList('delete_purchased')
+      .catch(err => {
+        console.error("Error clearing purchased items:", err);
+      });
   };
 
   const confirmClear = () => {

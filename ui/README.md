@@ -1,6 +1,6 @@
 # Mom's Recipe Box UI
 
-A React + TypeScript + Vite frontend for## UI Components and Features
+## A React + TypeScript + Vite frontend for## UI Components and Features
 
 ### Streamlined Header Design
 

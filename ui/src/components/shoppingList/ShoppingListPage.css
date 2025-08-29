@@ -230,6 +230,35 @@
   border-radius: 0.75rem 0.75rem 0 0;
 }
 
+/* Recipe link styling */
+.recipe-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.recipe-link:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.recipe-link:hover::after {
+  content: '→';
+  position: absolute;
+  right: 0.5rem;
+  animation: slideRight 0.3s ease forwards;
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .recipe-group-header svg {
   flex-shrink: 0;
 }
@@ -370,17 +399,9 @@
   margin: 0 0; /* Left-aligned */
 }
 
-.recipe-group-chevron {
-  transition: transform 0.2s ease;
-}
+/* No longer using chevron indicators */
 
-.recipe-group-chevron.collapsed {
-  transform: rotate(-90deg);
-}
-
-.recipe-group-list.collapsed {
-  display: none;
-}
+/* No longer using collapsed state for lists */
 
 .recipe-group-item-count {
   background: rgba(255, 255, 255, 0.2);

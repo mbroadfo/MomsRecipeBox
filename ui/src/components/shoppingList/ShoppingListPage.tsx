@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useShoppingList } from './useShoppingList';
 import { useIngredientCategories } from './useIngredientCategories';
+import { useNavigate } from 'react-router-dom';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
   Chip, 
@@ -20,8 +21,8 @@ import './ShoppingListPage.css';
 import './PrintStyles.css';
 
 const ShoppingListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'recipe' | 'category'>('recipe');
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [searchText, setSearchText] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState<'all' | 'purchased' | null>(null);
   
@@ -271,32 +272,21 @@ const ShoppingListPage: React.FC = () => {
             if (items.length === 0) return null;
             
             const recipeName = items[0].recipeTitle || 'Other Items';
-            const isCollapsed = collapsedGroups[recipeId] || false;
             
             return (
               <div key={recipeId} className="recipe-group">
-                <div 
-                  className="recipe-group-header" 
-                  onClick={() => setCollapsedGroups(prev => ({
-                    ...prev, 
-                    [recipeId]: !isCollapsed
-                  }))}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <svg 
-                      className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                    
+                <div className="recipe-group-header">
+                  <div 
+                    className="recipe-link"
+                    onClick={() => navigate(`/recipe/${recipeId}`)}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      cursor: 'pointer',
+                      width: '100%'
+                    }}
+                  >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
                     </svg>
@@ -304,7 +294,7 @@ const ShoppingListPage: React.FC = () => {
                   </div>
                   <span className="recipe-group-item-count">{items.length}</span>
                 </div>
-                <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
+                <ul className="recipe-group-list">
                   {items.map(item => (
                     <ShoppingListItemRow
                       key={item._id}
@@ -325,37 +315,16 @@ const ShoppingListPage: React.FC = () => {
             // Skip if no unchecked items in this category
             if (items.length === 0) return null;
             
-            const isCollapsed = collapsedGroups[categoryKey] || false;
-            
             return (
               <div key={categoryKey} className="recipe-group">
-                <div 
-                  className="recipe-group-header category-header"
-                  onClick={() => setCollapsedGroups(prev => ({
-                    ...prev, 
-                    [categoryKey]: !isCollapsed
-                  }))}
-                >
+                <div className="recipe-group-header category-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <svg 
-                      className={`recipe-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
                     {category.icon}
                     <span className="recipe-title-text">{category.name}</span>
                   </div>
                   <span className="recipe-group-item-count">{items.length}</span>
                 </div>
-                <ul className={`recipe-group-list ${isCollapsed ? 'collapsed' : ''}`}>
+                <ul className="recipe-group-list">
                   {items.map(item => (
                     <ShoppingListItemRow
                       key={item._id}

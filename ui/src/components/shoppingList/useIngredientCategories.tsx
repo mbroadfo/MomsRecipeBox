@@ -259,11 +259,21 @@ export const useIngredientCategories = (items: ShoppingListItem[]) => {
       const aiCategory = aiCategorizations[itemName];
       
       if (aiCategory) {
-        // Find the category key that matches the AI category name
-        const categoryKey = Object.entries(CATEGORIES)
-          .find(([_, category]) => category.name === aiCategory)?.[0] || 'OTHER';
-          
-        categorizedItems[categoryKey].items.push(item);
+        // Instead of trying to match the AI category to our predefined categories,
+        // let's just use what the AI gives us directly
+        
+        // Check if we already have this category in our results
+        if (!categorizedItems[aiCategory]) {
+          // Create a new dynamic category
+          categorizedItems[aiCategory] = {
+            name: aiCategory,
+            icon: CATEGORIES.OTHER.icon, // Use the "Other" icon as default
+            items: []
+          };
+        }
+        
+        // Add the item to its AI-assigned category
+        categorizedItems[aiCategory].items.push(item);
       } else {
         // Fallback to keyword matching
         const itemNameLower = itemName.toLowerCase();

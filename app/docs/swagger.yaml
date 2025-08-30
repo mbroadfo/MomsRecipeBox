@@ -493,6 +493,60 @@ paths:
           description: Shopping list not found
         '500':
           description: Internal server error
+          
+  /shopping-list/categorize:
+    post:
+      tags:
+        - shopping-list
+      summary: Categorize ingredients using AI
+      description: Uses AI to categorize ingredients into grocery store departments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ingredients
+              properties:
+                ingredients:
+                  type: array
+                  description: List of ingredient strings to categorize
+                  items:
+                    type: string
+            example:
+              ingredients: 
+                - "1 cup flour"
+                - "2 eggs"
+                - "1/2 cup milk"
+                - "1 tbsp olive oil"
+      responses:
+        '200':
+          description: Ingredients categorized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  categories:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    description: Object mapping each ingredient to its category
+                    example:
+                      "1 cup flour": "Baking"
+                      "2 eggs": "Dairy & Eggs"
+                      "1/2 cup milk": "Dairy & Eggs"
+                      "1 tbsp olive oil": "Spices & Condiments"
+        '400':
+          description: Missing required parameters
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error or AI service unavailable
 
 components:
   schemas:

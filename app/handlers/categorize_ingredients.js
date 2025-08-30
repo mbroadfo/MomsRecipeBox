@@ -91,7 +91,8 @@ async function categorizeIngredientsWithAI(ingredients) {
     Categorize each ingredient into one of the following categories:
     ${categories.join(', ')}
     
-    Return a JSON object where keys are ingredient names and values are their categories.
+    Return a JSON object where keys are the EXACT ingredient strings I provide (including quantities and preparations) and values are their categories.
+    It's critically important to use the full ingredient strings I provide as the keys in your response.
     
     Ingredients to categorize:
     ${ingredients.join('\n')}
@@ -104,7 +105,7 @@ async function categorizeIngredientsWithAI(ingredients) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that categorizes food ingredients into grocery store categories. Respond only with JSON."
+            content: "You are a helpful assistant that categorizes food ingredients into grocery store categories. Respond only with JSON. Use the EXACT full ingredient strings provided (including quantities and preparations) as the keys in your JSON response."
           },
           {
             role: "user",
@@ -124,11 +125,13 @@ async function categorizeIngredientsWithAI(ingredients) {
     
     // Parse and validate the response
     const categorizedData = response.data.choices[0].message.content;
+    console.log("Raw OpenAI response:", categorizedData);
     
     // Parse the JSON response
     let categorizedIngredients;
     try {
       categorizedIngredients = JSON.parse(categorizedData);
+      console.log("Parsed categorizations:", categorizedIngredients);
     } catch (e) {
       console.error("Error parsing AI response:", e);
       // Fallback to returning all ingredients as "Other"
@@ -138,15 +141,36 @@ async function categorizeIngredientsWithAI(ingredients) {
       }, {});
     }
     
-    // Ensure all ingredients are categorized
-    const result = ingredients.reduce((acc, ingredient) => {
-      acc[ingredient] = categorizedIngredients[ingredient] || "Other";
-      return acc;
-    }, {});
+    // Map AI categorizations back to full ingredient strings
+    // AI often extracts just the main ingredient (e.g., "flour" from "1 cup flour")
+    const result = {};
+    
+    for (const ingredient of ingredients) {
+      // Try direct match first
+      if (categorizedIngredients[ingredient]) {
+        result[ingredient] = categorizedIngredients[ingredient];
+        continue;
+      }
+      
+      // Try to find the main ingredient within the full string
+      const mainIngredient = Object.keys(categorizedIngredients).find(key => 
+        ingredient.toLowerCase().includes(key.toLowerCase())
+      );
+      
+      if (mainIngredient) {
+        result[ingredient] = categorizedIngredients[mainIngredient];
+      } else {
+        // Fallback to "Other" if no match
+        result[ingredient] = "Other";
+      }
+    }
     
     return result;
   } catch (error) {
     console.error("Error calling AI service:", error);
+    console.error("API Key present:", !!process.env.OPENAI_API_KEY);
+    console.error("API Response:", error.response?.data);
+    console.error("API Status:", error.response?.status);
     
     // Fallback to returning all ingredients as "Other"
     return ingredients.reduce((acc, ingredient) => {

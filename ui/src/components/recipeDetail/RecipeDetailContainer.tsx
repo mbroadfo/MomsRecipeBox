@@ -137,22 +137,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         return;
       }
       
-      // Log working state to help debug
-      console.log("Working recipe state:", {
-        title: working.title,
-        subtitle: working.subtitle,
-        author: working.author,
-        source: working.source,
-        tags: working.tags,
-        yield: working.yield,
-        time: working.time,
-        ingredients: working.ingredients,
-        steps: working.steps,
-        notes: working.notes,
-        visibility: working.visibility,
-        owner_id: working.owner_id
-      });
-      
       // Build save payload
       const payload = buildSavePayload(working);
       
@@ -161,22 +145,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         payload.instructions = payload.steps;
       }
       
-      console.log("Saving recipe with payload:", payload);
-      console.log("Recipe fields present:", {
-        hasTitle: !!payload.title,
-        hasSubtitle: !!payload.subtitle,
-        hasDescription: !!payload.description,
-        hasAuthor: !!payload.author,
-        hasSource: !!payload.source,
-        tags: payload.tags,
-        hasYield: !!payload.yield,
-        time: payload.time,
-        ingredients: payload.ingredients?.length || 0,
-        steps: payload.steps?.length || 0,
-        instructions: payload.instructions?.length || 0,
-        notes: !!payload.notes,
-        hasImageUrl: !!payload.image_url
-      });
+
       
       if (isNew && saveNewRecipe) {
         // Creating a new recipe
@@ -184,13 +153,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           // Check for a temporary image that was uploaded
           const tempImageUrl = localStorage.getItem('newRecipe_tempImageUrl');
           if (tempImageUrl) {
-            console.log("Found temporary image URL:", tempImageUrl);
             payload.image_url = tempImageUrl;
           }
           
           const newRecipeId = await saveNewRecipe(payload);
           if (newRecipeId) {
-            console.log("Created recipe with ID:", newRecipeId);
             
             // If we have a temporary image, we'll need to copy it to the new ID
             if (tempImageUrl) {

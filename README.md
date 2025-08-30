@@ -107,7 +107,9 @@ npm test      # runs all tests
 
 ## 🖥 Frontend Highlights
 
-- Sticky header with in-place editable title & heart (like) toggle.
+- Consistent header shared across all pages with modern styling.
+- Sticky header and toolbar for easy access to navigation and filtering while scrolling.
+- Segmented toolbar for filtering and sorting recipes, replacing the traditional sidebar.
 - "Back to List" navigation that consistently returns to the recipe list.
 - Optimistic like updates calling new `/recipes/:id/like` endpoint.
 - Real-time image updates with automatic cache busting for instant visibility after upload.
@@ -115,6 +117,21 @@ npm test      # runs all tests
 - Custom drag & drop reordering without external DnD libs.
 
 ---
+
+## 🎨 Modern UI Enhancements
+
+Recent UI improvements create a more intuitive and efficient user experience:
+
+- **Consistent Header**: Standardized header design across all pages with logo, title, and user avatar
+- **Sticky Navigation**: Header and toolbar remain visible when scrolling for easy access to navigation
+- **Segmented Toolbar**: Replaced traditional sidebar with a streamlined toolbar containing:
+  - Recipe filtering options (All, My Recipes, My Family's, My Favorites)
+  - Custom sorting options (Newest, Most Popular, Most Favorited, A-Z)
+  - Quick access buttons for Add Recipe and Shopping List
+- **Responsive Toolbar**: Adapts to different screen sizes with appropriate layout changes
+- **Improved Font Handling**: Consistent typography with proper scaling across the application
+- **Visual Hierarchy**: Clear separation between navigation elements and content
+- **Smooth Transitions**: Subtle animations for interactive elements
 
 ## 🛒 Interactive Ingredients & Shopping List
 
@@ -197,6 +214,7 @@ Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc
 - **Interactive Ingredients**: Checkboxes for ingredients with shopping list functionality.
 - **Shopping List**: Enhanced shopping list with recipe/category organization, AI categorization, and purchased items tracking.
 - **Comments**: Add, update, delete, and retrieve comments on recipes.
+- **Modern UI**: Consistent header, sticky navigation elements, and segmented toolbar for filtering recipes.
 - **Navigation**: Consistent "Back to List" navigation throughout the application.
-- **Responsive Design**: Works across desktop and mobile devices with appropriate layouts.
+- **Responsive Design**: Works across desktop and mobile devices with appropriate layouts and fixed elements.
 - **Real-time UI Updates**: Immediate visual feedback for all user actions including image uploads.

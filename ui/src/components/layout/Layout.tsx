@@ -13,7 +13,7 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div className="app-layout bg-gray-50 text-gray-900">
       <Header />
-      <div className="app-content">
+      <div className="app-content p-0 m-0">
         {children}
       </div>
     </div>

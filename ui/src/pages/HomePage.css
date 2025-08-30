@@ -1,12 +1,30 @@
+.recipe-home-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
+  margin-top: 0; /* Ensure no gap at the top */
+  padding-top: 0; /* Ensure no gap at the top */
+}
+
+.recipe-list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 0.5rem; /* Add a little padding at the top */
+  padding-bottom: 2rem; /* Add some padding at the bottom for better UX */
+}
+
 .filter-toolbar {
   position: sticky;
-  top: 4.5rem; /* Match the height of the header */
+  top: 0; /* Changed to 0 to fix scroll positioning */
+  margin-top: 0; /* No margin at top */
   z-index: 30;
+  width: 100%;
   background: linear-gradient(to right, #f0f8ff, #f8f9fa);
   padding: 0.85rem 1.25rem;
   box-shadow: 0 3px 6px rgba(0,0,0,0.08);
   border-bottom: 1px solid #e5e7eb;
-  border-top: 1px solid #f0f0f5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;

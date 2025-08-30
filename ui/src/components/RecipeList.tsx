@@ -27,7 +27,6 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   useEffect(() => {
     // Explicitly use 'demo-user' as default to ensure consistent user ID
     const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
-    console.log(`Fetching recipes with user_id: ${userId}`); // Debug log
     fetch(`/api/recipes?user_id=${encodeURIComponent(userId)}`)
       .then((res) => res.json())
       .then((data) => {

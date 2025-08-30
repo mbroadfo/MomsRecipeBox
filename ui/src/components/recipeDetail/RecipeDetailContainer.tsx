@@ -17,6 +17,7 @@ import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { StepsEditor } from './parts/StepsEditor';
 import '../RecipeDetail.css';
+import '../../components/shoppingList/ShoppingListPage.css';
 
 interface Props { recipeId?: string; isNew?: boolean; onBack: () => void; }
 export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false, onBack }) => {

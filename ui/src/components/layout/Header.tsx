@@ -4,39 +4,16 @@ import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
 interface HeaderProps {
-  onToggleSidebar?: () => void;
-  showSidebar?: boolean;
+  // No sidebar props needed anymore
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, showSidebar = false }) => {
+export const Header: React.FC<HeaderProps> = () => {
   const location = useLocation();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
   return (
     <header className="app-header flex items-center justify-between">
       <div className="flex items-center gap-4 md:gap-6 min-w-0 flex-shrink-0">
-        {onToggleSidebar && (
-          <button
-            type="button"
-            aria-label="Toggle navigation drawer"
-            onClick={onToggleSidebar}
-            className="focus:outline-none"
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          >
-            {showSidebar ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="3" x2="9" y2="21"></line>
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            )}
-          </button>
-        )}
         
         <Link to="/" className="flex items-center gap-4 flex-shrink-0">
           <img src={defaultLogo} alt="MRB Logo" className="app-logo" />
@@ -58,22 +35,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, showSidebar = f
             Recipes
           </Link>
         </nav>
-        
-        <Link 
-          to="/shopping-list" 
-          className={`flex items-center px-3 py-1.5 rounded-md ${
-            location.pathname === '/shopping-list' 
-              ? 'bg-blue-100 text-blue-700' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          <span className="font-medium">Shopping List</span>
-        </Link>
         
         <div className="relative ml-3">
           <span

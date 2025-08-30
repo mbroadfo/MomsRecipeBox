@@ -5,21 +5,14 @@ import './Layout.css';
 
 interface LayoutProps {
   children: ReactNode;
-  onToggleSidebar?: () => void;
-  showSidebar?: boolean;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  onToggleSidebar, 
-  showSidebar = false 
+  children 
 }) => {
   return (
     <div className="app-layout bg-gray-50 text-gray-900">
-      <Header 
-        onToggleSidebar={onToggleSidebar} 
-        showSidebar={showSidebar}
-      />
+      <Header />
       <div className="app-content">
         {children}
       </div>

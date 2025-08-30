@@ -1,0 +1,27 @@
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.app-content {
+  flex-grow: 1;
+  padding-top: 1rem;
+  width: 100%;
+}
+
+/* Adjust spacing for specific pages */
+.shopping-list-page {
+  padding-top: 0;
+}
+
+.recipe-page {
+  padding-top: 0;
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    padding-top: 1.5rem;
+  }
+}

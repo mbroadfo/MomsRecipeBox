@@ -43,7 +43,7 @@ export const Header: React.FC<Props> = ({
   }, [editing]);
 
   return (
-    <div style={{ position:'sticky', top:0, zIndex:50 }}>
+    <div style={{ position:'relative', zIndex:10 }}>
       <style>{`
         h1[data-placeholder]:empty:before {
           content: attr(data-placeholder);
@@ -51,7 +51,7 @@ export const Header: React.FC<Props> = ({
           font-style: italic;
         }
       `}</style>
-      <div className="shopping-list-header" style={{ marginBottom: '0' }}>
+      <div className="shopping-list-header" style={{ marginBottom: '0', marginTop: '0.5rem' }}>
         <div className="back-button-container">
           <button 
             className="back-to-recipes-button"

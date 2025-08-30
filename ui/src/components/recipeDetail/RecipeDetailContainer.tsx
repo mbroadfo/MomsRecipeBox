@@ -4,7 +4,7 @@ import { useRecipe } from './hooks/useRecipe';
 import { useNewRecipe } from './hooks/useNewRecipe';
 import { useWorkingRecipe, buildSavePayload } from './hooks/useWorkingRecipe';
 import { useImageUpload } from './hooks/useImageUpload';
-import { Header } from './parts/Header';
+import { Header as RecipeHeader } from './parts/Header';
 import { Tags } from './parts/Tags';
 import { Subtitle } from './parts/Subtitle';
 import { Meta } from './parts/Meta';
@@ -269,11 +269,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   return (
     <div className="recipe-page">
       <div className="recipe-left">{/* flex column; header separated from scroll area */}
-        <Header
+        <RecipeHeader
           title={working.title}
           editing={editMode}
           saving={saving}
-          onTitleChange={v => patch({ title: v })}
+          onTitleChange={(v: string) => patch({ title: v })}
           onEdit={startEdit}
           onSave={save}
           onCancel={cancelEdit}

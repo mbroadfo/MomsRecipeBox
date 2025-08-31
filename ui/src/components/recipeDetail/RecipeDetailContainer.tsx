@@ -16,7 +16,9 @@ import { Notes } from './parts/Notes';
 import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { StepsEditor } from './parts/StepsEditor';
+import { RecipeAIChat } from './parts/RecipeAIChat';
 import '../RecipeDetail.css';
+import './parts/RecipeAIChat.css';
 import '../../components/shoppingList/ShoppingListPage.css';
 
 interface Props { recipeId?: string; isNew?: boolean; onBack: () => void; }
@@ -24,6 +26,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const navigate = useNavigate();
   const [editMode, setEditMode] = useState(isNew);
   const [saving, setSaving] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(isNew); // Show AI chat by default for new recipes
   
   // For existing recipes
   const { recipe: existingRecipe, loading: existingLoading, error: existingError, refresh } = 
@@ -39,8 +42,22 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   useEffect(() => {
     if (isNew) {
       setEditMode(true);
+    } else if (recipeId) {
+      // Check if this is a newly created recipe that might need image polling
+      const isNewlyCreated = window.location.pathname.includes(`/recipe/${recipeId}`) && 
+        window.performance && 
+        window.performance.navigation && 
+        window.performance.navigation.type === 0; // 0 means navigation by direct URL (not reload)
+      
+      if (isNewlyCreated) {
+        console.log('Detected new recipe navigation, will poll for image updates');
+        // Poll for image updates after a short delay to ensure backend processing is complete
+        setTimeout(() => {
+          refresh();
+        }, 500);
+      }
     }
-  }, [isNew]);
+  }, [isNew, recipeId, refresh]);
   
   // Combine states for unified handling
   const recipe = isNew ? newRecipe : existingRecipe;
@@ -252,6 +269,32 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           onVisibilityChange={patch}
         />
         <div className="recipe-left-scroll">{/* new scroll container */}
+          {isNew && (
+            <button 
+              className="recipe-ai-toggle" 
+              onClick={() => setShowAIChat(!showAIChat)}
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {showAIChat ? (
+                  <>
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                  </>
+                )}
+              </svg>
+              {showAIChat ? "Hide Recipe AI Assistant" : "Show Recipe AI Assistant"}
+            </button>
+          )}
+          
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
           <Meta source={working.source as any} author={working.author} editing={editMode} onChange={patch} />
           <Tags tags={working.tags} editing={editMode} add={addTag} remove={removeTag} />
@@ -321,12 +364,219 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         </div>
       </div>
       <div className="recipe-right">
-        <ImagePane 
-          url={working.image_url} 
-          uploading={uploading} 
-          onUpload={f => upload(f)}
-          lastUploadTime={lastUploadTime} 
-        />
+        <div className="recipe-right-content">
+          <ImagePane 
+            url={working.image_url} 
+            uploading={uploading} 
+            onUpload={f => upload(f)}
+            lastUploadTime={lastUploadTime} 
+          />
+          
+          {isNew && (
+            <div className="recipe-ai-container">
+              <RecipeAIChat 
+                isVisible={showAIChat} 
+                onApplyRecipe={async (recipeData) => {
+                  // We'll directly create the recipe using the recipe data without updating the form
+                  try {
+                    setSaving(true);
+                    
+                    // Build a complete recipe object
+                    const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+                    
+                    // Prepare ingredients in the right format
+                    const ingredients = Array.isArray(recipeData.ingredients) ? recipeData.ingredients.map(ingredient => ({
+                      name: ingredient.name || "",
+                      quantity: ingredient.quantity || "",
+                      position: 1
+                    })) : [];
+                    
+                    // Normalize tags to lowercase
+                    const normalizedTags = Array.isArray(recipeData.tags) 
+                      ? recipeData.tags.map(tag => tag.toLowerCase()) 
+                      : [];
+                    
+                    // Save the AI extraction image URL for later use
+                    const initialImageUrl = recipeData.imageUrl || null;
+                    if (initialImageUrl) {
+                      console.log("Found image URL from AI extraction:", initialImageUrl);
+                      // Don't set image_url yet - we'll handle it in a dedicated step after recipe creation
+                    }
+                    
+                    // Build the payload
+                    const payload = {
+                      title: recipeData.title || "New Recipe",
+                      subtitle: recipeData.subtitle || "",
+                      description: recipeData.description || "",
+                      author: recipeData.author || "",
+                      source: recipeData.source || "",
+                      owner_id: userId,
+                      visibility: "private", // Default to private for AI-generated recipes
+                      tags: normalizedTags,
+                      yield: recipeData.yield || "",
+                      time: recipeData.time || {},
+                      ingredients: ingredients,
+                      steps: Array.isArray(recipeData.steps) ? recipeData.steps : [],
+                      instructions: Array.isArray(recipeData.steps) ? recipeData.steps : [],
+                      notes: recipeData.notes || "",
+                      // Don't set image_url in initial creation to avoid race conditions
+                    };
+                    
+                    console.log("Creating new recipe with payload:", payload);
+                    
+                    // Make the API call to create the recipe
+                    const response = await fetch('/api/recipes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                      const errorText = await response.text();
+                      throw new Error(`Recipe creation failed (${response.status}): ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log("Successfully created recipe:", data);
+                    
+                    // Check if we have an image URL from the AI extraction
+                    if (initialImageUrl) {
+                      try {
+                        console.log("Uploading image from URL:", initialImageUrl);
+                        
+                        // Fetch the image from the URL
+                        const imageResponse = await fetch(`/api/recipes/${data._id}/image`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ 
+                            imageUrl: initialImageUrl,
+                            recipeName: recipeData.title || "Recipe" 
+                          })
+                        });
+                        
+                        if (!imageResponse.ok) {
+                          console.error("Failed to upload image from URL:", await imageResponse.text());
+                        } else {
+                          console.log("Successfully uploaded image from URL");
+                          
+                          // After successful image upload, we need to verify the image is properly saved in MongoDB
+                          // Add a significantly longer delay to ensure S3 processing completes and MongoDB update is done
+                          let maxAttempts = 5;
+                          let attempt = 0;
+                          let imageUrlConfirmed = false;
+                          
+                          while (attempt < maxAttempts && !imageUrlConfirmed) {
+                            attempt++;
+                            console.log(`Verification attempt ${attempt}/${maxAttempts} for image URL...`);
+                            
+                            try {
+                              // Wait between attempts with increasing delay
+                              await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                              
+                              const refreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${(window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'}`);
+                              if (refreshResponse.ok) {
+                                const refreshedData = await refreshResponse.json();
+                                console.log("Refreshed recipe data with image:", refreshedData);
+                                console.log("Updated image_url:", refreshedData.image_url);
+                                
+                                // If we have the image_url, update our local state to ensure it's available when we navigate
+                                if (refreshedData && refreshedData.image_url) {
+                                  console.log("Setting image URL for navigation:", refreshedData.image_url);
+                                  imageUrlConfirmed = true;
+                                  // If imageUrl is confirmed, manually update MongoDB again just to be absolutely sure
+                                  try {
+                                    const manualUpdateResponse = await fetch(`/api/recipes/${data._id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ 
+                                        image_url: refreshedData.image_url 
+                                      })
+                                    });
+                                    
+                                    if (manualUpdateResponse.ok) {
+                                      console.log("Manually reinforced image URL in recipe document");
+                                    }
+                                  } catch (updateErr) {
+                                    console.error("Error in manual image_url update:", updateErr);
+                                  }
+                                } else {
+                                  console.log("No image_url found yet, will retry");
+                                }
+                              }
+                            } catch (refreshErr) {
+                              console.error("Error refreshing recipe data:", refreshErr);
+                            }
+                          }
+                          
+                          if (!imageUrlConfirmed) {
+                            console.error("Failed to verify image_url after multiple attempts!");
+                          }
+                        }
+                      } catch (imageErr) {
+                        console.error("Error uploading image from URL:", imageErr);
+                      }
+                    } 
+                    // If we have a temporary image, copy it to the new ID
+                    else {
+                      const tempImageUrl = localStorage.getItem('newRecipe_tempImageUrl');
+                      if (tempImageUrl && data._id) {
+                        try {
+                          // Extract the filename part from the URL
+                          const urlParts = tempImageUrl.split('/');
+                          const filename = urlParts[urlParts.length - 1];
+                          
+                          // Tell the backend to copy the image
+                          await fetch(`/api/recipes/${data._id}/copy-image`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              sourceKey: `${tempId}.${filename.split('.').pop()}`,
+                              targetKey: `${data._id}.${filename.split('.').pop()}`
+                            })
+                          });
+                          
+                          // Clean up the localStorage
+                          localStorage.removeItem('newRecipe_tempImageUrl');
+                        } catch (imageErr) {
+                          console.error("Error copying temporary image:", imageErr);
+                        }
+                      }
+                    }
+                    
+                    // Wait for the S3 image processing to complete and MongoDB to update
+                    console.log('Recipe created with ID:', data._id);
+                    console.log('Image URL from AI data:', recipeData.imageUrl);
+                    
+                    // Add a longer delay to ensure everything is processed before navigation
+                    console.log('Waiting for image processing to complete...');
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Do one final refresh to get the most up-to-date data including the S3 image URL
+                    try {
+                      const finalRefreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${(window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'}`);
+                      if (finalRefreshResponse.ok) {
+                        const finalData = await finalRefreshResponse.json();
+                        console.log("Final recipe data before navigation:", finalData);
+                        console.log("Final image_url:", finalData.image_url);
+                      }
+                    } catch (err) {
+                      console.error("Error in final refresh:", err);
+                    }
+                    
+                    // Navigate to the newly created recipe
+                    navigate(`/recipe/${data._id}`);
+                    
+                  } catch (err) {
+                    console.error("Error creating recipe:", err);
+                    alert(`Failed to create recipe: ${err instanceof Error ? err.message : String(err)}`);
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -11,13 +11,28 @@ export async function handler(event) {
   let format = null;
 
   try {
-    // First, try to get format info from the recipe document
+    // First, try to get format info and image_url from the recipe document
     try {
       const db = await getDb();
       const recipe = await db.collection('recipes').findOne(
         { _id: id },
-        { projection: { imageMetadata: 1 } }
+        { projection: { imageMetadata: 1, image_url: 1 } }
       );
+      
+      // Check if we have a direct S3 URL
+      if (recipe && recipe.image_url && recipe.image_url.startsWith('https://') && recipe.image_url.includes('s3.amazonaws.com')) {
+        console.log(`Found direct S3 URL: ${recipe.image_url}`);
+        
+        // Redirect to the S3 URL
+        return {
+          statusCode: 302,
+          headers: {
+            'Location': recipe.image_url,
+            'Cache-Control': 'max-age=31536000'
+          },
+          body: ''
+        };
+      }
       
       if (recipe && recipe.imageMetadata && recipe.imageMetadata.format) {
         format = recipe.imageMetadata.format;

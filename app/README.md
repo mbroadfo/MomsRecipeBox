@@ -68,6 +68,36 @@ The shopping list implementation allows users to:
 - Track which recipe each ingredient came from
 - Field naming compatibility ensures both frontend and backend work seamlessly regardless of naming conventions
 
+## AI Recipe Assistant
+
+The API includes an AI-powered recipe assistant with the following capabilities, enabling users to quickly create recipes with minimal effort:
+
+| Aspect        | Implementation |
+| ------------- | -------------- |
+| Chat Interface| Interactive conversation with AI to build recipes |
+| URL Extraction| Automatic detection and extraction of recipe data from URLs |
+| Image Extraction| Automatically finds and downloads recipe images from websites |
+| Recipe Structure| Parses conversational input into structured recipe format |
+| API Endpoints | `/ai/chat` for conversation, `/ai/extract` for URL processing |
+| Integration   | Seamlessly works with recipe creation workflow |
+| Recipe Creation| Automatically creates a recipe in the database when ready |
+| Image Processing| Downloads, stores, and associates images with newly created recipes |
+
+The AI Recipe Assistant provides:
+
+- Natural language interface for recipe creation
+- Automatic extraction of ingredients, instructions, and metadata from URLs
+- Automatic extraction and processing of recipe images from websites
+- Support for direct copy/paste of recipe content from websites
+- Interactive refinement of recipe details
+- Structured output compatible with the recipe creation form
+- Smart detection of recipe components from conversational text
+- Automated recipe creation with proper formatting of all fields
+- Support for image downloading and association with new recipes
+- Intelligent recipe metadata extraction including tags, cooking times, and servings
+- Direct recipe creation from the chat interface without form-filling
+- Image handling that extracts, downloads, uploads to S3, and associates with recipes
+
 ## RESTful Routes & Handlers (Excerpt)
 
 | File                          | Method | Route                      | Description |
@@ -90,6 +120,9 @@ The shopping list implementation allows users to:
 | `update_shopping_list_item.js`| PUT    | /shopping-list/item/{id}   | Update shopping list item |
 | `delete_shopping_list_item.js`| DELETE | /shopping-list/item/{id}   | Delete shopping list item |
 | `clear_shopping_list.js`      | POST   | /shopping-list/clear       | Clear shopping list or mark all as checked |
+| `ai_recipe_assistant.js`      | POST   | /ai/chat                   | Send message to AI recipe assistant |
+| `ai_recipe_assistant.js`      | POST   | /ai/extract                | Extract recipe data from URL |
+| `ai_recipe_assistant.js`      | POST   | /ai/create-recipe          | Create recipe from AI conversation data |
 
 ## Handler Pattern
 
@@ -149,6 +182,7 @@ All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary 
 | Image Handling | Complete | Upload, update, retrieve, and delete images for recipes |
 | Favorites System | Complete | Like/unlike recipes with proper count management |
 | Shopping List | Complete | Add, update, delete shopping list items; mark as checked or clear list |
+| AI Recipe Assistant | Complete | Chat interface to help create recipes and extract recipe data from URLs |
 | Auth Integration | Planned | Full Auth0 JWT integration for secure user identification |
 | User Favorites Feed | Planned | Endpoint to list all recipes favorited by a user |
 | Analytics | Planned | Endpoints to expose recipe popularity and engagement metrics |

@@ -3,7 +3,13 @@ import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
 
 export default async function createRecipe(db, body) {
+  // Generate a new ObjectId here to ensure we can work with it consistently
+  const recipeId = new ObjectId();
+  
+  console.log(`Creating new recipe with generated _id: ${recipeId}`);
+  
   const recipe = {
+    _id: recipeId, // Explicitly set the ID
     title: body.title,
     subtitle: body.subtitle || '',
     description: body.description || '',
@@ -22,13 +28,27 @@ export default async function createRecipe(db, body) {
     created_at: new Date(),
     updated_at: new Date(),
     comments: [],
-    likes_count: 0 // denormalized count field (updated by like handler)
+    likes_count: 0, // denormalized count field (updated by like handler)
+    image_url: body.image_url || null // Include image URL if provided
   };
 
-  const result = await db.collection('recipes').insertOne(recipe);
+  // Log the image URL if provided
+  if (body.image_url) {
+    console.log(`Recipe created with image_url: ${body.image_url}`);
+  } else {
+    console.log(`Recipe created without image_url`);
+  }
 
+  const result = await db.collection('recipes').insertOne(recipe);
+  console.log(`Recipe inserted with _id: ${result.insertedId}`);
+
+  // Return the ObjectId as a string for consistency
   return {
     statusCode: 201,
-    body: JSON.stringify({ _id: result.insertedId, ...recipe })
+    body: JSON.stringify({ 
+      _id: result.insertedId.toString(), 
+      ...recipe,
+      _id: result.insertedId.toString() // Override the _id to ensure it's a string
+    })
   };
 }

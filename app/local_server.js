@@ -150,6 +150,9 @@ const server = http.createServer(async (req, res) => {
     pathParameters.itemId = shoppingListItemMatch[1];
   }
 
+  // Add support for AI endpoints
+  // This will proxy /ai/* requests to the lambda handler
+
   // Handle the request differently based on content type
   if (
     req.headers['content-type'] &&

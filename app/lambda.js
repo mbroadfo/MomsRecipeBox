@@ -21,8 +21,9 @@ import { handler as getShoppingList } from './handlers/get_shopping_list.js';
 import { handler as updateShoppingListItem } from './handlers/update_shopping_list_item.js';
 import { handler as deleteShoppingListItem } from './handlers/delete_shopping_list_item.js';
 import { handler as clearShoppingList } from './handlers/clear_shopping_list.js';
-// AI-powered categorization
+// AI-powered handlers
 import { handler as categorizeIngredients } from './handlers/categorize_ingredients.js';
+import { handler as aiRecipeAssistant } from './handlers/ai_recipe_assistant.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -111,6 +112,14 @@ export async function handler(event, context) {
     // AI ingredient categorization
     if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/categorize') {
       return await categorizeIngredients(event);
+    }
+    
+    // AI recipe assistant endpoints
+    if (event.httpMethod === 'POST' && pathOnly === '/ai/chat') {
+      return await aiRecipeAssistant(event);
+    }
+    if (event.httpMethod === 'POST' && pathOnly === '/ai/extract') {
+      return await aiRecipeAssistant(event);
     }
 
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };

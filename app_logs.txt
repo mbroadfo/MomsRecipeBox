@@ -1,0 +1,1257 @@
+﻿≡ƒÜÇ Local server running at http://localhost:3000
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+Response: 200 2953 bytes
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+Response: 200 2953 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+Response: 200 2953 bytes
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+Response: 200 2953 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+≡ƒôÑ GET /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: GET /recipes/68b492b1e5ee01cd443730b4?user_id=demo-user
+Response: 200 2953 bytes
+Response: 200 2953 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ DELETE /recipes/68b492b1e5ee01cd443730b4
+≡ƒôÑ Event received: DELETE /recipes/68b492b1e5ee01cd443730b4
+Response: 200 28 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ POST /ai/chat
+≡ƒôÑ Event received: POST /ai/chat
+Extracted image URL: https://res.cloudinary.com/hksqkdlah/image/upload/ar_1:1,c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,q_auto:low,w_150/22995_sil-measuringspoons-cuisipro-747002
+Response: 200 4587 bytes
+≡ƒôÑ POST /recipes
+≡ƒôÑ Event received: POST /recipes
+Response: 201 2941 bytes
+≡ƒôÑ PUT /recipes/68b4988771efcfdc6ec6486b/image
+≡ƒôÑ Event received: PUT /recipes/68b4988771efcfdc6ec6486b/image
+Processing image from URL for recipe 68b4988771efcfdc6ec6486b
+Downloaded image from URL: https://res.cloudinary.com/hksqkdlah/image/upload/ar_1:1,c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,q_auto:low,w_150/22995_sil-measuringspoons-cuisipro-747002, size: 8321 bytes, type: image/jpeg
+Processing image upload for recipe 68b4988771efcfdc6ec6486b: image/jpeg, 8321 bytes
+Local mode: Uploading original image without processing
+No old images to clean up for recipe 68b4988771efcfdc6ec6486b
+Updated image metadata and URL in recipe 68b4988771efcfdc6ec6486b document
+Response: 200 105 bytes
+≡ƒôÑ GET /recipes/68b4988771efcfdc6ec6486b
+≡ƒôÑ Event received: GET /recipes/68b4988771efcfdc6ec6486b?user_id=demo-user
+Response: 200 2955 bytes
+≡ƒôÑ GET /recipes/68b4988771efcfdc6ec6486b
+≡ƒôÑ Event received: GET /recipes/68b4988771efcfdc6ec6486b?user_id=demo-user
+Response: 200 2955 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ DELETE /recipes/68b4988771efcfdc6ec6486b
+≡ƒôÑ Event received: DELETE /recipes/68b4988771efcfdc6ec6486b
+Response: 200 28 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ POST /ai/chat
+≡ƒôÑ Event received: POST /ai/chat
+Response: 200 1639 bytes
+≡ƒôÑ POST /recipes
+≡ƒôÑ Event received: POST /recipes
+Response: 201 400 bytes
+≡ƒôÑ GET /recipes/68b498ef71efcfdc6ec6486c
+≡ƒôÑ Event received: GET /recipes/68b498ef71efcfdc6ec6486c?user_id=demo-user
+Response: 200 414 bytes
+≡ƒôÑ GET /recipes/68b498ef71efcfdc6ec6486c
+≡ƒôÑ Event received: GET /recipes/68b498ef71efcfdc6ec6486c?user_id=demo-user
+Response: 200 414 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ DELETE /recipes/68b498ef71efcfdc6ec6486c
+≡ƒôÑ Event received: DELETE /recipes/68b498ef71efcfdc6ec6486c
+Response: 200 28 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ GET /recipes
+≡ƒôÑ Event received: GET /recipes?user_id=demo-user
+Response: 200 3407 bytes
+≡ƒôÑ POST /ai/chat
+≡ƒôÑ Event received: POST /ai/chat
+Extracted image URL: https://res.cloudinary.com/hksqkdlah/image/upload/ar_1:1,c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,q_auto:low,w_150/22995_sil-measuringspoons-cuisipro-747002
+Response: 200 4291 bytes
+≡ƒôÑ POST /recipes
+≡ƒôÑ Event received: POST /recipes
+Response: 201 2795 bytes
+≡ƒôÑ PUT /recipes/68b4996271efcfdc6ec6486d/image
+≡ƒôÑ Event received: PUT /recipes/68b4996271efcfdc6ec6486d/image
+Processing image from URL for recipe 68b4996271efcfdc6ec6486d
+Downloaded image from URL: https://res.cloudinary.com/hksqkdlah/image/upload/ar_1:1,c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,q_auto:low,w_150/22995_sil-measuringspoons-cuisipro-747002, size: 8321 bytes, type: image/jpeg
+Processing image upload for recipe 68b4996271efcfdc6ec6486d: image/jpeg, 8321 bytes
+Local mode: Uploading original image without processing
+No old images to clean up for recipe 68b4996271efcfdc6ec6486d
+Updated image metadata and URL in recipe 68b4996271efcfdc6ec6486d document
+Response: 200 105 bytes
+≡ƒôÑ GET /recipes/68b4996271efcfdc6ec6486d
+≡ƒôÑ Event received: GET /recipes/68b4996271efcfdc6ec6486d?user_id=demo-user
+Response: 200 2809 bytes
+≡ƒôÑ GET /recipes/68b4996271efcfdc6ec6486d
+≡ƒôÑ Event received: GET /recipes/68b4996271efcfdc6ec6486d?user_id=demo-user
+Response: 200 2809 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes
+≡ƒôÑ GET /shopping-list
+≡ƒôÑ Event received: GET /shopping-list?user_id=auth0%7Ctestuser
+Found 0 items in shopping list for user auth0|testuser
+Found shopping list for user auth0|testuser: {
+  "_id": "68b0f352b16d57ba48bf8bdd",
+  "user_id": "auth0|testuser",
+  "created_at": "2025-08-29T00:24:50.826Z",
+  "items": [],
+  "updated_at": "2025-08-31T14:26:39.272Z"
+}
+Response: 200 167 bytes

@@ -1,8 +1,18 @@
 # Mom's Recipe Box UI
 
-## A React + TypeScript + Vite frontend for## UI Components and Features
+## A React + TypeScript + Vite frontend for viewing and editing recipes
 
-### Streamlined Header Design
+## UI Components and Features
+
+### Streamlined Header- **Chat Interface**: Conversational UI for recipe creation located below the image in its own scrollable pane
+- **Multiple Input Methods**: Supports:
+  - Natural language recipe creation (\"Create a chocolate chip cookie recipe\")
+  - URL extraction (paste any recipe website URL for automatic extraction)
+  - Direct content pasting (paste recipe text for automatic parsing)
+  - Ingredient-based suggestions (\"What can I make with chicken, rice, and broccoli?\")
+- **Seamless Recipe Creation**: One-click recipe creation from AI responses without manual form filling
+- **Automatic Image Extraction**: Detects, retrieves, and associates images from recipe URLs with new recipes
+- **Streamlined Position**: Chat interface positioned below the image for better user experience
 
 The recipe header provides an efficient, consolidated interface:
 
@@ -55,6 +65,7 @@ The application provides consistent navigation:
 - Consistent "Back to List" navigation for improved user experience
 - Tag management
 - Comments system
+- AI Recipe Assistant with chat interface for recipe creation and extraction
 
 ## Overview
 
@@ -146,6 +157,28 @@ npm run preview --prefix ui # Serve production bundle locally
 
 ## Additional Interaction Features
 
+### AI Recipe Assistant
+
+The UI includes a sophisticated AI Recipe Assistant with the following features:
+
+- **Integrated Chat Interface**: Conversational UI for recipe creation located below the image in its own scrollable pane
+- **Multiple Input Methods**: Supports:
+  - Natural language recipe creation (\"Create a chocolate chip cookie recipe\")
+  - URL extraction (paste any recipe website URL for automatic extraction)
+  - Direct content pasting (paste recipe text for automatic parsing)
+  - Ingredient-based suggestions (\"What can I make with chicken, rice, and broccoli?\")
+- **Seamless Recipe Creation**: One-click recipe creation from AI responses without manual form filling
+- **Automatic Image Extraction**: Detects, retrieves, and associates images from recipe URLs with new recipes
+- **Streamlined Position**: Chat interface positioned below the image for better user experience
+- **Intelligent Parsing**: Structures free-text recipes into proper components (ingredients, instructions, metadata)
+- **Interactive Refinement**: Allows users to refine and modify recipes through conversation
+- **Example Suggestions**: Provides prompt examples to help users get started
+- **Visual Feedback**: Loading indicators and success messages keep users informed
+- **Togglable Interface**: Can be shown/hidden with a simple button click
+- **Automatic Recipe Creation**: Creates new recipes directly from the assistant without form entry
+
+The assistant significantly reduces the effort required to add recipes to the system, whether creating from scratch or importing from external sources.
+
 ### Favorites (Like) Toggle System
 
 The recipe favoriting system uses an optimistic UI approach:
@@ -186,6 +219,8 @@ ui/
           Notes.tsx                   # Recipe notes
           Comments.tsx                # Comments section
           ImagePane.tsx               # Image display and upload
+          RecipeAIChat.tsx            # AI Recipe Assistant chat interface
+          RecipeAIChat.css            # Styling for the AI chat component
         RecipeDetail.css              # Component-specific styles including interactive ingredient styling
     pages/
       HomePage.tsx                    # Main recipe listing page
@@ -242,6 +277,9 @@ The UI interacts with the following API endpoints:
 - `POST /api/recipes/:id/comments` - Add comments
 - `PUT /api/recipes/:id/comments/:commentId` - Update comments
 - `DELETE /api/recipes/:id/comments/:commentId` - Delete comments
+- `POST /api/ai/chat` - Send messages to the AI recipe assistant
+- `POST /api/ai/extract` - Extract recipe data from URLs
+- `POST /api/ai/create-recipe` - Create recipe directly from AI conversation
 
 ## License
 

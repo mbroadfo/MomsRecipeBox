@@ -4,16 +4,23 @@
   "description": "Tests for MomsRecipeBox API",
   "type": "module",
   "scripts": {
-    "test": "npm run test:recipes && npm run test:images && npm run test:comments && npm run test:favorites && npm run test:shopping",
+    "test": "npm run test:recipes && npm run test:images && npm run test:comments && npm run test:favorites && npm run test:shopping && npm run test:ai",
     "test:recipes": "node test_recipes.js",
     "test:images": "node test_images.js",
     "test:comments": "node test_comments.js",
     "test:favorites": "node test_favorites.js",
-    "test:shopping": "node test_shopping_list.js"
+    "test:shopping": "node test_shopping_list.js",
+    "test:ai": "mocha test_ai_recipe_assistant.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
+    "chai": "^4.3.7",
+    "chai-http": "^4.4.0",
     "form-data": "^4.0.0",
-    "node-fetch": "^3.3.2"
+    "mocha": "^10.2.0",
+    "nock": "^13.3.2",
+    "node-fetch": "^3.3.2",
+    "openai": "^5.16.0",
+    "sinon": "^15.2.0"
   }
 }

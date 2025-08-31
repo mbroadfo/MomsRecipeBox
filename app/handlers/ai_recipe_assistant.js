@@ -3,6 +3,73 @@ import { getDb } from '../app.js';
 import axios from 'axios';
 
 /**
+ * Helper function to optimize image URLs from known sources
+ * Attempts to get higher resolution or better quality versions of images
+ */
+function optimizeImageUrl(url, recipeTitle = '') {
+  // Handle Cloudinary URLs (as seen in your example)
+  if (url.includes('cloudinary.com')) {
+    console.log('Optimizing Cloudinary URL');
+    
+    // Extract the base parts and image ID
+    const parts = url.split('/');
+    let transformIndex = -1;
+    let baseUrl = '';
+    let imageId = '';
+    
+    // Find the transformation section in the URL
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].includes('upload')) {
+        transformIndex = i + 1;
+        baseUrl = parts.slice(0, i+1).join('/');
+        break;
+      }
+    }
+    
+    if (transformIndex > 0 && transformIndex < parts.length) {
+      // Extract the image ID (last part of the URL)
+      imageId = parts[parts.length - 1];
+      
+      // Create a new optimized URL with better quality parameters
+      // Use: larger dimensions, better quality, no cropping
+      return `${baseUrl}/c_fill,dpr_2.0,f_auto,fl_lossy.progressive.strip_profile,g_faces:auto,h_800,q_auto:good,w_1200/${imageId}`;
+    }
+  }
+  
+  // Handle image URLs with common compression or resizing parameters
+  if (url.includes('resize=') || url.includes('quality=') || url.includes('width=') || url.includes('size=')) {
+    // Try to identify and remove size-limiting parameters
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete('resize');
+    urlObj.searchParams.delete('quality');
+    urlObj.searchParams.delete('w'); // Common width parameter
+    urlObj.searchParams.delete('h'); // Common height parameter
+    urlObj.searchParams.delete('width');
+    urlObj.searchParams.delete('height');
+    urlObj.searchParams.delete('size');
+    
+    // Sometimes add a quality parameter
+    if (!urlObj.searchParams.has('q')) {
+      urlObj.searchParams.set('q', '95'); // Request high quality
+    }
+    
+    return urlObj.toString();
+  }
+  
+  // Handle common CDN patterns
+  if (url.match(/\d+x\d+/) || url.match(/w\d+/) || url.match(/small|medium|thumbnail/i)) {
+    // Try to replace size limitations with larger sizes
+    return url
+      .replace(/\d+x\d+/, '1200x800') // Replace dimensions like 300x200
+      .replace(/w\d+/, 'w1200') // Replace width designators like w300
+      .replace(/small|medium|thumbnail/i, 'large'); // Replace size indicators
+  }
+  
+  // Return the original URL if no optimizations were applied
+  return url;
+}
+
+/**
  * Handler for AI recipe chat and URL extraction
  * This handler connects to the OpenAI API to provide recipe creation assistance
  */
@@ -96,39 +163,152 @@ async function handleUrlExtraction(url, apiKey) {
     
     // First, extract potential image URLs from the HTML
     let imageUrl = null;
+    let allImageCandidates = [];
     
-    // Look for schema.org recipe markup with image
-    const schemaMatch = htmlContent.match(/"image"\s*:\s*"([^"]+)"/);
-    if (schemaMatch) {
-      imageUrl = schemaMatch[1];
+    // Look for schema.org recipe markup with image (often the most reliable)
+    const schemaMatches = Array.from(htmlContent.matchAll(/"image"\s*:\s*"([^"]+)"/g));
+    if (schemaMatches.length > 0) {
+      // Collect all schema image URLs
+      schemaMatches.forEach(match => {
+        allImageCandidates.push({
+          url: match[1],
+          priority: 90, // High priority
+          source: 'schema',
+          size: 0 // Will be calculated later
+        });
+      });
     }
     
-    // Look for Open Graph image tags
-    if (!imageUrl) {
-      const ogImageMatch = htmlContent.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-      if (ogImageMatch) {
-        imageUrl = ogImageMatch[1];
-      }
+    // Look for Open Graph image tags (also very reliable)
+    const ogImageMatches = Array.from(htmlContent.matchAll(/<meta\s+property="og:image"\s+content="([^"]+)"/ig));
+    if (ogImageMatches.length > 0) {
+      ogImageMatches.forEach(match => {
+        allImageCandidates.push({
+          url: match[1],
+          priority: 85, // High priority, but slightly below schema
+          source: 'og',
+          size: 0
+        });
+      });
     }
     
     // Look for Twitter image tags
-    if (!imageUrl) {
-      const twitterImageMatch = htmlContent.match(/<meta\s+name="twitter:image"\s+content="([^"]+)"/i);
-      if (twitterImageMatch) {
-        imageUrl = twitterImageMatch[1];
-      }
+    const twitterImageMatches = Array.from(htmlContent.matchAll(/<meta\s+name="twitter:image"\s+content="([^"]+)"/ig));
+    if (twitterImageMatches.length > 0) {
+      twitterImageMatches.forEach(match => {
+        allImageCandidates.push({
+          url: match[1],
+          priority: 80,
+          source: 'twitter',
+          size: 0
+        });
+      });
     }
     
     // Look for regular image tags with recipe-related classes or IDs
-    if (!imageUrl) {
-      const imgMatches = Array.from(htmlContent.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/gi));
-      for (const match of imgMatches) {
-        const imgTag = match[0].toLowerCase();
-        if (imgTag.includes('recipe') || imgTag.includes('hero') || imgTag.includes('main')) {
-          imageUrl = match[1];
-          break;
-        }
+    const imgMatches = Array.from(htmlContent.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/gi));
+    
+    // Extract the recipe title for better image matching
+    let recipeTitle = "";
+    const titleMatch = htmlContent.match(/<h1[^>]*>([^<]+)<\/h1>/i) || 
+                       htmlContent.match(/<title>([^<]+)<\/title>/i);
+    if (titleMatch) {
+      recipeTitle = titleMatch[1].toLowerCase().trim();
+      console.log(`Extracted recipe title for image matching: "${recipeTitle}"`);
+    }
+    
+    for (const match of imgMatches) {
+      const imgTag = match[0].toLowerCase();
+      const imgSrc = match[1];
+      
+      // Skip tiny images, icons, avatars, and common non-recipe images
+      if (imgSrc.includes('icon') || imgSrc.includes('logo') || imgSrc.includes('avatar') || 
+          imgSrc.includes('badge') || imgSrc.includes('button') || imgSrc.includes('banner') ||
+          imgSrc.includes('ad-') || imgSrc.includes('pixel') || imgSrc.includes('tracker')) {
+        continue;
       }
+      
+      // Calculate priority based on image attributes
+      let priority = 50; // Base priority
+      
+      // Extract width and height if available
+      const widthMatch = imgTag.match(/width=["']?(\d+)/);
+      const heightMatch = imgTag.match(/height=["']?(\d+)/);
+      let width = widthMatch ? parseInt(widthMatch[1]) : 0;
+      let height = heightMatch ? parseInt(heightMatch[1]) : 0;
+      
+      // Extract image size from style attribute
+      if (!width || !height) {
+        const styleWidth = imgTag.match(/style=["'][^"']*width\s*:\s*(\d+)/i);
+        const styleHeight = imgTag.match(/style=["'][^"']*height\s*:\s*(\d+)/i);
+        if (styleWidth) width = parseInt(styleWidth[1]);
+        if (styleHeight) height = parseInt(styleHeight[1]);
+      }
+      
+      // Calculate image size factor (larger images are more likely to be the main dish)
+      const size = width * height || 0;
+      
+      // Detect key image indicators in the image tag
+      if (imgTag.includes('hero') || imgTag.includes('main-image') || imgTag.includes('primary')) priority += 25;
+      if (imgTag.includes('recipe-image') || imgTag.includes('recipeimage')) priority += 30;
+      if (imgTag.includes('featured') || imgTag.includes('feature-img')) priority += 20;
+      if (imgTag.includes('header') || imgTag.includes('banner')) priority += 15;
+      
+      // Avoid equipment images
+      if (imgTag.includes('equipment') || imgTag.includes('tool')) priority -= 30;
+      if (imgTag.includes('measuring') || imgTag.includes('spoon')) priority -= 25;
+      if (imgTag.includes('product') || imgTag.includes('affiliate')) priority -= 20;
+      
+      // Check for alt text that indicates it's the main recipe image
+      const altMatch = imgTag.match(/alt=["']([^"']+)["']/i);
+      if (altMatch) {
+        const altText = altMatch[1].toLowerCase();
+        // Boost priority if alt text contains the recipe name or key terms
+        if (recipeTitle && altText.includes(recipeTitle)) priority += 40;
+        if (altText.includes('recipe') || altText.includes('dish') || altText.includes('food')) priority += 15;
+        // Penalize non-food images
+        if (altText.includes('equipment') || altText.includes('tool') || altText.includes('utensil')) priority -= 25;
+      }
+      
+      // Check image filename for clues
+      const filename = imgSrc.split('/').pop()?.toLowerCase() || '';
+      if (filename.includes('recipe') || filename.includes('dish') || filename.includes('food')) priority += 10;
+      if (filename.includes('hero') || filename.includes('main') || filename.includes('feature')) priority += 10;
+      
+      // Size-based priority adjustments
+      if (size > 100000) priority += 30; // Very large images are likely hero images
+      else if (size > 40000) priority += 15; // Medium-large images
+      else if (size < 10000 && size > 0) priority -= 10; // Small images are less likely to be the main dish
+      
+      // Add to candidates list
+      allImageCandidates.push({
+        url: imgSrc,
+        priority: priority,
+        source: 'img',
+        size: size,
+        altText: altMatch ? altMatch[1] : ''
+      });
+    }
+    
+    console.log(`Found ${allImageCandidates.length} image candidates`);
+    
+    // Sort candidates by priority (highest first)
+    allImageCandidates.sort((a, b) => b.priority - a.priority);
+    
+    // Log the top candidates for debugging
+    if (allImageCandidates.length > 0) {
+      console.log('Top 3 image candidates:');
+      for (let i = 0; i < Math.min(3, allImageCandidates.length); i++) {
+        const candidate = allImageCandidates[i];
+        console.log(`${i+1}. URL: ${candidate.url.substring(0, 100)}${candidate.url.length > 100 ? '...' : ''}`);
+        console.log(`   Priority: ${candidate.priority}, Source: ${candidate.source}, Size: ${candidate.size}`);
+        if (candidate.altText) console.log(`   Alt text: ${candidate.altText}`);
+      }
+      
+      // Select the highest priority image
+      imageUrl = allImageCandidates[0].url;
+    } else {
+      console.log('No suitable images found on the page');
     }
     
     // If image URL is relative, convert to absolute
@@ -140,6 +320,13 @@ async function handleUrlExtraction(url, apiKey) {
         const path = urlObj.pathname.split('/').slice(0, -1).join('/');
         imageUrl = `${urlObj.protocol}//${urlObj.host}${path}/${imageUrl}`;
       }
+    }
+    
+    console.log(`Selected final image URL: ${imageUrl || 'None found'}`);
+    
+    // Try to optimize the image URL if it's from a known source
+    if (imageUrl) {
+      imageUrl = optimizeImageUrl(imageUrl, recipeTitle);
     }
     
     console.log("Extracted image URL:", imageUrl);

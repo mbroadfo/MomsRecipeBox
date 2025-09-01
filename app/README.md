@@ -76,12 +76,14 @@ The API includes an AI-powered recipe assistant with the following capabilities,
 | ------------- | -------------- |
 | Chat Interface| Interactive conversation with AI to build recipes |
 | URL Extraction| Automatic detection and extraction of recipe data from URLs |
-| Image Extraction| Automatically finds and downloads recipe images from websites |
+| Image Extraction| Automatically finds and downloads recipe images from websites with intelligent selection |
 | Recipe Structure| Parses conversational input into structured recipe format |
 | API Endpoints | `/ai/chat` for conversation, `/ai/extract` for URL processing |
 | Integration   | Seamlessly works with recipe creation workflow |
 | Recipe Creation| Automatically creates a recipe in the database when ready |
 | Image Processing| Downloads, stores, and associates images with newly created recipes |
+| Error Handling| Robust retry mechanism with exponential backoff for API calls |
+| Rate Limiting | Graceful handling of API rate limits with helpful user feedback |
 
 The AI Recipe Assistant provides:
 

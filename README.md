@@ -181,7 +181,7 @@ The application now features an AI-powered recipe assistant that helps users cre
 
 - **Chat Interface**: Natural language conversation with AI to build recipes from scratch
 - **URL Extraction**: Paste a recipe URL to automatically extract ingredients, instructions, and metadata
-- **Image Extraction**: Automatically downloads and associates recipe images from websites
+- **Image Extraction**: Automatically downloads and associates recipe images from websites with intelligent image selection
 - **Streamlined UI Position**: Chat interface positioned below the image for better user experience
 - **Structured Output**: AI parses conversation into structured recipe format ready for the form
 - **Interactive Refinement**: Users can refine recipe details through conversation
@@ -192,6 +192,7 @@ The application now features an AI-powered recipe assistant that helps users cre
 - **One-Click Creation**: Create recipes directly from the chat interface without manual form entry
 - **Ingredient-Based Suggestions**: Suggest recipes based on available ingredients
 - **Automatic Categorization**: Intelligently categorizes ingredients for shopping lists
+- **Robust Error Handling**: Graceful handling of API rate limits and temporary service disruptions
 
 The AI Recipe Assistant provides an intuitive way to quickly add recipes to the system either by:
 

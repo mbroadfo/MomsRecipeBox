@@ -90,11 +90,59 @@ Simply type your request or paste a recipe or URL to get started!`
         }),
       });
       
+      const data = await response.json();
+      
+      // Special handling for rate limiting (429)
+      if (response.status === 429) {
+        console.log('Rate limit reached:', data);
+        
+        // Display a user-friendly message about rate limiting
+        const rateLimitMessage = `The AI service is currently rate limited. ${
+          data.retryAfter ? `Please try again in ${data.retryAfter} seconds.` : 'Please try again later.'
+        }`;
+        
+        setMessages(prev => [
+          ...prev, 
+          { role: 'assistant', content: rateLimitMessage }
+        ]);
+        
+        // If we still have some partial data (like an image), we can use it
+        if (data.recipeData || data.imageUrl) {
+          setMessages(prev => [
+            ...prev, 
+            { 
+              role: 'assistant', 
+              content: `However, I was able to extract some information. Would you like to continue with what I have?` 
+            }
+          ]);
+          
+          // If we have partial recipe data, offer to apply it
+          if (data.recipeData) {
+            // Wait a moment before showing the apply option to ensure messages are read in order
+            setTimeout(() => {
+              setMessages(prev => [
+                ...prev,
+                {
+                  role: 'assistant',
+                  content: 'Would you like to create a basic recipe with the information I was able to gather?'
+                }
+              ]);
+              
+              // Auto-apply the partial recipe data to create a new recipe after a short delay
+              setTimeout(() => handleApplyRecipe(data.recipeData), 2000);
+            }, 1500);
+          }
+        }
+        
+        return; // Exit early, we've handled the rate limit case
+      }
+      
+      // For other non-OK responses
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
       }
       
-      const data = await response.json();
+      // Continue with normal processing for successful responses
       
       // Add AI response to chat
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);

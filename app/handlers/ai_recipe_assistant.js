@@ -9,8 +9,6 @@ import axios from 'axios';
 function optimizeImageUrl(url, recipeTitle = '') {
   // Handle Cloudinary URLs (as seen in your example)
   if (url.includes('cloudinary.com')) {
-    console.log('Optimizing Cloudinary URL');
-    
     // Extract the base parts and image ID
     const parts = url.split('/');
     let transformIndex = -1;
@@ -322,14 +320,10 @@ async function handleUrlExtraction(url, apiKey) {
       }
     }
     
-    console.log(`Selected final image URL: ${imageUrl || 'None found'}`);
-    
     // Try to optimize the image URL if it's from a known source
     if (imageUrl) {
       imageUrl = optimizeImageUrl(imageUrl, recipeTitle);
     }
-    
-    console.log("Extracted image URL:", imageUrl);
     
     // Create a prompt for the OpenAI API to extract recipe information from HTML
     const prompt = `
@@ -360,36 +354,112 @@ async function handleUrlExtraction(url, apiKey) {
     ${htmlContent.substring(0, 100000)} // Limit to 100k characters to avoid token limits
     `;
     
-    const openaiResponse = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: "gpt-4-turbo", // Using powerful model for better extraction
-        messages: [
+    // Add retry logic with exponential backoff for OpenAI API calls
+    let retries = 3;
+    let delay = 1000; // Start with 1 second delay
+    let lastError = null;
+    
+    // Retry loop for handling rate limits
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        console.log(`OpenAI API attempt ${attempt + 1}/${retries + 1}`);
+        
+        const openaiResponse = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
           {
-            role: "system",
-            content: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
+            model: "gpt-4-turbo", // Using powerful model for better extraction
+            messages: [
+              {
+                role: "system",
+                content: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.3 // Lower temperature for more consistent results
           },
           {
-            role: "user",
-            content: prompt
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            timeout: 60000 // 60 second timeout
           }
-        ],
-        temperature: 0.3 // Lower temperature for more consistent results
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+        );
+        
+        // If successful, process the response and return it
+        const aiResponse = openaiResponse.data.choices[0].message.content;
+        
+        // Parse the text response into a structured recipe object
+        const recipeData = parseRecipeFromText(aiResponse);
+        
+        // Add the image URL to the recipe data if we found one
+        if (imageUrl) {
+          recipeData.imageUrl = imageUrl;
+        }
+        
+        // Add the source URL to the recipe
+        if (!recipeData.source) {
+          // Extract domain name for the source
+          const domain = new URL(url).hostname.replace('www.', '');
+          recipeData.source = domain;
+        }
+        
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            message: `I've extracted the recipe from ${url}. Here's what I found:
+
+${aiResponse}
+
+${imageUrl ? "I also found an image that I'll include with your recipe." : ""}
+Would you like me to apply this to your recipe form? You'll be able to make additional edits afterward.`,
+            recipeData,
+            imageUrl
+          })
+        };
+      } catch (error) {
+        lastError = error;
+        
+        // Check if this is a rate limit error (429) or other temporary error
+        if (error.response && (error.response.status === 429 || 
+            error.response.status === 500 || 
+            error.response.status === 502 || 
+            error.response.status === 503)) {
+          
+          // Log the error details for debugging
+          console.error(`OpenAI API error (${error.response.status}): Rate limit or server error`);
+          console.error(`Error details:`, error.response.data);
+          
+          // If we've used all our retries, throw the error
+          if (attempt === retries) {
+            console.error(`All ${retries + 1} attempts failed. Giving up.`);
+            throw error;
+          }
+          
+          // Calculate exponential backoff with jitter
+          const jitter = Math.random() * 0.3 * delay;
+          const waitTime = delay + jitter;
+          console.log(`Waiting ${Math.round(waitTime / 1000)} seconds before retry ${attempt + 2}...`);
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          
+          // Increase delay for next attempt (exponential backoff)
+          delay *= 2;
+        } else {
+          // For other errors (not rate-limiting related), don't retry
+          console.error('Non-retryable OpenAI API error:', error.message);
+          throw error;
         }
       }
-    );
+    }
     
-    const aiResponse = openaiResponse.data.choices[0].message.content;
-    
-    // Parse the text response into a structured recipe object
-    const recipeData = parseRecipeFromText(aiResponse);
-    
-    // Add the image URL to the recipe data if we found one
+    // If we get here, all retries failed
+    throw lastError || new Error('OpenAI API failed after multiple retries');
     if (imageUrl) {
       recipeData.imageUrl = imageUrl;
     }
@@ -418,6 +488,39 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
   } catch (error) {
     console.error("Error in URL extraction:", error);
     
+    // Check for rate limit errors specifically
+    if (error.response && error.response.status === 429) {
+      console.error("OpenAI API rate limit exceeded:", error.response.data);
+      
+      // Check if we managed to at least download the page and extract an image
+      let fallbackMessage = "The AI recipe extraction service is temporarily unavailable due to rate limiting.";
+      let fallbackData = null;
+      
+      if (imageUrl) {
+        fallbackMessage += " However, I was able to extract an image from the page.";
+        
+        // Create minimal fallback data with just the image
+        fallbackData = {
+          imageUrl: imageUrl,
+          title: "New Recipe", // Default title
+          source: new URL(url).hostname.replace('www.', '') // Extract domain name
+        };
+      }
+      
+      return {
+        statusCode: 429, // Return actual rate limit status
+        body: JSON.stringify({
+          success: false,
+          message: fallbackMessage,
+          recipeData: fallbackData,
+          imageUrl: imageUrl,
+          rateLimited: true,
+          retryAfter: error.response.headers['retry-after'] || '60'
+        })
+      };
+    }
+    
+    // For other errors
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -462,24 +565,94 @@ async function handleChatMessage(message, history, apiKey) {
       content: message
     });
     
-    const openaiResponse = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: "gpt-4", // Using powerful model for better recipes
-        messages,
-        temperature: 0.7 // Slightly more creative for recipe generation
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+    // Add retry logic with exponential backoff for OpenAI API calls
+    let retries = 3;
+    let delay = 1000; // Start with 1 second delay
+    let lastError = null;
+    
+    // Retry loop for handling rate limits
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        console.log(`OpenAI API attempt ${attempt + 1}/${retries + 1}`);
+        
+        const openaiResponse = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: "gpt-4", // Using powerful model for better recipes
+            messages,
+            temperature: 0.7 // Slightly more creative for recipe generation
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            timeout: 60000 // 60 second timeout
+          }
+        );
+        
+        // If successful, process the response and return it
+        const aiResponse = openaiResponse.data.choices[0].message.content;
+        
+        // Check if response contains a complete recipe
+        const containsCompleteRecipe = 
+          aiResponse.includes("Title:") && 
+          aiResponse.includes("Ingredients:") && 
+          (aiResponse.includes("Instructions:") || aiResponse.includes("Steps:"));
+        
+        let recipeData = null;
+        if (containsCompleteRecipe) {
+          // Parse the response to extract structured recipe data
+          recipeData = parseRecipeFromText(aiResponse);
+        }
+        
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            message: aiResponse,
+            recipeData
+          })
+        };
+      } catch (error) {
+        lastError = error;
+        
+        // Check if this is a rate limit error (429) or other temporary error
+        if (error.response && (error.response.status === 429 || 
+            error.response.status === 500 || 
+            error.response.status === 502 || 
+            error.response.status === 503)) {
+          
+          // Log the error details for debugging
+          console.error(`OpenAI API error (${error.response.status}): Rate limit or server error`);
+          console.error(`Error details:`, error.response.data);
+          
+          // If we've used all our retries, throw the error
+          if (attempt === retries) {
+            console.error(`All ${retries + 1} attempts failed. Giving up.`);
+            throw error;
+          }
+          
+          // Calculate exponential backoff with jitter
+          const jitter = Math.random() * 0.3 * delay;
+          const waitTime = delay + jitter;
+          console.log(`Waiting ${Math.round(waitTime / 1000)} seconds before retry ${attempt + 2}...`);
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          
+          // Increase delay for next attempt (exponential backoff)
+          delay *= 2;
+        } else {
+          // For other errors (not rate-limiting related), don't retry
+          console.error('Non-retryable OpenAI API error:', error.message);
+          throw error;
         }
       }
-    );
+    }
     
-    const aiResponse = openaiResponse.data.choices[0].message.content;
-    
-    // Check if response contains a complete recipe
+    // If we get here, all retries failed
+    throw lastError || new Error('OpenAI API failed after multiple retries');
     const containsCompleteRecipe = 
       aiResponse.includes("Title:") && 
       aiResponse.includes("Ingredients:") && 
@@ -722,8 +895,6 @@ function parseRecipeFromText(text) {
  */
 async function handlePastedRecipeContent(content, apiKey) {
   try {
-    console.log("Handling pasted recipe content...");
-    
     // Create a prompt for the OpenAI API to extract recipe information from pasted content
     const prompt = `
     You are a recipe extraction assistant. Extract the complete recipe from the following content which was copy/pasted from a recipe website.
@@ -753,31 +924,98 @@ async function handlePastedRecipeContent(content, apiKey) {
     ${content}
     `;
     
-    const openaiResponse = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: "gpt-4-turbo",
-        messages: [
+    // Add retry logic with exponential backoff for OpenAI API calls
+    let retries = 3;
+    let delay = 1000; // Start with 1 second delay
+    let lastError = null;
+    
+    // Retry loop for handling rate limits
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        console.log(`OpenAI API attempt ${attempt + 1}/${retries + 1}`);
+        
+        const openaiResponse = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
           {
-            role: "system",
-            content: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
+            model: "gpt-4-turbo",
+            messages: [
+              {
+                role: "system",
+                content: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.3 // Lower temperature for more consistent results
           },
           {
-            role: "user",
-            content: prompt
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            timeout: 60000 // 60 second timeout
           }
-        ],
-        temperature: 0.3 // Lower temperature for more consistent results
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+        );
+        
+        // If successful, process the response and return it
+        const aiResponse = openaiResponse.data.choices[0].message.content;
+        
+        // Parse the text response into a structured recipe object
+        const recipeData = parseRecipeFromText(aiResponse);
+        
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            message: `I've extracted the recipe from your pasted content. Here's what I found:
+
+${aiResponse}
+
+Would you like me to apply this to your recipe form? You'll be able to make additional edits afterward.`,
+            recipeData
+          })
+        };
+      } catch (error) {
+        lastError = error;
+        
+        // Check if this is a rate limit error (429) or other temporary error
+        if (error.response && (error.response.status === 429 || 
+            error.response.status === 500 || 
+            error.response.status === 502 || 
+            error.response.status === 503)) {
+          
+          // Log the error details for debugging
+          console.error(`OpenAI API error (${error.response.status}): Rate limit or server error`);
+          console.error(`Error details:`, error.response.data);
+          
+          // If we've used all our retries, throw the error
+          if (attempt === retries) {
+            console.error(`All ${retries + 1} attempts failed. Giving up.`);
+            throw error;
+          }
+          
+          // Calculate exponential backoff with jitter
+          const jitter = Math.random() * 0.3 * delay;
+          const waitTime = delay + jitter;
+          console.log(`Waiting ${Math.round(waitTime / 1000)} seconds before retry ${attempt + 2}...`);
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          
+          // Increase delay for next attempt (exponential backoff)
+          delay *= 2;
+        } else {
+          // For other errors (not rate-limiting related), don't retry
+          console.error('Non-retryable OpenAI API error:', error.message);
+          throw error;
         }
       }
-    );
+    }
     
-    const aiResponse = openaiResponse.data.choices[0].message.content;
+    // If we get here, all retries failed
+    throw lastError || new Error('OpenAI API failed after multiple retries');
     
     // Parse the text response into a structured recipe object
     const recipeData = parseRecipeFromText(aiResponse);

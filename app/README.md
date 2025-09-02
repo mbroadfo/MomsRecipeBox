@@ -4,6 +4,65 @@
 
 MomsRecipeBox API provides a complete backend for recipe management, including recipe storage, comments, favorites, image handling, and shopping lists. Built with a modern serverless architecture in mind, it can be run locally or deployed to AWS Lambda. The API includes comprehensive image handling with proper metadata management and cache control for optimal user experience.
 
+## Environment Setup
+
+Before running the application, create a `.env` file in the project root directory with the following variables:
+
+```bash
+# MongoDB Configuration
+MONGODB_ROOT_USER=admin
+MONGODB_ROOT_PASSWORD=password123
+MONGODB_DB_NAME=momsrecipebox
+MONGODB_URI=mongodb://admin:password123@localhost:27017/momsrecipebox?authSource=admin
+
+# Application Mode
+APP_MODE=local
+
+# OpenAI API Key for AI Recipe Assistant
+# Get your API key from: https://platform.openai.com/api-keys
+OPENAI_API_KEY=your_openai_api_key_here
+
+# AWS S3 Configuration for Image Storage
+RECIPE_IMAGES_BUCKET=your_s3_bucket_name
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=us-west-2
+
+# Auth0 Configuration (optional)
+AUTH0_DOMAIN=your_auth0_domain
+AUTH0_CLIENT_ID=your_auth0_client_id
+AUTH0_CLIENT_SECRET=your_auth0_client_secret
+AUTH0_AUDIENCE=your_auth0_audience
+```
+
+### Required Environment Variables
+
+| Variable | Required | Purpose | Notes |
+|----------|----------|---------|-------|
+| `MONGODB_URI` | Yes | Database connection | Must match Docker MongoDB credentials |
+| `OPENAI_API_KEY` | Yes | AI Recipe Assistant | Required for `/ai/chat` and `/ai/extract` endpoints |
+| `RECIPE_IMAGES_BUCKET` | Yes | Image storage | S3 bucket name for recipe images |
+| `AWS_ACCESS_KEY_ID` | Yes | S3 access | AWS credentials for image upload/download |
+| `AWS_SECRET_ACCESS_KEY` | Yes | S3 access | AWS credentials for image upload/download |
+| `AWS_REGION` | Yes | S3 region | AWS region where your S3 bucket is located |
+| `AUTH0_*` | No | Authentication | Optional for development, required for production |
+
+### Getting API Keys
+
+1. **OpenAI API Key**: 
+   - Visit https://platform.openai.com/api-keys
+   - Create a new API key
+   - Add billing information (required for API access)
+
+2. **AWS S3 Setup**:
+   - Create an S3 bucket for recipe images
+   - Create an IAM user with S3 permissions
+   - Generate access key and secret key for the IAM user
+
+3. **Auth0 Setup** (Optional):
+   - Create an Auth0 application
+   - Configure domain, client ID, and audience
+
 ## Quick Reference: Rebuilding the App Tier
 
 ```powershell
@@ -15,6 +74,9 @@ docker compose build --no-cache app
 
 # Start services
 docker compose up -d
+
+# Restart app after environment changes
+.\scripts\restart_app.ps1
 ```
 
 For rapid iteration on code only (no dependency changes):

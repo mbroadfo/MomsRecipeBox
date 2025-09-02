@@ -3,43 +3,19 @@ import { getDb } from '../app.js';
 import axios from 'axios';
 
 /**
- * Helper function for logging API requests and responses
- * Provides consistent debug information while protecting sensitive data
- */
-function logApiOperation(stage, provider, details) {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${provider}] [${stage}] ${details}`);
-}
-
-/**
  * Select the most appropriate API and model based on available keys
  * This helps manage costs and provide fallback options
  */
 function selectModelAndEndpoint() {
   // Check for available API keys and select the most cost-effective option
-  if (process.env.GOOGLE_API_KEY) {
-    logApiOperation('CONFIG', 'GOOGLE', 'Using Google Gemini API');
-    
-    return {
-      endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
-      isGoogleFormat: true,
-      apiKey: process.env.GOOGLE_API_KEY,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      fallbackToOpenAI: true // Enable automatic fallback to OpenAI if Google fails
-    };
-  } else if (process.env.GROQ_API_KEY) {
-    logApiOperation('CONFIG', 'GROQ', 'Using Groq API');
-    
+  if (process.env.GROQ_API_KEY) {
     return {
       endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-      model: 'llama3-70b-8192', // Groq model
+      model: 'llama3-70b-8192', // Llama3 is a good cost-effective option on Groq
       headers: {
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json'
-      },
-      fallbackToOpenAI: true // Enable automatic fallback to OpenAI if Groq fails
+      }
     };
   } else if (process.env.DEEPSEEK_API_KEY) {
     return {
@@ -151,7 +127,7 @@ export async function handler(event) {
     
     // Check if we have API key
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY && !process.env.GROQ_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.DEEPSEEK_API_KEY && !process.env.GOOGLE_API_KEY) {
+    if (!OPENAI_API_KEY && !process.env.GROQ_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.DEEPSEEK_API_KEY) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
@@ -464,99 +440,31 @@ async function handleUrlExtraction(url, apiKey) {
           );
           
           aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          const googlePrompt = "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added.\n\n" + prompt;
-          
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.3,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 2048
-            }
-          };
-          
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
-          
+        } else {
+          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
           openaiResponse = await axios.post(
-            requestUrl,
-            payload,
+            endpoint,
+            {
+              model: model,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
+                },
+                {
+                  role: "user",
+                  content: prompt
+                }
+              ],
+              temperature: 0.3 // Lower temperature for more consistent results
+            },
             {
               headers: headers,
               timeout: 60000 // 60 second timeout
             }
           );
           
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
-          }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: [
-              {
-                role: "system",
-                content: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.3 // Lower temperature for more consistent results
-          };
-          
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
-          }
+          aiResponse = openaiResponse.data.choices[0].message.content;
         }
         
         // Parse the text response into a structured recipe object
@@ -743,100 +651,22 @@ async function handleChatMessage(message, history, apiKey) {
           );
           
           aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          // Combine all messages into a single conversation string
-          let googlePrompt = "";
-          
-          // Add system message
-          googlePrompt += "You are a helpful recipe creation assistant that helps users build recipes from scratch or modify existing ones.\n\n";
-          
-          // Add conversation history
-          for (let i = 1; i < messages.length; i++) {
-            const msg = messages[i];
-            googlePrompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n\n`;
-          }
-          
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 1024
-            }
-          };
-          
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
-          
+        } else {
+          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
           openaiResponse = await axios.post(
-            requestUrl,
-            payload,
+            endpoint,
+            {
+              model: model,
+              messages: messages,
+              temperature: 0.7 // Slightly more creative for recipe generation
+            },
             {
               headers: headers,
               timeout: 60000 // 60 second timeout
             }
           );
           
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
-          }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: messages,
-            temperature: 0.7 // Slightly more creative for recipe generation
-          };
-          
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
-          }
+          aiResponse = openaiResponse.data.choices[0].message.content;
         }
         
         // Check if response contains a complete recipe
@@ -1188,99 +1018,31 @@ async function handlePastedRecipeContent(content, apiKey) {
           );
           
           aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          const googlePrompt = "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added.\n\n" + prompt;
-          
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.3,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 2048
-            }
-          };
-          
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
-          
+        } else {
+          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
           openaiResponse = await axios.post(
-            requestUrl,
-            payload,
+            endpoint,
+            {
+              model: model,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
+                },
+                {
+                  role: "user",
+                  content: prompt
+                }
+              ],
+              temperature: 0.3 // Lower temperature for more consistent results
+            },
             {
               headers: headers,
               timeout: 60000 // 60 second timeout
             }
           );
           
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
-          }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: [
-              {
-                role: "system",
-                content: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.3 // Lower temperature for more consistent results
-          };
-          
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
-          }
+          aiResponse = openaiResponse.data.choices[0].message.content;
         }
         
         // Parse the text response into a structured recipe object

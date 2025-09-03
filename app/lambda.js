@@ -24,6 +24,10 @@ import { handler as clearShoppingList } from './handlers/clear_shopping_list.js'
 // AI-powered handlers
 import { handler as categorizeIngredients } from './handlers/categorize_ingredients.js';
 import { handler as aiRecipeAssistant } from './handlers/ai_recipe_assistant.js';
+// Admin handlers
+import { listUsersHandler } from './admin/admin_handlers/list_users.js';
+import { inviteUserHandler } from './admin/admin_handlers/invite_user.js';
+import { deleteUserHandler } from './admin/admin_handlers/delete_user.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -114,12 +118,17 @@ export async function handler(event, context) {
       return await categorizeIngredients(event);
     }
     
-    // AI recipe assistant endpoints
-    if (event.httpMethod === 'POST' && pathOnly === '/ai/chat') {
-      return await aiRecipeAssistant(event);
+    // Admin routes
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
+      return await listUsersHandler(event);
     }
-    if (event.httpMethod === 'POST' && pathOnly === '/ai/extract') {
-      return await aiRecipeAssistant(event);
+    if (event.httpMethod === 'POST' && pathOnly === '/admin/users/invite') {
+      return await inviteUserHandler(event);
+    }
+    if (event.httpMethod === 'DELETE' && /^\/admin\/users\/[\w|@.-]+$/.test(pathOnly)) {
+      const userId = decodeURIComponent(pathOnly.split('/').pop());
+      event.pathParameters = { id: userId };
+      return await deleteUserHandler(event);
     }
 
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };

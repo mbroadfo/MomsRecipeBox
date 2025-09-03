@@ -6,7 +6,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 Write-Host "=== Invoking init-mrb-db Lambda ===" -ForegroundColor Cyan
 
-$response = aws lambda invoke `
+aws lambda invoke `
   --function-name init-mrb-db `
   --payload '{}' `
   "$scriptDir/test_results.json" `

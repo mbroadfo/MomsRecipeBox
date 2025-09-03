@@ -149,6 +149,11 @@ const server = http.createServer(async (req, res) => {
   if (shoppingListItemMatch) {
     pathParameters.itemId = shoppingListItemMatch[1];
   }
+  // /admin/users/{id} - for admin user operations
+  const adminUserMatch = cleanPath.match(/^\/admin\/users\/([\w|@.-]+)$/);
+  if (adminUserMatch) {
+    pathParameters.id = decodeURIComponent(adminUserMatch[1]);
+  }
 
   // Add support for AI endpoints
   // This will proxy /ai/* requests to the lambda handler
@@ -238,6 +243,11 @@ const server = http.createServer(async (req, res) => {
         const shoppingListItemMatch = cleanPath.match(/^\/shopping-list\/item\/([\w-]+)$/);
         if (shoppingListItemMatch) {
           pathParameters.itemId = shoppingListItemMatch[1];
+        }
+        // /admin/users/{id} - for admin user operations
+        const adminUserMatch = cleanPath.match(/^\/admin\/users\/([\w|@.-]+)$/);
+        if (adminUserMatch) {
+          pathParameters.id = decodeURIComponent(adminUserMatch[1]);
         }
 
         // Patch: Set content-length header for multipart/form-data if missing

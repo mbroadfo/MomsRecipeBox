@@ -1,0 +1,359 @@
+{
+  "info": {
+    "name": "MomsRecipeBox - Admin API",
+    "description": "Admin endpoints for user management in MomsRecipeBox. Requires Auth0 JWT authentication with admin permissions.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth0_admin_jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL for the MomsRecipeBox API"
+    },
+    {
+      "key": "auth0_admin_jwt",
+      "value": "your_auth0_jwt_token_here",
+      "type": "string",
+      "description": "Auth0 JWT token with admin permissions (admin:read, admin:write)"
+    },
+    {
+      "key": "test_user_id",
+      "value": "auth0|test123",
+      "type": "string",
+      "description": "Test user ID for delete operations"
+    },
+    {
+      "key": "test_email",
+      "value": "test@example.com",
+      "type": "string",
+      "description": "Test email for user invitation"
+    }
+  ],
+  "item": [
+    {
+      "name": "Admin User Management",
+      "description": "Endpoints for managing users through Auth0",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth0_admin_jwt}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?page=1&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "description": "Users per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by email",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieve a paginated list of users with statistics.\n\n**Required Permission:** `admin:read`\n\n**Response includes:**\n- User list with basic info\n- Pagination metadata\n- User statistics (total users, active users, new users this month)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth0_admin_jwt}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users?page=1&per_page=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"users\": [\n    {\n      \"user_id\": \"auth0|67e1cc293eeee752d79bfd3a\",\n      \"email\": \"user@example.com\",\n      \"name\": \"John Doe\",\n      \"created_at\": \"2024-01-01T00:00:00.000Z\",\n      \"logins_count\": 25,\n      \"last_login\": \"2024-01-15T10:30:00.000Z\",\n      \"email_verified\": true\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"per_page\": 10,\n    \"total\": 50,\n    \"total_pages\": 5\n  },\n  \"stats\": {\n    \"total_users\": 50,\n    \"active_users\": 45,\n    \"new_users_this_month\": 8\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Invite User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth0_admin_jwt}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"name\": \"Test User\",\n  \"role\": \"user\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/invite",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "invite"]
+            },
+            "description": "Invite a new user to the application.\n\n**Required Permission:** `admin:write`\n\n**Request Body:**\n- `email` (required): User's email address\n- `name` (required): User's full name\n- `role` (optional): User role (default: 'user')\n\n**Response:**\n- Created user information\n- Success message"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth0_admin_jwt}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"name\": \"New User\",\n  \"role\": \"user\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users/invite",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "invite"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"User invitation sent successfully\",\n  \"user\": {\n    \"user_id\": \"auth0|new123456789\",\n    \"email\": \"newuser@example.com\",\n    \"name\": \"New User\",\n    \"created_at\": \"2024-01-16T12:00:00.000Z\",\n    \"email_verified\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth0_admin_jwt}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{test_user_id}}"]
+            },
+            "description": "Delete a user account permanently.\n\n**Required Permission:** `admin:write`\n\n**Path Parameter:**\n- `user_id`: The Auth0 user ID (e.g., auth0|123456789)\n\n**Response:**\n- Success message\n- Deleted user ID\n\n**⚠️ Warning:** This action is irreversible!"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{auth0_admin_jwt}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/auth0|test123",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "auth0|test123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"User deleted successfully\",\n  \"user_id\": \"auth0|test123\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication & Testing",
+      "description": "Helper endpoints for authentication testing",
+      "item": [
+        {
+          "name": "Test Authentication",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth0_admin_jwt}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?per_page=1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Quick test to verify your JWT token is working.\n\nThis endpoint requires valid Auth0 authentication and admin permissions.\n\n**Expected responses:**\n- 200: Authentication successful\n- 401: Invalid or missing JWT token\n- 403: Insufficient permissions"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the API server is running (no authentication required)."
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Check if JWT token is set",
+          "const token = pm.collectionVariables.get('auth0_admin_jwt');",
+          "if (!token || token === 'your_auth0_jwt_token_here') {",
+          "    console.warn('⚠️ Auth0 JWT token not configured. Please set the auth0_admin_jwt collection variable.');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common response checks",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "// Check for authentication errors",
+          "if (pm.response.code === 401) {",
+          "    pm.test('Authentication error detected', function () {",
+          "        console.error('❌ Authentication failed. Check your JWT token.');",
+          "        pm.expect.fail('Invalid JWT token - please update your auth0_admin_jwt variable');",
+          "    });",
+          "}",
+          "",
+          "if (pm.response.code === 403) {",
+          "    pm.test('Authorization error detected', function () {",
+          "        console.error('❌ Insufficient permissions. Ensure your JWT has admin permissions.');",
+          "        pm.expect.fail('Insufficient permissions - admin:read and admin:write required');",
+          "    });",
+          "}",
+          "",
+          "// Success response checks",
+          "if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "    pm.test('Response is JSON', function () {",
+          "        pm.response.to.be.json;",
+          "    });",
+          "",
+          "    pm.test('Response has expected content-type', function () {",
+          "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}

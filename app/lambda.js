@@ -131,6 +131,20 @@ export async function handler(event, context) {
       return await deleteUserHandler(event);
     }
 
+    // Health check endpoint
+    if (event.httpMethod === 'GET' && pathOnly === '/health') {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          environment: process.env.NODE_ENV || 'development'
+        })
+      };
+    }
+
     return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };
   } catch (err) {
     console.error('❌ Error:', err);

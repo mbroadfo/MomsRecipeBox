@@ -8,12 +8,14 @@ The admin system provides secure endpoints for managing users in the MomsRecipeB
 
 ### Features
 
-- **🔐 Auth0 Integration**: Machine-to-Machine (M2M) authentication with Management API access
-- **👥 User Management**: List, invite, and delete users with detailed statistics
+- **🔐 Auth0 Integration**: Machine-to-Machine (M2M) authentication with secure token management
+- **👥 User Management**: List, invite, and delete users with detailed statistics  
 - **🎫 JWT Validation**: Secure token validation with Auth0 signature verification
 - **🛡️ Granular Permissions**: Role-based access control for admin operations
 - **⚡ Token Caching**: Intelligent M2M token caching with automatic refresh
 - **🧪 Comprehensive Testing**: Full test suite for all components
+- **📮 Postman Integration**: Complete API testing collection with secure M2M authentication
+- **🚀 Health Monitoring**: Built-in health check endpoint for API status verification
 
 ## 🏗️ Architecture
 
@@ -119,13 +121,28 @@ Authorization: Bearer <auth0_jwt_token>
 }
 ```
 
+### Health Check
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-09-04T...",
+  "version": "1.0.0",
+  "environment": "development"
+}
+```
+
 ## 🔑 Authentication & Authorization
 
 ### JWT Token Requirements
 
 Admin endpoints require Auth0 JWT tokens with:
 - **Issuer**: Your Auth0 domain (`https://your-domain.auth0.com/`)
-- **Audience**: `https://momsrecipebox-api`
+- **Audience**: `https://momsrecipebox/api` (matches your Auth0 API configuration)
 - **Permissions**: `admin:read`, `admin:write` (as applicable)
 
 ### Permission System
@@ -154,7 +171,7 @@ Required in your `.env` file:
 AUTH0_DOMAIN=your-domain.auth0.com
 AUTH0_CLIENT_ID=your_spa_client_id
 AUTH0_CLIENT_SECRET=your_spa_client_secret  
-AUTH0_AUDIENCE=https://momsrecipebox-api
+AUTH0_AUDIENCE=https://momsrecipebox/api
 
 # Auth0 M2M Application (for admin functions)
 AUTH0_M2M_CLIENT_ID=your_m2m_client_id

@@ -17,7 +17,7 @@ function createTestJWT() {
   const payload = {
     iss: `https://${process.env.AUTH0_DOMAIN}/`,
     sub: 'test-user-id',
-    aud: ['https://momsrecipebox-api', `https://${process.env.AUTH0_DOMAIN}/userinfo`],
+    aud: ['https://momsrecipebox/api', `https://${process.env.AUTH0_DOMAIN}/userinfo`],
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600,
     azp: 'test-client-id',
@@ -81,7 +81,7 @@ async function testJWTIntegration() {
     console.log('   4. Include admin:read and admin:write permissions');
     console.log('');
     console.log(`   🔗 Auth0 Domain: ${process.env.AUTH0_DOMAIN}`);
-    console.log(`   🎯 Required Audience: https://momsrecipebox-api`);
+    console.log(`   🎯 Required Audience: https://momsrecipebox/api`);
     
     console.log('\n✅ JWT integration test completed!');
     

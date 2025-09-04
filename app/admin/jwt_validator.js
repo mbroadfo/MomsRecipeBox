@@ -6,8 +6,9 @@ dotenv.config();
 
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
 const AUTH0_AUDIENCE_PERMISSIONS = {
-  "https://momsrecipebox-api": "*",           // General API access
-  "https://momsrecipebox-admin-api": "admin"  // Admin API access
+  "https://momsrecipebox/api": "admin",        // Main API with admin access for M2M
+  "https://momsrecipebox-api": "*",            // Legacy identifier (fallback)
+  "https://momsrecipebox-admin-api": "admin"   // Admin API access
 };
 const JWKS_URL = `https://${AUTH0_DOMAIN}/.well-known/jwks.json`;
 const ALGORITHMS = ['RS256'];
@@ -78,8 +79,14 @@ export function validateJWT(token, requiredAudience = null) {
               break;
             } else if (requiredRole === "admin") {
               // Check if this is an M2M token (client credentials)
-              if (decoded.gty === 'client-credentials') {
-                console.log('🔓 Token is from client credentials grant, granting admin access');
+              // M2M tokens have either gty=client-credentials or sub ending with @clients
+              const isM2M = decoded.gty === 'client-credentials' || 
+                           (decoded.sub && decoded.sub.includes('@clients'));
+              
+              if (isM2M) {
+                console.log('🔓 Token is from M2M client credentials, granting admin access');
+                console.log(`   🔍 Grant type: ${decoded.gty || 'not set'}`);
+                console.log(`   🔍 Subject: ${decoded.sub}`);
                 allowed = true;
                 userRole = 'admin';
                 break;

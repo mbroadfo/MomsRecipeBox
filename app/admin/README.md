@@ -31,6 +31,10 @@ admin/
 │   ├── list_users.js          
 │   ├── invite_user.js         
 │   └── delete_user.js         
+├── postman/                   # API testing with Postman
+│   ├── MomsRecipeBox-Admin-API.postman_collection.json
+│   ├── MomsRecipeBox-Admin-Local.postman_environment.json
+│   └── README.md              # Postman setup guide with M2M auth
 └── tests/                     # Comprehensive test suite
     ├── run-tests.js           # Test runner for all admin tests
     ├── connection-test.js     # Auth0 M2M connectivity tests
@@ -407,10 +411,19 @@ curl -X DELETE \
 ```
 
 ### Using Postman
-1. **Set Authorization**: Bearer Token with your Auth0 JWT
-2. **Set Headers**: `Content-Type: application/json`
-3. **Set Base URL**: `http://localhost:3000`
-4. **Test Endpoints**: Use the routes listed above
+
+For easier testing, use the provided Postman collection with automated M2M authentication:
+
+📁 **See `./postman/` folder for:**
+- `MomsRecipeBox-Admin-API.postman_collection.json` - Complete API collection
+- `MomsRecipeBox-Admin-Local.postman_environment.json` - Local environment config  
+- `README.md` - Detailed setup instructions with secure M2M workflow
+
+The Postman collection includes automatic token management, so you just need to:
+1. Import the collection and environment
+2. Set your Auth0 M2M credentials
+3. Run "Get M2M Token" to authenticate
+4. Test all admin endpoints automatically
 
 ## 🔧 Development
 

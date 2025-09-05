@@ -6,6 +6,13 @@ import { RecipeDetail } from './components/RecipeDetail';
 import ShoppingListPage from './components/shoppingList/ShoppingListPage';
 import { Layout } from './components/layout';
 
+// Admin Components
+import { AdminProvider } from './contexts/AdminContext';
+import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/AdminDashboard';
+import UserManagementPage from './pages/UserManagementPage';
+
 const AppRoutes = () => {
   // Simplified - no more sidebar management
   return (
@@ -21,10 +28,33 @@ const AppRoutes = () => {
   );
 };
 
+const AdminRoutes = () => {
+  return (
+    <AdminProtectedRoute>
+      <AdminLayout>
+        <Routes>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
+          <Route path="/admin/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
+          <Route path="/admin/analytics" element={<div>Analytics - Coming Soon</div>} />
+        </Routes>
+      </AdminLayout>
+    </AdminProtectedRoute>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <AdminProvider>
+        <Routes>
+          {/* Regular App Routes */}
+          <Route path="/*" element={<AppRoutes />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/*" element={<AdminRoutes />} />
+        </Routes>
+      </AdminProvider>
     </BrowserRouter>
   );
 };

@@ -60,6 +60,14 @@ export const Header: React.FC<HeaderProps> = () => {
             <div className="absolute mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50" style={{ right: '0', minWidth: '10.5rem', whiteSpace: 'nowrap' }}>
               <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => {/* TODO: Edit profile logic */ setAvatarMenuOpen(false); }}>Edit Profile</button>
               <div className="border-t border-gray-200 my-1"></div>
+              <Link 
+                to="/admin" 
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-600 font-medium"
+                onClick={() => setAvatarMenuOpen(false)}
+              >
+                Admin Panel
+              </Link>
+              <div className="border-t border-gray-200 my-1"></div>
               <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => {/* TODO: Logout logic */ setAvatarMenuOpen(false); }}>Logout</button>
             </div>
           )}

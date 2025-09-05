@@ -20,6 +20,8 @@ tags:
     description: Shopping list operations
   - name: ai-recipe-assistant
     description: AI-powered recipe creation and extraction operations
+  - name: admin
+    description: Admin operations for user management and system monitoring
 
 paths:
   /recipes:
@@ -727,6 +729,188 @@ paths:
         '500':
           description: Internal server error or extraction service unavailable
 
+  # Admin endpoints
+  /admin/users:
+    get:
+      tags:
+        - admin
+      summary: List all users (Admin only)
+      description: Retrieve a paginated list of all users with statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 20
+          description: Number of users per page
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search users by name or email
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminUser'
+                  stats:
+                    $ref: '#/components/schemas/AdminUserStats'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Unauthorized - Admin access required
+        '403':
+          description: Forbidden - Insufficient permissions
+
+  /admin/users/invite:
+    post:
+      tags:
+        - admin
+      summary: Invite a new user (Admin only)
+      description: Send an invitation to a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+              required:
+                - email
+                - firstName
+                - lastName
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  user_id:
+                    type: string
+        '400':
+          description: Invalid input data
+        '401':
+          description: Unauthorized - Admin access required
+        '409':
+          description: User already exists
+
+  /admin/users/{userId}:
+    delete:
+      tags:
+        - admin
+      summary: Delete a user (Admin only)
+      description: Permanently delete a user and all associated data
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: User ID to delete
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized - Admin access required
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /admin/system-status:
+    get:
+      tags:
+        - admin
+      summary: Check system connectivity status (Admin only)
+      description: Test connectivity to S3, AI services, and other critical components
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: System status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+                  overall_status:
+                    type: string
+                    enum: [operational, degraded]
+                  services:
+                    type: object
+                    properties:
+                      s3:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum: [success, error]
+                          message:
+                            type: string
+                      ai:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum: [success, error]
+                          message:
+                            type: string
+                          provider:
+                            type: string
+                            description: AI service provider (Google Gemini, Groq, etc.)
+        '401':
+          description: Unauthorized - Admin access required
+        '500':
+          description: System status check failed
+
 components:
   schemas:
     ShoppingList:
@@ -848,3 +1032,59 @@ components:
           type: string
         content:
           type: string
+
+    # Admin schemas
+    AdminUser:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLogin:
+          type: string
+          format: date-time
+          nullable: true
+        loginCount:
+          type: integer
+          description: Total number of logins
+
+    AdminUserStats:
+      type: object
+      properties:
+        total_users:
+          type: integer
+          description: Total number of registered users
+        active_users:
+          type: integer
+          description: Users who logged in within the last month
+        new_users_this_month:
+          type: integer
+          description: New user registrations this month
+
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        total_pages:
+          type: integer
+        total_count:
+          type: integer
+        per_page:
+          type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

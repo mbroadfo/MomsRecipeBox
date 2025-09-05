@@ -28,7 +28,7 @@ AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_REGION=us-west-2
 
-# Auth0 Configuration (optional)
+# Auth0 Configuration (required for admin features)
 AUTH0_DOMAIN=your_auth0_domain
 AUTH0_CLIENT_ID=your_auth0_client_id
 AUTH0_CLIENT_SECRET=your_auth0_client_secret
@@ -45,7 +45,7 @@ AUTH0_AUDIENCE=your_auth0_audience
 | `AWS_ACCESS_KEY_ID` | Yes | S3 access | AWS credentials for image upload/download |
 | `AWS_SECRET_ACCESS_KEY` | Yes | S3 access | AWS credentials for image upload/download |
 | `AWS_REGION` | Yes | S3 region | AWS region where your S3 bucket is located |
-| `AUTH0_*` | No | Authentication | Optional for development, required for production |
+| `AUTH0_*` | Yes* | Authentication | Required for admin features and production, optional for basic development |
 
 ### Getting API Keys
 
@@ -162,6 +162,71 @@ The AI Recipe Assistant provides:
 - Direct recipe creation from the chat interface without form-filling
 - Image handling that extracts, downloads, uploads to S3, and associates with recipes
 
+## Admin System
+
+The admin system provides comprehensive user management and system monitoring capabilities with JWT-based authentication and role-based access control.
+
+### Admin Features
+
+- **User Management**: List, invite, and delete users
+- **User Statistics**: Dashboard with user counts and activity metrics
+- **System Monitoring**: Real-time connectivity tests for S3 and AI services
+- **Role-based Access**: Secure admin-only endpoints with JWT validation
+- **Audit Trail**: Comprehensive logging of admin operations
+
+### Admin Endpoints
+
+| Method | Route | Description | Auth Required |
+|--------|-------|-------------|---------------|
+| GET | `/admin/users` | List all users with pagination and search | Admin JWT |
+| POST | `/admin/users/invite` | Invite new users via email | Admin JWT |
+| DELETE | `/admin/users/{userId}` | Delete user and associated data | Admin JWT |
+| GET | `/admin/system-status` | Check S3, AI, and system connectivity | Admin JWT |
+
+### Admin Authentication
+
+The admin system uses Auth0 JWT tokens with role-based access control:
+
+```javascript
+// Users must have app_metadata.role = "admin" in their JWT token
+{
+  "sub": "auth0|user123",
+  "app_metadata": {
+    "role": "admin"
+  },
+  // ... other JWT claims
+}
+```
+
+### System Status Monitoring
+
+The admin dashboard includes real-time connectivity tests for:
+
+- **Admin API**: Validates JWT authentication and database connectivity
+- **S3 Storage**: Tests bucket access and IAM permissions for image operations
+- **AI Services**: Verifies connectivity to configured AI providers:
+  - Google Gemini (primary)
+  - Groq (fallback)
+  - DeepSeek (fallback)
+  - OpenAI (fallback)
+
+### Testing Admin Endpoints
+
+Admin endpoints can be tested using the provided test suite:
+
+```bash
+# Run admin API tests
+cd app/admin/tests
+node run-tests.js
+```
+
+The test suite includes:
+- JWT token generation and validation
+- User management operations
+- Error handling and edge cases
+- System status monitoring
+- Role-based access control verification
+
 ## RESTful Routes & Handlers (Excerpt)
 
 | File                          | Method | Route                      | Description |
@@ -247,6 +312,9 @@ All handlers catch and return 400/404/500 with JSON `{ message|error }`. Binary 
 | Favorites System | Complete | Like/unlike recipes with proper count management |
 | Shopping List | Complete | Add, update, delete shopping list items; mark as checked or clear list |
 | AI Recipe Assistant | Complete | Chat interface to help create recipes and extract recipe data from URLs |
+| Admin System | Complete | User management, system monitoring, and administrative controls |
+| Admin Authentication | Complete | JWT-based role authentication with Auth0 integration |
+| System Status Monitoring | Complete | Real-time connectivity tests for S3, AI services, and database |
 | Auth Integration | Planned | Full Auth0 JWT integration for secure user identification |
 | User Favorites Feed | Planned | Endpoint to list all recipes favorited by a user |
 | Analytics | Planned | Endpoints to expose recipe popularity and engagement metrics |

@@ -28,6 +28,7 @@ import { handler as aiRecipeAssistant } from './handlers/ai_recipe_assistant.js'
 import { listUsersHandler } from './admin/admin_handlers/list_users.js';
 import { inviteUserHandler } from './admin/admin_handlers/invite_user.js';
 import { deleteUserHandler } from './admin/admin_handlers/delete_user.js';
+import { handler as systemStatusHandler } from './admin/admin_handlers/system_status.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -129,6 +130,9 @@ export async function handler(event, context) {
       const userId = decodeURIComponent(pathOnly.split('/').pop());
       event.pathParameters = { id: userId };
       return await deleteUserHandler(event);
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
+      return await systemStatusHandler(event);
     }
 
     // Health check endpoint

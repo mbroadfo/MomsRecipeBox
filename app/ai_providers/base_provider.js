@@ -9,7 +9,7 @@ export class BaseAIProvider {
   static getRecipeStructure() {
     return `Title: [Recipe Title]
 Subtitle: [Recipe subtitle or tagline, if present]
-Description: [Full description]
+Description: [Full description - do NOT include the word "Description:" in this content]
 Author: [Recipe author, if present]
 Source: [Original source or website name]
 Yield: [Number of servings]
@@ -37,6 +37,10 @@ Nutrition: [Nutritional information if available]`;
 
 ${BaseAIProvider.getRecipeStructure()}
 
+IMPORTANT: Do NOT repeat field labels in the content. Write only the actual content after each field label. For example:
+- CORRECT: "Description: This delicious soup is perfect for winter."
+- INCORRECT: "Description: Description: This delicious soup is perfect for winter."
+
 If any section is not available in the content, skip that section entirely. For tags, include relevant cooking method, meal type, dietary restrictions, cuisine type, or difficulty level.`;
   }
 
@@ -59,6 +63,10 @@ Be helpful, friendly, and provide practical cooking advice.`;
 
 ${BaseAIProvider.getRecipeStructure()}
 
+IMPORTANT: Do NOT repeat field labels in the content. Write only the actual content after each field label. For example:
+- CORRECT: "Description: This delicious soup is perfect for winter."
+- INCORRECT: "Description: Description: This delicious soup is perfect for winter."
+
 Clean up any formatting issues and ensure the recipe is well-structured.`;
   }
 
@@ -74,6 +82,7 @@ FORMATTING RULES:
 3. Do not include ANY explanatory text, introductions, or commentary
 4. Do not include phrases like "Here's the recipe" or "I've extracted"
 5. If information for a field is not present, omit that field entirely
+6. CRITICAL: Do NOT repeat field labels in the content. For example, if you write "Description: This delicious soup...", write ONLY "This delicious soup..." after the colon.
 
 RECIPE STRUCTURE:
 ${BaseAIProvider.getRecipeStructure()}`;

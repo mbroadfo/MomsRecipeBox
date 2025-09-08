@@ -205,7 +205,7 @@ The `AIProviderFactory` class manages all AI providers with intelligent selectio
 
 | Provider | Model | API Key Format | Features | Strengths |
 |----------|-------|----------------|----------|-----------|
-| **Google Gemini** | `gemini-1.5-pro` | `AIza...` | Primary provider, excellent extraction | High accuracy, good at parsing web content |
+| **Google Gemini** | `gemini-1.5-flash` | `AIza...` | Primary provider, excellent extraction | High accuracy, good at parsing web content, generous free tier |
 | **OpenAI** | `gpt-3.5-turbo` | `sk-...` | Reliable fallback | Consistent responses, good conversation flow |
 | **Groq** | `llama-3.1-8b-instant` | `gsk_...` | Fast responses | Very fast inference, free tier available |
 | **Anthropic Claude** | `claude-3-haiku-20240307` | `sk-ant-...` | High-quality reasoning | Excellent instruction following |

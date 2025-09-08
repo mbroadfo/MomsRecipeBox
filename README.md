@@ -211,7 +211,7 @@ The system features a modular AI provider architecture with:
 
 | Provider | Model | Features | Status |
 |----------|-------|----------|--------|
-| **Google Gemini** | gemini-1.5-pro | Primary provider, excellent at recipe extraction | ✅ Active |
+| **Google Gemini** | gemini-1.5-flash | Primary provider, excellent at recipe extraction | ✅ Active |
 | **OpenAI** | gpt-3.5-turbo | Reliable fallback, good conversation flow | ✅ Active |
 | **Groq** | llama-3.1-8b-instant | Fast responses, good for quick extractions | ✅ Active |
 | **Anthropic Claude** | claude-3-haiku-20240307 | High-quality responses, good reasoning | ✅ Active |

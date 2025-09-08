@@ -119,6 +119,14 @@ export async function handler(event, context) {
       return await categorizeIngredients(event);
     }
     
+    // AI recipe assistant routes
+    if (event.httpMethod === 'POST' && pathOnly === '/ai/chat') {
+      return await aiRecipeAssistant(event);
+    }
+    if (event.httpMethod === 'POST' && pathOnly === '/ai/extract') {
+      return await aiRecipeAssistant(event);
+    }
+    
     // Admin routes
     if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
       return await listUsersHandler(event);

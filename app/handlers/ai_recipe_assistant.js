@@ -1,80 +1,13 @@
 // File: handlers/ai_recipe_assistant.js
 import { getDb } from '../app.js';
 import axios from 'axios';
+import { AIProviderFactory } from '../ai_providers/index.js';
 
-/**
- * Helper function for logging API requests and responses
- * Provides consistent debug information while protecting sensitive data
- */
+// Helper function for logging API requests and responses
 function logApiOperation(stage, provider, details) {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [${provider}] [${stage}] ${details}`);
-}
-
-/**
- * Select the most appropriate API and model based on available keys
- * This helps manage costs and provide fallback options
- */
-function selectModelAndEndpoint() {
-  // Check for available API keys and select the most cost-effective option
-  if (process.env.GOOGLE_API_KEY) {
-    logApiOperation('CONFIG', 'GOOGLE', 'Using Google Gemini API');
-    
-    return {
-      endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
-      isGoogleFormat: true,
-      apiKey: process.env.GOOGLE_API_KEY,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      fallbackToOpenAI: true // Enable automatic fallback to OpenAI if Google fails
-    };
-  } else if (process.env.GROQ_API_KEY) {
-    logApiOperation('CONFIG', 'GROQ', 'Using Groq API');
-    
-    return {
-      endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-      model: 'llama3-70b-8192', // Groq model
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      fallbackToOpenAI: true // Enable automatic fallback to OpenAI if Groq fails
-    };
-  } else if (process.env.DEEPSEEK_API_KEY) {
-    return {
-      endpoint: 'https://api.deepseek.com/v1/chat/completions',
-      model: 'deepseek-chat',
-      headers: {
-        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  } else if (process.env.ANTHROPIC_API_KEY) {
-    return {
-      endpoint: 'https://api.anthropic.com/v1/messages',
-      model: 'claude-3-haiku-20240307',
-      isAnthropicFormat: true,
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      }
-    };
-  } else {
-    // Default to OpenAI's more cost-effective model
-    return {
-      endpoint: 'https://api.openai.com/v1/chat/completions',
-      model: 'gpt-3.5-turbo',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  }
-}
-
-/**
+}/**
  * Helper function to optimize image URLs from known sources
  * Attempts to get higher resolution or better quality versions of images
  */
@@ -147,11 +80,23 @@ export async function handler(event) {
   try {
     // Parse the request body
     const body = JSON.parse(event.body);
-    const { message, messages = [], url = null, user_id = null } = body;
+    const { message, messages = [], url = null, user_id = null, model = 'auto' } = body;
     
-    // Check if we have API key
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY && !process.env.GROQ_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.DEEPSEEK_API_KEY && !process.env.GOOGLE_API_KEY) {
+    // Initialize AI provider based on selected model (or auto-select)
+    let aiProvider;
+    try {
+      // Check if the explicitly requested provider is rate limited
+      let wasExplicitlyRequested = model !== 'auto';
+      let selectedAltProvider = false;
+      
+      aiProvider = AIProviderFactory.getProvider(model);
+      
+      // If the provider is different from what was requested, note it in the logs
+      if (wasExplicitlyRequested && aiProvider.getConfig().name.toLowerCase() !== model) {
+        console.log(`Note: User requested ${model} but using ${aiProvider.getConfig().name} due to rate limits`);
+        selectedAltProvider = true;
+      }
+    } catch (error) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
@@ -172,7 +117,7 @@ export async function handler(event) {
           body: JSON.stringify({ success: false, message: "URL is required for extraction" })
         };
       }
-      return await handleUrlExtraction(url, OPENAI_API_KEY);
+      return await handleUrlExtraction(url, aiProvider);
     } else if (pathOnly === '/ai/chat') {
       // Chat endpoint - requires message
       if (!message) {
@@ -187,7 +132,7 @@ export async function handler(event) {
       if (urlMatch && message.trim().startsWith('http')) {
         const extractedUrl = urlMatch[0];
         // Special case: automatically handle URL extraction in chat if user sends a URL directly
-        return await handleUrlExtraction(extractedUrl, OPENAI_API_KEY);
+        return await handleUrlExtraction(extractedUrl, aiProvider);
       }
       
       // Check if this appears to be pasted recipe content
@@ -197,10 +142,10 @@ export async function handler(event) {
         (message.match(/\d+\s+(?:minute|hour)/) && message.match(/\d+\s+(?:tablespoon|teaspoon|cup|pound|ounce|gram)/i));
       
       if (looksLikeRecipe) {
-        return await handlePastedRecipeContent(message, OPENAI_API_KEY);
+        return await handlePastedRecipeContent(message, aiProvider);
       }
       
-      return await handleChatMessage(message, messages || [], OPENAI_API_KEY);
+      return await handleChatMessage(message, messages || [], aiProvider);
     } else {
       // Unknown endpoint
       return {
@@ -225,14 +170,15 @@ export async function handler(event) {
  * Process URL extraction requests
  * Fetches a web page and extracts recipe information using LLM
  */
-async function handleUrlExtraction(url, apiKey) {
+async function handleUrlExtraction(url, aiProvider) {
+  let imageUrl = null; // Declare at function level for outer catch block access
+  
   try {
     // Fetch the page content
     const response = await axios.get(url);
     const htmlContent = response.data;
     
     // First, extract potential image URLs from the HTML
-    let imageUrl = null;
     let allImageCandidates = [];
     
     // Look for schema.org recipe markup with image (often the most reliable)
@@ -397,236 +343,142 @@ async function handleUrlExtraction(url, apiKey) {
       imageUrl = optimizeImageUrl(imageUrl, recipeTitle);
     }
     
-    // Create a prompt for the API to extract recipe information from HTML
-    const prompt = `
-    You are a helpful recipe extraction assistant. Extract the complete recipe from the following HTML content.
-    Format your response as a complete, detailed recipe with the following structure:
+    // Extract text content from HTML to reduce payload size
+    const textContent = htmlContent
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove styles
+      .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
     
-    Title: [Recipe Title]
-    Subtitle: [Brief description or tagline, if present]
-    Description: [Full description, if present]
-    Author: [Recipe author, if present]
-    Source: [Original source or website name]
-    Yield: [Number of servings or quantity]
-    Time: [Preparation time, cooking time, total time]
-    Ingredients:
-    - [List each ingredient with quantity and preparation method]
-    
-    Instructions:
-    1. [Step 1]
-    2. [Step 2]
-    ...
-    
-    Notes: [Any additional notes or tips]
-    Tags: [Comma-separated list of recipe categories or keywords]
-    
-    Don't include any field if there's no corresponding information in the HTML.
-    
-    HTML Content:
-    ${htmlContent.substring(0, 100000)} // Limit to 100k characters to avoid token limits
-    `;
-    
-    // Add retry logic with exponential backoff for API calls
-    let retries = 3;
-    let delay = 1000; // Start with 1 second delay
-    let lastError = null;
-    
-    // Retry loop for handling rate limits
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        console.log(`LLM API attempt ${attempt + 1}/${retries + 1}`);
-        
-        // Get the appropriate model and endpoint
-        const { endpoint, model, headers, isAnthropicFormat } = selectModelAndEndpoint();
-        
-        let aiResponse;
-        let openaiResponse;
-        
-        if (isAnthropicFormat) {
-          // Handle Anthropic's different API format
-          openaiResponse = await axios.post(
-            endpoint,
-            {
-              model: model,
-              max_tokens: 4000,
-              messages: [
-                {
-                  role: "user",
-                  content: prompt
-                }
-              ],
-              system: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
-            },
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
+    // Use our provider to handle URL extraction
+    try {
+      // Add retry logic with exponential backoff for API calls
+      let retries = 3;
+      let delay = 1000; // Start with 1 second delay
+      let lastError = null;
+      
+      // Retry loop for handling rate limits and API errors
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          console.log(`LLM API attempt ${attempt + 1}/${retries + 1}`);
           
-          aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          const googlePrompt = "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added.\n\n" + prompt;
+          // Use the provider to handle URL extraction
+          const aiResponse = await aiProvider.handleUrlExtraction(url, textContent);
           
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.3,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 2048
-            }
-          };
+          // Log the AI response for debugging
+          console.log("AI Response from provider:", aiProvider.getConfig().name);
+          console.log("Response sample (first 200 chars):", aiResponse.substring(0, 200));
           
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
+          // Parse the text response into a structured recipe object
+          const recipeData = parseRecipeFromText(aiResponse);
           
-          openaiResponse = await axios.post(
-            requestUrl,
-            payload,
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
+          // Log the parsed recipe data for debugging
+          console.log("Parsed Recipe Data:", JSON.stringify(recipeData, null, 2));
           
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
+          // Add the image URL to the recipe data if we found one
+          if (imageUrl) {
+            recipeData.imageUrl = imageUrl;
           }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: [
-              {
-                role: "system",
-                content: "You are a precise recipe extraction assistant that can parse recipes from HTML content. Extract only the recipe details in the exact format requested, with nothing else added."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.3 // Lower temperature for more consistent results
-          };
           
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
+          // Add the source URL to the recipe
+          if (!recipeData.source) {
+            // Extract domain name for the source
+            const domain = new URL(url).hostname.replace('www.', '');
+            recipeData.source = domain;
           }
-        }
-        
-        // Parse the text response into a structured recipe object
-        const recipeData = parseRecipeFromText(aiResponse);
-        
-        // Add the image URL to the recipe data if we found one
-        if (imageUrl) {
-          recipeData.imageUrl = imageUrl;
-        }
-        
-        // Add the source URL to the recipe
-        if (!recipeData.source) {
-          // Extract domain name for the source
-          const domain = new URL(url).hostname.replace('www.', '');
-          recipeData.source = domain;
-        }
-        
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            success: true,
-            message: `I've extracted the recipe from ${url}. Here's what I found:
+          
+          return {
+            statusCode: 200,
+            body: JSON.stringify({
+              success: true,
+              message: `I've extracted the recipe from ${url}. Here's what I found:
 
 ${aiResponse}
 
 ${imageUrl ? "I also found an image that I'll include with your recipe." : ""}
 Would you like me to apply this to your recipe form? You'll be able to make additional edits afterward.`,
-            recipeData,
-            imageUrl
-          })
-        };
-      } catch (error) {
-        lastError = error;
-        
-        // Check if this is a rate limit error (429) or other temporary error
-        if (error.response && (error.response.status === 429 || 
-            error.response.status === 500 || 
-            error.response.status === 502 || 
-            error.response.status === 503)) {
+              recipeData,
+              imageUrl
+            })
+          };
+        } catch (error) {
+          lastError = error;
           
-          // Log the error details for debugging
-          console.error(`API error (${error.response.status}): Rate limit or server error`);
-          console.error(`Error details:`, error.response.data);
-          
-          // If we've used all our retries, throw the error
-          if (attempt === retries) {
-            console.error(`All ${retries + 1} attempts failed. Giving up.`);
+          // Check if this is a rate limit error (429) or other temporary error
+          if (error.response && (error.response.status === 429 || 
+              error.response.status === 500 || 
+              error.response.status === 502 || 
+              error.response.status === 503)) {
+            
+            // Log the error details for debugging
+            console.error(`API error (${error.response.status}): Rate limit or server error`);
+            console.error(`Error details:`, error.response.data);
+            
+            // For rate limit errors (429), record the rate limit but don't switch providers
+            if (error.response.status === 429) {
+              // Import AIProviderFactory dynamically to avoid circular dependencies
+              const { AIProviderFactory } = await import('../ai_providers/index.js');
+              
+              // Get the current provider's key
+              const currentProviderKey = Object.keys(AIProviderFactory.initializeProviders())
+                .find(key => AIProviderFactory.initializeProviders()[key] === aiProvider);
+              
+              if (currentProviderKey) {
+                // Get retry-after from headers or default to 60 seconds
+                const retryAfter = error.response.headers?.['retry-after'] 
+                  ? parseInt(error.response.headers['retry-after'], 10) 
+                  : 60;
+                
+                // Record the rate limit
+                AIProviderFactory.recordRateLimit(currentProviderKey, retryAfter);
+                
+                console.log(`Provider ${currentProviderKey} is rate limited. No fallback will be used.`);
+                
+                // Return a user-friendly error message
+                return {
+                  statusCode: 429,
+                  body: JSON.stringify({
+                    success: false,
+                    message: `The ${aiProvider.getConfig().name} API is currently rate limited. Please try again in ${retryAfter} seconds or select a different model.`,
+                    rateLimited: true,
+                    retryAfter: retryAfter,
+                    provider: currentProviderKey
+                  })
+                };
+              }
+            }
+            
+            // If we've used all our retries or couldn't find a fallback provider, give up
+            if (attempt === retries) {
+              console.error(`All ${retries + 1} attempts failed. Giving up.`);
+              throw error;
+            }
+            
+            // Calculate exponential backoff with jitter
+            const jitter = Math.random() * 0.3 * delay;
+            const waitTime = delay + jitter;
+            console.log(`Waiting ${Math.round(waitTime / 1000)} seconds before retry ${attempt + 2}...`);
+            
+            // Wait before next attempt
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            
+            // Increase delay for next attempt (exponential backoff)
+            delay *= 2;
+          } else {
+            // For other errors (not rate-limiting related), don't retry
+            console.error('Non-retryable API error:', error.message);
             throw error;
           }
-          
-          // Calculate exponential backoff with jitter
-          const jitter = Math.random() * 0.3 * delay;
-          const waitTime = delay + jitter;
-          console.log(`Waiting ${Math.round(waitTime / 1000)} seconds before retry ${attempt + 2}...`);
-          
-          // Wait before next attempt
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          
-          // Increase delay for next attempt (exponential backoff)
-          delay *= 2;
-        } else {
-          // For other errors (not rate-limiting related), don't retry
-          console.error('Non-retryable API error:', error.message);
-          throw error;
         }
       }
+      
+      // If we get here, all retries failed
+      throw lastError || new Error('API failed after multiple retries');
+    } catch (error) {
+      console.error("Error in provider URL extraction:", error);
+      throw error;
     }
-    
-    // If we get here, all retries failed
-    throw lastError || new Error('API failed after multiple retries');
   } catch (error) {
     console.error("Error in URL extraction:", error);
     
@@ -676,168 +528,24 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
 /**
  * Process chat messages for recipe creation/modification
  */
-async function handleChatMessage(message, history, apiKey) {
+async function handleChatMessage(message, history, aiProvider) {
   try {
-    // Convert our internal history format to AI API format
-    const messages = [
-      {
-        role: "system",
-        content: `You are a helpful recipe creation assistant that helps users build recipes from scratch or modify existing ones. 
-        Your goal is to help create complete, well-structured recipes with all necessary fields: 
-        title, description, ingredients (with quantities), detailed instructions, cooking time, servings, etc.
-        
-        If the user asks for a specific recipe or provides ingredients, help them create a complete recipe.
-        If they ask for modifications or substitutions, provide clear guidance.
-        If you detect that a complete recipe can be created from the conversation, format it nicely and prepare it for saving.
-        `
-      }
-    ];
-    
-    // Add conversation history
-    history.forEach(msg => {
-      messages.push({
-        role: msg.role,
-        content: msg.content
-      });
-    });
-    
-    // Add the current message
-    messages.push({
-      role: "user",
-      content: message
-    });
-    
     // Add retry logic with exponential backoff for API calls
     let retries = 3;
     let delay = 1000; // Start with 1 second delay
     let lastError = null;
     
-    // Retry loop for handling rate limits
+    // Retry loop for handling rate limits and API errors
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         console.log(`LLM API attempt ${attempt + 1}/${retries + 1}`);
         
-        // Get the appropriate model and endpoint
-        const { endpoint, model, headers, isAnthropicFormat } = selectModelAndEndpoint();
+        // Use the provider to handle the chat message
+        const aiResponse = await aiProvider.handleChatMessage(message, history);
         
-        let aiResponse;
-        let openaiResponse;
-        
-        if (isAnthropicFormat) {
-          // Handle Anthropic's different API format
-          const systemContent = messages[0].content;
-          const userMessages = messages.slice(1);
-          
-          openaiResponse = await axios.post(
-            endpoint,
-            {
-              model: model,
-              max_tokens: 4000,
-              messages: userMessages,
-              system: systemContent
-            },
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
-          
-          aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          // Combine all messages into a single conversation string
-          let googlePrompt = "";
-          
-          // Add system message
-          googlePrompt += "You are a helpful recipe creation assistant that helps users build recipes from scratch or modify existing ones.\n\n";
-          
-          // Add conversation history
-          for (let i = 1; i < messages.length; i++) {
-            const msg = messages[i];
-            googlePrompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n\n`;
-          }
-          
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 1024
-            }
-          };
-          
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
-          
-          openaiResponse = await axios.post(
-            requestUrl,
-            payload,
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
-          
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
-          }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: messages,
-            temperature: 0.7 // Slightly more creative for recipe generation
-          };
-          
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
-          }
-        }
+        // Log the AI response for debugging
+        console.log("Chat AI Response from provider:", aiProvider.getConfig().name);
+        console.log("Chat Response sample (first 200 chars):", aiResponse.substring(0, 200));
         
         // Check if response contains a complete recipe
         const containsCompleteRecipe = 
@@ -845,10 +553,15 @@ async function handleChatMessage(message, history, apiKey) {
           aiResponse.includes("Ingredients:") && 
           (aiResponse.includes("Instructions:") || aiResponse.includes("Steps:"));
         
+        console.log("Contains complete recipe:", containsCompleteRecipe);
+        
         let recipeData = null;
         if (containsCompleteRecipe) {
           // Parse the response to extract structured recipe data
           recipeData = parseRecipeFromText(aiResponse);
+          
+          // Log the parsed recipe data for debugging
+          console.log("Chat Parsed Recipe Data:", JSON.stringify(recipeData, null, 2));
         }
         
         return {
@@ -872,7 +585,41 @@ async function handleChatMessage(message, history, apiKey) {
           console.error(`API error (${error.response.status}): Rate limit or server error`);
           console.error(`Error details:`, error.response.data);
           
-          // If we've used all our retries, throw the error
+          // For rate limit errors (429), try to switch to another provider
+          if (error.response.status === 429) {
+            // Import AIProviderFactory dynamically to avoid circular dependencies
+            const { AIProviderFactory } = await import('../ai_providers/index.js');
+            
+            // Get the current provider's key
+            const currentProviderKey = Object.keys(AIProviderFactory.initializeProviders())
+              .find(key => AIProviderFactory.initializeProviders()[key] === aiProvider);
+            
+            if (currentProviderKey) {
+              // Get retry-after from headers or default to 60 seconds
+              const retryAfter = error.response.headers?.['retry-after'] 
+                ? parseInt(error.response.headers['retry-after'], 10) 
+                : 60;
+              
+              // Record the rate limit
+              AIProviderFactory.recordRateLimit(currentProviderKey, retryAfter);
+              
+              console.log(`Provider ${currentProviderKey} is rate limited. No fallback will be used.`);
+              
+              // Return a user-friendly error message
+              return {
+                statusCode: 429,
+                body: JSON.stringify({
+                  success: false,
+                  message: `The ${aiProvider.getConfig().name} API is currently rate limited. Please try again in ${retryAfter} seconds or select a different model.`,
+                  rateLimited: true,
+                  retryAfter: retryAfter,
+                  provider: currentProviderKey
+                })
+              };
+            }
+          }
+          
+          // If we've used all our retries or couldn't find a fallback provider, give up
           if (attempt === retries) {
             console.error(`All ${retries + 1} attempts failed. Giving up.`);
             throw error;
@@ -915,16 +662,34 @@ async function handleChatMessage(message, history, apiKey) {
  * Parse recipe text into a structured object
  */
 function parseRecipeFromText(text) {
+  console.log('===== PARSE RECIPE FROM TEXT =====');
+  console.log('Recipe text length:', text?.length || 0);
+  
+  if (!text) {
+    console.error('ERROR: Empty text passed to parseRecipeFromText');
+    return {};
+  }
+  
+  // Log the beginning of the text to verify format
+  console.log('Text begins with:', text.substring(0, 100).replace(/\n/g, '\\n'));
+  
   const recipe = {};
   
   // Extract title - clean any Markdown formatting
   const titleMatch = text.match(/Title:?\s*([^\n]+)/i);
+  console.log('Title match:', titleMatch ? `Found: "${titleMatch[1]}"` : 'Not found');
+  
   if (titleMatch) {
     recipe.title = titleMatch[1].trim()
       .replace(/\*\*/g, '')  // Remove bold formatting
       .replace(/\*/g, '')    // Remove italic formatting
       .replace(/^#+\s*/, '') // Remove heading markers
       .trim();
+    console.log('Extracted title:', recipe.title);
+  } else {
+    console.error('Failed to extract title. Text format might be incorrect.');
+    // Log a more detailed view of the text for debugging
+    console.log('First 200 chars with newlines:', JSON.stringify(text.substring(0, 200)));
   }
   
   // Extract subtitle
@@ -938,11 +703,22 @@ function parseRecipeFromText(text) {
   
   // Extract description
   const descriptionMatch = text.match(/Description:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|$)/i);
+  console.log('Description match:', descriptionMatch ? 'Found' : 'Not found');
+  
   if (descriptionMatch) {
     recipe.description = descriptionMatch[1].trim()
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
       .trim();
+    console.log('Extracted description:', recipe.description.substring(0, 50) + (recipe.description.length > 50 ? '...' : ''));
+    console.log('Description length:', recipe.description.length);
+  } else {
+    console.error('Failed to extract description');
+    // Check if there's any text resembling a description
+    const possibleDesc = text.match(/([^\n]+(?:\n+[^#\n][^\n]*)*)/);
+    if (possibleDesc) {
+      console.log('Possible description found:', possibleDesc[1].substring(0, 50));
+    }
   }
   
   // Extract author
@@ -983,17 +759,34 @@ function parseRecipeFromText(text) {
   
   // Extract ingredients
   const ingredientsMatch = text.match(/Ingredients:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|\n\s*\n|$)/i);
+  console.log('Ingredients match:', ingredientsMatch ? 'Found' : 'Not found');
+  
   if (ingredientsMatch) {
     const ingredientsText = ingredientsMatch[1].trim();
+    console.log('Raw ingredients text sample:', ingredientsText.substring(0, 100));
+    console.log('Raw ingredients text length:', ingredientsText.length);
+    console.log('Raw ingredients lines:', ingredientsText.split('\n').length);
+    
+    // More detailed logging of the ingredients section
+    console.log('Ingredients section full text:');
+    console.log(JSON.stringify(ingredientsText));
+    
     const ingredientItems = ingredientsText.split('\n')
       .map(line => line.trim())
       // Identify lines that look like list items or numbered items and exclude section headers
       .filter(line => {
         // Skip lines that look like headers (e.g. Instructions:, Steps:)
-        if (line.match(/^[A-Z][a-z]+:$/)) return false;
+        if (line.match(/^[A-Z][a-z]+:$/)) {
+          console.log('Skipping header-like line:', line);
+          return false;
+        }
         
         // Include lines that start with list markers or numbers
-        return line.match(/^[-•*]|\d+\./) || line.length > 0;
+        const isValidLine = line.match(/^[-•*]|\d+\./) || line.length > 0;
+        if (!isValidLine && line.length > 0) {
+          console.log('Skipping non-ingredient line:', line);
+        }
+        return isValidLine;
       })
       .map(line => {
         // Remove list markers and clean formatting
@@ -1003,42 +796,83 @@ function parseRecipeFromText(text) {
           .trim();
       }); 
     
+    console.log('Found ingredient items count:', ingredientItems.length);
+    if (ingredientItems.length > 0) {
+      console.log('First 3 ingredient items:', ingredientItems.slice(0, 3));
+    } else {
+      console.error('No ingredient items found after processing');
+    }
+    
     // Parse ingredients into structured format if possible
-    recipe.ingredients = ingredientItems
-      .filter(item => item.length > 0)
+    console.log('Processing ingredients into structured format');
+    
+    const filteredItems = ingredientItems.filter(item => item.length > 0);
+    console.log(`After filtering empty items: ${filteredItems.length} ingredients remain`);
+    
+    recipe.ingredients = filteredItems
       .map(item => {
         // Try to extract quantity and name
         const matches = item.match(/^([\d\s\/\.\-,]+\s*(?:cups?|tablespoons?|tbsp|tbs|teaspoons?|tsp|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l|pinch(?:es)?|dash(?:es)?|to taste|handful|[A-Za-z]+)?)\s+(.*)/i);
         
         if (matches) {
+          console.log(`Structured ingredient: quantity="${matches[1].trim()}", name="${matches[2].trim()}"`);
           return {
             quantity: matches[1].trim(),
             name: matches[2].trim()
           };
         } else {
+          console.log(`Unstructured ingredient: name="${item}"`);
           return {
             quantity: '',
             name: item
           };
         }
       });
+    
+    console.log(`Final ingredient count in recipe object: ${recipe.ingredients.length}`);
+    if (recipe.ingredients.length === 0) {
+      console.error('WARNING: No ingredients were extracted or all were filtered out');
+    }
   }
   
   // Extract instructions/steps
+  console.log('Looking for instructions/steps section');
   let stepsText = '';
   const instructionsMatch = text.match(/Instructions:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|$)/i);
   const stepsMatch = text.match(/Steps:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|$)/i);
   
+  console.log('Instructions match:', instructionsMatch ? 'Found' : 'Not found');
+  console.log('Steps match:', stepsMatch ? 'Found' : 'Not found');
+  
   if (instructionsMatch) {
     stepsText = instructionsMatch[1].trim();
+    console.log('Using Instructions section, length:', stepsText.length);
   } else if (stepsMatch) {
     stepsText = stepsMatch[1].trim();
+    console.log('Using Steps section, length:', stepsText.length);
+  } else {
+    console.error('Failed to find Instructions or Steps section');
+    // Look for other possible headings that might contain instructions
+    const directionsMatch = text.match(/Directions:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|$)/i);
+    const methodMatch = text.match(/Method:?\s*([^\n]+(?:\n[^\n]+)*?)(?=\n\s*[A-Za-z]+:|$)/i);
+    
+    if (directionsMatch) {
+      console.log('Found alternative "Directions" section');
+      stepsText = directionsMatch[1].trim();
+    } else if (methodMatch) {
+      console.log('Found alternative "Method" section');
+      stepsText = methodMatch[1].trim();
+    }
   }
   
   if (stepsText) {
+    console.log('Processing steps text, sample:', stepsText.substring(0, 100));
+    
     const stepLines = stepsText.split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
+    
+    console.log(`Found ${stepLines.length} lines in steps section`);
     
     // Group step lines that belong together
     const stepItems = [];
@@ -1049,25 +883,34 @@ function parseRecipeFromText(text) {
       if (line.match(/^\d+\.|\d+\)|\*|-|•/)) {
         if (currentStep) {
           stepItems.push(currentStep.trim());
+          console.log(`Added step: "${currentStep.substring(0, 40)}..."`);
           currentStep = '';
         }
         // Remove the marker and add to current step
         currentStep = line.replace(/^\d+\.|\d+\)|\*|-|•\s*/, '');
+        console.log(`Started new step: "${currentStep.substring(0, 40)}..."`);
       }
       // Exclude metadata lines like "Cooking time:" or "Servings:"
       else if (!line.match(/^\*\*(?:Cooking time|Servings|Prep time|Cook time):/)) {
         // If it's a continuation of a step
         if (currentStep) {
           currentStep += ' ' + line;
+          console.log(`Continued step: now ${currentStep.length} chars`);
         } else {
           currentStep = line;
+          console.log(`Started step without marker: "${line.substring(0, 40)}..."`);
         }
+      } else {
+        console.log(`Skipping metadata line: "${line}"`);
       }
     }
     
     if (currentStep) {
       stepItems.push(currentStep.trim());
+      console.log(`Added final step: "${currentStep.substring(0, 40)}..."`);
     }
+    
+    console.log(`Found ${stepItems.length} steps before cleanup`);
     
     // Clean up formatting in steps
     recipe.steps = stepItems
@@ -1077,8 +920,20 @@ function parseRecipeFromText(text) {
         .trim())
       .filter(step => {
         // Final filtering to remove non-instruction content
-        return !step.match(/Enjoy your meal|serving suggestion|bon appétit/i);
+        const isValid = !step.match(/Enjoy your meal|serving suggestion|bon appétit/i);
+        if (!isValid) {
+          console.log(`Filtered out non-instruction step: "${step}"`);
+        }
+        return isValid;
       });
+    
+    console.log(`Final step count: ${recipe.steps.length}`);
+    if (recipe.steps.length > 0) {
+      console.log('First step:', recipe.steps[0]);
+      console.log('Last step:', recipe.steps[recipe.steps.length - 1]);
+    } else {
+      console.error('WARNING: No steps were extracted or all were filtered out');
+    }
   }
   
   // Extract notes
@@ -1112,6 +967,23 @@ function parseRecipeFromText(text) {
       .trim();
   }
   
+  // Log a summary of what we parsed
+  console.log('===== RECIPE PARSING SUMMARY =====');
+  console.log(`Title: ${recipe.title ? 'Found' : 'NOT FOUND!'}`);
+  console.log(`Description: ${recipe.description ? 'Found' : 'NOT FOUND!'}`);
+  console.log(`Ingredients: ${recipe.ingredients?.length || 0} items`);
+  console.log(`Steps: ${recipe.steps?.length || 0} steps`);
+  console.log(`Additional fields: ${Object.keys(recipe).filter(k => 
+    !['title', 'description', 'ingredients', 'steps'].includes(k)
+  ).join(', ')}`);
+  
+  if (!recipe.title || !recipe.ingredients || recipe.ingredients.length === 0 || 
+      !recipe.steps || recipe.steps.length === 0) {
+    console.error('WARNING: Recipe parsing incomplete - missing essential fields');
+  } else {
+    console.log('Recipe parsing complete - all essential fields found');
+  }
+  
   return recipe;
 }
 
@@ -1119,169 +991,20 @@ function parseRecipeFromText(text) {
  * Process pasted recipe content
  * Analyzes raw text (typically copy/pasted from a recipe website) and extracts recipe information
  */
-async function handlePastedRecipeContent(content, apiKey) {
+async function handlePastedRecipeContent(content, aiProvider) {
   try {
-    // Create a prompt for the API to extract recipe information from pasted content
-    const prompt = `
-    You are a recipe extraction assistant. Extract the complete recipe from the following content which was copy/pasted from a recipe website.
-    Format your response as a complete, detailed recipe with the following structure:
-    
-    Title: [Recipe Title]
-    Subtitle: [Brief description or tagline, if present]
-    Description: [Full description, if present]
-    Author: [Recipe author, if present]
-    Source: [Original source or website name, if present]
-    Yield: [Number of servings or quantity]
-    Time: [Preparation time, cooking time, total time]
-    Ingredients:
-    - [List each ingredient with quantity and preparation method]
-    
-    Instructions:
-    1. [Step 1]
-    2. [Step 2]
-    ...
-    
-    Notes: [Any additional notes or tips]
-    Tags: [Comma-separated list of recipe categories or keywords]
-    
-    Don't include any field if there's no corresponding information in the content.
-    
-    Copy/pasted Content:
-    ${content}
-    `;
-    
     // Add retry logic with exponential backoff for API calls
     let retries = 3;
     let delay = 1000; // Start with 1 second delay
     let lastError = null;
     
-    // Retry loop for handling rate limits
+    // Retry loop for handling rate limits and API errors
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         console.log(`LLM API attempt ${attempt + 1}/${retries + 1}`);
         
-        // Get the appropriate model and endpoint
-        const { endpoint, model, headers, isAnthropicFormat } = selectModelAndEndpoint();
-        
-        let aiResponse;
-        let openaiResponse;
-        
-        if (isAnthropicFormat) {
-          // Handle Anthropic's different API format
-          openaiResponse = await axios.post(
-            endpoint,
-            {
-              model: model,
-              max_tokens: 4000,
-              messages: [
-                {
-                  role: "user",
-                  content: prompt
-                }
-              ],
-              system: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
-            },
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
-          
-          aiResponse = openaiResponse.data.content[0].text;
-        } else if (isGoogleFormat) {
-          // Handle Google's Gemini API format
-          const googlePrompt = "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added.\n\n" + prompt;
-          
-          const payload = {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: googlePrompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.3,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 2048
-            }
-          };
-          
-          // For Google API, the key is sent as a query parameter
-          const requestUrl = `${endpoint}?key=${apiKey}`;
-          
-          openaiResponse = await axios.post(
-            requestUrl,
-            payload,
-            {
-              headers: headers,
-              timeout: 60000 // 60 second timeout
-            }
-          );
-          
-          aiResponse = openaiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (!aiResponse) {
-            console.error("Invalid Google API response format:", openaiResponse.data);
-            throw new Error("Invalid Google API response format");
-          }
-        } else {
-          // Standard OpenAI-compatible format (works for OpenAI, Groq, etc)
-          const payload = {
-            model: model,
-            messages: [
-              {
-                role: "system",
-                content: "You are a precise recipe extraction assistant that can parse recipes from copy/pasted website content. Extract only the recipe details in the exact format requested, with nothing else added."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            temperature: 0.3 // Lower temperature for more consistent results
-          };
-          
-          console.log(`Making API request to ${endpoint} with model ${model}`);
-          
-          try {
-            openaiResponse = await axios.post(
-              endpoint,
-              payload,
-              {
-                headers: headers,
-                timeout: 60000 // 60 second timeout
-              }
-            );
-            
-            console.log("API response received successfully");
-            
-            if (endpoint.includes('groq.com')) {
-              // Groq response format may vary slightly
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-              if (!aiResponse && openaiResponse.data?.choices?.[0]?.text) {
-                // Alternative format sometimes used by Groq
-                aiResponse = openaiResponse.data.choices[0].text;
-              }
-            } else {
-              // Standard OpenAI format
-              aiResponse = openaiResponse.data?.choices?.[0]?.message?.content;
-            }
-            
-            // Ensure we got a valid response
-            if (!aiResponse) {
-              console.error("Invalid API response format:", openaiResponse.data);
-              throw new Error("Invalid API response format");
-            }
-          } catch (apiError) {
-            console.error("API request error:", apiError);
-            console.error("API error response:", apiError.response?.data);
-            throw apiError;
-          }
-        }
+        // Use the provider to handle the pasted recipe content
+        const aiResponse = await aiProvider.handlePastedRecipeContent(content);
         
         // Parse the text response into a structured recipe object
         const recipeData = parseRecipeFromText(aiResponse);
@@ -1311,7 +1034,41 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
           console.error(`API error (${error.response.status}): Rate limit or server error`);
           console.error(`Error details:`, error.response.data);
           
-          // If we've used all our retries, throw the error
+          // For rate limit errors (429), try to switch to another provider
+          if (error.response.status === 429) {
+            // Import AIProviderFactory dynamically to avoid circular dependencies
+            const { AIProviderFactory } = await import('../ai_providers/index.js');
+            
+            // Get the current provider's key
+            const currentProviderKey = Object.keys(AIProviderFactory.initializeProviders())
+              .find(key => AIProviderFactory.initializeProviders()[key] === aiProvider);
+            
+            if (currentProviderKey) {
+              // Get retry-after from headers or default to 60 seconds
+              const retryAfter = error.response.headers?.['retry-after'] 
+                ? parseInt(error.response.headers['retry-after'], 10) 
+                : 60;
+              
+              // Record the rate limit
+              AIProviderFactory.recordRateLimit(currentProviderKey, retryAfter);
+              
+              console.log(`Provider ${currentProviderKey} is rate limited. No fallback will be used.`);
+              
+              // Return a user-friendly error message
+              return {
+                statusCode: 429,
+                body: JSON.stringify({
+                  success: false,
+                  message: `The ${aiProvider.getConfig().name} API is currently rate limited. Please try again in ${retryAfter} seconds or select a different model.`,
+                  rateLimited: true,
+                  retryAfter: retryAfter,
+                  provider: currentProviderKey
+                })
+              };
+            }
+          }
+          
+          // If we've used all our retries or couldn't find a fallback provider, give up
           if (attempt === retries) {
             console.error(`All ${retries + 1} attempts failed. Giving up.`);
             throw error;

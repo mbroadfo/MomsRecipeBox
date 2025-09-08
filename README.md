@@ -177,8 +177,11 @@ This feature creates a more interactive cooking experience with shopping list fu
 
 ## 🧠 AI Recipe Assistant
 
-The application now features an AI-powered recipe assistant that helps users create recipes:
+The application now features a powerful AI-powered recipe assistant with **multiple provider support** for reliability and flexibility:
 
+- **Multi-Provider Architecture**: Supports OpenAI, Google Gemini, Groq, Anthropic Claude, and DeepSeek APIs with automatic fallback
+- **Centralized Recipe Instructions**: All providers use identical system messages for consistent recipe formatting
+- **Auto Provider Selection**: Intelligent provider selection based on API key availability and rate limiting
 - **Chat Interface**: Natural language conversation with AI to build recipes from scratch
 - **URL Extraction**: Paste a recipe URL to automatically extract ingredients, instructions, and metadata
 - **Image Extraction**: Automatically downloads and associates recipe images from websites with intelligent image selection
@@ -188,11 +191,31 @@ The application now features an AI-powered recipe assistant that helps users cre
 - **Seamless Integration**: Works within the Add Recipe flow with toggle visibility
 - **Smart Recognition**: Automatically detects and extracts recipe components from text
 - **Context Aware**: Maintains conversation history for refining recipe details
-- **Full Recipe Support**: Creates all aspects including title, description, ingredients, instructions, and metadata
+- **Full Recipe Support**: Creates all aspects including title, subtitle, description, ingredients, instructions, notes, tags, and nutrition
 - **One-Click Creation**: Create recipes directly from the chat interface without manual form entry
 - **Ingredient-Based Suggestions**: Suggest recipes based on available ingredients
 - **Automatic Categorization**: Intelligently categorizes ingredients for shopping lists
 - **Robust Error Handling**: Graceful handling of API rate limits and temporary service disruptions
+
+### AI Provider Architecture
+
+The system features a modular AI provider architecture with:
+
+- **Provider Factory**: Centralized management of multiple AI providers with automatic selection
+- **Base Provider Class**: Shared functionality and standardized recipe formatting across all providers
+- **Rate Limit Management**: Intelligent tracking of provider rate limits with automatic fallback
+- **Unified API**: Consistent interface regardless of which AI provider is actually used
+- **Environment-Based Selection**: Providers are enabled based on available API keys
+
+### Supported AI Providers
+
+| Provider | Model | Features | Status |
+|----------|-------|----------|--------|
+| **Google Gemini** | gemini-1.5-pro | Primary provider, excellent at recipe extraction | ✅ Active |
+| **OpenAI** | gpt-3.5-turbo | Reliable fallback, good conversation flow | ✅ Active |
+| **Groq** | llama-3.1-8b-instant | Fast responses, good for quick extractions | ✅ Active |
+| **Anthropic Claude** | claude-3-haiku-20240307 | High-quality responses, good reasoning | ✅ Active |
+| **DeepSeek** | deepseek-chat | Cost-effective option, good performance | ✅ Active |
 
 The AI Recipe Assistant provides an intuitive way to quickly add recipes to the system either by:
 

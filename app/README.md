@@ -40,7 +40,11 @@ AUTH0_AUDIENCE=your_auth0_audience
 | Variable | Required | Purpose | Notes |
 |----------|----------|---------|-------|
 | `MONGODB_URI` | Yes | Database connection | Must match Docker MongoDB credentials |
-| `OPENAI_API_KEY` | Yes | AI Recipe Assistant | Required for `/ai/chat` and `/ai/extract` endpoints |
+| `OPENAI_API_KEY` | No* | OpenAI GPT models | *At least one AI provider key required |
+| `GOOGLE_API_KEY` | No* | Google Gemini models | *At least one AI provider key required |
+| `GROQ_API_KEY` | No* | Groq/Llama models | *At least one AI provider key required |
+| `ANTHROPIC_API_KEY` | No* | Anthropic Claude models | *At least one AI provider key required |
+| `DEEPSEEK_API_KEY` | No* | DeepSeek models | *At least one AI provider key required |
 | `RECIPE_IMAGES_BUCKET` | Yes | Image storage | S3 bucket name for recipe images |
 | `AWS_ACCESS_KEY_ID` | Yes | S3 access | AWS credentials for image upload/download |
 | `AWS_SECRET_ACCESS_KEY` | Yes | S3 access | AWS credentials for image upload/download |
@@ -49,17 +53,39 @@ AUTH0_AUDIENCE=your_auth0_audience
 
 ### Getting API Keys
 
-1. **OpenAI API Key**: 
-   - Visit https://platform.openai.com/api-keys
-   - Create a new API key
+The AI Recipe Assistant supports multiple providers for reliability and flexibility. You need at least one API key from the supported providers:
+
+1. **Google Gemini API Key** (Recommended):
+   - Visit <https://ai.google.dev/>
+   - Enable the Gemini API
+   - Create an API key (starts with "AIza")
+
+2. **OpenAI API Key**:
+   - Visit <https://platform.openai.com/api-keys>
+   - Create a new API key (starts with "sk-")
    - Add billing information (required for API access)
 
-2. **AWS S3 Setup**:
+3. **Groq API Key** (Fast and Free):
+   - Visit <https://console.groq.com/>
+   - Create an account and generate an API key (starts with "gsk_")
+   - Free tier available with generous limits
+
+4. **Anthropic Claude API Key**:
+   - Visit <https://console.anthropic.com/>
+   - Create an API key (starts with "sk-ant-")
+   - Add billing information for usage
+
+5. **DeepSeek API Key** (Cost-effective):
+   - Visit <https://platform.deepseek.com/>
+   - Create an API key (starts with "sk-")
+   - Competitive pricing for high-quality models
+
+6. **AWS S3 Setup**:
    - Create an S3 bucket for recipe images
    - Create an IAM user with S3 permissions
    - Generate access key and secret key for the IAM user
 
-3. **Auth0 Setup** (Optional):
+7. **Auth0 Setup** (Optional):
    - Create an Auth0 application
    - Configure domain, client ID, and audience
 
@@ -162,6 +188,117 @@ The AI Recipe Assistant provides:
 - Direct recipe creation from the chat interface without form-filling
 - Image handling that extracts, downloads, uploads to S3, and associates with recipes
 
+## AI Provider Architecture
+
+The AI Recipe Assistant features a robust, multi-provider architecture designed for reliability, performance, and maintainability:
+
+### Provider Factory Pattern
+
+The `AIProviderFactory` class manages all AI providers with intelligent selection and fallback capabilities:
+
+- **Automatic Provider Selection**: Selects providers based on API key availability and rate limiting status
+- **Rate Limit Management**: Tracks rate-limited providers and automatically excludes them from selection
+- **Centralized Configuration**: Single point of control for all provider management
+- **Graceful Degradation**: Continues working even when some providers are unavailable
+
+### Supported AI Providers
+
+| Provider | Model | API Key Format | Features | Strengths |
+|----------|-------|----------------|----------|-----------|
+| **Google Gemini** | `gemini-1.5-pro` | `AIza...` | Primary provider, excellent extraction | High accuracy, good at parsing web content |
+| **OpenAI** | `gpt-3.5-turbo` | `sk-...` | Reliable fallback | Consistent responses, good conversation flow |
+| **Groq** | `llama-3.1-8b-instant` | `gsk_...` | Fast responses | Very fast inference, free tier available |
+| **Anthropic Claude** | `claude-3-haiku-20240307` | `sk-ant-...` | High-quality reasoning | Excellent instruction following |
+| **DeepSeek** | `deepseek-chat` | `sk-...` | Cost-effective option | Good performance-to-cost ratio |
+
+### Centralized Recipe Instructions
+
+All providers use identical system messages defined in the `BaseAIProvider` class:
+
+- **`getRecipeStructure()`**: Standardized recipe format template
+- **`getUrlExtractionSystemMessage()`**: Instructions for extracting recipes from web content
+- **`getChatSystemMessage()`**: Instructions for recipe chat assistance
+- **`getPastedContentSystemMessage()`**: Instructions for processing pasted recipe content
+- **`getDetailedExtractionPrompt()`**: Detailed formatting rules for providers requiring specific instructions
+
+This centralization ensures:
+
+- **Consistency**: All providers return identically formatted recipes
+- **Maintainability**: Recipe format changes only need to be made in one place
+- **Quality**: Unified, well-tested prompts across all providers
+- **Extensibility**: New providers can be added easily using existing templates
+
+### Provider Selection Logic
+
+The system automatically selects providers using this priority order:
+
+1. **User Selection**: If a specific provider is requested via the UI
+2. **Auto Selection**: Uses this priority order for automatic selection:
+   - Google Gemini (primary choice if available)
+   - OpenAI (reliable fallback)
+   - Groq (fast alternative)
+   - Anthropic Claude (high-quality option)
+   - DeepSeek (cost-effective choice)
+
+### Rate Limiting & Error Handling
+
+The system includes sophisticated error handling:
+
+- **Rate Limit Tracking**: Automatically tracks when providers hit rate limits
+- **Temporary Exclusion**: Rate-limited providers are excluded until their limits reset
+- **User Feedback**: Clear error messages inform users about rate limits and suggest alternatives
+- **Graceful Fallback**: Automatically tries alternative providers when the selected one fails
+- **Retry Logic**: Implements exponential backoff for transient failures
+
+### Environment Configuration
+
+Providers are automatically enabled based on available environment variables:
+
+```bash
+# Enable Google Gemini
+GOOGLE_API_KEY=AIza...
+
+# Enable OpenAI
+OPENAI_API_KEY=sk-...
+
+# Enable Groq
+GROQ_API_KEY=gsk_...
+
+# Enable Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Enable DeepSeek
+DEEPSEEK_API_KEY=sk-...
+```
+
+### File Structure
+
+```text
+app/ai_providers/
+├── base_provider.js          # Base class with shared functionality
+├── provider_factory.js       # Provider management and selection
+├── google_provider.js        # Google Gemini implementation
+├── openai_provider.js        # OpenAI GPT implementation
+├── groq_provider.js          # Groq Llama implementation
+├── anthropic_provider.js     # Anthropic Claude implementation
+├── deepseek_provider.js      # DeepSeek implementation
+└── index.js                  # Export all providers
+```
+
+### Usage in Handlers
+
+```javascript
+import { AIProviderFactory } from '../ai_providers/index.js';
+
+// Get the best available provider
+const aiProvider = AIProviderFactory.getProvider(selectedModel);
+
+// Use provider for recipe extraction
+const response = await aiProvider.handleUrlExtraction(url, content);
+```
+
+This architecture ensures the AI Recipe Assistant remains functional and performant even as individual AI providers change their availability, pricing, or capabilities.
+
 ## Admin System
 
 The admin system provides comprehensive user management and system monitoring capabilities with JWT-based authentication and role-based access control.
@@ -221,6 +358,7 @@ node run-tests.js
 ```
 
 The test suite includes:
+
 - JWT token generation and validation
 - User management operations
 - Error handling and edge cases

@@ -31,6 +31,7 @@ export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVis
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string>('auto');
   const chatEndRef = useRef<HTMLDivElement>(null);
   
   // Add initial greeting when the component mounts
@@ -86,7 +87,8 @@ Simply type your request or paste a recipe or URL to get started!`
         body: JSON.stringify({
           message: userInput,
           messages: messages,  // The backend expects 'messages' instead of 'history'
-          user_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'
+          user_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
+          model: selectedModel // Send the selected model to the backend
         }),
       });
       
@@ -207,7 +209,23 @@ Simply type your request or paste a recipe or URL to get started!`
   return (
     <div className="recipe-ai-chat">
       <div className="recipe-ai-header">
-        <h2>Recipe AI Assistant</h2>
+        <div className="recipe-ai-header-top">
+          <h2>Recipe AI Assistant</h2>
+          <div className="recipe-ai-model-select-container">
+            <select 
+              className="recipe-ai-model-select"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+            >
+              <option value="auto">Auto-select Best Model</option>
+              <option value="google">Google Gemini</option>
+              <option value="openai">OpenAI GPT</option>
+              <option value="groq">Groq</option>
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="deepseek">DeepSeek</option>
+            </select>
+          </div>
+        </div>
         <p className="recipe-ai-subtitle">
           Let me help you create a recipe by chatting or extracting from a URL
         </p>

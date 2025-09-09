@@ -33,7 +33,7 @@ class RecipeDataQualityChecker {
       let isClean = true;
       
       // Critical checks
-      if (!recipe.title || !recipe.ingredients || !recipe.directions) {
+      if (!recipe.title || !recipe.ingredients || !recipe.instructions) {
         issues.critical++;
         isClean = false;
       }
@@ -43,17 +43,17 @@ class RecipeDataQualityChecker {
         issues.high++;
         isClean = false;
       }
-      if (Array.isArray(recipe.directions) && recipe.directions.length === 0) {
+      if (Array.isArray(recipe.instructions) && recipe.instructions.length === 0) {
         issues.high++;
         isClean = false;
       }
       
       // Medium priority checks
-      if (!recipe.cookTime && !recipe.prepTime && !recipe.totalTime) {
+      if (!recipe.time || (typeof recipe.time === 'object' && Object.keys(recipe.time).length === 0)) {
         issues.medium++;
         isClean = false;
       }
-      if (!recipe.servings) {
+      if (!recipe.yield) {
         issues.medium++;
         isClean = false;
       }

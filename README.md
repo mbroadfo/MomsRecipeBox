@@ -62,6 +62,55 @@ API exposed at `http://localhost:3000`.
 
 ---
 
+## 🛡️ Database Backup & Restore
+
+Your family recipes and user data are now protected with a comprehensive backup and restore system:
+
+### Quick Backup Operations
+
+```powershell
+# Create a backup
+.\scripts\backup\backup-simple.ps1 -Operation backup
+
+# Check backup status
+.\scripts\backup\backup-simple.ps1 -Operation status
+
+# Restore from backup (requires confirmation)
+.\scripts\backup\restore-simple.ps1 -BackupPath ".\backups\backup_2025-09-09_09-07-12"
+
+# Force restore without confirmation (use carefully!)
+.\scripts\backup\restore-simple.ps1 -BackupPath ".\backups\backup_2025-09-09_09-07-12" -Force
+```
+
+### Backup Strategy
+
+- **What's Backed Up**: All collections (recipes, favorites, comments, shopping_lists, users)
+- **Backup Format**: MongoDB BSON dumps with metadata
+- **Storage Location**: `.\backups\` directory
+- **Retention**: Manual management (delete old backups as needed)
+
+### Advanced Backup Features
+
+For enterprise-grade backup management, see the comprehensive backup system in `scripts\backup\`:
+
+- **Scheduled Backups**: Automated daily/incremental backups
+- **Compressed Archives**: Space-efficient storage
+- **Integrity Verification**: Automatic backup validation
+- **Cloud Sync**: Optional cloud storage integration
+- **Disaster Recovery**: Complete restoration procedures
+
+**Quick Start Guide**: `scripts\backup\QUICKSTART.md`  
+**Full Documentation**: `scripts\backup\README.md`
+
+### Emergency Recovery
+
+1. **List available backups**: `.\scripts\backup\backup-simple.ps1 -Operation status`
+2. **Stop the application**: `docker compose down`
+3. **Restore database**: `.\scripts\backup\restore-simple.ps1 -BackupPath "PATH_TO_BACKUP" -Force`
+4. **Restart application**: `docker compose up -d`
+
+---
+
 ## 🧪 Testing
 
 Backend end-to-end tests live in `app/tests` and use native `fetch` + `assert`:

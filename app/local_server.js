@@ -278,8 +278,6 @@ const server = http.createServer(async (req, res) => {
 
     req.on('end', async () => {
       try {
-        console.debug(`📥 Event received: ${req.method} ${req.url}`);
-
         // Remove query string for path matching
         const urlParts = req.url.split('?');
         const cleanPath = urlParts[0];

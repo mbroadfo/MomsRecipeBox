@@ -14,8 +14,6 @@ export async function handler(event) {
   
   // Get bucket name from environment
   const bucketName = process.env.RECIPE_IMAGES_BUCKET;
-  
-  console.debug(`Copying image from ${sourceKey} to ${targetKey}`);
 
   try {
     // Check if source object exists
@@ -148,7 +146,6 @@ export async function handler(event) {
         Bucket: bucketName,
         Key: sourceKey
       }).promise();
-      console.debug(`Deleted temporary image with key: ${sourceKey}`);
     } catch (deleteErr) {
       console.warn(`Failed to delete temporary image: ${deleteErr.message}`);
       // Continue anyway, the copy was successful

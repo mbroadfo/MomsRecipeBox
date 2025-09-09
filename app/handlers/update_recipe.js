@@ -28,7 +28,6 @@ const handler = async (event) => {
   
   // Only add fields to updateFields if they exist in the request body
   if ('visibility' in body) updateFields.visibility = body.visibility;
-  if ('status' in body) updateFields.status = body.status;
   if ('title' in body) updateFields.title = body.title;
   if ('subtitle' in body) updateFields.subtitle = body.subtitle;
   if ('description' in body) updateFields.description = body.description;

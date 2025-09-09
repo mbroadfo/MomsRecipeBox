@@ -1,4 +1,13 @@
 {
+  "type": "module",
+  "scripts": {
+    "db:analyze": "node tools/database/quality-analyzer.js",
+    "db:fields": "node tools/database/field-analyzer.js", 
+    "db:clean": "node tools/database/database-cleaner.js",
+    "db:clean-preview": "node tools/database/database-cleaner.js",
+    "db:clean-apply": "node tools/database/database-cleaner.js --apply",
+    "db:clean-full": "node tools/database/database-cleaner.js --apply --remove-tests"
+  },
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
     "dotenv": "^17.2.1",

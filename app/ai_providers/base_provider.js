@@ -8,7 +8,7 @@ export class BaseAIProvider {
    */
   static getRecipeStructure() {
     return `Title: [Recipe Title]
-Subtitle: [Recipe subtitle or tagline, if present]
+Subtitle: [A brief descriptive tagline or cooking method summary - always include this]
 Description: [Full description - do NOT include the word "Description:" in this content]
 Author: [Recipe author, if present]
 Source: [Original source or website name]
@@ -41,7 +41,9 @@ IMPORTANT: Do NOT repeat field labels in the content. Write only the actual cont
 - CORRECT: "Description: This delicious soup is perfect for winter."
 - INCORRECT: "Description: Description: This delicious soup is perfect for winter."
 
-If any section is not available in the content, skip that section entirely. For tags, include relevant cooking method, meal type, dietary restrictions, cuisine type, or difficulty level.`;
+ALWAYS include a subtitle - if the recipe doesn't have an explicit subtitle, create a brief descriptive tagline (e.g., "Rich and creamy comfort food", "Quick weeknight dinner", "Traditional Italian pasta dish"). 
+
+If any other section is not available in the content, skip that section entirely. For tags, include relevant cooking method, meal type, dietary restrictions, cuisine type, or difficulty level.`;
   }
 
   /**
@@ -51,6 +53,8 @@ If any section is not available in the content, skip that section entirely. For 
     return `You are a helpful recipe assistant. Help users with recipe-related questions, cooking tips, and recipe creation. If you provide a complete recipe, format it as follows:
 
 ${BaseAIProvider.getRecipeStructure()}
+
+ALWAYS include a subtitle - create a brief descriptive tagline for the dish (e.g., "Rich and creamy comfort food", "Quick weeknight dinner", "Traditional Italian pasta dish").
 
 Be helpful, friendly, and provide practical cooking advice.`;
   }
@@ -67,6 +71,8 @@ IMPORTANT: Do NOT repeat field labels in the content. Write only the actual cont
 - CORRECT: "Description: This delicious soup is perfect for winter."
 - INCORRECT: "Description: Description: This delicious soup is perfect for winter."
 
+ALWAYS include a subtitle - if the recipe doesn't have an explicit subtitle, create a brief descriptive tagline (e.g., "Rich and creamy comfort food", "Quick weeknight dinner", "Traditional Italian pasta dish").
+
 Clean up any formatting issues and ensure the recipe is well-structured.`;
   }
 
@@ -81,8 +87,9 @@ FORMATTING RULES:
 2. Follow the recipe structure exactly as shown below
 3. Do not include ANY explanatory text, introductions, or commentary
 4. Do not include phrases like "Here's the recipe" or "I've extracted"
-5. If information for a field is not present, omit that field entirely
+5. If information for a field is not present, omit that field entirely (EXCEPT subtitle - always include a subtitle)
 6. CRITICAL: Do NOT repeat field labels in the content. For example, if you write "Description: This delicious soup...", write ONLY "This delicious soup..." after the colon.
+7. ALWAYS include a subtitle - if the recipe doesn't have an explicit subtitle, create a brief descriptive tagline (e.g., "Rich and creamy comfort food", "Quick weeknight dinner", "Traditional Italian pasta dish").
 
 RECIPE STRUCTURE:
 ${BaseAIProvider.getRecipeStructure()}`;

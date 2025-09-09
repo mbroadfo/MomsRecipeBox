@@ -82,6 +82,59 @@ npm test      # runs all tests
 
 ---
 
+## 🏥 Health Monitoring & Data Quality
+
+The application includes a comprehensive health monitoring system with embedded data quality analysis:
+
+### Health Check System
+
+- **🚀 Startup Health Checks**: Automatic quality analysis during application startup
+- **📊 Data Quality Integration**: Real-time monitoring of recipe data quality metrics
+- **🌐 HTTP Health Endpoints**: REST API endpoints for external monitoring
+- **⚙️ Configurable Thresholds**: Customizable health criteria and quality standards
+- **🚨 Graceful Degradation**: Continues operation with warnings when possible
+
+### Health Endpoints
+
+| Endpoint | Purpose | Use Case |
+|----------|---------|----------|
+| `/health` | Basic status | Load balancer health checks |
+| `/health/detailed` | Full component breakdown | Troubleshooting and monitoring |
+| `/health/history` | Health check history | Trend analysis |
+| `/health/live` | Liveness probe | Container orchestration |
+| `/health/ready` | Readiness probe | Traffic routing decisions |
+
+### Database Tools
+
+Comprehensive database management tools for maintaining data quality:
+
+```powershell
+# Analyze database quality
+npm run db:analyze
+
+# Analyze field usage patterns  
+npm run db:fields
+
+# Clean database (apply auto-fixes)
+npm run db:clean-apply
+
+# Preview cleanup changes
+npm run db:clean-preview
+```
+
+### Database Tools Features
+
+- **📊 Quality Analysis**: Comprehensive analysis of recipe data quality with detailed reporting
+- **🔧 Auto-Cleanup**: Automatic fixing of common data quality issues (standardization, formatting, etc.)
+- **📈 Field Analysis**: Analysis of field usage patterns and data distribution
+- **⚠️ Issue Detection**: Identification of critical, high, medium, and low priority data issues
+- **🛡️ Safe Operations**: Preview mode for reviewing changes before applying
+- **📝 Detailed Reporting**: Comprehensive reports with actionable recommendations
+
+The health system provides enterprise-grade monitoring capabilities and ensures data quality is maintained as the application scales.
+
+---
+
 ## 🔌 Key Backend Endpoints (Excerpt)
 
 | Method | Route                       | Description                                |

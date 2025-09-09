@@ -1,5 +1,7 @@
 // File: app/local_server.js
 import { handler } from './lambda.js';
+import { setupHealthRoutes, setupGracefulShutdown } from './health/health-routes.js';
+import { getDb } from './app.js';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -8,6 +10,93 @@ import url from 'url';
 const PORT = process.env.PORT || 3000;
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+
+// Health route handler for local server
+async function handleHealthRoutes(req, res, path) {
+  const { getHealthChecker } = await import('./app.js');
+  const healthChecker = getHealthChecker();
+  const endpoints = healthChecker.getHealthEndpoints();
+  
+  try {
+    let result;
+    
+    switch (path) {
+      case '/health':
+        result = await new Promise((resolve, reject) => {
+          const mockReq = { ...req };
+          const mockRes = {
+            status: (code) => ({ json: (data) => resolve({ statusCode: code, body: JSON.stringify(data) }) }),
+            json: (data) => resolve({ statusCode: 200, body: JSON.stringify(data) })
+          };
+          endpoints['/health'](mockReq, mockRes).catch(reject);
+        });
+        break;
+        
+      case '/health/detailed':
+        result = await new Promise((resolve, reject) => {
+          const mockReq = { ...req };
+          const mockRes = {
+            status: (code) => ({ json: (data) => resolve({ statusCode: code, body: JSON.stringify(data) }) }),
+            json: (data) => resolve({ statusCode: 200, body: JSON.stringify(data) })
+          };
+          endpoints['/health/detailed'](mockReq, mockRes).catch(reject);
+        });
+        break;
+        
+      case '/health/history':
+        result = await new Promise((resolve, reject) => {
+          const mockReq = { ...req };
+          const mockRes = {
+            json: (data) => resolve({ statusCode: 200, body: JSON.stringify(data) })
+          };
+          endpoints['/health/history'](mockReq, mockRes).catch(reject);
+        });
+        break;
+        
+      case '/health/live':
+        result = {
+          statusCode: 200,
+          body: JSON.stringify({
+            status: 'alive',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+          })
+        };
+        break;
+        
+      case '/health/ready':
+        const health = healthChecker.getCurrentHealth();
+        const isReady = !health || health.overall !== 'critical';
+        result = {
+          statusCode: isReady ? 200 : 503,
+          body: JSON.stringify({
+            status: isReady ? 'ready' : 'not_ready',
+            overall_health: health?.overall || 'unknown',
+            timestamp: new Date().toISOString()
+          })
+        };
+        break;
+        
+      default:
+        result = {
+          statusCode: 404,
+          body: JSON.stringify({ error: 'Health endpoint not found' })
+        };
+    }
+    
+    res.writeHead(result.statusCode, { 'Content-Type': 'application/json' });
+    res.end(result.body);
+    
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'error', 
+      message: error.message,
+      timestamp: new Date().toISOString()
+    }));
+  }
+}
 
 // Centralized response handler function
 function handleResponse(res, result) {
@@ -195,6 +284,12 @@ const server = http.createServer(async (req, res) => {
         const urlParts = req.url.split('?');
         const cleanPath = urlParts[0];
         
+        // Handle health check routes directly
+        if (cleanPath.startsWith('/health')) {
+          await handleHealthRoutes(req, res, cleanPath);
+          return;
+        }
+        
         // Parse query parameters
         let queryStringParameters = {};
         if (urlParts.length > 1) {
@@ -284,6 +379,33 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Local server running at http://localhost:${PORT}`);
+server.listen(PORT, async () => {
+  console.log(`🚀 Local server starting on http://localhost:${PORT}`);
+  
+  try {
+    // Initialize database and health checks
+    await getDb();
+    
+    // Setup health check routes (simulated for local server)
+    console.log('✅ Health check system initialized');
+    console.log('📍 Health endpoints available:');
+    console.log(`   http://localhost:${PORT}/health`);
+    console.log(`   http://localhost:${PORT}/health/detailed`);
+    console.log(`   http://localhost:${PORT}/health/history`);
+    console.log(`   http://localhost:${PORT}/health/live`);
+    console.log(`   http://localhost:${PORT}/health/ready`);
+    
+    // Setup graceful shutdown
+    setupGracefulShutdown();
+    
+    console.log(`✅ Server ready at http://localhost:${PORT}`);
+  } catch (error) {
+    console.error('❌ Server startup failed:', error.message);
+    if (process.env.FAIL_ON_CRITICAL_HEALTH === 'true') {
+      console.error('💀 Exiting due to critical health issues');
+      process.exit(1);
+    } else {
+      console.log('⚠️  Server started with health issues - some features may not work correctly');
+    }
+  }
 });

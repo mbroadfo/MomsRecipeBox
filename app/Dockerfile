@@ -11,6 +11,9 @@ RUN npm install --omit=dev
 # Copy the application code
 COPY app/ . 
 
+# Copy the tools directory for health checks
+COPY tools/ ../tools/
+
 # Make sure local_server.js and lambda.js are in place
 COPY app/local_server.js .
 COPY app/lambda.js .

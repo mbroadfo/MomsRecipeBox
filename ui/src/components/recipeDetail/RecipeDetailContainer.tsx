@@ -15,8 +15,9 @@ import { InstructionsView } from './parts/InstructionsView';
 import { Notes } from './parts/Notes';
 import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
-import { StepsEditor } from './parts/StepsEditor';
+import { InstructionsEditor } from './parts/StepsEditor';
 import { RecipeAIChat } from './parts/RecipeAIChat';
+import { Description } from './parts/Description';
 import '../RecipeDetail.css';
 import './parts/RecipeAIChat.css';
 import '../../components/shoppingList/ShoppingListPage.css';
@@ -73,7 +74,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     };
   }, [isNew]);
   
-  const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, moveIngredientItem } = 
+  const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, moveIngredientItem, updateInstruction, addInstruction, removeInstruction } = 
     useWorkingRecipe(recipe, editMode);
   
   // For image uploads - need to handle both new and existing recipes
@@ -157,9 +158,10 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
       // Build save payload
       const payload = buildSavePayload(working);
       
-      // Ensure we have all fields for a comprehensive save
+      // Ensure we have all fields for a comprehensive save - standardize on instructions
       if (!payload.instructions && Array.isArray(payload.steps)) {
         payload.instructions = payload.steps;
+        delete payload.steps; // Remove the old steps field
       }
       
 
@@ -296,6 +298,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           )}
           
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
+          <Description value={working.description} editing={editMode} onChange={v => patch({ description: v })} />
           <Meta source={working.source as any} author={working.author} editing={editMode} onChange={patch} />
           <Tags tags={working.tags} editing={editMode} add={addTag} remove={removeTag} />
           <YieldTime yieldValue={working.yield} time={working.time} editing={editMode} onChange={patch} />
@@ -315,15 +318,15 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             />
           )}
           {editMode ? (
-            <StepsEditor
-              steps={working.steps}
-              update={(i,v)=>patch({ steps: working.steps.map((s,si)=>si===i?v:s) })}
-              add={()=>patch({ steps:[...working.steps,''] })}
-              remove={(i)=>patch({ steps: working.steps.filter((_,si)=>si!==i) })}
-              move={(from,to)=>patch({ steps: (()=>{ const arr=[...working.steps]; const [m]=arr.splice(from,1); arr.splice(to,0,m); return arr; })() })}
+            <InstructionsEditor
+              instructions={working.instructions}
+              update={updateInstruction}
+              add={addInstruction}
+              remove={removeInstruction}
+              move={(from: number, to: number) => patch({ instructions: (()=>{ const arr=[...working.instructions]; const [m]=arr.splice(from,1); arr.splice(to,0,m); return arr; })() })}
             />
           ) : (
-            <InstructionsView steps={working.steps} />
+            <InstructionsView instructions={working.instructions} />
           )}
           <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
           {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
@@ -416,7 +419,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                       yield: recipeData.yield || "",
                       time: recipeData.time || {},
                       ingredients: ingredients,
-                      steps: Array.isArray(recipeData.steps) ? recipeData.steps : [],
                       instructions: Array.isArray(recipeData.steps) ? recipeData.steps : [],
                       notes: recipeData.notes || "",
                       // Don't set image_url in initial creation to avoid race conditions

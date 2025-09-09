@@ -22,7 +22,6 @@ export default async function createRecipe(db, body) {
     time: body.time || {},
     sections: body.sections || [],
     ingredients: body.ingredients || [],
-    steps: body.steps || [],
     instructions: body.instructions || [],
     notes: body.notes || '',
     created_at: new Date(),

@@ -15,3 +15,9 @@ node_modules/
 
 # output
 output/
+
+# Database tool reports
+tools/reports/
+*_report_*.json
+*_quality_report_*.json
+*_cleanup_report_*.json

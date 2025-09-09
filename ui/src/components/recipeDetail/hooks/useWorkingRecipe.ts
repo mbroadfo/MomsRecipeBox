@@ -16,7 +16,7 @@ export interface WorkingRecipe {
   yield?: string;
   time: { total?: string; prep?: string; cook?: string; [k: string]: any };
   ingredients: IngredientGroup[]; // will always be length 1 now
-  steps: string[]; // flattened instructions
+  instructions: string[]; // standardized on instructions instead of steps
   notes?: string;
   extraSections: CanonicalSection[]; // any non-Instructions sections
   image_url?: string;
@@ -53,14 +53,14 @@ function normalizeIngredients(raw: any): IngredientGroup[] {
   return [{ items: [] }];
 }
 
-function normalizeSteps(r: RawRecipe): { steps: string[]; from: 'instructions' | 'steps' | 'sections'; } {
-  if (Array.isArray(r.instructions)) return { steps: r.instructions.slice(), from: 'instructions' };
-  if (Array.isArray(r.steps)) return { steps: r.steps.slice(), from: 'steps' };
+function normalizeInstructions(r: RawRecipe): { instructions: string[]; from: 'instructions' | 'steps' | 'sections'; } {
+  if (Array.isArray(r.instructions)) return { instructions: r.instructions.slice(), from: 'instructions' };
+  if (Array.isArray(r.steps)) return { instructions: r.steps.slice(), from: 'steps' };
   if (Array.isArray(r.sections)) {
     const inst = r.sections.filter(s => (s.section_type || s.type) === 'Instructions').map(s => s.content);
-    if (inst.length) return { steps: inst, from: 'sections' };
+    if (inst.length) return { instructions: inst, from: 'sections' };
   }
-  return { steps: [], from: 'instructions' };
+  return { instructions: [], from: 'instructions' };
 }
 
 function extractExtraSections(r: RawRecipe): CanonicalSection[] {
@@ -74,12 +74,12 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
   if (!r) {
     return {
       title: '', subtitle: '', author: '', source: '', description: '', tags: [], yield: '', time: {}, 
-      ingredients: [{ items: [] }], steps: [], notes: '', extraSections: [], image_url: undefined, 
+      ingredients: [{ items: [] }], instructions: [], notes: '', extraSections: [], image_url: undefined, 
       visibility: 'private', owner_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
       original: null
     };
   }
-  const { steps, from } = normalizeSteps(r);
+  const { instructions, from } = normalizeInstructions(r);
   const working: WorkingRecipe = {
     title: r.title || '',
     subtitle: r.subtitle || '',
@@ -90,7 +90,7 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     yield: r.yield || r.servings || '',
     time: r.time || r.timing || {},
     ingredients: normalizeIngredients(r.ingredients),
-    steps,
+    instructions,
     notes: r.notes || '',
     extraSections: extractExtraSections(r),
     image_url: r._id && r.image_url ? `/api/recipes/${r._id}/image` : r.image_url,
@@ -98,8 +98,8 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     owner_id: r.owner_id || (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
     original: r
   };
-  // store origin of steps in hidden property for reverse mapping
-  (working as any)._stepsOrigin = from;
+  // store origin of instructions in hidden property for reverse mapping
+  (working as any)._instructionsOrigin = from;
   return working;
 }
 
@@ -131,9 +131,9 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
     return { ...w, ingredients: [{ items }] };
   });
 
-  const updateStep = (idx: number, value: string) => setWorking(w => ({ ...w, steps: w.steps.map((s, i) => i === idx ? value : s) }));
-  const addStep = () => setWorking(w => ({ ...w, steps: [...w.steps, ''] }));
-  const removeStep = (idx: number) => setWorking(w => ({ ...w, steps: w.steps.filter((_, i) => i !== idx) }));
+  const updateInstruction = (idx: number, value: string) => setWorking(w => ({ ...w, instructions: w.instructions.map((s, i) => i === idx ? value : s) }));
+  const addInstruction = () => setWorking(w => ({ ...w, instructions: [...w.instructions, ''] }));
+  const removeInstruction = (idx: number) => setWorking(w => ({ ...w, instructions: w.instructions.filter((_, i) => i !== idx) }));
 
   const updateSection = (idx: number, content: string) => setWorking(w => ({ ...w, extraSections: w.extraSections.map((s, i) => i === idx ? { ...s, content } : s) }));
   const addSection = (type: string) => setWorking(w => ({ ...w, extraSections: [...w.extraSections, { type, content: '' }] }));
@@ -144,7 +144,7 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
     patch,
     addTag, removeTag,
     updateIngredient, addIngredient, removeIngredient, moveIngredientItem,
-    updateStep, addStep, removeStep,
+    updateInstruction, addInstruction, removeInstruction,
     updateSection, addSection, removeSection,
     setWorking
   };
@@ -152,7 +152,7 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
 
 // Reverse mapping for save
 export function buildSavePayload(w: WorkingRecipe) {
-  const origin = (w as any)._stepsOrigin || 'instructions';
+  const origin = (w as any)._instructionsOrigin || 'instructions';
   // Always save as a flat array of items
   const ingredients = w.ingredients[0].items
     .filter(i => (i.name && i.name.trim()) || (i.quantity && i.quantity.trim()))
@@ -184,20 +184,20 @@ export function buildSavePayload(w: WorkingRecipe) {
 
   if (origin === 'sections') {
     base.sections = [
-      ...w.steps.filter(s => s.trim()).map((content, i) => ({ section_type: 'Instructions', content, position: i + 1 })),
-      ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.steps.length + i + 1 }))
+      ...w.instructions.filter(s => s.trim()).map((content, i) => ({ section_type: 'Instructions', content, position: i + 1 })),
+      ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.instructions.length + i + 1 }))
     ];
   } else if (origin === 'steps') {
-    base.steps = w.steps.filter(s => s.trim()); // keep # markers so headers persist
+    base.steps = w.instructions.filter(s => s.trim()); // keep # markers so headers persist
   } else {
-    base.instructions = w.steps.filter(s => s.trim());
+    base.instructions = w.instructions.filter(s => s.trim());
   }
 
   if (w.extraSections.length && origin !== 'sections') {
     // add extra sections separately (won't lose them if originally none)
     base.sections = [
-      ...w.steps.filter(s => s.trim()).map((content, i) => ({ section_type: 'Instructions', content, position: i + 1 })),
-      ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.steps.length + i + 1 }))
+      ...w.instructions.filter(s => s.trim()).map((content, i) => ({ section_type: 'Instructions', content, position: i + 1 })),
+      ...w.extraSections.map((s, i) => ({ section_type: s.type, content: s.content, position: w.instructions.length + i + 1 }))
     ];
   }
 

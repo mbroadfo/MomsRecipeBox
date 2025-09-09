@@ -1,13 +1,13 @@
 import React from 'react';
 
-export const InstructionsView: React.FC<{ steps: string[] }> = ({ steps }) => {
-  if (!steps.length) return null;
+export const InstructionsView: React.FC<{ instructions: string[] }> = ({ instructions }) => {
+  if (!instructions.length) return null;
   return (
     <div className="section-block">
       <h2>Instructions</h2>
       <div>
         <ol className="ol-steps" style={{ paddingLeft: '1.2rem', margin:0 }}>
-          {steps.reduce<{ elements: React.ReactNode[]; stepNumber: number }>((acc, raw, i) => {
+          {instructions.reduce<{ elements: React.ReactNode[]; stepNumber: number }>((acc, raw, i) => {
             const isHeader = /^\s*#/.test(raw);
             if (isHeader) {
               const text = raw.replace(/^\s*#\s*/, '').trim();

@@ -2,14 +2,14 @@ import React from 'react';
 import { ReorderableList } from './ReorderableList';
 
 interface Props {
-  steps: string[];
+  instructions: string[];
   update(idx: number, value: string): void;
   add(): void;
   remove(idx: number): void;
   move(from: number, to: number): void;
 }
 
-export const StepsEditor: React.FC<Props> = ({ steps, update, add, remove, move }) => {
+export const InstructionsEditor: React.FC<Props> = ({ instructions, update, add, remove, move }) => {
   const autoResize = (el: HTMLTextAreaElement | null) => {
     if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(800, el.scrollHeight) + 'px';
   };
@@ -17,7 +17,7 @@ export const StepsEditor: React.FC<Props> = ({ steps, update, add, remove, move 
     <div className="section-block">
       <h2>Instructions</h2>
       <ReorderableList
-        items={steps}
+        items={instructions}
         onReorder={(from,to)=>move(from,to)}
         render={(s, i) => {
           const headerMatch = s.match(/^\s*#(.*)$/);

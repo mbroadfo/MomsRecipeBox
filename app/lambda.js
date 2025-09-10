@@ -29,6 +29,7 @@ import { listUsersHandler } from './admin/admin_handlers/list_users.js';
 import { inviteUserHandler } from './admin/admin_handlers/invite_user.js';
 import { deleteUserHandler } from './admin/admin_handlers/delete_user.js';
 import { handler as systemStatusHandler } from './admin/admin_handlers/system_status.js';
+import { handler as aiServicesStatusHandler } from './admin/admin_handlers/ai_services_status.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -141,6 +142,9 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
       return await systemStatusHandler(event);
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/ai-services-status') {
+      return await aiServicesStatusHandler(event);
     }
 
     // Health check endpoint

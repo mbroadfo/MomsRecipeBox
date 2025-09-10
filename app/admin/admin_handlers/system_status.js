@@ -1,6 +1,5 @@
 // File: admin_handlers/system_status.js
 import AWS from 'aws-sdk';
-import axios from 'axios';
 
 const s3 = new AWS.S3();
 
@@ -59,181 +58,16 @@ async function testS3Connectivity() {
 }
 
 /**
- * Test AI Recipe Assistant connectivity
- */
-async function testAIConnectivity() {
-  try {
-    // Test the most available AI service
-    let testResult = null;
-    
-    // Try Google Gemini first (usually most reliable)
-    if (process.env.GOOGLE_API_KEY) {
-      try {
-        const response = await axios.post(
-          'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
-          {
-            contents: [{
-              parts: [{
-                text: "Say 'AI connectivity test successful' in exactly those words."
-              }]
-            }],
-            generationConfig: {
-              maxOutputTokens: 20
-            }
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            params: {
-              key: process.env.GOOGLE_API_KEY
-            },
-            timeout: 10000 // 10 second timeout
-          }
-        );
-
-        if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          return {
-            status: 'success',
-            message: 'Google Gemini AI service operational',
-            provider: 'Google Gemini'
-          };
-        }
-      } catch (googleError) {
-        console.log('Google Gemini test failed, trying next provider:', googleError.message);
-      }
-    }
-
-    // Try Groq if Google failed
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const response = await axios.post(
-          'https://api.groq.com/openai/v1/chat/completions',
-          {
-            model: 'llama3-70b-8192',
-            messages: [{
-              role: 'user',
-              content: "Say 'AI connectivity test successful' in exactly those words."
-            }],
-            max_tokens: 20
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000
-          }
-        );
-
-        if (response.data?.choices?.[0]?.message?.content) {
-          return {
-            status: 'success',
-            message: 'Groq AI service operational',
-            provider: 'Groq'
-          };
-        }
-      } catch (groqError) {
-        console.log('Groq test failed, trying next provider:', groqError.message);
-      }
-    }
-
-    // Try DeepSeek if others failed
-    if (process.env.DEEPSEEK_API_KEY) {
-      try {
-        const response = await axios.post(
-          'https://api.deepseek.com/v1/chat/completions',
-          {
-            model: 'deepseek-chat',
-            messages: [{
-              role: 'user',
-              content: "Say 'AI connectivity test successful' in exactly those words."
-            }],
-            max_tokens: 20
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000
-          }
-        );
-
-        if (response.data?.choices?.[0]?.message?.content) {
-          return {
-            status: 'success',
-            message: 'DeepSeek AI service operational',
-            provider: 'DeepSeek'
-          };
-        }
-      } catch (deepseekError) {
-        console.log('DeepSeek test failed, trying next provider:', deepseekError.message);
-      }
-    }
-
-    // Try OpenAI as last resort
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const response = await axios.post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo',
-            messages: [{
-              role: 'user',
-              content: "Say 'AI connectivity test successful' in exactly those words."
-            }],
-            max_tokens: 20
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000
-          }
-        );
-
-        if (response.data?.choices?.[0]?.message?.content) {
-          return {
-            status: 'success',
-            message: 'OpenAI service operational',
-            provider: 'OpenAI'
-          };
-        }
-      } catch (openaiError) {
-        console.log('OpenAI test failed:', openaiError.message);
-      }
-    }
-
-    // If we get here, no AI services are working
-    return {
-      status: 'error',
-      message: 'No AI services available or configured'
-    };
-
-  } catch (error) {
-    console.error('AI connectivity test failed:', error);
-    return {
-      status: 'error',
-      message: `AI service error: ${error.message}`
-    };
-  }
-}
-
-/**
- * Admin endpoint to test system connectivity
+ * Admin endpoint to test system connectivity (excluding AI services)
+ * AI services have their own dedicated endpoint: /admin/ai-services-status
  */
 export async function handler(event) {
   try {
-    // Run all connectivity tests in parallel
-    const [s3Test, aiTest] = await Promise.all([
-      testS3Connectivity(),
-      testAIConnectivity()
-    ]);
+    // Run connectivity tests
+    const s3Test = await testS3Connectivity();
 
-    // Overall system status
-    const allSystemsOperational = s3Test.status === 'success' && aiTest.status === 'success';
+    // Overall system status (excluding AI services)
+    const systemOperational = s3Test.status === 'success';
 
     return {
       statusCode: 200,
@@ -246,11 +80,11 @@ export async function handler(event) {
       body: JSON.stringify({
         success: true,
         timestamp: new Date().toISOString(),
-        overall_status: allSystemsOperational ? 'operational' : 'degraded',
+        overall_status: systemOperational ? 'operational' : 'degraded',
         services: {
-          s3: s3Test,
-          ai: aiTest
-        }
+          s3: s3Test
+        },
+        note: 'AI services status available at /admin/ai-services-status'
       })
     };
   } catch (error) {

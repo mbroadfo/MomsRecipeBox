@@ -911,6 +911,177 @@ paths:
         '500':
           description: System status check failed
 
+  /admin/ai-services-status:
+    get:
+      tags:
+        - admin
+      summary: Check AI services status for all providers (Admin only)
+      description: Test connectivity and performance for all AI service providers with optional detailed timing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: test
+          in: query
+          required: false
+          description: Type of AI test to perform
+          schema:
+            type: string
+            enum: [basic, detailed]
+            default: basic
+        - name: includeUnavailable
+          in: query
+          required: false
+          description: Include status for unavailable providers
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: AI services status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+                  summary:
+                    type: object
+                    properties:
+                      total_providers:
+                        type: integer
+                        description: Total number of AI providers tested
+                      available_providers:
+                        type: integer
+                        description: Number of providers that are available
+                      average_response_time:
+                        type: number
+                        description: Average response time in milliseconds
+                  providers:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        available:
+                          type: boolean
+                          description: Whether the provider is available
+                        status:
+                          type: string
+                          enum: [success, error, unavailable]
+                        message:
+                          type: string
+                          description: Status message or error details
+                        response_time_ms:
+                          type: number
+                          description: Response time in milliseconds (if available)
+                        provider:
+                          type: string
+                          description: Provider name for timing statistics
+                        tested_at:
+                          type: string
+                          format: date-time
+                          description: When this provider was tested
+                  timing_stats:
+                    type: object
+                    properties:
+                      fastest:
+                        type: object
+                        properties:
+                          time_ms:
+                            type: number
+                            description: Fastest response time in milliseconds
+                          provider:
+                            type: string
+                            description: Provider that achieved fastest time
+                      slowest:
+                        type: object
+                        properties:
+                          time_ms:
+                            type: number
+                            description: Slowest response time in milliseconds
+                          provider:
+                            type: string
+                            description: Provider that had slowest time
+                      average_ms:
+                        type: number
+                        description: Average response time across all available providers
+                      total_providers_tested:
+                        type: integer
+                        description: Number of providers included in timing calculations
+              examples:
+                basic_test:
+                  summary: Basic connectivity test
+                  value:
+                    success: true
+                    timestamp: "2025-01-27T10:30:00Z"
+                    summary:
+                      total_providers: 5
+                      available_providers: 5
+                      average_response_time: 1524.2
+                    providers:
+                      google:
+                        available: true
+                        status: "success"
+                        message: "Provider is available"
+                        response_time_ms: 348
+                        provider: "Google Gemini"
+                        tested_at: "2025-01-27T10:30:00Z"
+                      openai:
+                        available: true
+                        status: "success"
+                        message: "Provider is available"
+                        response_time_ms: 1122
+                        provider: "OpenAI"
+                        tested_at: "2025-01-27T10:30:00Z"
+                    timing_stats:
+                      fastest:
+                        time_ms: 348
+                        provider: "Google Gemini"
+                      slowest:
+                        time_ms: 4284
+                        provider: "DeepSeek"
+                      average_ms: 1524.2
+                      total_providers_tested: 5
+                detailed_test:
+                  summary: Detailed AI functionality test
+                  value:
+                    success: true
+                    timestamp: "2025-01-27T10:30:00Z"
+                    summary:
+                      total_providers: 5
+                      available_providers: 4
+                      average_response_time: 2456.8
+                    providers:
+                      google:
+                        available: true
+                        status: "success"
+                        message: "AI functionality test passed"
+                        response_time_ms: 1834
+                        provider: "Google Gemini"
+                        tested_at: "2025-01-27T10:30:00Z"
+                      anthropic:
+                        available: false
+                        status: "error"
+                        message: "API key not configured"
+                        provider: "Anthropic"
+                        tested_at: "2025-01-27T10:30:00Z"
+                    timing_stats:
+                      fastest:
+                        time_ms: 1245
+                        provider: "Groq"
+                      slowest:
+                        time_ms: 3892
+                        provider: "DeepSeek"
+                      average_ms: 2456.8
+                      total_providers_tested: 4
+        '401':
+          description: Unauthorized - Admin access required
+        '500':
+          description: AI services status check failed
+
 components:
   schemas:
     ShoppingList:

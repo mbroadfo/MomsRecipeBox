@@ -62,3 +62,51 @@
   color: #3182ce;
   font-weight: 600;
 }
+
+/* Avatar Dropdown Styles */
+.avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 10.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  z-index: 1200; /* Higher than admin layout z-indices */
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.avatar-dropdown-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.avatar-dropdown-item:hover {
+  background-color: #f9fafb;
+}
+
+.avatar-dropdown-admin {
+  color: #2563eb !important;
+  font-weight: 500;
+}
+
+.avatar-dropdown-admin:hover {
+  background-color: #eff6ff;
+}
+
+.avatar-dropdown-divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 0.25rem 0;
+}

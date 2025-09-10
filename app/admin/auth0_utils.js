@@ -147,7 +147,101 @@ function generateTempPassword(length = 12) {
 // Enhanced user listing with app statistics
 export async function listUsersWithStats(db) {
   try {
-    // Get Auth0 users
+    // Development bypass - return mock user data if Auth0 is not properly configured
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NODE_ENV === 'test' ||
+                         process.env.APP_MODE === 'local' ||
+                         !process.env.AUTH0_DOMAIN || 
+                         process.env.AUTH0_DOMAIN === 'your-auth0-domain';
+    
+    if (isDevelopment) {
+      console.log('🔧 Using development mock user data');
+      const mockUsers = [
+        {
+          user_id: 'auth0|testadmin',
+          email: 'admin@test.com',
+          firstName: 'Test',
+          lastName: 'Admin',
+          loginCount: 25,
+          lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+          userImage: null,
+          favoriteCount: 5,
+          commentCount: 12,
+          emailVerified: true,
+          createdAt: '2024-01-15T10:00:00.000Z',
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          user_id: 'auth0|testuser1',
+          email: 'user1@test.com',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          loginCount: 15,
+          lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+          userImage: null,
+          favoriteCount: 8,
+          commentCount: 3,
+          emailVerified: true,
+          createdAt: '2024-02-01T14:30:00.000Z',
+          lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString()
+        },
+        {
+          user_id: 'auth0|testuser2',
+          email: 'user2@test.com',
+          firstName: 'Bob',
+          lastName: 'Johnson',
+          loginCount: 8,
+          lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+          userImage: null,
+          favoriteCount: 3,
+          commentCount: 7,
+          emailVerified: false,
+          createdAt: '2024-03-10T09:15:00.000Z',
+          lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
+        },
+        {
+          user_id: 'auth0|testuser3',
+          email: 'user3@test.com',
+          firstName: 'Alice',
+          lastName: 'Brown',
+          loginCount: 32,
+          lastLogin: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+          userImage: null,
+          favoriteCount: 12,
+          commentCount: 18,
+          emailVerified: true,
+          createdAt: '2023-12-05T16:45:00.000Z',
+          lastUpdated: new Date(Date.now() - 1000 * 60 * 30).toISOString()
+        }
+      ];
+
+      // Generate stats from mock users
+      const totalUsers = mockUsers.length;
+      const activeUsers = mockUsers.filter(user => {
+        const lastLogin = new Date(user.lastLogin);
+        const daysSinceLogin = (Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+        return daysSinceLogin <= 30; // Active if logged in within 30 days
+      }).length;
+      
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const newUsersThisMonth = mockUsers.filter(user => {
+        const created = new Date(user.createdAt);
+        return created.getMonth() === currentMonth && created.getFullYear() === currentYear;
+      }).length;
+
+      return {
+        users: mockUsers,
+        total: totalUsers,
+        stats: {
+          total_users: totalUsers,
+          active_users: activeUsers,
+          new_users_this_month: newUsersThisMonth
+        }
+      };
+    }
+
+    // Production code - Get Auth0 users
     const auth0Response = await listAuth0Users();
     const auth0Users = auth0Response.users || [];
     

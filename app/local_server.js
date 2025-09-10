@@ -13,6 +13,13 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 // Health route handler for local server
 async function handleHealthRoutes(req, res, path) {
+  // Add CORS headers for health routes
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+  };
+
   const { getHealthChecker } = await import('./app.js');
   const healthChecker = getHealthChecker();
   const endpoints = healthChecker.getHealthEndpoints();
@@ -84,12 +91,18 @@ async function handleHealthRoutes(req, res, path) {
         };
     }
     
-    res.writeHead(result.statusCode, { 'Content-Type': 'application/json' });
+    res.writeHead(result.statusCode, { 
+      ...corsHeaders,
+      'Content-Type': 'application/json' 
+    });
     res.end(result.body);
     
   } catch (error) {
     console.error('Health check error:', error);
-    res.writeHead(503, { 'Content-Type': 'application/json' });
+    res.writeHead(503, { 
+      ...corsHeaders,
+      'Content-Type': 'application/json' 
+    });
     res.end(JSON.stringify({ 
       status: 'error', 
       message: error.message,
@@ -100,8 +113,18 @@ async function handleHealthRoutes(req, res, path) {
 
 // Centralized response handler function
 function handleResponse(res, result) {
+  // Add CORS headers to all responses
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+  };
+
+  // Merge CORS headers with existing headers
+  const headers = { ...corsHeaders, ...(result.headers || {}) };
+
   // Only log minimal info about the response
-  const isImage = result.headers && result.headers['Content-Type'] && result.headers['Content-Type'].startsWith('image/');
+  const isImage = headers['Content-Type'] && headers['Content-Type'].startsWith('image/');
   const bodyLength = result.body ? 
     (Buffer.isBuffer(result.body) ? result.body.length : 
       (typeof result.body === 'string' ? result.body.length : 'unknown')) : 0;
@@ -117,7 +140,6 @@ function handleResponse(res, result) {
     const buffer = Buffer.from(result.body, 'base64');
     
     // Ensure Content-Disposition is set for inline viewing
-    const headers = { ...result.headers };
     if (!headers['Content-Disposition']) {
       headers['Content-Disposition'] = 'inline';
     }
@@ -135,7 +157,6 @@ function handleResponse(res, result) {
   // Handle raw binary responses (non-base64)
   else if (!result.isBase64Encoded && Buffer.isBuffer(result.body)) {
     // Ensure Content-Disposition is set for inline viewing
-    const headers = { ...result.headers };
     if (!headers['Content-Disposition']) {
       headers['Content-Disposition'] = 'inline';
     }
@@ -150,13 +171,34 @@ function handleResponse(res, result) {
   } 
   // Handle regular string/JSON responses
   else {
-    res.writeHead(result.statusCode || 200, result.headers || { 'Content-Type': 'application/json' });
+    res.writeHead(result.statusCode || 200, headers['Content-Type'] ? headers : { ...headers, 'Content-Type': 'application/json' });
     res.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body));
   }
 }
 
 
 const server = http.createServer(async (req, res) => {
+  // Add CORS headers for all requests
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',  // Allow all origins in development
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400' // 24 hours
+  };
+
+  // Set CORS headers for all responses
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    console.log(`📥 ${req.method} ${req.url}`);
+    console.log(`Response: 200 21 bytes`);
+    res.writeHead(200, corsHeaders);
+    res.end();
+    return;
+  }
   // Serve Swagger YAML
   if (req.url === '/api-docs/swagger.yaml') {
     const filePath = path.join(__dirname, 'docs', 'swagger.yaml');

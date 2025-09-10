@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminContext';
 import './AdminLayout.css';
@@ -6,6 +6,7 @@ import './AdminLayout.css';
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAdminAuth();
   const location = useLocation();
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
   const navigationItems = [
     {
@@ -91,7 +92,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             ))}
           </nav>
 
-          {/* User Info & Logout */}
+          {/* User Info */}
           <div className="admin-sidebar-footer">
             <div className="admin-user-info">
               <div className="admin-user-avatar">
@@ -106,15 +107,6 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 <p className="admin-user-role">Administrator</p>
               </div>
             </div>
-            <button
-              onClick={logout}
-              className="admin-logout-btn"
-            >
-              <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
           </div>
         </div>
       </div>
@@ -132,12 +124,53 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 {location.pathname.startsWith('/admin/analytics') && 'Analytics'}
               </h2>
               <div className="admin-header-actions">
+                {/* Back to App Link */}
                 <Link
                   to="/"
                   className="admin-back-link"
                 >
                   ← Back to App
                 </Link>
+                
+                {/* Admin Avatar Dropdown */}
+                <div className="admin-avatar-container">
+                  <span
+                    className="admin-avatar"
+                    onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+                    tabIndex={0}
+                    aria-label="Admin menu"
+                  >
+                    <svg viewBox="0 0 24 24" width="32" height="32" className="admin-avatar-icon" fill="#fff">
+                      <circle cx="12" cy="9" r="4" />
+                      <path d="M4 20c0-3.313 3.134-6 7-6s7 2.687 7 6" />
+                    </svg>
+                  </span>
+                  {avatarMenuOpen && (
+                    <div className="admin-avatar-dropdown">
+                      <div className="admin-avatar-dropdown-header">
+                        <div className="admin-avatar-dropdown-user">
+                          <p className="admin-avatar-dropdown-name">
+                            {user?.name || user?.email || 'Admin User'}
+                          </p>
+                          <p className="admin-avatar-dropdown-role">Administrator</p>
+                        </div>
+                      </div>
+                      <div className="admin-avatar-dropdown-divider"></div>
+                      <button 
+                        onClick={() => {
+                          logout();
+                          setAvatarMenuOpen(false);
+                        }}
+                        className="admin-avatar-dropdown-item"
+                      >
+                        <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

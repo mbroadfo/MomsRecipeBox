@@ -33,10 +33,10 @@ const AdminRoutes = () => {
     <AdminProtectedRoute>
       <AdminLayout>
         <Routes>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<UserManagementPage />} />
-          <Route path="/admin/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
-          <Route path="/admin/analytics" element={<div>Analytics - Coming Soon</div>} />
+          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/users" element={<UserManagementPage />} />
+          <Route path="/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
+          <Route path="/analytics" element={<div>Analytics - Coming Soon</div>} />
         </Routes>
       </AdminLayout>
     </AdminProtectedRoute>

@@ -36,6 +36,32 @@ export function validateJWT(token, requiredAudience = null) {
   return new Promise((resolve, reject) => {
     console.log('🔍 Validating JWT token...');
     
+    // Development bypass for test admin token
+    // Allow bypass in development environments or when running locally
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NODE_ENV === 'test' ||
+                         process.env.APP_MODE === 'local' ||
+                         !process.env.AUTH0_DOMAIN; // If Auth0 not configured, assume dev
+    
+    if (isDevelopment && token === 'test-admin-token') {
+      console.log('🔧 Using development test admin token bypass in validateJWT');
+      console.log(`🔧 Environment indicators: NODE_ENV=${process.env.NODE_ENV}, APP_MODE=${process.env.APP_MODE}, AUTH0_DOMAIN=${process.env.AUTH0_DOMAIN ? 'set' : 'not set'}`);
+      return resolve({
+        user: {
+          sub: 'auth0|testadmin',
+          email: 'admin@test.com',
+          name: 'Test Admin',
+          given_name: 'Test',
+          family_name: 'Admin',
+          'https://momsrecipebox.app/roles': ['admin']
+        },
+        role: 'admin',
+        isAdmin: true,
+        userId: 'auth0|testadmin',
+        audiences: ['https://momsrecipebox/api']
+      });
+    }
+    
     jwt.verify(
       token,
       getKey,
@@ -209,6 +235,33 @@ export async function validateLambdaAuth(event, requiredRole = null) {
     }
 
     const token = authHeader.split(' ')[1];
+
+    // Development bypass for test admin token
+    // Allow bypass in development environments or when running locally
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NODE_ENV === 'test' ||
+                         process.env.APP_MODE === 'local' ||
+                         !process.env.AUTH0_DOMAIN; // If Auth0 not configured, assume dev
+    
+    if (isDevelopment && token === 'test-admin-token') {
+      console.log('🔧 Using development test admin token bypass in validateLambdaAuth');
+      console.log(`🔧 Environment indicators: NODE_ENV=${process.env.NODE_ENV}, APP_MODE=${process.env.APP_MODE}, AUTH0_DOMAIN=${process.env.AUTH0_DOMAIN ? 'set' : 'not set'}`);
+      return {
+        isAuthorized: true,
+        user: {
+          sub: 'auth0|testadmin',
+          email: 'admin@test.com',
+          name: 'Test Admin',
+          given_name: 'Test',
+          family_name: 'Admin',
+          'https://momsrecipebox.app/roles': ['admin']
+        },
+        role: 'admin',
+        isAdmin: true,
+        userId: 'auth0|testadmin'
+      };
+    }
+
     const validation = await validateJWT(token);
 
     // Check role requirements

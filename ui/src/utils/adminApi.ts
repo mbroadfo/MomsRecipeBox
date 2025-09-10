@@ -12,6 +12,8 @@ const getAuthHeaders = (): Record<string, string> => {
   // This will be updated once we understand your current auth implementation
   const token = localStorage.getItem('auth_token') || '';
   
+  console.log('🔧 AdminAPI: Getting auth headers, token:', token ? 'present' : 'missing');
+  
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -22,11 +24,17 @@ const getAuthHeaders = (): Record<string, string> => {
  * Handle API responses and errors
  */
 const handleResponse = async (response: Response) => {
+  console.log('🔧 AdminAPI: Response received', { status: response.status, ok: response.ok });
+  
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+    console.error('🔧 AdminAPI: Error response', errorData);
     throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
   }
-  return response.json();
+  
+  const data = await response.json();
+  console.log('🔧 AdminAPI: Success response', data);
+  return data;
 };
 
 /**
@@ -37,6 +45,8 @@ export const adminApi = {
    * List all users with statistics
    */
   async listUsers(page: number = 1, search?: string): Promise<AdminUserListResponse> {
+    console.log('🔧 AdminAPI: listUsers called', { page, search });
+    
     const params = new URLSearchParams({
       page: page.toString(),
       per_page: '20'
@@ -46,12 +56,20 @@ export const adminApi = {
       params.append('search', search);
     }
     
-    const response = await fetch(`${API_BASE_URL}/admin/users?${params}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
+    const url = `${API_BASE_URL}/admin/users?${params}`;
+    console.log('🔧 AdminAPI: Making request to', url);
     
-    return handleResponse(response);
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('🔧 AdminAPI: listUsers error', error);
+      throw error;
+    }
   },
 
   /**
@@ -83,18 +101,26 @@ export const adminApi = {
    * Test admin API connectivity
    */
   async testConnection(): Promise<{ status: string; message: string }> {
+    console.log('🔧 AdminAPI: testConnection called');
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/users?page=1&per_page=1`, {
+      const url = `${API_BASE_URL}/admin/users?page=1&per_page=1`;
+      console.log('🔧 AdminAPI: Testing connection to', url);
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders()
       });
       
       if (response.ok) {
+        console.log('🔧 AdminAPI: Connection test successful');
         return { status: 'success', message: 'Admin API connection successful' };
       } else {
+        console.log('🔧 AdminAPI: Connection test failed', response.status);
         return { status: 'error', message: `HTTP ${response.status}: ${response.statusText}` };
       }
     } catch (error) {
+      console.error('🔧 AdminAPI: Connection test error', error);
       return { 
         status: 'error', 
         message: error instanceof Error ? error.message : 'Unknown error occurred' 
@@ -112,15 +138,22 @@ export const adminApi = {
       ai: { status: string; message: string; provider?: string };
     };
   }> {
+    console.log('🔧 AdminAPI: testSystemStatus called');
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/system-status`, {
+      const url = `${API_BASE_URL}/admin/system-status`;
+      console.log('🔧 AdminAPI: Testing system status at', url);
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders()
       });
       
       const data = await handleResponse(response);
+      console.log('🔧 AdminAPI: System status received', data);
       return data;
     } catch (error) {
+      console.error('🔧 AdminAPI: System status error', error);
       // Return a fallback response if the endpoint isn't available
       return {
         overall_status: 'degraded',

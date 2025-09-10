@@ -7,7 +7,6 @@ import { queryClient } from '../utils/queryClient';
 // Lazy load section components
 const UserStatsSection = React.lazy(() => import('../components/admin/sections/UserStatsSection'));
 const SystemStatusSection = React.lazy(() => import('../components/admin/sections/SystemStatusSection'));
-const RecentUsersSection = React.lazy(() => import('../components/admin/sections/RecentUsersSection'));
 const QuickActionsSection = React.lazy(() => import('../components/admin/sections/QuickActionsSection'));
 
 // Loading fallbacks for Suspense
@@ -25,23 +24,27 @@ const SectionFallback: React.FC<{ className?: string }> = ({ className }) => (
 const AdminDashboardContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-sm text-gray-600">Monitor and manage your Recipe Box application</p>
+          <p className="text-sm text-gray-600 mt-1">Monitor and manage your Recipe Box application</p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content Area - 2/3 width */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* User Statistics */}
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* User Statistics - Full width */}
+          <div className="lg:col-span-4">
             <ErrorBoundary title="User Statistics Error">
               <Suspense fallback={<SectionFallback />}>
                 <UserStatsSection />
               </Suspense>
             </ErrorBoundary>
+          </div>
 
-            {/* System Status */}
+          {/* System Status - 2/3 width */}
+          <div className="lg:col-span-3">
             <ErrorBoundary title="System Status Error">
               <Suspense fallback={<SectionFallback />}>
                 <SystemStatusSection />
@@ -49,16 +52,8 @@ const AdminDashboardContent: React.FC = () => {
             </ErrorBoundary>
           </div>
 
-          {/* Sidebar - 1/3 width */}
-          <div className="space-y-6">
-            {/* Recent Users */}
-            <ErrorBoundary title="Recent Users Error">
-              <Suspense fallback={<SectionFallback />}>
-                <RecentUsersSection />
-              </Suspense>
-            </ErrorBoundary>
-
-            {/* Quick Actions */}
+          {/* Quick Actions - 1/3 width */}
+          <div className="lg:col-span-1">
             <ErrorBoundary title="Quick Actions Error">
               <Suspense fallback={<SectionFallback />}>
                 <QuickActionsSection />

@@ -10,15 +10,15 @@ const SystemStatusContent: React.FC = () => {
     switch (serviceStatus) {
       case 'operational':
       case 'success':
-        return 'text-green-600 bg-green-100';
+        return 'text-green-600';
       case 'degraded':
       case 'warning':
-        return 'text-yellow-600 bg-yellow-100';
+        return 'text-yellow-600';
       case 'error':
       case 'failed':
-        return 'text-red-600 bg-red-100';
+        return 'text-red-600';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-gray-600';
     }
   };
 
@@ -38,6 +38,27 @@ const SystemStatusContent: React.FC = () => {
     }
   };
 
+  const services = [
+    {
+      name: 'Overall System',
+      status: status?.overall_status || 'unknown',
+      icon: '⚙️',
+      message: 'System Health'
+    },
+    {
+      name: 'S3 Storage',
+      status: status?.services?.s3?.status || 'unknown',
+      icon: '💾',
+      message: status?.services?.s3?.message || 'No status available'
+    },
+    {
+      name: 'AI Services',
+      status: status?.services?.ai?.status || 'unknown',
+      icon: '🤖',
+      message: status?.services?.ai?.message || 'No status available'
+    }
+  ];
+
   return (
     <SectionWrapper
       loading={isLoading}
@@ -46,58 +67,40 @@ const SystemStatusContent: React.FC = () => {
       skeleton={<SystemStatusSkeleton />}
       title="Failed to load system status"
     >
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-4">System Status</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">System Status</h3>
         
-        {/* Overall Status */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${
-                status?.overall_status === 'operational' ? 'bg-green-500' : 'bg-yellow-500'
-              }`}></div>
-              <span className="text-sm font-medium">Overall System</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {services.map((service, index) => (
+            <div key={index} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-150 p-4 hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <span className="text-lg mr-3">{service.icon}</span>
+                  <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => refetch()}
+                    className="text-gray-400 hover:text-gray-600 mr-2 p-1 rounded hover:bg-gray-200 transition-colors duration-150"
+                    title="Refresh status"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                  <span className={`text-lg ${getStatusColor(service.status)}`}>
+                    {getStatusIcon(service.status)}
+                  </span>
+                </div>
+              </div>
+              <div className="text-xs text-gray-600 leading-relaxed">
+                {service.message}
+                {service.name === 'AI Services' && status?.services?.ai?.provider && (
+                  <span className="ml-1 text-blue-600 font-medium">({status.services.ai.provider})</span>
+                )}
+              </div>
             </div>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              getStatusColor(status?.overall_status || 'unknown')
-            }`}>
-              {status?.overall_status || 'Unknown'}
-            </span>
-          </div>
-        </div>
-
-        {/* Service Status Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg border">
-            <div className="flex items-center mb-1">
-              <span className={`text-xs mr-1.5 ${
-                getStatusColor(status?.services?.s3?.status || 'unknown').split(' ')[0]
-              }`}>
-                {getStatusIcon(status?.services?.s3?.status || 'unknown')}
-              </span>
-              <span className="text-xs font-medium">S3 Storage</span>
-            </div>
-            <div className="text-xs text-gray-600">
-              {status?.services?.s3?.message || 'No status available'}
-            </div>
-          </div>
-          
-          <div className="p-3 bg-gray-50 rounded-lg border">
-            <div className="flex items-center mb-1">
-              <span className={`text-xs mr-1.5 ${
-                getStatusColor(status?.services?.ai?.status || 'unknown').split(' ')[0]
-              }`}>
-                {getStatusIcon(status?.services?.ai?.status || 'unknown')}
-              </span>
-              <span className="text-xs font-medium">AI Services</span>
-            </div>
-            <div className="text-xs text-gray-600">
-              {status?.services?.ai?.message || 'No status available'}
-              {status?.services?.ai?.provider && (
-                <span className="ml-1 text-blue-600">({status.services.ai.provider})</span>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </SectionWrapper>

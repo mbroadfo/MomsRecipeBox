@@ -129,14 +129,14 @@ export const adminApi = {
   },
 
   /**
-   * Test system connectivity (S3, AI services)
+   * Test system connectivity (S3, infrastructure only)
    */
   async testSystemStatus(): Promise<{
     overall_status: 'operational' | 'degraded';
     services: {
       s3: { status: string; message: string };
-      ai: { status: string; message: string; provider?: string };
     };
+    note?: string;
   }> {
     console.log('🔧 AdminAPI: testSystemStatus called');
     
@@ -161,13 +161,105 @@ export const adminApi = {
           s3: { 
             status: 'error', 
             message: error instanceof Error ? error.message : 'System status check failed' 
-          },
-          ai: { 
-            status: 'error', 
-            message: 'Unable to check AI service status' 
           }
         }
       };
+    }
+  },
+
+  /**
+   * Get comprehensive AI services status for all providers
+   */
+  async getAIServicesStatus(options?: {
+    test?: boolean;
+    includeUnavailable?: boolean;
+  }): Promise<{
+    success: boolean;
+    timestamp: string;
+    overallStatus: 'operational' | 'degraded' | 'failed';
+    summary: {
+      total: number;
+      configured: number;
+      operational: number;
+      unavailable: number;
+      errors: number;
+      rateLimited: number;
+    };
+    providers: Array<{
+      key: string;
+      name: string;
+      status: 'operational' | 'configured' | 'rate_limited' | 'error' | 'unavailable';
+      message: string;
+      responseTime: string;
+      provider: string;
+      testedAt?: string;
+      rateLimitExpiry?: string;
+      errorType?: string;
+    }>;
+    timing?: {
+      tested: number;
+      fastest: { time: string; provider: string; key: string };
+      slowest: { time: string; provider: string; key: string };
+      average: string;
+      totalTime: string;
+    };
+  }> {
+    console.log('🔧 AdminAPI: getAIServicesStatus called', options);
+    
+    try {
+      const params = new URLSearchParams();
+      if (options?.test) params.append('test', 'basic'); // Changed from 'true' to 'basic'
+      if (options?.includeUnavailable) params.append('includeUnavailable', 'true');
+      
+      const url = `${API_BASE_URL}/admin/ai-services-status${params.toString() ? '?' + params : ''}`;
+      console.log('🔧 AdminAPI: Fetching AI services status from', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
+      const data = await handleResponse(response);
+      console.log('🔧 AdminAPI: AI services status received', data);
+      return data;
+    } catch (error) {
+      console.error('🔧 AdminAPI: AI services status error', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Test specific AI provider connectivity
+   */
+  async testAIProvider(providerKey: string): Promise<{
+    success: boolean;
+    timestamp: string;
+    provider: {
+      key: string;
+      status: string;
+      message: string;
+      responseTime?: string;
+      provider: string;
+      testedAt: string;
+    };
+  }> {
+    console.log('🔧 AdminAPI: testAIProvider called', providerKey);
+    
+    try {
+      const url = `${API_BASE_URL}/admin/ai-services-status?provider=${encodeURIComponent(providerKey)}`;
+      console.log('🔧 AdminAPI: Testing specific AI provider at', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
+      const data = await handleResponse(response);
+      console.log('🔧 AdminAPI: AI provider test result', data);
+      return data;
+    } catch (error) {
+      console.error('🔧 AdminAPI: AI provider test error', error);
+      throw error;
     }
   }
 };

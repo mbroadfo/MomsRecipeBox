@@ -42,3 +42,41 @@ export const useRecentUsers = () => {
     }),
   });
 };
+
+// AI Services Status Hook - Basic configuration check
+export const useAIServicesStatus = () => {
+  return useQuery({
+    queryKey: ['admin', 'ai-services', 'status'],
+    queryFn: () => adminApi.getAIServicesStatus(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 3 * 60 * 1000, // Refresh every 3 minutes
+  });
+};
+
+// AI Services Connectivity Test Hook - With actual testing
+export const useAIServicesConnectivity = (options?: { 
+  enabled?: boolean;
+  includeUnavailable?: boolean;
+}) => {
+  return useQuery({
+    queryKey: ['admin', 'ai-services', 'connectivity', options?.includeUnavailable],
+    queryFn: () => adminApi.getAIServicesStatus({ 
+      test: true, 
+      includeUnavailable: options?.includeUnavailable 
+    }),
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5 minutes (longer due to API calls)
+    refetchInterval: false, // Manual refresh only for connectivity tests
+  });
+};
+
+// Individual AI Provider Test Hook
+export const useAIProviderTest = (providerKey?: string) => {
+  return useQuery({
+    queryKey: ['admin', 'ai-provider', 'test', providerKey],
+    queryFn: () => providerKey ? adminApi.testAIProvider(providerKey) : Promise.reject('No provider key'),
+    enabled: false, // Only run manually
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: false, // Manual refresh only
+  });
+};

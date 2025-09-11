@@ -224,15 +224,47 @@ async function testAllProviderConnectivity(testUnavailable = false) {
 export async function handler(event) {
   try {
     const queryParams = event.queryStringParameters || {};
-    const testConnectivity = queryParams.test === 'true';
+    const testMode = queryParams.test; // 'basic', 'detailed', 'true', or undefined
     const testUnavailable = queryParams.includeUnavailable === 'true';
+    const specificProvider = queryParams.provider; // Test specific provider
+    
+    // Determine if we should test connectivity
+    const testConnectivity = testMode === 'true' || testMode === 'basic' || testMode === 'detailed';
     
     let aiResults = [];
     let timingStats = null;
     
-    if (testConnectivity) {
+    if (specificProvider) {
+      // Test a specific provider
+      console.log(`Testing specific AI provider: ${specificProvider}...`);
+      const providers = AIProviderFactory.initializeProviders();
+      const provider = providers[specificProvider];
+      
+      if (!provider) {
+        throw new Error(`Provider ${specificProvider} not found`);
+      }
+      
+      const testResult = await testProviderConnectivity(specificProvider, provider);
+      testResult.key = specificProvider;
+      testResult.testedAt = new Date().toISOString();
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+          'Access-Control-Allow-Methods': 'GET,OPTIONS'
+        },
+        body: JSON.stringify({
+          success: true,
+          timestamp: new Date().toISOString(),
+          provider: testResult
+        })
+      };
+    } else if (testConnectivity) {
       // Perform actual connectivity tests
-      console.log('Testing AI provider connectivity...');
+      console.log(`Testing AI provider connectivity (mode: ${testMode})...`);
       const testData = await testAllProviderConnectivity(testUnavailable);
       aiResults = testData.results;
       timingStats = testData.timingStats;

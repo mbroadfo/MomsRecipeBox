@@ -43,19 +43,13 @@ const SystemStatusContent: React.FC = () => {
       name: 'Overall System',
       status: status?.overall_status || 'unknown',
       icon: '⚙️',
-      message: 'System Health'
+      message: 'Infrastructure Health'
     },
     {
       name: 'S3 Storage',
       status: status?.services?.s3?.status || 'unknown',
       icon: '💾',
       message: status?.services?.s3?.message || 'No status available'
-    },
-    {
-      name: 'AI Services',
-      status: status?.services?.ai?.status || 'unknown',
-      icon: '🤖',
-      message: status?.services?.ai?.message || 'No status available'
     }
   ];
 
@@ -67,41 +61,70 @@ const SystemStatusContent: React.FC = () => {
       skeleton={<SystemStatusSkeleton />}
       title="Failed to load system status"
     >
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">System Status</h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              status?.overall_status === 'operational' ? 'bg-emerald-100 text-emerald-700' :
+              status?.overall_status === 'degraded' ? 'bg-amber-100 text-amber-700' :
+              'bg-rose-100 text-rose-700'
+            }`}>
+              {status?.overall_status === 'operational' ? '✓' : 
+               status?.overall_status === 'degraded' ? '⚠' : '✗'}
+              {status?.overall_status?.toUpperCase() || 'UNKNOWN'}
+            </span>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors"
+            title="Refresh status"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {services.map((service, index) => (
-            <div key={index} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-150 p-4 hover:shadow-md transition-shadow duration-200">
+            <div key={index} className="bg-slate-50 rounded-xl border border-slate-200 p-5 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
-                  <span className="text-lg mr-3">{service.icon}</span>
-                  <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                  <span className="text-2xl mr-3">{service.icon}</span>
+                  <span className="text-base font-semibold text-slate-900">{service.name}</span>
                 </div>
-                <div className="flex items-center">
-                  <button
-                    onClick={() => refetch()}
-                    className="text-gray-400 hover:text-gray-600 mr-2 p-1 rounded hover:bg-gray-200 transition-colors duration-150"
-                    title="Refresh status"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                  <span className={`text-lg ${getStatusColor(service.status)}`}>
-                    {getStatusIcon(service.status)}
-                  </span>
-                </div>
+                <span className={`text-xl ${getStatusColor(service.status)}`}>
+                  {getStatusIcon(service.status)}
+                </span>
               </div>
-              <div className="text-xs text-gray-600 leading-relaxed">
+              <div className="text-sm text-slate-600 leading-relaxed">
                 {service.message}
-                {service.name === 'AI Services' && status?.services?.ai?.provider && (
-                  <span className="ml-1 text-blue-600 font-medium">({status.services.ai.provider})</span>
-                )}
               </div>
             </div>
           ))}
         </div>
+
+        {/* Note about AI Services */}
+        {status?.note && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-center text-blue-800 text-sm">
+              <svg className="w-4 h-4 min-w-4 min-h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{width: '1rem', height: '1rem'}}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {status.note}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Stats Footer */}
+        {status && (
+          <div className="pt-4 border-t border-slate-200 text-xs text-slate-500">
+            <div className="flex justify-between items-center">
+              <span>Updated: {new Date().toLocaleString()}</span>
+              <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-full text-xs">Infrastructure Only</span>
+            </div>
+          </div>
+        )}
       </div>
     </SectionWrapper>
   );

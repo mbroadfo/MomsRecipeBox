@@ -118,7 +118,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           <div className="admin-header-content">
             <div className="admin-header-inner">
               <h2 className="admin-page-title">
-                {location.pathname === '/admin' && 'Dashboard'}
+                {location.pathname === '/admin' && '🎛️ Admin Dashboard'}
                 {location.pathname.startsWith('/admin/users') && 'User Management'}
                 {location.pathname.startsWith('/admin/recipes') && 'Recipe Moderation'}
                 {location.pathname.startsWith('/admin/analytics') && 'Analytics'}

@@ -6,50 +6,62 @@ import { SystemStatusSkeleton } from '../skeletons';
 const SystemStatusContent: React.FC = () => {
   const { data: status, isLoading, error, refetch } = useSystemStatus();
 
-  const getStatusColor = (serviceStatus: string) => {
-    switch (serviceStatus) {
-      case 'operational':
-      case 'success':
-        return 'text-green-600';
-      case 'degraded':
-      case 'warning':
-        return 'text-yellow-600';
-      case 'error':
-      case 'failed':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  const getStatusIcon = (serviceStatus: string) => {
-    switch (serviceStatus) {
-      case 'operational':
-      case 'success':
-        return '✓';
-      case 'degraded':
-      case 'warning':
-        return '⚠';
-      case 'error':
-      case 'failed':
-        return '✗';
-      default:
-        return '?';
-    }
-  };
-
   const services = [
     {
-      name: 'Overall System',
-      status: status?.overall_status || 'unknown',
-      icon: '⚙️',
-      message: 'Infrastructure Health'
+      name: 'MongoDB Database',
+      status: status?.services?.mongodb?.status || 'unknown',
+      icon: '�️',
+      message: status?.services?.mongodb?.message || 'Database connection status unknown',
+      stats: status?.services?.mongodb?.stats || null
     },
     {
       name: 'S3 Storage',
       status: status?.services?.s3?.status || 'unknown',
-      icon: '💾',
-      message: status?.services?.s3?.message || 'No status available'
+      icon: '�',
+      message: status?.services?.s3?.message || 'Storage service status unknown',
+      stats: status?.services?.s3?.stats || null
+    },
+    {
+      name: 'API Gateway',
+      status: status?.services?.api_gateway?.status || 'unknown',
+      icon: '🌐',
+      message: status?.services?.api_gateway?.message || 'API Gateway status unknown',
+      stats: status?.services?.api_gateway?.stats || null
+    },
+    {
+      name: 'Lambda Functions',
+      status: status?.services?.lambda?.status || 'unknown',
+      icon: '🚀',
+      message: status?.services?.lambda?.message || 'Lambda functions status unknown',
+      stats: status?.services?.lambda?.stats || null
+    },
+    {
+      name: 'Backup System',
+      status: status?.services?.backup?.status || 'unknown',
+      icon: '�',
+      message: status?.services?.backup?.message || 'Backup status unknown',
+      stats: status?.services?.backup?.stats || null
+    },
+    {
+      name: 'Infrastructure',
+      status: status?.services?.terraform?.status || 'unknown',
+      icon: '⚙️',
+      message: status?.services?.terraform?.message || 'Infrastructure state unknown',
+      stats: status?.services?.terraform?.stats || null
+    },
+    {
+      name: 'Security & SSL',
+      status: status?.services?.security?.status || 'unknown',
+      icon: '🔒',
+      message: status?.services?.security?.message || 'Security status unknown',
+      stats: status?.services?.security?.stats || null
+    },
+    {
+      name: 'Performance & CDN',
+      status: status?.services?.performance?.status || 'unknown',
+      icon: '📊',
+      message: status?.services?.performance?.message || 'Performance status unknown',
+      stats: status?.services?.performance?.stats || null
     }
   ];
 
@@ -61,67 +73,130 @@ const SystemStatusContent: React.FC = () => {
       skeleton={<SystemStatusSkeleton />}
       title="Failed to load system status"
     >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              status?.overall_status === 'operational' ? 'bg-emerald-100 text-emerald-700' :
-              status?.overall_status === 'degraded' ? 'bg-amber-100 text-amber-700' :
-              'bg-rose-100 text-rose-700'
-            }`}>
-              {status?.overall_status === 'operational' ? '✓' : 
-               status?.overall_status === 'degraded' ? '⚠' : '✗'}
-              {status?.overall_status?.toUpperCase() || 'UNKNOWN'}
-            </span>
-          </div>
-          <button
-            onClick={() => refetch()}
-            className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors"
-            title="Refresh status"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="space-y-4">
+        {/* Infrastructure Services Grid - AI Services Style */}
+        <div className="space-y-2">
           {services.map((service, index) => (
-            <div key={index} className="bg-slate-50 rounded-xl border border-slate-200 p-5 hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center">
-                  <span className="text-2xl mr-3">{service.icon}</span>
-                  <span className="text-base font-semibold text-slate-900">{service.name}</span>
+            <div key={index} className="bg-slate-50 rounded-lg border border-slate-200 p-1 hover:shadow-sm transition-all duration-200 min-h-[30px]">
+              {/* 11-column grid layout without badge column */}
+              <div className="grid grid-cols-11 gap-3 items-center">
+                
+                {/* Status + Service Icon & Name - Col 1-4 */}
+                <div className="col-span-4 flex items-center space-x-2 min-w-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    service.status === 'operational' || service.status === 'success' ? 'bg-emerald-500' :
+                    service.status === 'degraded' ? 'bg-amber-500' :
+                    service.status === 'error' || service.status === 'failed' ? 'bg-rose-500' :
+                    'bg-slate-400'
+                  }`} 
+                  title={service.message}
+                  />
+                  <span className="text-lg flex-shrink-0">{service.icon}</span>
+                  <span className="text-sm font-medium text-slate-900 truncate">{service.name}</span>
                 </div>
-                <span className={`text-xl ${getStatusColor(service.status)}`}>
-                  {getStatusIcon(service.status)}
-                </span>
-              </div>
-              <div className="text-sm text-slate-600 leading-relaxed">
-                {service.message}
+
+                {/* Key Metrics - Col 5-8 */}
+                <div className="col-span-4 text-right pr-3 text-xs text-slate-600 min-w-0">
+                  {/* MongoDB Metrics */}
+                  {service.name === 'MongoDB Database' && (
+                    service.stats?.totalRecipes ? (
+                      <span className="truncate">{service.stats.totalRecipes.toLocaleString()} recipes</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* S3 Metrics */}
+                  {service.name === 'S3 Storage' && (
+                    service.stats?.storageUsed && service.stats.storageUsed !== "Metrics unavailable" ? (
+                      <span className="truncate">{service.stats.storageUsed}</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* API Gateway Metrics */}
+                  {service.name === 'API Gateway' && (
+                    service.stats?.requestsPerMinute && service.stats.requestsPerMinute !== "Metrics require CloudWatch" ? (
+                      <span className="truncate">{service.stats.requestsPerMinute}/min</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Lambda Metrics */}
+                  {service.name === 'Lambda Functions' && (
+                    service.stats?.totalFunctions ? (
+                      <span className="truncate">{service.stats.totalFunctions} functions</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Backup Metrics */}
+                  {service.name === 'Backup System' && (
+                    service.stats?.lastFull ? (
+                      <span className="truncate">Last: {new Date(service.stats.lastFull).toLocaleDateString()}</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Infrastructure Metrics */}
+                  {service.name === 'Infrastructure' && (
+                    service.stats?.resourceCount ? (
+                      <span className="truncate">{service.stats.resourceCount} resources</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Security Metrics */}
+                  {service.name === 'Security & SSL' && (
+                    service.stats?.auth0Status ? (
+                      <span className="truncate">Auth0: {service.stats.auth0Status}</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Performance Metrics */}
+                  {service.name === 'Performance & CDN' && (
+                    service.stats?.cdnHitRate ? (
+                      <span className="truncate">{service.stats.cdnHitRate} hit rate</span>
+                    ) : (
+                      <span className="text-slate-400 truncate">Coming Soon!</span>
+                    )
+                  )}
+                  
+                  {/* Default/No Stats */}
+                  {!service.stats && (
+                    <span className="text-slate-400 truncate">Coming Soon!</span>
+                  )}
+                </div>
+
+                {/* Test Button - Col 9-11 */}
+                <div className="col-span-3 flex justify-center pl-2">
+                  <button
+                    onClick={() => refetch()}
+                    className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors text-lg"
+                    title={`Test ${service.name}`}
+                  >
+                    🔄
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Note about AI Services */}
-        {status?.note && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <div className="flex items-center text-blue-800 text-sm">
-              <svg className="w-4 h-4 min-w-4 min-h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{width: '1rem', height: '1rem'}}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {status.note}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Stats Footer */}
+        {/* Simple Footer with refresh time */}
         {status && (
-          <div className="pt-4 border-t border-slate-200 text-xs text-slate-500">
-            <div className="flex justify-between items-center">
-              <span>Updated: {new Date().toLocaleString()}</span>
-              <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-full text-xs">Infrastructure Only</span>
+          <div className="pt-4 border-t border-slate-200">
+            <div className="flex justify-end">
+              <span className="text-xs text-slate-500">
+                Updated: {new Date().toLocaleTimeString()}
+              </span>
             </div>
           </div>
         )}

@@ -1,52 +1,35 @@
 # MomsRecipeBox
 
-A secure, multi-family recipe sharing platform with a modular architecture: infrastru| POST   | /ai/chat                    | Chat with AI to create or modify recipes  |
-| POST   | /ai/extract                  | Extract structured recipe data from URL   |
-| POST   | /ai/create-recipe            | Create recipe directly from AI conversation  |ure (Terraform), backend A## 🔒 Upcoming / TODO
+A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend API (Node.js + MongoDB), and modern React frontend with comprehensive admin monitoring.
 
-- Add additional shopping list features like recipe suggestions and historical tracking
-- Enhance the Node.js Lambda-style + MongoDB backend with more features
-- Continue improving the modern React/Vite UI and supporting automation scripts
+## 🎛️ Enhanced Admin Dashboard
 
----
+**New Feature**: Comprehensive admin dashboard with real-time monitoring of AI services and infrastructure components:
 
-## 📦 Architecture Overview
+- **AI Services Monitoring**: Real-time status of 5 AI providers (OpenAI, Google Gemini, Anthropic, Groq, DeepSeek) with performance metrics
+- **Infrastructure Monitoring**: 8-service comprehensive monitoring including MongoDB, S3, API Gateway, Lambda, Backup System, Terraform state, Security/SSL, and Performance/CDN  
+- **Compact Design**: Ultra-efficient layout with 30px element heights for maximum information density
+- **Real-time Testing**: Individual service testing capabilities with instant status updates
+- **Smart Metrics**: Real API data integration with "Coming Soon!" placeholders for pending metrics
 
-| Tier         | Local Development                      | Cloud Deployment (Infra/Terraform)        |
-| ------------ | -------------------------------------- | ----------------------------------------- |
-| Database     | MongoDB (Docker Compose)               | Aurora / (Future: DocumentDB or Atlas)    |
-| App Backend  | Node.js 18 (Lambda-style in container) | AWS Lambda (container image) + API GW     |
-| Web Frontend | React 19 + Vite (dev server)           | S3 (static hosting) + CloudFront          |
-| Images       | Local FS / S3 mock (future)            | S3 bucket (recipe images)                 |
-| Favorites    | MongoDB `favorites` collection         | Managed DB (same)                         |
+### Admin API Endpoints
 
----
-
-## ⭐ New: Favorites (Likes) Model
-
-Recent changes introduced a scalable favorites system:
-
-- Separate `favorites` collection with documents: `{ _id, recipeId: ObjectId, userId: string, createdAt }`.
-- Denormalized `likes_count` integer on each `recipes` document (created at 0, atomically $inc on toggle).
-- Endpoint: `POST /recipes/:id/like` now handled by `toggle_favorite.js` returning `{ liked, likes }`.
-- Old embedded `likes` array & handler `post_like.js` are deprecated (left temporarily for reference).
-- `get_recipe.js` now injects `likes_count` (and placeholder `liked: false` until auth context added).
-
-Benefits: O(1) toggle, indexable queries (e.g., user favorites), race-safe up/down counts, avoids unbounded array growth in recipe documents.
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /admin/system-status            | Comprehensive infrastructure monitoring   |
+| GET    | /admin/ai-services-status       | AI provider status and performance       |
+| GET    | /admin/users                    | User management and statistics           |
+| POST   | /admin/users/invite             | Invite new users to the platform        |
+| DELETE | /admin/users/:id                | Remove users from the platform          |
 
 ---
 
-## ⚡ Quick Start (Local)
+## 🤖 AI Recipe Assistant
 
-```powershell
-# Start MongoDB + API container
-docker compose up -d
+The platform now includes a sophisticated AI-powered recipe assistant that can help you create, modify, and extract recipes:
 
-# (Optional) rebuild after backend code changes
-docker compose build --no-cache app; docker compose up -d app
-```
-
-API exposed at `http://localhost:3000`.
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
 
 ---
 

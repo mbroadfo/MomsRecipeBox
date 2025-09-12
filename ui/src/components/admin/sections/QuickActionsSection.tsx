@@ -1,11 +1,10 @@
 import React from 'react';
-import { useConnectionTest, useAIServicesStatus } from '../../../hooks/useAdminData';
+import { useConnectionTest } from '../../../hooks/useAdminData';
 import { SectionWrapper } from '../ErrorBoundary';
 import { QuickActionsSkeleton } from '../skeletons';
 
 const QuickActionsContent: React.FC = () => {
   const { data: connectionStatus, isLoading, error, refetch } = useConnectionTest();
-  const { data: aiStatus, refetch: refetchAI } = useAIServicesStatus();
 
   const handleAction = (action: string) => {
     console.log(`Executing action: ${action}`);
@@ -18,9 +17,6 @@ const QuickActionsContent: React.FC = () => {
         break;
       case 'test-connection':
         refetch();
-        break;
-      case 'test-ai-services':
-        refetchAI();
         break;
       case 'restart-services':
         // TODO: Implement service restart
@@ -37,14 +33,6 @@ const QuickActionsContent: React.FC = () => {
       description: 'Check API connectivity',
       icon: '🔌',
       status: connectionStatus?.status || 'unknown'
-    },
-    {
-      id: 'test-ai-services',
-      title: 'Check AI Services',
-      description: 'Refresh AI status',
-      icon: '🤖',
-      status: aiStatus?.overallStatus === 'operational' ? 'success' : 
-              aiStatus?.overallStatus === 'degraded' ? 'warning' : 'ready'
     },
     {
       id: 'refresh-cache',
@@ -108,42 +96,31 @@ const QuickActionsContent: React.FC = () => {
       title="Failed to load quick actions"
     >
       <div className="space-y-4">
-        {/* Action Bar */}
-        <div className="flex flex-wrap gap-2">
-          {actions.map((action) => (
-            <button
-              key={action.id}
-              onClick={() => handleAction(action.id)}
-              className="flex items-center px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md hover:from-blue-50 hover:to-blue-100 transition-all duration-200 group min-w-0 flex-shrink-0"
-              title={action.description}
-            >
-              <span className="text-sm mr-2">{action.icon}</span>
-              <span className="text-xs font-medium text-gray-700 group-hover:text-blue-800 truncate">
-                {action.title}
-              </span>
-              <span className={`text-xs ml-2 ${getStatusColor(action.status)}`}>
-                {getStatusIcon(action.status)}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* AI Services Quick Status */}
-        {aiStatus && (
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-600">
-                AI Services: {aiStatus.summary.operational}/{aiStatus.summary.total} operational
-              </div>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                aiStatus.overallStatus === 'operational' ? 'bg-green-100 text-green-700' :
-                aiStatus.overallStatus === 'degraded' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {aiStatus.overallStatus.toUpperCase()}
-              </span>
-            </div>
+        {/* Action Bar with inline title */}
+        <div className="flex items-center gap-4 min-w-0">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center flex-shrink-0">
+            <span className="mr-2">⚡</span>
+            Actions
+          </h2>
+          <div className="flex gap-2 min-w-0 overflow-x-auto">
+            {actions.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => handleAction(action.id)}
+                className="flex items-center px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md hover:from-blue-50 hover:to-blue-100 transition-all duration-200 group flex-shrink-0 whitespace-nowrap"
+                title={action.description}
+              >
+                <span className="text-sm mr-2">{action.icon}</span>
+                <span className="text-xs font-medium text-gray-700 group-hover:text-blue-800">
+                  {action.title}
+                </span>
+                <span className={`text-xs ml-2 ${getStatusColor(action.status)}`}>
+                  {getStatusIcon(action.status)}
+                </span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </SectionWrapper>
   );

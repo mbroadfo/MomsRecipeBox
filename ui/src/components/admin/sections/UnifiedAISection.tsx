@@ -75,7 +75,7 @@ const UnifiedAISectionContent: React.FC = () => {
     
     if (timing.fastest?.key === provider.key) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500 text-white border border-emerald-600 shadow-sm">
           Fastest
         </span>
       );
@@ -83,7 +83,7 @@ const UnifiedAISectionContent: React.FC = () => {
     
     if (timing.slowest?.key === provider.key) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500 text-white border border-amber-600 shadow-sm">
           Slowest
         </span>
       );
@@ -120,13 +120,12 @@ const UnifiedAISectionContent: React.FC = () => {
               .map((provider, index) => (
                 <div 
                   key={provider.key || index} 
-                  className="grid grid-cols-12 gap-3 items-center p-3 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
-                  style={{ minHeight: '60px' }}
+                  className="grid grid-cols-11 gap-3 items-center p-1 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow min-h-[30px]"
                 >
-                  {/* Status Dot - Col 1 */}
-                  <div className="col-span-1 flex justify-center">
+                  {/* Status + Provider Name with Badge - Col 1-5 */}
+                  <div className="col-span-5 flex items-center space-x-2">
                     <span 
-                      className="text-lg leading-none cursor-help"
+                      className="text-base leading-none cursor-help flex-shrink-0"
                       title={`${provider.status.charAt(0).toUpperCase() + provider.status.slice(1).replace('_', ' ')} - ${
                         provider.status === 'operational' ? 'Working normally' :
                         provider.status === 'configured' ? 'Set up but not tested recently' :
@@ -134,58 +133,28 @@ const UnifiedAISectionContent: React.FC = () => {
                         provider.status === 'error' ? 'Experiencing errors' :
                         'Not configured or inaccessible'
                       }`}
-                      style={{ fontSize: '16px' }}
                     >
                       {getStatusEmoji(provider.status)}
                     </span>
-                  </div>
-                  
-                  {/* Provider Name - Col 2-6 */}
-                  <div className="col-span-5">
-                    <div 
-                      className="font-medium text-base"
-                      style={{ 
-                        color: '#1f2937',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      {getProviderDisplayName(provider)}
+                    <div className="font-medium text-sm text-slate-900 min-w-0 flex items-center space-x-2">
+                      <span className="truncate">{getProviderDisplayName(provider)}</span>
+                      {getBadgeForProvider(provider, aiData.timing)}
                     </div>
                   </div>
                   
-                  {/* Response Time - Col 7-8 */}
-                  <div className="col-span-2 text-right pr-2">
+                  {/* Response Time - Col 6-9 */}
+                  <div className="col-span-4 text-right pr-3">
                     <span className="text-sm font-medium text-slate-700">
                       {formatResponseTime(provider.responseTime)}
                     </span>
                   </div>
                   
-                  {/* Badge - Col 9-11 */}
-                  <div className="col-span-3 flex justify-center">
-                    {getBadgeForProvider(provider, aiData.timing) || (
-                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>-</span>
-                    )}
-                  </div>
-                  
-                  {/* Test Button - Col 12 */}
-                  <div className="col-span-1 flex justify-center">
+                  {/* Test Button - Col 10-11 */}
+                  <div className="col-span-2 flex justify-center pl-2">
                     <button
                       onClick={() => testSpecificProvider(provider.key)}
                       disabled={testingProvider === provider.key}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        backgroundColor: testingProvider === provider.key ? '#e5e7eb' : '#f3f4f6',
-                        color: '#3b82f6',
-                        cursor: testingProvider === provider.key ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '14px'
-                      }}
+                      className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-lg"
                       title={`Test ${getProviderDisplayName(provider)}
 
 Status Legend:
@@ -194,18 +163,8 @@ Status Legend:
 🟡 Rate Limited - Temporarily limiting requests
 🔴 Error - Experiencing errors
 ⚪ Unavailable - Not configured or inaccessible`}
-                      onMouseOver={(e) => {
-                        if (!testingProvider) {
-                          e.currentTarget.style.backgroundColor = '#e5e7eb';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!testingProvider) {
-                          e.currentTarget.style.backgroundColor = '#f3f4f6';
-                        }
-                      }}
                     >
-                      {testingProvider === provider.key ? '🔄' : '🔄'}
+                      🔄
                     </button>
                   </div>
                 </div>
@@ -213,21 +172,11 @@ Status Legend:
           </div>
         )}
 
-        {/* Summary Footer */}
+        {/* Simple Footer with just refresh time */}
         {aiData && (
-          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 mt-4">
-            <div className="flex justify-between items-center text-sm px-2 py-1">
-              <div className="flex space-x-6 text-slate-600">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
-                  {aiData.summary.operational} Operational
-                </span>
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-rose-500 rounded-full mr-2"></span>
-                  {aiData.summary.errors} Errors
-                </span>
-              </div>
-              <span className="text-slate-500">
+          <div className="pt-4 border-t border-slate-200">
+            <div className="flex justify-end">
+              <span className="text-xs text-slate-500">
                 Updated: {new Date(aiData.timestamp).toLocaleTimeString()}
               </span>
             </div>

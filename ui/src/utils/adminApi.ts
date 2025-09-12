@@ -134,7 +134,14 @@ export const adminApi = {
   async testSystemStatus(): Promise<{
     overall_status: 'operational' | 'degraded';
     services: {
-      s3: { status: string; message: string };
+      s3: { status: string; message: string; stats?: any };
+      mongodb?: { status: string; message: string; stats?: { totalRecipes?: number; connectionTime?: number } };
+      api_gateway?: { status: string; message: string; stats?: { requestsPerMinute?: number; errorRate?: number } };
+      lambda?: { status: string; message: string; stats?: { totalFunctions?: number; executionsToday?: number } };
+      backup?: { status: string; message: string; stats?: { lastFull?: string; lastIncremental?: string; nextScheduled?: string } };
+      terraform?: { status: string; message: string; stats?: { lastApply?: string; resourceCount?: number; driftDetected?: boolean } };
+      security?: { status: string; message: string; stats?: { sslExpiry?: string; auth0Status?: string; corsEnabled?: boolean } };
+      performance?: { status: string; message: string; stats?: { cdnHitRate?: string; avgResponseTime?: string; cachingEnabled?: boolean } };
     };
     note?: string;
   }> {

@@ -1,5 +1,4 @@
-@import "tailwindcss/preflight";
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Overriding Tailwind v4 font weights and font sizes to match v3 behavior */
 @layer utilities {

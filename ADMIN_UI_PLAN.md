@@ -74,7 +74,7 @@ Build a comprehensive admin interface within the existing React application to m
 #### **2.1 Advanced User Features**
 - **User Detail View**: Individual user profiles with activity history
 - **Bulk Operations**: Select multiple users for batch actions
-- **Role Management**: Edit user roles (if super_admin)
+- **Role Management**: Edit user roles (admin can promote users to admin)
 - **User Activity Log**: Track user actions and logins
 - **Export Users**: CSV/Excel export functionality
 

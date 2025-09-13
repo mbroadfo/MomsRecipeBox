@@ -322,8 +322,7 @@ The admin system uses a role-based permission model:
 ### Roles
 
 - **user**: Regular application users
-- **admin**: Can manage users and moderate content
-- **super_admin**: Full system access (future use)
+- **admin**: Can manage users, moderate content, and manage the system
 
 ### Admin Permissions
 
@@ -331,10 +330,12 @@ The admin system uses a role-based permission model:
 - `view_user_details`: View individual user details
 - `invite_users`: Invite new users to the platform
 - `delete_users`: Delete users and their data
+- `modify_user_roles`: Change user roles (promote users to admin)
 - `delete_any_recipe`: Delete any recipe (not just own)
 - `moderate_comments`: Moderate user comments
 - `view_all_recipes`: View all recipes regardless of visibility
 - `view_analytics`: View system analytics
+- `manage_system`: System administration and configuration
 
 ## Setup Requirements
 

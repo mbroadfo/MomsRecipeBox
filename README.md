@@ -14,10 +14,33 @@ A secure, multi-family recipe sharing platform with a modular architecture: infr
 
 ### Admin API Endpoints
 
+#### Infrastructure Monitoring
+
 | Method | Endpoint                        | Description                               |
 | ------ | ------------------------------- | ----------------------------------------- |
-| GET    | /admin/system-status            | Comprehensive infrastructure monitoring   |
-| GET    | /admin/ai-services-status       | AI provider status and performance       |
+| GET    | /admin/system-status            | All infrastructure services status        |
+| GET    | /admin/system-status?service=mongodb | Individual MongoDB status only      |
+| GET    | /admin/system-status?service=s3 | Individual S3 storage status only        |
+| GET    | /admin/system-status?service=api_gateway | Individual API Gateway status only |
+| GET    | /admin/system-status?service=lambda | Individual Lambda functions status only |
+| GET    | /admin/system-status?service=backup | Individual backup system status only   |
+| GET    | /admin/system-status?service=terraform | Individual infrastructure status only |
+| GET    | /admin/system-status?service=security | Individual security/SSL status only   |
+| GET    | /admin/system-status?service=performance | Individual performance/CDN status only |
+
+#### AI Services Monitoring
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /admin/ai-services-status       | All AI providers configuration check     |
+| GET    | /admin/ai-services-status?test=basic | Live connectivity test all providers |
+| GET    | /admin/ai-services-status?provider=openai | Test specific provider only       |
+| GET    | /admin/ai-services-status?includeUnavailable=true | Include unconfigured providers |
+
+#### User Management
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
 | GET    | /admin/users                    | User management and statistics           |
 | POST   | /admin/users/invite             | Invite new users to the platform        |
 | DELETE | /admin/users/:id                | Remove users from the platform          |
@@ -30,6 +53,58 @@ The platform now includes a sophisticated AI-powered recipe assistant that can h
 
 | Method | Endpoint                        | Description                               |
 | ------ | ------------------------------- | ----------------------------------------- |
+| POST   | /ai/chat                        | Interactive recipe chat assistant        |
+| POST   | /ai/extract                     | Extract recipe from text/image           |
+| POST   | /shopping-list/categorize       | AI-powered ingredient categorization     |
+
+---
+
+## 📚 Complete API Reference
+
+### Recipe Management
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /recipes                        | List all recipes (with query parameters) |
+| GET    | /recipes/:id                    | Get specific recipe details              |
+| POST   | /recipes                        | Create new recipe                        |
+| PUT    | /recipes/:id                    | Update existing recipe                   |
+| DELETE | /recipes/:id                    | Delete recipe                            |
+| POST   | /recipes/:id/like               | Toggle recipe favorite status            |
+
+### Recipe Images
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /recipes/:id/image              | Get recipe image                         |
+| PUT    | /recipes/:id/image              | Upload/update recipe image               |
+| DELETE | /recipes/:id/image              | Delete recipe image                      |
+| POST   | /recipes/:id/copy-image         | Copy image for new recipe                |
+
+### Comments
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /comments/:id                   | Get specific comment                     |
+| POST   | /recipes/:id/comments           | Add comment to recipe                    |
+| PUT    | /comments/:id                   | Update existing comment                  |
+| DELETE | /comments/:id                   | Delete comment                           |
+
+### Shopping List
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /shopping-list                  | Get user's shopping list                 |
+| POST   | /shopping-list/add              | Add items to shopping list               |
+| PUT    | /shopping-list/item/:id         | Update shopping list item                |
+| DELETE | /shopping-list/item/:id         | Delete shopping list item                |
+| POST   | /shopping-list/clear            | Clear entire shopping list               |
+
+### Health Check
+
+| Method | Endpoint                        | Description                               |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | /health                         | Basic health check endpoint              |
 
 ---
 

@@ -1,10 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSystemStatus } from '../../../hooks/useAdminData';
 import { SectionWrapper } from '../ErrorBoundary';
 import { SystemStatusSkeleton } from '../skeletons';
 
 const SystemStatusContent: React.FC = () => {
   const { data: status, isLoading, error, refetch } = useSystemStatus();
+  const [testingService, setTestingService] = useState<string | null>(null);
+  
+  // Service name mapping for API calls
+  const serviceApiNames: { [key: string]: string } = {
+    'MongoDB Database': 'mongodb',
+    'S3 Storage': 's3',
+    'API Gateway': 'api_gateway',
+    'Lambda Functions': 'lambda',
+    'Backup System': 'backup',
+    'Infrastructure': 'terraform',
+    'Security & SSL': 'security',
+    'Performance & CDN': 'performance'
+  };
+
+  const handleIndividualTest = async (serviceName: string) => {
+    const apiServiceName = serviceApiNames[serviceName];
+    if (!apiServiceName) return;
+    
+    setTestingService(serviceName);
+    
+    try {
+      // Use the admin API to test individual service
+      const API_BASE_URL = process.env.NODE_ENV === 'production' 
+        ? 'https://your-production-api.com' 
+        : 'http://localhost:3000';
+        
+      const result = await fetch(`${API_BASE_URL}/admin/system-status?service=${apiServiceName}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (result.ok) {
+        console.log(`✅ Individual test completed for ${serviceName}`);
+        // Refresh the full status to update the UI
+        refetch();
+      } else {
+        console.error(`❌ Individual test failed for ${serviceName}`);
+      }
+    } catch (error) {
+      console.error('Individual service test failed:', error);
+    } finally {
+      setTestingService(null);
+    }
+  };
 
   const services = [
     {
@@ -178,11 +224,16 @@ const SystemStatusContent: React.FC = () => {
                 {/* Test Button - Col 9-11 */}
                 <div className="col-span-3 flex justify-center pl-2">
                   <button
-                    onClick={() => refetch()}
-                    className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors text-lg"
+                    onClick={() => handleIndividualTest(service.name)}
+                    disabled={testingService === service.name}
+                    className={`p-0.5 transition-colors text-lg ${
+                      testingService === service.name 
+                        ? 'text-blue-500 animate-spin' 
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
                     title={`Test ${service.name}`}
                   >
-                    🔄
+                    {testingService === service.name ? '⟳' : '🔄'}
                   </button>
                 </div>
               </div>

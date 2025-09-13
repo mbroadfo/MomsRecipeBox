@@ -21,6 +21,17 @@ export const useSystemStatus = () => {
   });
 };
 
+// Individual Service Test Hook
+export const useIndividualServiceTest = (serviceName?: string) => {
+  return useQuery({
+    queryKey: ['admin', 'system', 'service', serviceName],
+    queryFn: () => serviceName ? adminApi.testIndividualService(serviceName) : Promise.reject('No service name'),
+    enabled: false, // Only run manually
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: false, // Manual refresh only
+  });
+};
+
 // Connection Test Hook
 export const useConnectionTest = () => {
   return useQuery({

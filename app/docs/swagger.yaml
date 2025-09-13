@@ -865,12 +865,70 @@ paths:
       tags:
         - admin
       summary: Check comprehensive infrastructure status (Admin only)
-      description: Test connectivity and get metrics for 8 infrastructure services including MongoDB, S3, API Gateway, Lambda, Backup System, Terraform state, Security/SSL, and Performance/CDN
+      description: Test connectivity and get metrics for 8 infrastructure services including MongoDB, S3, API Gateway, Lambda, Backup System, Terraform state, Security/SSL, and Performance/CDN. Supports individual service testing via query parameter.
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: service
+          schema:
+            type: string
+            enum: [mongodb, s3, api_gateway, lambda, backup, terraform, security, performance]
+          description: Test specific service only (optional)
+          example: mongodb
       responses:
         '200':
           description: Infrastructure status retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: All services response
+                    properties:
+                      success:
+                        type: boolean
+                      timestamp:
+                        type: string
+                        format: date-time
+                      overall_status:
+                        type: string
+                        enum: [operational, degraded]
+                      services:
+                        type: object
+                        properties:
+                          mongodb:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          s3:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          api_gateway:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          lambda:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          backup:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          terraform:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          security:
+                            $ref: '#/components/schemas/InfrastructureService'
+                          performance:
+                            $ref: '#/components/schemas/InfrastructureService'
+                  - type: object
+                    description: Individual service response
+                    properties:
+                      success:
+                        type: boolean
+                      timestamp:
+                        type: string
+                        format: date-time
+                      service:
+                        type: string
+                      result:
+                        $ref: '#/components/schemas/InfrastructureService'
+                      note:
+                        type: string
+        '400':
+          description: Invalid service name
           content:
             application/json:
               schema:
@@ -878,154 +936,16 @@ paths:
                 properties:
                   success:
                     type: boolean
-                  timestamp:
+                  error:
                     type: string
-                    format: date-time
-                  overall_status:
-                    type: string
-                    enum: [operational, degraded]
-                  services:
-                    type: object
-                    properties:
-                      mongodb:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, error]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              totalRecipes:
-                                type: integer
-                              connectionTime:
-                                type: integer
-                      s3:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, error]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              storageUsed:
-                                type: string
-                      api_gateway:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, error]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              requestsPerMinute:
-                                type: string
-                              errorRate:
-                                type: string
-                      lambda:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, error]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              totalFunctions:
-                                type: integer
-                              executionsToday:
-                                type: integer
-                      backup:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, degraded]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              lastFull:
-                                type: string
-                                format: date-time
-                              lastIncremental:
-                                type: string
-                                format: date-time
-                              nextScheduled:
-                                type: string
-                                format: date-time
-                      terraform:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, degraded]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              lastApply:
-                                type: string
-                                format: date-time
-                              resourceCount:
-                                type: integer
-                              driftDetected:
-                                type: boolean
-                      security:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, degraded]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              sslExpiry:
-                                type: string
-                                format: date-time
-                              auth0Status:
-                                type: string
-                              corsEnabled:
-                                type: boolean
-                      performance:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                            enum: [operational, degraded]
-                          message:
-                            type: string
-                          stats:
-                            type: object
-                            properties:
-                              cdnHitRate:
-                                type: string
-                              avgResponseTime:
-                                type: string
-                              cachingEnabled:
-                                type: boolean
-                  note:
-                    type: string
-                    description: Additional information about the infrastructure status
+                  availableServices:
+                    type: array
+                    items:
+                      type: string
         '401':
           description: Unauthorized - Admin access required
         '500':
           description: System status check failed
-
   /admin/ai-services-status:
     get:
       tags:
@@ -1126,78 +1046,17 @@ paths:
                       total_providers_tested:
                         type: integer
                         description: Number of providers included in timing calculations
-              examples:
-                basic_test:
-                  summary: Basic connectivity test
-                  value:
-                    success: true
-                    timestamp: "2025-01-27T10:30:00Z"
-                    summary:
-                      total_providers: 5
-                      available_providers: 5
-                      average_response_time: 1524.2
-                    providers:
-                      google:
-                        available: true
-                        status: "success"
-                        message: "Provider is available"
-                        response_time_ms: 348
-                        provider: "Google Gemini"
-                        tested_at: "2025-01-27T10:30:00Z"
-                      openai:
-                        available: true
-                        status: "success"
-                        message: "Provider is available"
-                        response_time_ms: 1122
-                        provider: "OpenAI"
-                        tested_at: "2025-01-27T10:30:00Z"
-                    timing_stats:
-                      fastest:
-                        time_ms: 348
-                        provider: "Google Gemini"
-                      slowest:
-                        time_ms: 4284
-                        provider: "DeepSeek"
-                      average_ms: 1524.2
-                      total_providers_tested: 5
-                detailed_test:
-                  summary: Detailed AI functionality test
-                  value:
-                    success: true
-                    timestamp: "2025-01-27T10:30:00Z"
-                    summary:
-                      total_providers: 5
-                      available_providers: 4
-                      average_response_time: 2456.8
-                    providers:
-                      google:
-                        available: true
-                        status: "success"
-                        message: "AI functionality test passed"
-                        response_time_ms: 1834
-                        provider: "Google Gemini"
-                        tested_at: "2025-01-27T10:30:00Z"
-                      anthropic:
-                        available: false
-                        status: "error"
-                        message: "API key not configured"
-                        provider: "Anthropic"
-                        tested_at: "2025-01-27T10:30:00Z"
-                    timing_stats:
-                      fastest:
-                        time_ms: 1245
-                        provider: "Groq"
-                      slowest:
-                        time_ms: 3892
-                        provider: "DeepSeek"
-                      average_ms: 2456.8
-                      total_providers_tested: 4
         '401':
           description: Unauthorized - Admin access required
         '500':
           description: AI services status check failed
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     ShoppingList:
       type: object
@@ -1369,8 +1228,15 @@ components:
         per_page:
           type: integer
 
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    InfrastructureService:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [operational, error, degraded]
+        message:
+          type: string
+        stats:
+          type: object
+          additionalProperties: true
+          description: Service-specific statistics (varies by service)

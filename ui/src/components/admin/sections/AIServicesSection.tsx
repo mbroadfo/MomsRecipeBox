@@ -274,7 +274,7 @@ const AIServicesContent: React.FC = () => {
                   <span>Include unavailable providers in tests</span>
                 </label>
               </div>
-              <div className="text-xs text-slate-500 bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+              <div className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
                 ⚠️ Live API calls
               </div>
             </div>

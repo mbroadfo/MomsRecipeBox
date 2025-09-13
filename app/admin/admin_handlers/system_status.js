@@ -313,10 +313,89 @@ async function checkPerformanceStatus() {
 
 /**
  * Admin endpoint to test comprehensive infrastructure status
+ * Supports individual service testing via query parameter: ?service=mongodb
  * AI services have their own dedicated endpoint: /admin/ai-services-status
  */
 export async function handler(event) {
   try {
+    const queryParams = event.queryStringParameters || {};
+    const specificService = queryParams.service;
+    
+    // If specific service requested, test only that service
+    if (specificService) {
+      console.log(`🔍 Testing specific service: ${specificService}`);
+      
+      let serviceResult;
+      let serviceName;
+      
+      switch (specificService.toLowerCase()) {
+        case 'mongodb':
+          serviceResult = await testMongoDBConnectivity();
+          serviceName = 'mongodb';
+          break;
+        case 's3':
+          serviceResult = await testS3Connectivity();
+          serviceName = 's3';
+          break;
+        case 'api_gateway':
+        case 'apigateway':
+          serviceResult = await testAPIGateway();
+          serviceName = 'api_gateway';
+          break;
+        case 'lambda':
+          serviceResult = await testLambdaFunctions();
+          serviceName = 'lambda';
+          break;
+        case 'backup':
+          serviceResult = await checkBackupStatus();
+          serviceName = 'backup';
+          break;
+        case 'terraform':
+        case 'infrastructure':
+          serviceResult = await checkTerraformState();
+          serviceName = 'terraform';
+          break;
+        case 'security':
+          serviceResult = await checkSecurityStatus();
+          serviceName = 'security';
+          break;
+        case 'performance':
+          serviceResult = await checkPerformanceStatus();
+          serviceName = 'performance';
+          break;
+        default:
+          return {
+            statusCode: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+              success: false,
+              error: 'Invalid service name',
+              availableServices: ['mongodb', 's3', 'api_gateway', 'lambda', 'backup', 'terraform', 'security', 'performance']
+            })
+          };
+      }
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+          'Access-Control-Allow-Methods': 'GET,OPTIONS'
+        },
+        body: JSON.stringify({
+          success: true,
+          timestamp: new Date().toISOString(),
+          service: serviceName,
+          result: serviceResult,
+          note: `Individual service test for ${serviceName}`
+        })
+      };
+    }
+    
     // Run all infrastructure connectivity tests in parallel
     const [
       mongoTest,

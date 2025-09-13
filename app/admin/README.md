@@ -16,10 +16,12 @@ The admin system provides secure endpoints for managing users in the MomsRecipeB
 - **🧪 Comprehensive Testing**: Full test suite for all components
 - **📮 Postman Integration**: Complete API testing collection with secure M2M authentication
 - **🚀 Health Monitoring**: Built-in health check endpoint for API status verification
+- **🏗️ Infrastructure Monitoring**: Comprehensive system status monitoring for 8 core services
+- **🤖 AI Services Status**: Real-time monitoring and performance testing of AI providers
 
 ## 🏗️ Architecture
 
-```
+```text
 admin/
 ├── README.md                    # This documentation
 ├── auth0_utils.js              # Auth0 M2M token management & API calls
@@ -28,11 +30,15 @@ admin/
 ├── list_users.js              # Core user listing logic
 ├── invite_user.js              # Core user invitation logic
 ├── delete_user.js              # Core user deletion logic
+├── system_status.js            # Infrastructure monitoring logic
+├── ai_services_status.js       # AI services monitoring logic
 ├── admin_routes.js            # Express router (for future use)
 ├── admin_handlers/            # Lambda-style endpoint wrappers
 │   ├── list_users.js          
 │   ├── invite_user.js         
-│   └── delete_user.js         
+│   ├── delete_user.js
+│   ├── system_status.js       # Infrastructure status endpoint
+│   └── ai_services_status.js  # AI services status endpoint
 ├── postman/                   # API testing with Postman
 │   ├── MomsRecipeBox-Admin-API.postman_collection.json
 │   ├── MomsRecipeBox-Admin-Local.postman_environment.json
@@ -49,12 +55,14 @@ admin/
 All admin endpoints require a valid Auth0 JWT token with appropriate permissions.
 
 ### List Users
+
 ```http
 GET /admin/users?page=1&per_page=10&search=email@example.com
 Authorization: Bearer <auth0_jwt_token>
 ```
 
 **Response:**
+
 ```json
 {
   "users": [
@@ -82,6 +90,7 @@ Authorization: Bearer <auth0_jwt_token>
 ```
 
 ### Invite User
+
 ```http
 POST /admin/users/invite
 Authorization: Bearer <auth0_jwt_token>
@@ -95,6 +104,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "User invitation sent successfully",
@@ -108,12 +118,14 @@ Content-Type: application/json
 ```
 
 ### Delete User
+
 ```http
 DELETE /admin/users/{user_id}
 Authorization: Bearer <auth0_jwt_token>
 ```
 
 **Response:**
+
 ```json
 {
   "message": "User deleted successfully",
@@ -122,11 +134,13 @@ Authorization: Bearer <auth0_jwt_token>
 ```
 
 ### Health Check
+
 ```http
 GET /health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -136,11 +150,113 @@ GET /health
 }
 ```
 
+### System Status Monitoring
+
+```http
+GET /admin/system-status?service=mongodb
+Authorization: Bearer <auth0_jwt_token>
+```
+
+**Response (All Services):**
+
+```json
+{
+  "success": true,
+  "timestamp": "2025-09-13T...",
+  "overall_status": "operational",
+  "services": {
+    "mongodb": {
+      "status": "operational",
+      "message": "Database connection healthy",
+      "stats": {
+        "totalRecipes": 1247,
+        "connectionTime": 15
+      }
+    },
+    "s3": {
+      "status": "operational", 
+      "message": "Storage service healthy",
+      "stats": {
+        "storageUsed": "2.4 GB",
+        "objectCount": 892
+      }
+    }
+  }
+}
+```
+
+**Response (Individual Service):**
+
+```json
+{
+  "success": true,
+  "timestamp": "2025-09-13T...",
+  "service": "mongodb",
+  "result": {
+    "status": "operational",
+    "message": "Database connection healthy",
+    "stats": {
+      "totalRecipes": 1247,
+      "connectionTime": 15
+    }
+  }
+}
+```
+
+### AI Services Status
+
+```http
+GET /admin/ai-services-status?test=detailed&includeUnavailable=true
+Authorization: Bearer <auth0_jwt_token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "timestamp": "2025-09-13T...",
+  "summary": {
+    "total_providers": 5,
+    "available_providers": 4,
+    "average_response_time": 1524.2
+  },
+  "providers": {
+    "google": {
+      "available": true,
+      "status": "success",
+      "message": "AI functionality test passed",
+      "response_time_ms": 348,
+      "provider": "Google Gemini"
+    },
+    "openai": {
+      "available": true,
+      "status": "success", 
+      "message": "AI functionality test passed",
+      "response_time_ms": 1122,
+      "provider": "OpenAI"
+    }
+  },
+  "timing_stats": {
+    "fastest": {
+      "time_ms": 348,
+      "provider": "Google Gemini"
+    },
+    "slowest": {
+      "time_ms": 4284,
+      "provider": "DeepSeek"
+    },
+    "average_ms": 1524.2
+  }
+}
+```
+
 ## 🔑 Authentication & Authorization
 
 ### JWT Token Requirements
 
 Admin endpoints require Auth0 JWT tokens with:
+
 - **Issuer**: Your Auth0 domain (`https://your-domain.auth0.com/`)
 - **Audience**: `https://momsrecipebox/api` (matches your Auth0 API configuration)
 - **Permissions**: `admin:read`, `admin:write` (as applicable)
@@ -149,12 +265,13 @@ Admin endpoints require Auth0 JWT tokens with:
 
 | Role  | Permissions |
 |-------|-------------|
-| admin | `users:read`, `users:write`, `users:delete`, `admin:read`, `admin:write` |
+| admin | `users:read`, `users:write`, `users:delete`, `admin:read`, `admin:write`, `system:monitor`, `ai:monitor` |
 | user  | `users:read` |
 
 ### Required Auth0 M2M Scopes
 
 Your Auth0 M2M application needs these Management API scopes:
+
 - `read:users` - List and retrieve user information
 - `create:users` - Create and invite new users  
 - `delete:users` - Delete user accounts
@@ -291,6 +408,7 @@ node admin/tests/jwt-integration-test.js
 ### Logs and Monitoring
 
 Check application logs for:
+
 - JWT validation errors
 - Auth0 API call failures  
 - Database connection issues
@@ -301,6 +419,7 @@ Check application logs for:
 ### Token Caching
 
 The system implements intelligent M2M token caching:
+
 - Tokens cached for 24 hours
 - Automatic refresh before expiration
 - Memory-based caching (suitable for single-instance deployment)
@@ -308,6 +427,7 @@ The system implements intelligent M2M token caching:
 ### Error Handling
 
 All endpoints implement comprehensive error handling:
+
 - Input validation with detailed error messages
 - Auth0 API error forwarding
 - Database error handling
@@ -336,6 +456,7 @@ For questions or issues, check the test results or review the troubleshooting se
 ### Response Formats
 
 #### List Users (`GET /admin/users`)
+
 ```json
 {
   "users": [
@@ -357,6 +478,7 @@ For questions or issues, check the test results or review the troubleshooting se
 ```
 
 #### Invite User (`POST /admin/users/invite`)
+
 ```json
 {
   "email": "newuser@example.com",
@@ -368,6 +490,7 @@ For questions or issues, check the test results or review the troubleshooting se
 ```
 
 #### Delete User (`DELETE /admin/users/{id}`)
+
 ```json
 {
   "message": "User deleted successfully",
@@ -378,11 +501,13 @@ For questions or issues, check the test results or review the troubleshooting se
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 1. **Auth0 Account**: Set up with Management API access
 2. **Environment Variables**: Configured in `.env`
 3. **Dependencies**: Run `npm install` in the app directory
 
 ### Environment Configuration
+
 Ensure these variables are set in your `.env` file:
 
 ```env
@@ -393,6 +518,7 @@ AUTH0_M2M_CLIENT_SECRET=your_m2m_client_secret
 ```
 
 ### Running Tests
+
 ```bash
 # Run all admin tests
 cd app/admin/tests
@@ -407,6 +533,7 @@ node jwt-integration-test.js # Test JWT validation
 ## 🧪 Testing with HTTP Clients
 
 ### Using curl
+
 ```bash
 # Get a valid Auth0 JWT first, then:
 
@@ -432,11 +559,13 @@ curl -X DELETE \
 For easier testing, use the provided Postman collection with automated M2M authentication:
 
 📁 **See `./postman/` folder for:**
+
 - `MomsRecipeBox-Admin-API.postman_collection.json` - Complete API collection
 - `MomsRecipeBox-Admin-Local.postman_environment.json` - Local environment config  
 - `README.md` - Detailed setup instructions with secure M2M workflow
 
 The Postman collection includes automatic token management, so you just need to:
+
 1. Import the collection and environment
 2. Set your Auth0 M2M credentials
 3. Run "Get M2M Token" to authenticate
@@ -445,13 +574,15 @@ The Postman collection includes automatic token management, so you just need to:
 ## 🔧 Development
 
 ### Adding New Admin Functions
+
 1. Create the core logic file (e.g., `new_function.js`)
 2. Create the Lambda wrapper in `admin_handlers/`
 3. Add the route to `app/lambda.js`
 4. Update permissions in `admin_permissions.js`
 5. Add tests for the new functionality
 
-### Permission System
+### Permission Mapping
+
 Permissions are mapped in `admin_permissions.js`:
 
 ```javascript
@@ -462,7 +593,8 @@ export const ADMIN_PERMISSIONS = {
 };
 ```
 
-### Token Caching
+### M2M Token Caching
+
 The M2M token system includes automatic caching:
 
 - **Cache Duration**: 24 hours
@@ -471,24 +603,28 @@ The M2M token system includes automatic caching:
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### Common Authentication Issues
 
 #### "M2M token failed"
+
 - Check Auth0 M2M credentials in `.env`
 - Verify M2M application has Management API scopes
 - Confirm Auth0 domain is correct
 
 #### "JWT validation failed"
+
 - Ensure JWT is from correct Auth0 tenant
 - Verify JWT includes required permissions
 - Check token expiration
 
 #### "Management API access denied"
+
 - Confirm M2M application has user management scopes
 - Check Auth0 API permissions
 - Verify tenant configuration
 
 ### Debug Mode
+
 Set `NODE_ENV=development` for detailed logging:
 
 ```bash
@@ -531,6 +667,8 @@ When contributing to the admin system:
 
 ---
 
-**Last Updated**: September 3, 2025  
-**System Version**: 1.0.0  
-**Auth0 Integration**: ✅ Complete
+**Last Updated**: September 13, 2025  
+**System Version**: 1.1.0  
+**Auth0 Integration**: ✅ Complete  
+**Infrastructure Monitoring**: ✅ Complete  
+**AI Services Monitoring**: ✅ Complete

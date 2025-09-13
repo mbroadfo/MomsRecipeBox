@@ -175,6 +175,39 @@ export const adminApi = {
   },
 
   /**
+   * Test individual infrastructure service
+   */
+  async testIndividualService(serviceName: string): Promise<{
+    success: boolean;
+    timestamp: string;
+    service: string;
+    result: {
+      status: string;
+      message: string;
+      stats?: any;
+    };
+  }> {
+    console.log('🔧 AdminAPI: testIndividualService called', serviceName);
+    
+    try {
+      const url = `${API_BASE_URL}/admin/system-status?service=${encodeURIComponent(serviceName)}`;
+      console.log('🔧 AdminAPI: Testing individual service at', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
+      const data = await handleResponse(response);
+      console.log('🔧 AdminAPI: Individual service test result', data);
+      return data;
+    } catch (error) {
+      console.error('🔧 AdminAPI: Individual service test error', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get comprehensive AI services status for all providers
    */
   async getAIServicesStatus(options?: {

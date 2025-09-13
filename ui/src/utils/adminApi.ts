@@ -301,6 +301,30 @@ export const adminApi = {
       console.error('🔧 AdminAPI: AI provider test error', error);
       throw error;
     }
+  },
+
+  /**
+   * Get comprehensive user analytics and engagement metrics
+   */
+  async getUserAnalytics(dateRange: string = '30'): Promise<any> {
+    console.log('🔧 AdminAPI: getUserAnalytics called', { dateRange });
+    
+    try {
+      const url = `${API_BASE_URL}/admin/user-analytics?range=${encodeURIComponent(dateRange)}`;
+      console.log('🔧 AdminAPI: Fetching analytics from', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      
+      const data = await handleResponse(response);
+      console.log('🔧 AdminAPI: Analytics data received', data);
+      return data;
+    } catch (error) {
+      console.error('🔧 AdminAPI: Analytics fetch error', error);
+      throw error;
+    }
   }
 };
 

@@ -12,6 +12,7 @@ import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import UserManagementPage from './pages/UserManagementPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 const AppRoutes = () => {
   // Simplified - no more sidebar management
@@ -36,7 +37,7 @@ const AdminRoutes = () => {
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/users" element={<UserManagementPage />} />
           <Route path="/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
-          <Route path="/analytics" element={<div>Analytics - Coming Soon</div>} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
         </Routes>
       </AdminLayout>
     </AdminProtectedRoute>

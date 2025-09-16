@@ -405,7 +405,38 @@ This feature significantly streamlines the recipe creation process and makes it 
 
 ## ☁️ Cloud Mode
 
-Terraform modules (in `infra/`) provision AWS resources (Aurora, S3, Lambda, etc.). Adjust variables in `Terraform.tfvars`. Bastion / Session Manager support for secure DB connectivity (see infra README details).
+### Database Options
+
+The application supports two database deployment options:
+
+#### 1. AWS Aurora/PostgreSQL (Original)
+
+Terraform modules provision AWS resources including Aurora PostgreSQL, S3, Lambda, etc.
+
+#### 2. MongoDB Atlas (New Zero-Cost Option)
+
+The application now fully supports MongoDB Atlas as a cloud database option:
+
+- **Free Tier**: Utilizes MongoDB Atlas M0 free tier (512MB storage)
+- **Terraform Integration**: Complete Terraform configuration for MongoDB Atlas
+- **AWS Secrets Manager**: Secure storage of MongoDB credentials
+- **Custom Backup Solution**: Lambda-based backup to S3 with lifecycle policies
+
+To set up MongoDB Atlas:
+
+1. Create MongoDB Atlas account and organization
+2. Store credentials in AWS Secrets Manager
+3. Run Terraform to provision the MongoDB Atlas cluster
+4. Configure application to use MongoDB URI
+
+For detailed setup instructions, see:
+
+- `docs/mongodb_atlas_backup_strategy.md` - Cloud backup strategy
+- `docs/aws_secrets_setup.md` - Secure credential management
+
+### Terraform Configuration
+
+Adjust variables in `Terraform.tfvars` for AWS resources or use AWS Secrets Manager for MongoDB Atlas credentials. Bastion / Session Manager support for secure DB connectivity (see infra README details).
 
 ---
 

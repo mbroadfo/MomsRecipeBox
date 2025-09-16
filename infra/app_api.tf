@@ -489,7 +489,7 @@ resource "aws_api_gateway_integration" "recipe_image_delete_integration" {
 ##############################################
 resource "aws_iam_policy" "mrb_api_s3_access" {
   name        = "mrb-api-s3-access"
-  description = "Policy for Mom's Recipe Box API to access S3 bucket"
+  description = "Policy for Mom's Recipe Box API to access S3 buckets"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -501,7 +501,20 @@ resource "aws_iam_policy" "mrb_api_s3_access" {
           "s3:GetObject",
           "s3:DeleteObject"
         ],
-        Resource = "arn:aws:s3:::mrb-recipe-images-dev/*"
+        Resource = [
+          "arn:aws:s3:::mrb-recipe-images-dev/*",
+          "arn:aws:s3:::mrb-mongodb-backups-dev/*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "arn:aws:s3:::mrb-recipe-images-dev",
+          "arn:aws:s3:::mrb-mongodb-backups-dev"
+        ]
       }
     ]
   })

@@ -1,4 +1,6 @@
 services:
+  # Conditionally start MongoDB based on MONGODB_MODE env variable
+  # Will only run if MONGODB_MODE is 'local' (default) or not set
   mongo:
     image: mongo:latest
     container_name: momsrecipebox-mongo
@@ -6,19 +8,23 @@ services:
     env_file:
       - .env
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box}
     ports:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_ROOT_USER}", "-p", "${MONGODB_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_ROOT_USER:-admin}", "-p", "${MONGODB_ROOT_PASSWORD:-supersecret}", "--authenticationDatabase", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
+    # Only start this service if MONGODB_MODE is not set or set to 'local'
+    profiles:
+      - ${MONGODB_MODE:-local}
 
+  # MongoDB Express - only run in local mode
   mongo-express:
     image: mongo-express:latest
     container_name: momsrecipebox-mongo-express
@@ -29,13 +35,18 @@ services:
     environment:
       ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_ROOT_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_ROOT_PASSWORD}
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_ROOT_USER}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_ROOT_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_ROOT_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
     ports:
       - "8081:8081"
+    # Only start this service if MONGODB_MODE is not set or set to 'local'
+    profiles:
+      - ${MONGODB_MODE:-local}
 
+  # DB init is only needed in local mode and only if using a fresh DB
+  # This should typically be run manually when needed, not automatically
   db-init:
     build:
       context: ./db
@@ -46,20 +57,22 @@ services:
       mongo:
         condition: service_healthy
     restart: "no"
+    profiles:
+      - db-init
 
   app:
     container_name: momsrecipebox-app
     build:
       context: .
       dockerfile: app/Dockerfile
-    depends_on:
-      mongo:
-        condition: service_healthy
     env_file:
       - .env
     environment:
-      MONGODB_URI: mongodb://${MONGODB_ROOT_USER}:${MONGODB_ROOT_PASSWORD}@mongo:27017/${MONGODB_DB_NAME}?authSource=admin
-      APP_MODE: ${APP_MODE}
+      # For local mode, use the Docker network hostname (mongo)
+      # For Atlas mode, MONGODB_URI will come from the .env file
+      MONGODB_URI: ${MONGODB_URI:-mongodb://${MONGODB_ROOT_USER:-admin}:${MONGODB_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box}?authSource=admin}
+      APP_MODE: ${APP_MODE:-express}
+      MONGODB_MODE: ${MONGODB_MODE:-local}
     ports:
       - "3000:3000"
     entrypoint: >
@@ -68,6 +81,17 @@ services:
              else
                node local_server.js;
              fi"
+    depends_on:
+      # Only depend on mongo when using local mode
+      # This dependency will be ignored if mongo is not included in the active profiles
+      mongo:
+        condition: service_healthy
 
 volumes:
   mongodata:
+
+# By default, Docker Compose will start services with no profile or with profiles that match the profile names passed via --profile
+# This means:
+# - For local MongoDB: docker compose --profile local up
+# - For Atlas MongoDB: docker compose --profile atlas up
+# Since 'local' is the default profile, running just 'docker compose up' will use local MongoDB

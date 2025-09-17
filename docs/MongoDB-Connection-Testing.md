@@ -6,6 +6,7 @@
    - Ensure Docker is running
    - Set mode to local: `.\scripts\Toggle-MongoDbConnection.ps1 -Mode local`
    - Verify `.env` has `MONGODB_MODE=local`
+   - All local MongoDB credentials are stored with `MONGODB_LOCAL_` prefix in `.env`
 
 2. **Verify Container Status**
    - Check all containers are running: `docker ps`

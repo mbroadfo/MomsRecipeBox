@@ -8,15 +8,15 @@ services:
     env_file:
       - .env
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
       MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box}
     ports:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_ROOT_USER:-admin}", "-p", "${MONGODB_ROOT_PASSWORD:-supersecret}", "--authenticationDatabase", "admin"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_LOCAL_ROOT_USER:-admin}", "-p", "${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}", "--authenticationDatabase", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,10 +35,10 @@ services:
     environment:
       ME_CONFIG_MONGODB_SERVER: mongo
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_ROOT_USER:-admin}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_ROOT_USER:-admin}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_ROOT_PASSWORD:-supersecret}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
     ports:
       - "8081:8081"
     # Only start this service if MONGODB_MODE is not set or set to 'local'
@@ -60,19 +60,18 @@ services:
     profiles:
       - db-init
 
-  app:
-    container_name: momsrecipebox-app
+  # App with local MongoDB dependency
+  app-local:
+    container_name: momsrecipebox-app-local
     build:
       context: .
       dockerfile: app/Dockerfile
     env_file:
       - .env
     environment:
-      # For local mode, use the Docker network hostname (mongo)
-      # For Atlas mode, MONGODB_URI will come from the .env file
-      MONGODB_URI: ${MONGODB_URI:-mongodb://${MONGODB_ROOT_USER:-admin}:${MONGODB_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box}?authSource=admin}
+      MONGODB_URI: ${MONGODB_LOCAL_URI:-mongodb://${MONGODB_LOCAL_ROOT_USER:-admin}:${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box}?authSource=admin}
       APP_MODE: ${APP_MODE:-express}
-      MONGODB_MODE: ${MONGODB_MODE:-local}
+      MONGODB_MODE: local
     ports:
       - "3000:3000"
     entrypoint: >
@@ -82,10 +81,35 @@ services:
                node local_server.js;
              fi"
     depends_on:
-      # Only depend on mongo when using local mode
-      # This dependency will be ignored if mongo is not included in the active profiles
       mongo:
         condition: service_healthy
+    profiles:
+      - local
+
+  # App with Atlas MongoDB connection
+  app-atlas:
+    container_name: momsrecipebox-app-atlas
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    env_file:
+      - .env
+    environment:
+      # MONGODB_ATLAS_URI is expected to be provided by the environment when using Atlas mode
+      # It will be retrieved from AWS Secrets Manager by Toggle-MongoDbConnection.ps1
+      MONGODB_URI: ${MONGODB_ATLAS_URI}
+      APP_MODE: ${APP_MODE:-express}
+      MONGODB_MODE: atlas
+    ports:
+      - "3000:3000"
+    entrypoint: >
+      sh -c "if [ \"$APP_MODE\" = 'lambda' ]; then
+               /lambda-entrypoint.sh lambda.handler;
+             else
+               node local_server.js;
+             fi"
+    profiles:
+      - atlas
 
 volumes:
   mongodata:

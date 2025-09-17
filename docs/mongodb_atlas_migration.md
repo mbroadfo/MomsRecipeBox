@@ -15,12 +15,23 @@ terraform output mongodb_srv_address
 
 ### 2. Update Local Development Environment
 
-Edit your `.env` file in the project root:
+The application now uses AWS Secrets Manager for MongoDB Atlas credentials. Instead of storing sensitive Atlas connection information in the `.env` file, we keep only local MongoDB configuration there:
 
 ```env
-# MongoDB Configuration
-MONGODB_URI=
-MONGODB_DB_NAME=momsrecipebox
+# Local MongoDB Configuration (for development only)
+MONGODB_LOCAL_ROOT_USER=admin
+MONGODB_LOCAL_ROOT_PASSWORD=supersecret
+MONGODB_DB_NAME=moms_recipe_box
+MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box?authSource=admin
+MONGODB_MODE=local  # Set to 'atlas' to use MongoDB Atlas
+```
+
+MongoDB Atlas connection information is securely retrieved from AWS Secrets Manager at runtime.
+
+To update AWS Secrets Manager with your Atlas connection string:
+
+```powershell
+aws secretsmanager update-secret --secret-id moms-recipe-secrets-dev --secret-string "{\"MONGODB_URI\":\"
 ```
 
 Replace:

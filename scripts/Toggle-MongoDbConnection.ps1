@@ -107,9 +107,28 @@ function Restart-AppContainer {
                 docker-compose --profile local up -d mongo
             }
         } else {
-            # For Atlas mode, exclude MongoDB container
-            docker-compose --profile atlas stop app
-            docker-compose --profile atlas up -d app
+            # For Atlas mode, get URI from AWS Secrets Manager and pass it as an environment variable
+            $getUriScript = Join-Path $PSScriptRoot "Get-MongoAtlasUri.ps1"
+            if (Test-Path $getUriScript) {
+                Write-Host "Getting MongoDB Atlas URI from AWS Secrets Manager..." -ForegroundColor Yellow
+                $mongoUri = & $getUriScript
+                if ($?) {
+                    Write-Host "✅ Successfully retrieved MongoDB Atlas URI" -ForegroundColor Green
+                    
+                    # Pass the URI as an environment variable
+                    $env:MONGODB_ATLAS_URI = $mongoUri
+                    
+                    # Restart container with Atlas profile
+                    docker-compose --profile atlas stop app
+                    docker-compose --profile atlas up -d app
+                } else {
+                    Write-Error "Failed to get MongoDB Atlas URI from AWS Secrets Manager"
+                    exit 1
+                }
+            } else {
+                Write-Error "Get-MongoAtlasUri.ps1 script not found at $getUriScript"
+                exit 1
+            }
         }
         
         Write-Host "✅ App container restarted successfully" -ForegroundColor Green
@@ -137,16 +156,18 @@ function Test-DockerRunning {
 function Show-AtlasHelp {
     Write-Host "`nMongoDB Atlas Configuration Help:" -ForegroundColor Cyan
     Write-Host "------------------------------"
-    Write-Host "To configure MongoDB Atlas connection, make sure your .env file includes:" -ForegroundColor Yellow
-    Write-Host "MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/moms_recipe_box?retryWrites=true&w=majority"
-    Write-Host "- OR -"
-    Write-Host "MONGODB_ATLAS_HOST=cluster.mongodb.net"
-    Write-Host "MONGODB_ATLAS_USER=username"
-    Write-Host "MONGODB_ATLAS_PASSWORD=your_password"
-    Write-Host "MONGODB_DB_NAME=moms_recipe_box"
+    Write-Host "MongoDB Atlas credentials are stored in AWS Secrets Manager." -ForegroundColor Yellow
+    Write-Host "The script will retrieve the connection URI securely when needed."
     
-    Write-Host "`nYou can get your connection details from MongoDB Atlas dashboard" -ForegroundColor Yellow
-    Write-Host "or by running: cd ./infra; terraform output mongodb_srv_address" -ForegroundColor Yellow
+    Write-Host "`nEnsure your AWS credentials are configured correctly with access to:" -ForegroundColor Yellow
+    Write-Host "Secret name: moms-recipe-secrets-dev"
+    
+    Write-Host "`nThe secret should contain a key named MONGODB_URI with your MongoDB Atlas connection string." -ForegroundColor Yellow
+    Write-Host "You can update it using the AWS console or CLI."
+    
+    Write-Host "`nAlternatively, you can run these commands:" -ForegroundColor Yellow
+    Write-Host "cd ./infra; terraform output mongodb_srv_address" -ForegroundColor Yellow
+    Write-Host "aws secretsmanager update-secret --secret-id moms-recipe-secrets-dev --secret-string '{\"MONGODB_URI\":\"your-connection-string\"}'" -ForegroundColor Yellow
 }
 
 # Main execution

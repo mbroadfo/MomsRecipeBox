@@ -9,21 +9,24 @@
    - [AWS Secrets Manager Setup](#aws-secrets-manager-setup)
    - [Terraform Integration](#terraform-integration)
    - [Development Environment](#development-environment)
-4. [MongoDB Atlas Backup Solution](#mongodb-atlas-backup-solution)
+4. [MongoDB Connection Management](#mongodb-connection-management)
+   - [Toggling Between Local and Atlas MongoDB](#toggling-between-local-and-atlas-mongodb)
+   - [Environment Configuration](#environment-configuration)
+   - [Docker Compose Profiles](#docker-compose-profiles)
+5. [MongoDB Atlas Backup Solution](#mongodb-atlas-backup-solution)
    - [M0 Tier Limitations](#m0-tier-limitations)
    - [Backup Strategy](#backup-strategy)
    - [Consolidated Backup Script](#consolidated-backup-script)
    - [AWS S3 Integration](#aws-s3-integration)
-5. [Backup Operations](#backup-operations)
+6. [Backup Operations](#backup-operations)
    - [Creating Backups](#creating-backups)
    - [Restoring from Backups](#restoring-from-backups)
    - [Scheduling Automated Backups](#scheduling-automated-backups)
    - [Maintenance Operations](#maintenance-operations)
-6. [MongoDB Atlas Migration](#mongodb-atlas-migration)
-   - [Updating Connection Strings](#updating-connection-strings)
-7. [Emergency Recovery Procedures](#emergency-recovery-procedures)
-8. [Troubleshooting](#troubleshooting)
-9. [Implementation Details](#implementation-details)
+7. [MongoDB Atlas Migration](#mongodb-atlas-migration)
+8. [Emergency Recovery Procedures](#emergency-recovery-procedures)
+9. [Troubleshooting](#troubleshooting)
+10. [Implementation Details](#implementation-details)
 
 ---
 
@@ -140,6 +143,7 @@ For local development, use the `Create-TfVarsFile.ps1` script:
 ```
 
 This script will:
+
 - Prompt for your MongoDB Atlas credentials
 - Detect your current IP address for the access list
 - Create the tfvars file with the appropriate format
@@ -272,11 +276,78 @@ The backup script integrates with AWS S3 for cloud storage:
 
 ---
 
-## MongoDB Atlas Migration
+## MongoDB Connection Management
 
-### Updating Connection Strings
+Mom's Recipe Box now supports toggling between local Docker MongoDB and MongoDB Atlas. This hybrid approach provides flexibility for both development and production use.
 
-After provisioning your MongoDB Atlas cluster with Terraform, you'll need to update your application's connection strings.
+### Toggling Between Local and Atlas MongoDB
+
+A convenient PowerShell script is provided to toggle between local Docker MongoDB and MongoDB Atlas:
+
+```powershell
+# Switch to local MongoDB
+.\scripts\Toggle-MongoDbConnection.ps1 -Mode local
+
+# Switch to MongoDB Atlas
+.\scripts\Toggle-MongoDbConnection.ps1 -Mode atlas
+
+# Toggle between modes
+.\scripts\Toggle-MongoDbConnection.ps1
+
+# Show current connection mode without changing
+.\scripts\Toggle-MongoDbConnection.ps1 -ShowCurrent
+```
+
+The script will:
+
+- Update your `.env` file with the appropriate `MONGODB_MODE` setting
+- Restart the application container with the correct configuration
+- Start or stop the local MongoDB container as needed
+
+### Environment Configuration
+
+Configure your `.env` file with the following variables:
+
+```env
+# Set to 'local' for Docker MongoDB or 'atlas' for MongoDB Atlas
+MONGODB_MODE=local
+
+# Database name (shared between local and Atlas)
+MONGODB_DB_NAME=moms_recipe_box
+
+# Local MongoDB credentials (for Docker)
+MONGODB_ROOT_USER=admin
+MONGODB_ROOT_PASSWORD=supersecret
+
+# MongoDB Atlas credentials
+MONGODB_ATLAS_URI=
+# Or use individual components:
+# MONGODB_ATLAS_HOST=cluster.mongodb.net
+# MONGODB_ATLAS_USER=username
+# MONGODB_ATLAS_PASSWORD=password
+```
+
+### Docker Compose Profiles
+
+The `docker-compose.yml` file has been updated to use Docker Compose profiles for toggling between local and Atlas MongoDB:
+
+```bash
+# Run with local MongoDB (default)
+docker-compose up -d
+
+# Explicitly run with local MongoDB
+docker-compose --profile local up -d
+
+# Run with MongoDB Atlas (no local MongoDB containers)
+docker-compose --profile atlas up -d
+
+# Run database initialization script (only when needed)
+docker-compose --profile db-init up
+```
+
+When using the `atlas` profile, the local MongoDB and mongo-express containers won't be started, saving system resources. The toggle script automatically uses the appropriate profile based on your `MONGODB_MODE` setting.
+
+### MongoDB Atlas Migration
 
 #### 1. Get Your Connection String
 
@@ -293,7 +364,8 @@ Edit your `.env` file in the project root:
 
 ```env
 # MongoDB Configuration
-MONGODB_URI=
+MONGODB_MODE=atlas
+MONGODB_ATLAS_URI=
 MONGODB_DB_NAME=momsrecipebox
 ```
 
@@ -312,7 +384,8 @@ resource "aws_lambda_function" "app_lambda" {
   
   environment {
     variables = {
-      MONGODB_URI = "
+      MONGODB_MODE = "atlas"
+      MONGODB_ATLAS_URI = "
       MONGODB_DB_NAME = "momsrecipebox"
     }
   }

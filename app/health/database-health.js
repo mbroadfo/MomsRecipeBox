@@ -80,14 +80,56 @@ class RecipeDataQualityChecker {
   }
 }
 
+/**
+ * Gets the MongoDB connection string for health checks based on environment configuration
+ */
+function getHealthCheckConnectionString() {
+  // Check which MongoDB mode to use (default: local)
+  const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  
+  // For MongoDB Atlas
+  if (mongoMode === 'atlas') {
+    // First check if a full connection string is provided
+    if (process.env.MONGODB_ATLAS_URI) {
+      return process.env.MONGODB_ATLAS_URI;
+    }
+    
+    // Check if we have the components to build a connection string
+    const host = process.env.MONGODB_ATLAS_HOST;
+    const user = process.env.MONGODB_ATLAS_USER;
+    const password = process.env.MONGODB_ATLAS_PASSWORD;
+    
+    if (host && user && password) {
+      return `mongodb+srv://${user}:${encodeURIComponent(password)}@${host}/${dbName}?retryWrites=true&w=majority`;
+    }
+  }
+  
+  // For local MongoDB (default)
+  if (process.env.MONGODB_URI) {
+    return process.env.MONGODB_URI;
+  }
+  
+  // Otherwise construct from components for Docker setup
+  const user = process.env.MONGODB_ROOT_USER || 'admin';
+  const password = process.env.MONGODB_ROOT_PASSWORD || 'supersecret';
+  const host = process.env.MONGODB_HOST || 'localhost:27017';
+  
+  return `mongodb://${user}:${encodeURIComponent(password)}@${host}/${dbName}?authSource=admin`;
+}
+
 class DatabaseHealthChecker {
   constructor(config = {}) {
+    // Determine database connection parameters based on environment
+    const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
+    const isAtlas = mongoMode === 'atlas';
+    
     this.config = {
       mongodb: {
-        uri: config.mongodb?.uri || "mongodb://admin:supersecret@localhost:27017/moms_recipe_box?authSource=admin",
+        uri: config.mongodb?.uri || getHealthCheckConnectionString(),
         dbName: config.mongodb?.dbName || process.env.MONGODB_DB_NAME || 'moms_recipe_box',
-        connectTimeoutMS: config.mongodb?.connectTimeoutMS || 5000,
-        serverSelectionTimeoutMS: config.mongodb?.serverSelectionTimeoutMS || 5000
+        connectTimeoutMS: config.mongodb?.connectTimeoutMS || (isAtlas ? 10000 : 5000), // Longer timeout for Atlas
+        serverSelectionTimeoutMS: config.mongodb?.serverSelectionTimeoutMS || (isAtlas ? 10000 : 5000)
       },
       healthChecks: {
         enableOnStartup: config.healthChecks?.enableOnStartup !== false,
@@ -97,7 +139,7 @@ class DatabaseHealthChecker {
         failOnCritical: config.healthChecks?.failOnCritical !== false
       },
       thresholds: {
-        maxConnectionTime: config.thresholds?.maxConnectionTime || 2000,
+        maxConnectionTime: config.thresholds?.maxConnectionTime || (isAtlas ? 5000 : 2000), // Higher threshold for Atlas
         minCleanPercentage: config.thresholds?.minCleanPercentage || 50,
         maxCriticalIssues: config.thresholds?.maxCriticalIssues || 0,
         maxHighIssues: config.thresholds?.maxHighIssues || 5

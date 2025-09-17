@@ -41,12 +41,62 @@ function initializeHealthChecker() {
   return healthChecker;
 }
 
+/**
+ * Gets the appropriate MongoDB connection string based on the environment configuration.
+ * Supports toggling between local Docker MongoDB and MongoDB Atlas.
+ * @returns {string} The MongoDB connection string
+ */
+function getMongoConnectionString() {
+  // Check which MongoDB mode to use (default: local)
+  const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  
+  // For MongoDB Atlas
+  if (mongoMode === 'atlas') {
+    // First check if a full connection string is provided
+    if (process.env.MONGODB_ATLAS_URI) {
+      console.log('📦 Using MongoDB Atlas (connection string provided)');
+      return process.env.MONGODB_ATLAS_URI;
+    }
+    
+    // Check if we have the components to build a connection string
+    const host = process.env.MONGODB_ATLAS_HOST;
+    const user = process.env.MONGODB_ATLAS_USER;
+    const password = process.env.MONGODB_ATLAS_PASSWORD;
+    
+    if (host && user && password) {
+      const atlasUri = `mongodb+srv://${user}:${encodeURIComponent(password)}@${host}/${dbName}?retryWrites=true&w=majority`;
+      console.log('📦 Using MongoDB Atlas (constructed from components)');
+      return atlasUri;
+    }
+    
+    // If we don't have a valid Atlas configuration, warn but fall back to local
+    console.warn('⚠️  MongoDB Atlas configuration incomplete, falling back to local MongoDB');
+    return process.env.MONGODB_URI || `mongodb://admin:supersecret@localhost:27017/${dbName}?authSource=admin`;
+  }
+  
+  // For local MongoDB (default)
+  console.log('📦 Using local MongoDB');
+  
+  // Use provided URI if available
+  if (process.env.MONGODB_URI) {
+    return process.env.MONGODB_URI;
+  }
+  
+  // Otherwise construct from components for Docker setup
+  const user = process.env.MONGODB_ROOT_USER || 'admin';
+  const password = process.env.MONGODB_ROOT_PASSWORD || 'supersecret';
+  const host = process.env.MONGODB_HOST || 'localhost:27017';
+  
+  return `mongodb://${user}:${encodeURIComponent(password)}@${host}/${dbName}?authSource=admin`;
+}
+
 export async function getDb() {
   if (cachedDb) return cachedDb;
   
-  const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB_NAME;
-  if (!uri || !dbName) throw new Error('Missing MongoDB config');
+  const uri = getMongoConnectionString();
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  if (!uri) throw new Error('Could not construct MongoDB connection string');
   
   // Initialize health checker before connecting to database
   const checker = initializeHealthChecker();
@@ -68,7 +118,8 @@ export async function getDb() {
     // Start periodic health checks if enabled
     checker.startPeriodicHealthChecks();
     
-    console.log('✅ Connected to MongoDB database');
+    const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
+    console.log(`✅ Connected to MongoDB database (${mongoMode} mode)`);
     return cachedDb;
     
   } catch (error) {

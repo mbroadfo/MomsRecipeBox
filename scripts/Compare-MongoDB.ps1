@@ -8,7 +8,7 @@
 #
 # Connection Configuration:
 # 1. For Atlas connection, add one of the following to your .env file:
-#    - MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname
+#    - MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/dbname
 #    - Or individual settings:
 #      MONGODB_ATLAS_HOST=cluster.mongodb.net
 #      MONGODB_ATLAS_USER=username 
@@ -157,7 +157,7 @@ function Get-ConnectionStrings {
             Write-Warning "No MongoDB Atlas connection information found in your .env file."
             Write-Host ""
             Write-Host "Please add one of the following to your .env file:" -ForegroundColor Yellow
-            Write-Host "1. MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname" -ForegroundColor Yellow
+            Write-Host "1. MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/dbname" -ForegroundColor Yellow
             Write-Host "   -- OR --" -ForegroundColor Yellow
             Write-Host "2. All of these individual components:" -ForegroundColor Yellow
             Write-Host "   MONGODB_ATLAS_HOST=cluster.mongodb.net" -ForegroundColor Yellow
@@ -165,7 +165,7 @@ function Get-ConnectionStrings {
             Write-Host "   MONGODB_ATLAS_PASSWORD=password" -ForegroundColor Yellow
             Write-Host ""
             Write-Host "Alternatively, provide the Atlas URI directly when running the script:" -ForegroundColor Cyan
-            Write-Host '.\scripts\Compare-MongoDB.ps1 -AtlasUri "mongodb+srv://username:password@cluster.mongodb.net/dbname"' -ForegroundColor Cyan
+            Write-Host '.\scripts\Compare-MongoDB.ps1 -AtlasUri "mongodb+srv://<username>:<password>@<cluster>.mongodb.net/dbname"' -ForegroundColor Cyan
             Write-Host ""
             return $null, $null
         }

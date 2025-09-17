@@ -5,7 +5,7 @@ const handler = async (event) => {
   try {
     const db = await getDb();
 
-    const { owner_id, visibility, tags, limit = 20, offset = 0, user_id } = event.queryStringParameters || {};
+    const { owner_id, visibility, tags, limit = 50, offset = 0, user_id } = event.queryStringParameters || {};
     const query = {};
 
     if (owner_id) query.owner_id = owner_id;

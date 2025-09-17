@@ -138,7 +138,7 @@ function Show-AtlasHelp {
     Write-Host "`nMongoDB Atlas Configuration Help:" -ForegroundColor Cyan
     Write-Host "------------------------------"
     Write-Host "To configure MongoDB Atlas connection, make sure your .env file includes:" -ForegroundColor Yellow
-    Write-Host "MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/moms_recipe_box?retryWrites=true&w=majority"
+    Write-Host "MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/moms_recipe_box?retryWrites=true&w=majority"
     Write-Host "- OR -"
     Write-Host "MONGODB_ATLAS_HOST=cluster.mongodb.net"
     Write-Host "MONGODB_ATLAS_USER=username"

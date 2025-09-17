@@ -26,7 +26,7 @@ Add one of the following to your `.env` file:
 1. **Complete connection URI**:
 
    ```env
-   MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/moms_recipe_box
+   MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/moms_recipe_box
    ```
 
 2. **Individual connection components**:
@@ -74,7 +74,7 @@ This will use the connection information from your `.env` file.
 You can specify connection strings directly:
 
 ```powershell
-.\scripts\Compare-MongoDB.ps1 -LocalUri "mongodb://username:password@localhost:27017/moms_recipe_box" -AtlasUri "mongodb+srv://username:password@cluster.mongodb.net/moms_recipe_box"
+.\scripts\Compare-MongoDB.ps1 -LocalUri "mongodb://<username>:<password>@localhost:27017/moms_recipe_box" -AtlasUri "mongodb+srv://<username>:<password>@<cluster>.mongodb.net/moms_recipe_box"
 ```
 
 ### Additional Parameters

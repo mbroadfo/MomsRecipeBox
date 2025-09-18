@@ -56,7 +56,7 @@ To use the AI Recipe Assistant, you'll need at least one AI provider API key con
 
 Add at least one of these API keys to your `.env` file:
 
-```
+```env
 # AI Provider API Keys (at least one required)
 GOOGLE_API_KEY=your_google_api_key     # Recommended primary
 OPENAI_API_KEY=your_openai_api_key     # Popular alternative
@@ -86,7 +86,7 @@ The AI Assistant is available in the recipe creation workflow:
 ### Scenario 2: Extracting a Recipe from a URL
 
 1. Open the AI Assistant panel
-2. Paste a recipe URL (e.g., "https://example.com/recipe")
+2. Paste a recipe URL (e.g., "[https://example.com/recipe](https://example.com/recipe)")
 3. The AI will automatically:
    - Extract the recipe details (title, ingredients, instructions)
    - Download and process any recipe images
@@ -110,9 +110,9 @@ The AI Assistant is available in the recipe creation workflow:
 4. Choose a suggestion you like and ask for the complete recipe
 5. Apply to the form and save when ready
 
-## Configuration
+## Provider Configuration
 
-### Getting API Keys
+### API Key Setup
 
 #### Google Gemini API Key (Recommended)
 
@@ -151,7 +151,7 @@ The AI Assistant is available in the recipe creation workflow:
 
 For advanced configuration options, you can modify these environment variables:
 
-```
+```env
 # AI Provider Selection
 AI_DEFAULT_PROVIDER=google  # Options: google, openai, groq, anthropic, deepseek
 
@@ -174,7 +174,9 @@ AI_RATE_LIMIT_WINDOW=60000  # Milliseconds for rate limit window
 #### Rate Limit Reached
 
 **Problem**: "Rate limit exceeded" error message
-**Solution**: 
+
+**Solution**:
+
 - Wait a few minutes and try again
 - Add keys for multiple providers for fallback options
 - Upgrade to a higher tier with your AI provider
@@ -182,7 +184,9 @@ AI_RATE_LIMIT_WINDOW=60000  # Milliseconds for rate limit window
 #### Extraction Failing
 
 **Problem**: Recipe not properly extracted from URL
+
 **Solution**:
+
 - Try another URL from the same site
 - Copy and paste the recipe content directly instead
 - Try using a different AI provider
@@ -190,7 +194,9 @@ AI_RATE_LIMIT_WINDOW=60000  # Milliseconds for rate limit window
 #### Provider Not Working
 
 **Problem**: Specific AI provider not responding
+
 **Solution**:
+
 - Verify the API key is correct and active
 - Check the provider's status page for outages
 - Switch to a different provider temporarily

@@ -56,7 +56,7 @@ If a provider is rate-limited or unavailable, the system automatically falls bac
 
 ### File Structure
 
-```
+```text
 app/ai_providers/
 ├── base_provider.js          # Base class with shared functionality
 ├── provider_factory.js       # Provider management and selection
@@ -74,7 +74,7 @@ The AI services expose three main endpoints:
 
 ### 1. Chat Endpoint
 
-```
+```http
 POST /ai/chat
 ```
 
@@ -111,7 +111,7 @@ Handles conversational recipe creation with AI.
 
 ### 2. Extract Endpoint
 
-```
+```http
 POST /ai/extract
 ```
 
@@ -158,7 +158,7 @@ Extracts recipe data from a URL or pasted content.
 
 ### 3. Create Recipe Endpoint
 
-```
+```http
 POST /ai/create-recipe
 ```
 
@@ -229,6 +229,7 @@ All providers use identical system messages defined in the `BaseAIProvider` clas
 - **getDetailedExtractionPrompt()**: Detailed formatting rules for providers requiring specific instructions
 
 This centralization ensures:
+
 - **Consistency**: All providers return identically formatted recipes
 - **Maintainability**: Recipe format changes only need to be made in one place
 - **Quality**: Unified, well-tested prompts across all providers
@@ -267,7 +268,7 @@ The system defines these error categories for comprehensive handling:
 
 The API includes a dedicated admin endpoint for AI services monitoring:
 
-```
+```http
 GET /admin/ai-services-status
 ```
 

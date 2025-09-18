@@ -59,7 +59,7 @@ There are multiple ways to access your shopping list:
 2. From any recipe, click **Go to Shopping List** in the ingredients section
 3. After adding ingredients to your list, click the confirmation link
 
-### Organization Options
+### View Organization Options
 
 The shopping list offers two organization modes:
 

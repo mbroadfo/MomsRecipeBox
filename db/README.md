@@ -1,78 +1,70 @@
-# MomsRecipeBox - DB Tier (MongoDB)
+# MomsRecipeBox - DB Tier
 
-This directory contains database initialization scripts and recipe seed data for local development.
+## Overview
 
-## Data Model (Recent Update)
+This directory contains database initialization scripts and recipe seed data for local development with MongoDB.
 
-- Recipes collection now includes a denormalized integer field: `likes_count` (defaults to 0 on creation) used for fast favorite counts.
-- New `favorites` collection introduced (one document per user/recipe pair) powering scalable like toggling.
-  - Suggested indexes (created lazily by handler):
-    - `{ recipeId: 1, userId: 1 }` unique
-    - `{ userId: 1, createdAt: -1 }`
-    - `{ recipeId: 1 }`
+## Quick Start
 
-## Files & Structure
+```bash
+# Seed the database
+node init_mrb_db.js
+```
 
-- `init_mrb_db.js` — Seeds MongoDB with recipes from `recipes/` JSON files.
-- `recipes/` — Individual recipe documents for seeding.
-- (Future) Migration scripts can adjust older documents missing `likes_count` (handler backfills on read if absent).
+For a complete setup guide, see the [Getting Started Guide](../docs/guides/getting_started.md).
+
+## Key Features
+
+- **Seed Data**: Initial recipe data for development
+- **Schema Design**: MongoDB schema definitions
+- **Database Initialization**: Scripts for setting up the database
+- **Migration Support**: Tools for updating data structure
+
+## Data Model
+
+For a complete description of the database schema and design, see the [MongoDB Guide](../docs/technical/mongodb_guide.md).
+
+### Core Collections
+
+- `recipes` - Recipe documents with likes_count
+- `favorites` - User favorites with references to recipes
+- `comments` - Comments on recipes
+- `shopping_lists` - User shopping lists
+- `users` - User information
 
 ## Environment Variables
 
 Set in `.env` (and consumed by Docker / app):
 
 ```bash
-MONGODB_URI=<full-connection-string OR constructed in docker-compose>
+MONGODB_URI=<full-connection-string>
 MONGODB_DB_NAME=<db-name>
 MONGODB_ROOT_USER=<root-user>
 MONGODB_ROOT_PASSWORD=<root-password>
 ```
 
-For local Docker Compose, `docker-compose.yml` builds URI from individual parts.
+For more details on MongoDB configuration, see the [Environment Variables Guide](../docs/technical/environment_variables.md).
 
-## Seeding the Database
+## Files & Structure
 
-```powershell
-node init_mrb_db.js
-```
+- `init_mrb_db.js` — Seeds MongoDB with recipes from `recipes/` JSON files
+- `recipes/` — Individual recipe documents for seeding
+- `Dockerfile` - Docker configuration for the MongoDB container
 
-The script will:
+## Backup and Restore
 
-- Connect using `MONGODB_URI`.
-- Load all JSON files in `recipes/` and insert if not already present.
-- (Optional enhancement) Could upsert to avoid duplicates.
+For information about database backup and restore procedures, see the [MongoDB Guide](../docs/technical/mongodb_guide.md#backup-and-restore).
 
-## Favorites Backfill (If Migrating)
+## MongoDB Atlas Support
 
-Legacy recipes that had an embedded `likes` array should be migrated:
+The application supports both local MongoDB and MongoDB Atlas. For detailed setup instructions, see the [MongoDB Guide](../docs/technical/mongodb_guide.md#mongodb-atlas).
 
-```js
-// Example one-off script snippet
-const bulk = [];
-const cursor = db.collection('recipes').find({ likes: { $exists: true } });
-while (await cursor.hasNext()) {
-  const r = await cursor.next();
-  const count = Array.isArray(r.likes) ? r.likes.length : 0;
-  bulk.push({ updateOne: { filter: { _id: r._id }, update: { $set: { likes_count: count }, $unset: { likes: '' } } } });
-}
-if (bulk.length) await db.collection('recipes').bulkWrite(bulk);
-```
+## Contributing
 
-The active application code tolerates missing `likes_count` by recomputing from `favorites`.
+To contribute to the DB tier:
 
-## Connectivity Test
+1. Add seed data to the `recipes/` directory
+2. Update the schema documentation in the MongoDB Guide
+3. Create or update migration scripts as needed
 
-(If you add a simple connectivity script):
-
-```powershell
-node test_mongo.js
-```
-
-## Notes
-
-- Passwords in plain text acceptable for local dev only; use secrets management for production.
-- Ensure indexes for `favorites` are created (handler does this lazily).
-
----
-
-For questions or contributions, coordinate with the API tier to keep schema expectations aligned.
+For more information, see the [Contributing Guide](../docs/development/contributing.md).

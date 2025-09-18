@@ -21,7 +21,7 @@ git clone https://github.com/mbroadfo/MomsRecipeBox.git
 cd MomsRecipeBox
 ```
 
-2. **Configure environment variables**:
+1. **Configure environment variables**:
 
 Create a `.env` file in the project root with the following basic configuration:
 
@@ -36,13 +36,13 @@ MONGODB_DB_NAME=momsrecipebox
 APP_MODE=local
 ```
 
-3. **Start the application**:
+1. **Start the application**:
 
 ```powershell
 docker compose up -d
 ```
 
-4. **Verify the installation**:
+1. **Verify the installation**:
 
 Access the application at [http://localhost:3000](http://localhost:3000)
 

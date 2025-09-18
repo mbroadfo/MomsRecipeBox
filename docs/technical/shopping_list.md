@@ -23,6 +23,7 @@ The shopping list feature is implemented using:
 - AI-powered categorization for organizing items
 
 The system is designed to:
+
 - Store shopping list items per user
 - Maintain recipe context for each item
 - Support multiple views (by recipe, by category)
@@ -76,16 +77,18 @@ The API normalizes these fields automatically to ensure compatibility regardless
 
 ### Get Shopping List
 
-```
+```http
 GET /shopping-list
 ```
 
 **Description:** Retrieves the user's shopping list
 
 **Request Parameters:**
+
 - `userId` (query parameter): The user ID to retrieve the shopping list for
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -104,13 +107,14 @@ GET /shopping-list
 
 ### Add Items to Shopping List
 
-```
+```http
 POST /shopping-list/add
 ```
 
 **Description:** Adds multiple ingredients to the shopping list
 
 **Request Body:**
+
 ```json
 {
   "userId": "user123",
@@ -126,6 +130,7 @@ POST /shopping-list/add
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -138,16 +143,18 @@ POST /shopping-list/add
 
 ### Update Shopping List Item
 
-```
+```http
 PUT /shopping-list/item/:id
 ```
 
 **Description:** Updates a specific shopping list item (typically to toggle checked status)
 
 **URL Parameters:**
+
 - `id`: The ID of the item to update
 
 **Request Body:**
+
 ```json
 {
   "userId": "user123",
@@ -156,6 +163,7 @@ PUT /shopping-list/item/:id
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -172,16 +180,18 @@ PUT /shopping-list/item/:id
 
 ### Delete Shopping List Item
 
-```
+```http
 DELETE /shopping-list/item/:id
 ```
 
 **Description:** Removes an item from the shopping list
 
 **URL Parameters:**
+
 - `id`: The ID of the item to delete
 
 **Request Body:**
+
 ```json
 {
   "userId": "user123"
@@ -189,6 +199,7 @@ DELETE /shopping-list/item/:id
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -198,13 +209,14 @@ DELETE /shopping-list/item/:id
 
 ### Clear Shopping List
 
-```
+```http
 POST /shopping-list/clear
 ```
 
 **Description:** Clears the entire shopping list or just purchased items
 
 **Request Body:**
+
 ```json
 {
   "userId": "user123",
@@ -213,6 +225,7 @@ POST /shopping-list/clear
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -223,13 +236,14 @@ POST /shopping-list/clear
 
 ### AI Categorization Endpoint
 
-```
+```http
 POST /shopping-list/categorize
 ```
 
 **Description:** Categorizes shopping list items into grocery store sections using AI
 
 **Request Body:**
+
 ```json
 {
   "items": [
@@ -242,6 +256,7 @@ POST /shopping-list/categorize
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,

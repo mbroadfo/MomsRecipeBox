@@ -77,7 +77,7 @@ MONGODB_MODE=local
 
 The application supports two database deployment options:
 
-1. **Local MongoDB (Docker)**: 
+1. **Local MongoDB (Docker)**:
    - Self-contained in Docker Compose
    - Perfect for development and testing
    - No external dependencies
@@ -182,7 +182,7 @@ docker exec -it mrb_mongodb mongosh -u admin -p supersecret
 
 After configuration, MongoDB Atlas provides a connection string in this format:
 
-```
+```text
 
 ```
 
@@ -210,8 +210,8 @@ For production environments, MongoDB Atlas credentials are securely stored in AW
 | `MONGODB_ATLAS_PASSWORD`   | `your-secure-db-password`    |
 | `MONGODB_URI`              | `mongodb+srv://...`          |
 
-5. Name the secret `moms-recipe-secrets-dev` (for development environment)
-6. Complete the creation wizard with default settings
+1. Name the secret `moms-recipe-secrets-dev` (for development environment)
+1. Complete the creation wizard with default settings
 
 #### Retrieving Secrets
 
@@ -234,6 +234,7 @@ For local development, you can use the `Create-TfVarsFile.ps1` script:
 ```
 
 This script will:
+
 - Prompt for your MongoDB Atlas credentials
 - Create the necessary configuration files
 - Detect your IP address for the access list
@@ -346,6 +347,7 @@ node tools/database/quality-analyzer.js
 ```
 
 This tool identifies:
+
 - Missing required fields
 - Data structure issues
 - Content quality problems
@@ -367,6 +369,7 @@ npm run db:clean-full
 ```
 
 Features include:
+
 - Field standardization
 - Legacy field conversion
 - Content cleanup
@@ -384,6 +387,7 @@ node tools/database/field-analyzer.js
 ```
 
 This provides:
+
 - Field distribution statistics
 - Usage patterns
 - Consistency checking

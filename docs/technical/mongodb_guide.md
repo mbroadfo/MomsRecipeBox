@@ -52,7 +52,7 @@ MONGODB_LOCAL_ROOT_USER=admin
 MONGODB_LOCAL_ROOT_PASSWORD=supersecret
 MONGODB_LOCAL_ADMIN_USER=admin
 MONGODB_LOCAL_ADMIN_PASSWORD=superdupersecret
-MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box?authSource=admin
+MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box_dev?authSource=admin
 ```
 
 #### Shared Variables
@@ -61,7 +61,7 @@ Some variables are common across both local and Atlas modes:
 
 ```env
 # Used in both local and Atlas modes
-MONGODB_DB_NAME=moms_recipe_box
+MONGODB_DB_NAME=moms_recipe_box_dev
 ```
 
 #### Mode Selection
@@ -119,7 +119,7 @@ mongodb:
   environment:
     MONGO_INITDB_ROOT_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
     MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
-    MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box}
+    MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box_dev}
   volumes:
     - mongodb_data:/data/db
     - ./db:/docker-entrypoint-initdb.d
@@ -171,7 +171,7 @@ docker exec -it mrb_mongodb mongosh -u admin -p supersecret
 1. **Database User**:
    - Create a dedicated application user (e.g., "mrbapp")
    - Set a secure password
-   - Assign readWrite permissions on the momsrecipebox database
+   - Assign readWrite permissions on the moms_recipe_box_dev database
 
 2. **Network Access**:
    - Add your IP address to the access list

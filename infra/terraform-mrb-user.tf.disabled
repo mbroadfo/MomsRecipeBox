@@ -138,11 +138,14 @@ resource "aws_iam_policy" "terraform_mrb_services" {
           "iam:DeletePolicy",
           "iam:DeleteRole",
           "iam:DeleteRolePolicy",
-          "iam:DetachRolePolicy"
+          "iam:DetachRolePolicy",
+          "iam:CreatePolicyVersion",
+          "iam:SetDefaultPolicyVersion"
         ]
         Resource = [
           "arn:aws:iam::491696534851:role/app_lambda_role",
-          "arn:aws:iam::491696534851:policy/mrb-*"
+          "arn:aws:iam::491696534851:policy/mrb-*",
+          "arn:aws:iam::491696534851:policy/terraform-mrb-*"
         ]
       }
     ]

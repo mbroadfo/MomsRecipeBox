@@ -1,6 +1,6 @@
 {
   "database": {
-    "name": "moms_recipe_box",
+    "name": "moms_recipe_box_dev",
     "host": "localhost",
     "port": 27017,
     "auth": {

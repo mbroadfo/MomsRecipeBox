@@ -295,7 +295,7 @@ AUTH0_M2M_CLIENT_ID=your_m2m_client_id
 AUTH0_M2M_CLIENT_SECRET=your_m2m_client_secret
 
 # Database
-MONGODB_URI=mongodb://admin:password123@localhost:27017/momsrecipebox?authSource=admin
+MONGODB_URI=mongodb://admin:password123@localhost:27017/moms_recipe_box_dev?authSource=admin
 ```
 
 ### Auth0 Setup

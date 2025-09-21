@@ -6,7 +6,7 @@ dotenv.config();
 
 // When running locally with Docker, MongoDB is exposed on port 27017
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const dbName = process.env.MONGODB_DB_NAME || 'momsrecipebox';
+const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
 
 async function analyzeRecipes() {
   console.log('⚡ Connecting to MongoDB...');

@@ -313,14 +313,14 @@ Configure your `.env` file with the following variables:
 MONGODB_MODE=local
 
 # Database name (shared between local and Atlas)
-MONGODB_DB_NAME=moms_recipe_box
+MONGODB_DB_NAME=moms_recipe_box_dev
 
 # Local MongoDB credentials (for Docker)
 MONGODB_ROOT_USER=admin
 MONGODB_ROOT_PASSWORD=supersecret
 
 # MongoDB Atlas credentials
-MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/moms_recipe_box?retryWrites=true&w=majority
+MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/moms_recipe_box_dev?retryWrites=true&w=majority
 # Or use individual components:
 # MONGODB_ATLAS_HOST=cluster.mongodb.net
 # MONGODB_ATLAS_USER=username
@@ -366,7 +366,7 @@ Edit your `.env` file in the project root:
 # MongoDB Configuration
 MONGODB_MODE=atlas
 MONGODB_ATLAS_URI=mongodb+srv://mrbapp:<PASSWORD>@<CLUSTER_NAME>.mongodb.net/momsrecipebox?retryWrites=true&w=majority
-MONGODB_DB_NAME=momsrecipebox
+MONGODB_DB_NAME=moms_recipe_box_dev
 ```
 
 Replace:

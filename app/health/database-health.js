@@ -86,7 +86,7 @@ class RecipeDataQualityChecker {
 function getHealthCheckConnectionString() {
   // Check which MongoDB mode to use (default: local)
   const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
-  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
   
   // For MongoDB Atlas
   if (mongoMode === 'atlas') {
@@ -127,7 +127,7 @@ class DatabaseHealthChecker {
     this.config = {
       mongodb: {
         uri: config.mongodb?.uri || getHealthCheckConnectionString(),
-        dbName: config.mongodb?.dbName || process.env.MONGODB_DB_NAME || 'moms_recipe_box',
+        dbName: config.mongodb?.dbName || process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev',
         connectTimeoutMS: config.mongodb?.connectTimeoutMS || (isAtlas ? 10000 : 5000), // Longer timeout for Atlas
         serverSelectionTimeoutMS: config.mongodb?.serverSelectionTimeoutMS || (isAtlas ? 10000 : 5000)
       },

@@ -10,7 +10,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
-      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box_dev}
     ports:
       - "27017:27017"
     volumes:
@@ -69,7 +69,7 @@ services:
     env_file:
       - .env
     environment:
-      MONGODB_URI: ${MONGODB_LOCAL_URI:-mongodb://${MONGODB_LOCAL_ROOT_USER:-admin}:${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box}?authSource=admin}
+      MONGODB_URI: ${MONGODB_LOCAL_URI:-mongodb://${MONGODB_LOCAL_ROOT_USER:-admin}:${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box_dev}?authSource=admin}
       APP_MODE: ${APP_MODE:-express}
       MONGODB_MODE: local
     ports:

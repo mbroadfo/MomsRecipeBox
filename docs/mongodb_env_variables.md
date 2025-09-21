@@ -14,7 +14,7 @@ MONGODB_LOCAL_ROOT_USER=admin
 MONGODB_LOCAL_ROOT_PASSWORD=supersecret
 MONGODB_LOCAL_ADMIN_USER=admin
 MONGODB_LOCAL_ADMIN_PASSWORD=superdupersecret
-MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box?authSource=admin
+MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box_dev?authSource=admin
 ```
 
 ### Mode Selection
@@ -32,7 +32,7 @@ Some variables are common across both local and Atlas modes:
 
 ```env
 # Used in both local and Atlas modes
-MONGODB_DB_NAME=moms_recipe_box
+MONGODB_DB_NAME=moms_recipe_box_dev
 ```
 
 ### MongoDB Atlas Configuration
@@ -67,7 +67,7 @@ The docker-compose.yml file uses environment variables with appropriate defaults
 environment:
   MONGO_INITDB_ROOT_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
   MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
-  MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box}
+  MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box_dev}
 ```
 
 ## AWS Secrets Manager Integration

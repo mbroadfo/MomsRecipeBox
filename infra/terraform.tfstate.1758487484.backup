@@ -1,0 +1,453 @@
+{
+  "version": 4,
+  "terraform_version": "1.11.3",
+  "serial": 1034,
+  "lineage": "598e7610-14f6-4b9c-18ec-fa8ece467ee1",
+  "outputs": {
+    "mongodb_connection_string": {
+      "value": "mongodb+srv://mrbapp:zjF5MNeHDeCs9@XBzjF5MNeHDeCs9@XB@momsrecipebox-cluster.vohcix5.mongodb.net/momsrecipebox?retryWrites=true\u0026w=majority",
+      "type": "string",
+      "sensitive": true
+    },
+    "mongodb_srv_address": {
+      "value": "mongodb+srv://momsrecipebox-cluster.vohcix5.mongodb.net",
+      "type": "string"
+    },
+    "recipe_images_bucket_url": {
+      "value": "https://mrb-recipe-images-dev.s3.amazonaws.com/",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "mrb_api_s3_access",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::491696534851:policy/mrb-api-s3-access",
+            "attachment_count": 2,
+            "description": "Policy for Mom's Recipe Box API to access S3 buckets",
+            "id": "arn:aws:iam::491696534851:policy/mrb-api-s3-access",
+            "name": "mrb-api-s3-access",
+            "name_prefix": "",
+            "path": "/",
+            "policy": "{\"Statement\":[{\"Action\":[\"s3:PutObject\",\"s3:GetObject\",\"s3:DeleteObject\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::mrb-recipe-images-dev/*\",\"arn:aws:s3:::mrb-mongodb-backups-dev/*\"]},{\"Action\":[\"s3:ListBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::mrb-recipe-images-dev\",\"arn:aws:s3:::mrb-mongodb-backups-dev\"]}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPAXE63FWVBYMWUGUJM2",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "terraform_mrb_infra",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::491696534851:policy/terraform-mrb-infra",
+            "attachment_count": 1,
+            "description": "Infrastructure permissions for MRB Terraform operations",
+            "id": "arn:aws:iam::491696534851:policy/terraform-mrb-infra",
+            "name": "terraform-mrb-infra",
+            "name_prefix": "",
+            "path": "/",
+            "policy": "{\"Statement\":[{\"Action\":[\"ecr:*\"],\"Condition\":{\"StringLike\":{\"ecr:repositoryName\":\"mrb-*\"}},\"Effect\":\"Allow\",\"Resource\":\"*\",\"Sid\":\"ECRAccess\"},{\"Action\":[\"logs:*\"],\"Effect\":\"Allow\",\"Resource\":\"*\",\"Sid\":\"LogsAccess\"},{\"Action\":[\"s3:GetObject\",\"s3:PutObject\",\"s3:ListBucket\",\"s3:DeleteObject\",\"s3:ListAllMyBuckets\",\"s3:GetBucketPolicy\",\"s3:GetBucketAcl\",\"s3:GetBucketCORS\",\"s3:GetBucketWebsite\",\"s3:GetBucketVersioning\",\"s3:GetAccelerateConfiguration\",\"s3:GetBucketRequestPayment\",\"s3:GetBucketLogging\",\"s3:GetLifecycleConfiguration\",\"s3:GetReplicationConfiguration\",\"s3:GetEncryptionConfiguration\",\"s3:GetBucketObjectLockConfiguration\",\"s3:GetBucketTagging\",\"s3:PutBucketTagging\",\"s3:PutBucketPublicAccessBlock\",\"s3:GetBucketPublicAccessBlock\",\"s3:PutBucketPolicy\",\"s3:DeleteBucket\",\"s3:DeleteBucketPolicy\",\"s3:CreateBucket\",\"s3:GetBucketLocation\",\"s3:PutLifecycleConfiguration\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::mrb-recipe-images-dev\",\"arn:aws:s3:::mrb-recipe-images-dev/*\",\"arn:aws:s3:::mrb-mongodb-backups-dev\",\"arn:aws:s3:::mrb-mongodb-backups-dev/*\"],\"Sid\":\"S3AccessMRBBuckets\"}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPAXE63FWVBZGXCKM6NW",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "terraform_mrb_passrole",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::491696534851:policy/terraform-mrb-passrole",
+            "attachment_count": 1,
+            "description": "PassRole permissions for MRB-specific roles only",
+            "id": "arn:aws:iam::491696534851:policy/terraform-mrb-passrole",
+            "name": "terraform-mrb-passrole",
+            "name_prefix": "",
+            "path": "/",
+            "policy": "{\"Statement\":[{\"Action\":\"iam:PassRole\",\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:iam::491696534851:role/app_lambda_role\"]}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPAXE63FWVB7H53KC7EL",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "terraform_mrb_secrets",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::491696534851:policy/terraform-mrb-secrets",
+            "attachment_count": 1,
+            "description": "Secrets Manager access for MRB Terraform operations",
+            "id": "arn:aws:iam::491696534851:policy/terraform-mrb-secrets",
+            "name": "terraform-mrb-secrets",
+            "name_prefix": "",
+            "path": "/",
+            "policy": "{\"Statement\":[{\"Action\":[\"secretsmanager:DescribeSecret\",\"secretsmanager:GetSecretValue\",\"secretsmanager:GetResourcePolicy\",\"secretsmanager:ListSecrets\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:secretsmanager:us-west-2:491696534851:secret:moms-recipe-box-secrets-dev*\",\"arn:aws:secretsmanager:us-west-2:*:secret:moms-recipe-secrets-dev-*\",\"arn:aws:secretsmanager:us-west-2:*:secret:moms-recipe-secrets-*\"]}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPAXE63FWVBWHAMPSCPC",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_policy",
+      "name": "terraform_mrb_services",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::491696534851:policy/terraform-mrb-services",
+            "attachment_count": 1,
+            "description": "AWS services permissions for MRB Terraform operations",
+            "id": "arn:aws:iam::491696534851:policy/terraform-mrb-services",
+            "name": "terraform-mrb-services",
+            "name_prefix": "",
+            "path": "/",
+            "policy": "{\"Statement\":[{\"Action\":[\"apigateway:DELETE\",\"apigateway:GET\",\"apigateway:PATCH\",\"apigateway:POST\",\"apigateway:PUT\",\"apigateway:UpdateRestApiPolicy\"],\"Effect\":\"Allow\",\"Resource\":\"*\",\"Sid\":\"APIGatewayAccess\"},{\"Action\":[\"lambda:AddPermission\",\"lambda:CreateFunction\",\"lambda:DeleteFunction\",\"lambda:GetFunction\",\"lambda:GetFunctionCodeSigningConfig\",\"lambda:GetPolicy\",\"lambda:InvokeFunction\",\"lambda:ListFunctions\",\"lambda:ListVersionsByFunction\",\"lambda:RemovePermission\",\"lambda:UpdateFunctionCode\",\"lambda:UpdateFunctionConfiguration\",\"lambda:GetFunctionConfiguration\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:lambda:us-west-2:491696534851:function:mrb-*\",\"Sid\":\"LambdaAccess\"},{\"Action\":[\"iam:CreateRole\",\"iam:AttachRolePolicy\",\"iam:CreatePolicy\",\"iam:GetRole\",\"iam:GetPolicy\",\"iam:GetPolicyVersion\",\"iam:GetRolePolicy\",\"iam:ListAttachedRolePolicies\",\"iam:ListPolicyVersions\",\"iam:ListRolePolicies\",\"iam:PassRole\",\"iam:PutRolePolicy\",\"iam:DeletePolicy\",\"iam:DeleteRole\",\"iam:DeleteRolePolicy\",\"iam:DetachRolePolicy\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:iam::491696534851:role/app_lambda_role\",\"arn:aws:iam::491696534851:policy/mrb-*\"],\"Sid\":\"IAMRoleManagement\"}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPAXE63FWVB7UTQL2G4T",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "recipe_images",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "acceleration_status": "",
+            "acl": null,
+            "arn": "arn:aws:s3:::mrb-recipe-images-dev",
+            "bucket": "mrb-recipe-images-dev",
+            "bucket_domain_name": "mrb-recipe-images-dev.s3.amazonaws.com",
+            "bucket_prefix": "",
+            "bucket_region": "us-west-2",
+            "bucket_regional_domain_name": "mrb-recipe-images-dev.s3.us-west-2.amazonaws.com",
+            "cors_rule": [],
+            "force_destroy": false,
+            "grant": [
+              {
+                "id": "5a464f68089a9aeaf77a891118f146743e334434bc376224599d7192ec67f563",
+                "permissions": [
+                  "FULL_CONTROL"
+                ],
+                "type": "CanonicalUser",
+                "uri": ""
+              }
+            ],
+            "hosted_zone_id": "Z3BJ6K6RIION7M",
+            "id": "mrb-recipe-images-dev",
+            "lifecycle_rule": [],
+            "logging": [],
+            "object_lock_configuration": [],
+            "object_lock_enabled": false,
+            "policy": "{\"Statement\":[{\"Action\":\"s3:GetObject\",\"Effect\":\"Allow\",\"Principal\":\"*\",\"Resource\":\"arn:aws:s3:::mrb-recipe-images-dev/*\",\"Sid\":\"PublicReadGetObject\"}],\"Version\":\"2012-10-17\"}",
+            "region": "us-west-2",
+            "replication_configuration": [],
+            "request_payer": "BucketOwner",
+            "server_side_encryption_configuration": [
+              {
+                "rule": [
+                  {
+                    "apply_server_side_encryption_by_default": [
+                      {
+                        "kms_master_key_id": "",
+                        "sse_algorithm": "AES256"
+                      }
+                    ],
+                    "bucket_key_enabled": false
+                  }
+                ]
+              }
+            ],
+            "tags": {
+              "Environment": "dev",
+              "Name": "Moms Recipe Box Images"
+            },
+            "tags_all": {
+              "Environment": "dev",
+              "Name": "Moms Recipe Box Images"
+            },
+            "timeouts": null,
+            "versioning": [
+              {
+                "enabled": false,
+                "mfa_delete": false
+              }
+            ],
+            "website": [],
+            "website_domain": null,
+            "website_endpoint": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMjAwMDAwMDAwMDAwLCJkZWxldGUiOjM2MDAwMDAwMDAwMDAsInJlYWQiOjEyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MTIwMDAwMDAwMDAwMH19"
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket_policy",
+      "name": "allow_public_read",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "bucket": "mrb-recipe-images-dev",
+            "id": "mrb-recipe-images-dev",
+            "policy": "{\"Statement\":[{\"Action\":\"s3:GetObject\",\"Effect\":\"Allow\",\"Principal\":\"*\",\"Resource\":\"arn:aws:s3:::mrb-recipe-images-dev/*\",\"Sid\":\"PublicReadGetObject\"}],\"Version\":\"2012-10-17\"}",
+            "region": "us-west-2"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_s3_bucket.recipe_images"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "recipe_images",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "block_public_acls": false,
+            "block_public_policy": false,
+            "bucket": "mrb-recipe-images-dev",
+            "id": "mrb-recipe-images-dev",
+            "ignore_public_acls": false,
+            "region": "us-west-2",
+            "restrict_public_buckets": false
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_s3_bucket.recipe_images"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "mongodbatlas_cluster",
+      "name": "momsrecipebox_cluster",
+      "provider": "provider[\"registry.terraform.io/mongodb/mongodbatlas\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "accept_data_risks_and_force_replica_set_reconfig": "",
+            "advanced_configuration": [
+              {
+                "default_read_concern": "",
+                "default_write_concern": "",
+                "fail_index_key_too_long": false,
+                "javascript_enabled": true,
+                "minimum_enabled_tls_protocol": "TLS1_2",
+                "no_table_scan": false,
+                "oplog_min_retention_hours": 0,
+                "oplog_size_mb": 0,
+                "sample_refresh_interval_bi_connector": 0,
+                "sample_size_bi_connector": 0,
+                "transaction_lifetime_limit_seconds": 0
+              }
+            ],
+            "auto_scaling_compute_enabled": false,
+            "auto_scaling_compute_scale_down_enabled": false,
+            "auto_scaling_disk_gb_enabled": false,
+            "backing_provider_name": "AWS",
+            "backup_enabled": false,
+            "bi_connector_config": [
+              {
+                "enabled": false,
+                "read_preference": "secondary"
+              }
+            ],
+            "cloud_backup": false,
+            "cluster_id": "68c73a795bdcd15ec2dcb500",
+            "cluster_type": "REPLICASET",
+            "connection_strings": [
+              {
+                "private": "",
+                "private_endpoint": [],
+                "private_srv": "",
+                "standard": "mongodb://ac-lnet2oz-shard-00-00.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-01.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-02.vohcix5.mongodb.net:27017/?ssl=true\u0026authSource=admin\u0026replicaSet=atlas-sep5dq-shard-0",
+                "standard_srv": "mongodb+srv://momsrecipebox-cluster.vohcix5.mongodb.net"
+              }
+            ],
+            "container_id": null,
+            "disk_size_gb": 0.5,
+            "encryption_at_rest_provider": "NONE",
+            "id": "Y2x1c3Rlcl9pZA==:NjhjNzNhNzk1YmRjZDE1ZWMyZGNiNTAw-Y2x1c3Rlcl9uYW1l:bW9tc3JlY2lwZWJveC1jbHVzdGVy-cHJvamVjdF9pZA==:NjhjNWZlOTgzM2FiMTg1NGYyMDMxMDU3-cHJvdmlkZXJfbmFtZQ==:VEVOQU5U",
+            "labels": [],
+            "mongo_db_major_version": "8.0",
+            "mongo_db_version": "8.0.13",
+            "mongo_uri": "mongodb://ac-lnet2oz-shard-00-00.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-01.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-02.vohcix5.mongodb.net:27017",
+            "mongo_uri_updated": "2025-09-14T21:58:37Z",
+            "mongo_uri_with_options": "mongodb://ac-lnet2oz-shard-00-00.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-01.vohcix5.mongodb.net:27017,ac-lnet2oz-shard-00-02.vohcix5.mongodb.net:27017/?ssl=true\u0026authSource=admin\u0026replicaSet=atlas-sep5dq-shard-0",
+            "name": "momsrecipebox-cluster",
+            "num_shards": 1,
+            "paused": false,
+            "pit_enabled": false,
+            "project_id": "68c5fe9833ab1854f2031057",
+            "provider_auto_scaling_compute_max_instance_size": "",
+            "provider_auto_scaling_compute_min_instance_size": "",
+            "provider_disk_iops": null,
+            "provider_disk_type_name": "",
+            "provider_encrypt_ebs_volume": null,
+            "provider_encrypt_ebs_volume_flag": null,
+            "provider_instance_size_name": "M0",
+            "provider_name": "TENANT",
+            "provider_region_name": "US_WEST_2",
+            "provider_volume_type": "",
+            "replication_factor": 3,
+            "replication_specs": [
+              {
+                "id": "68c73a795bdcd15ec2dcb4a1",
+                "num_shards": 1,
+                "regions_config": [
+                  {
+                    "analytics_nodes": 0,
+                    "electable_nodes": 3,
+                    "priority": 7,
+                    "read_only_nodes": 0,
+                    "region_name": "US_WEST_2"
+                  }
+                ],
+                "zone_name": "Zone 1"
+              }
+            ],
+            "retain_backups_enabled": null,
+            "snapshot_backup_policy": [],
+            "srv_address": "mongodb+srv://momsrecipebox-cluster.vohcix5.mongodb.net",
+            "state_name": "IDLE",
+            "tags": [],
+            "termination_protection_enabled": false,
+            "timeouts": null,
+            "version_release_system": "LTS"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMDgwMDAwMDAwMDAwMCwiZGVsZXRlIjoxMDgwMDAwMDAwMDAwMCwidXBkYXRlIjoxMDgwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9"
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "mongodbatlas_database_user",
+      "name": "momsrecipebox_user",
+      "provider": "provider[\"registry.terraform.io/mongodb/mongodbatlas\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "auth_database_name": "admin",
+            "aws_iam_type": "NONE",
+            "id": "YXV0aF9kYXRhYmFzZV9uYW1l:YWRtaW4=-cHJvamVjdF9pZA==:NjhjNWZlOTgzM2FiMTg1NGYyMDMxMDU3-dXNlcm5hbWU=:bXJiYXBw",
+            "labels": [],
+            "ldap_auth_type": "NONE",
+            "oidc_auth_type": "NONE",
+            "password": "zjF5MNeHDeCs9@XBzjF5MNeHDeCs9@XB",
+            "project_id": "68c5fe9833ab1854f2031057",
+            "roles": [
+              {
+                "collection_name": null,
+                "database_name": "admin",
+                "role_name": "readWrite"
+              },
+              {
+                "collection_name": null,
+                "database_name": "moms_recipe_box",
+                "role_name": "readWrite"
+              },
+              {
+                "collection_name": null,
+                "database_name": "moms_recipe_box_dev",
+                "role_name": "readWrite"
+              }
+            ],
+            "scopes": [],
+            "username": "mrbapp",
+            "x509_type": "NONE"
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "password"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "mongodbatlas_project_ip_access_list",
+      "name": "app_ip_list",
+      "provider": "provider[\"registry.terraform.io/mongodb/mongodbatlas\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "aws_security_group": "",
+            "cidr_block": "71.33.151.134/32",
+            "comment": "Development access",
+            "id": "ZW50cnk=:NzEuMzMuMTUxLjEzNC8zMg==-cHJvamVjdF9pZA==:NjhjNWZlOTgzM2FiMTg1NGYyMDMxMDU3",
+            "ip_address": "71.33.151.134",
+            "project_id": "68c5fe9833ab1854f2031057",
+            "timeouts": null
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

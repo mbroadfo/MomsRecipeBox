@@ -38,7 +38,7 @@ if (Test-Path ".env") {
 # Default configuration
 $Config = @{
     Database = @{
-        Name = if ($env:MONGODB_DB_NAME) { $env:MONGODB_DB_NAME } else { "moms_recipe_box" }
+        Name = if ($env:MONGODB_DB_NAME) { $env:MONGODB_DB_NAME } else { "moms_recipe_box_dev" }
         HostName = if ($env:MONGODB_HOST) { $env:MONGODB_HOST } else { "localhost" }
         Port = if ($env:MONGODB_PORT) { $env:MONGODB_PORT } else { "27017" }
         Username = if ($env:MONGODB_ROOT_USER) { $env:MONGODB_ROOT_USER } else { "admin" }

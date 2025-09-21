@@ -1,64 +1,85 @@
-# MongoDB Backup & Restore Strategy
-## Mom's Recipe Box Critical Data Management
+# MongoDB Local Database Backup & Restore
+## Mom's Recipe Box Local Development Data Management
 
-This directory contains scripts and documentation for backing up and restoring your MongoDB database. Your recipe data has evolved far beyond the initial JSON documents and now contains critical family recipes, user interactions, favorites, and shopping lists that deserve enterprise-grade protection.
+This directory contains simple backup utilities for local MongoDB development. These scripts are designed for development environment data protection and complement the comprehensive Atlas backup scripts in the parent directory.
 
 ## 📊 Current Database Profile
 
+- **Database Name**: moms_recipe_box_dev (standardized across all environments)
 - **Collections**: recipes, favorites, comments, shopping_lists, users
 - **Data Volume**: ~100KB with 109 documents across 5 collections
 - **Growth Potential**: High - family recipes, AI-generated content, user interactions
 - **Criticality**: HIGH - irreplaceable family recipes and user data
 
-## 🛡️ Backup Strategy Overview
+## 🛡️ Backup Architecture Overview
 
-### Multi-Tiered Approach
-1. **Hot Backups** - Scheduled automated backups with minimal downtime
-2. **Cold Backups** - Complete dumps for disaster recovery
-3. **Incremental Backups** - Change-based backups for efficiency
-4. **Cloud Backups** - Off-site storage for maximum protection
+### Two-Tier System
+1. **Local Development Backups** (this directory) - Simple scripts for local MongoDB development
+2. **Atlas/Production Backups** (parent `scripts/`) - Comprehensive enterprise scripts for production
 
-### Backup Types Implemented
+### Backup Types by Environment
 
-| Type | Frequency | Purpose | Retention |
-|------|-----------|---------|-----------|
-| **Full Dump** | Daily | Complete database snapshot | 30 days |
-| **Incremental** | Every 4 hours | Changed documents only | 7 days |
-| **Weekly Archive** | Weekly | Long-term storage | 1 year |
-| **Pre-deployment** | On-demand | Before major changes | Until verified |
+| Environment | Location | Purpose | Scripts |
+|------------|----------|---------|---------|
+| **Local Development** | `scripts/local_db/` | Development data protection | Simple backup/restore scripts |
+| **Atlas Production** | `scripts/` | Production data to S3 | Comprehensive enterprise scripts |
 
 ## 📁 Directory Structure
 
 ```
-scripts/backup/
-├── README.md                    # This documentation
-├── backup-mongodb.ps1          # Main backup orchestration script
-├── restore-mongodb.ps1          # Main restore orchestration script
-├── incremental-backup.ps1       # Change-based backup script
-├── verify-backup.ps1            # Backup integrity verification
-├── cleanup-backups.ps1          # Automated cleanup of old backups
-├── backup-config.json           # Configuration settings
-└── templates/
-    ├── cron-setup.md           # Scheduled backup setup
-    └── cloud-sync.ps1          # Cloud storage synchronization
+scripts/
+├── MongoDB-Backup.ps1           # Main Atlas backup to S3 (664 lines)
+├── Backup-MongoDBToS3.ps1       # S3 backup operations
+├── Restore-MongoDBFromS3.ps1    # S3 restore operations  
+├── Test-MongoDBBackup.ps1       # Atlas backup validation
+├── (other production scripts...)
+└── local_db/                    # ← This directory
+    ├── README.md                # This documentation
+    ├── IMPLEMENTATION_SUMMARY.md # Technical implementation details
+    ├── QUICKSTART.md            # Quick start guide
+    ├── backup-mongodb.ps1       # Simple local backup
+    ├── restore-mongodb.ps1      # Simple local restore
+    ├── verify-backup.ps1        # Local verification
+    ├── cleanup-backups.ps1      # Local cleanup
+    ├── manage-backups.ps1       # Local management
+    ├── backup-config.json       # Local configuration
+    └── templates/               # Local backup templates
 ```
+
+## 📍 Atlas/Production Backup Scripts
+
+The comprehensive Atlas backup scripts are located in the parent scripts directory:
+- **`../MongoDB-Backup.ps1`** (664 lines) - Main Atlas backup to S3
+- **`../Backup-MongoDBToS3.ps1`** - S3 backup operations  
+- **`../Restore-MongoDBFromS3.ps1`** - S3 restore operations
+- **`../Test-MongoDBBackup.ps1`** - Backup validation
 
 ## 🚀 Quick Start
 
-### 1. First-Time Setup
+### Local Development Backups
+
+#### 1. Local Database Backup
 ```powershell
 # Run from project root
-.\scripts\backup\backup-mongodb.ps1 -Type "setup"
+.\scripts\local_db\backup-mongodb.ps1
 ```
 
-### 2. Create Full Backup
+#### 2. Local Database Restore
 ```powershell
-.\scripts\backup\backup-mongodb.ps1 -Type "full"
+.\scripts\local_db\restore-mongodb.ps1 -BackupPath "backups\2025-09-21"
 ```
 
-### 3. Restore from Backup
+### Atlas/Production Backups
+
+#### 1. Atlas Backup to S3
 ```powershell
-.\scripts\backup\restore-mongodb.ps1 -BackupPath "backups\2025-09-08\full"
+# Run from scripts directory
+.\scripts\MongoDB-Backup.ps1
+```
+
+#### 2. Restore from S3
+```powershell
+.\scripts\Restore-MongoDBFromS3.ps1
 ```
 
 ## 📋 Available Scripts
@@ -140,7 +161,7 @@ BACKUP_CLOUD_REGION=us-east-1
 ```json
 {
   "database": {
-    "name": "moms_recipe_box",
+    "name": "moms_recipe_box_dev",
     "host": "localhost",
     "port": 27017,
     "auth": {

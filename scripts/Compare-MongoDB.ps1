@@ -26,7 +26,7 @@ param (
     [string]$AtlasUri = "",
     
     [Parameter(Mandatory = $false)]
-    [string]$DatabaseName = "moms_recipe_box",
+    [string]$DatabaseName = "moms_recipe_box_dev",
     
     [Parameter(Mandatory = $false)]
     [switch]$DetailedOutput

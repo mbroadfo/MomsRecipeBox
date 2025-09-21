@@ -415,7 +415,7 @@ ENVIRONMENT VARIABLES:
   - BACKUP_COMPRESSION      Enable compression (default: true)
   - BACKUP_VERIFICATION     Enable verification (default: true)
 
-For more information, see: scripts/backup/README.md
+For more information, see: scripts/local_db/README.md
 
 "@
 }

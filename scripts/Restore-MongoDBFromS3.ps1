@@ -186,7 +186,7 @@ function Restore-MongoDB {
         
         Write-Host "`n🔄 Starting MongoDB restore to Atlas..." -ForegroundColor Yellow
         Write-Host "   Source: $BackupPath" -ForegroundColor Gray
-        Write-Host "   Target: MongoDB Atlas (momsrecipebox database)" -ForegroundColor Gray
+        Write-Host "   Target: MongoDB Atlas (moms_recipe_box_dev database)" -ForegroundColor Gray
         
         # Execute mongorestore with --drop to replace existing data
         $restoreCmd = "mongorestore --uri=`"$connectionString`" --drop `"$BackupPath`""
@@ -263,8 +263,8 @@ try {
     # Download the backup files from S3
     $downloadPath = Get-BackupFiles -BucketName $BucketName -BackupKey $BackupKey -TempPath $TempPath -AwsProfile $AwsProfile
     
-    # The backup is in moms_recipe_box subdirectory
-    $actualBackupPath = Join-Path $downloadPath "moms_recipe_box"
+    # The backup is in moms_recipe_box_dev subdirectory
+    $actualBackupPath = Join-Path $downloadPath "moms_recipe_box_dev"
     
     if (-not (Test-Path $actualBackupPath)) {
         Write-Error "Expected backup subdirectory not found: $actualBackupPath"

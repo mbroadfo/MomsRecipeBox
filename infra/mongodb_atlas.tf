@@ -56,7 +56,12 @@ resource "mongodbatlas_database_user" "momsrecipebox_user" {
 
   roles {
     role_name     = "readWrite"
-    database_name = "momsrecipebox"
+    database_name = "moms_recipe_box"
+  }
+
+  roles {
+    role_name     = "readWrite"
+    database_name = "moms_recipe_box_dev"
   }
 
   roles {
@@ -84,7 +89,7 @@ resource "mongodbatlas_project_ip_access_list" "lambda_ip_list" {
 
 # Output the connection string
 output "mongodb_connection_string" {
-  value       = "mongodb+srv://${mongodbatlas_database_user.momsrecipebox_user.username}:${local.mongodb_atlas_password}@${replace(mongodbatlas_cluster.momsrecipebox_cluster.srv_address, "mongodb+srv://", "")}/momsrecipebox?retryWrites=true&w=majority"
+  value       = "mongodb+srv://${mongodbatlas_database_user.momsrecipebox_user.username}:${local.mongodb_atlas_password}@${replace(mongodbatlas_cluster.momsrecipebox_cluster.srv_address, "mongodb+srv://", "")}/moms_recipe_box?retryWrites=true&w=majority"
   description = "MongoDB Atlas connection string"
   sensitive   = true
 }

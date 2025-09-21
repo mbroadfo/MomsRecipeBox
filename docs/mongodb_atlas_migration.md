@@ -21,8 +21,8 @@ The application now uses AWS Secrets Manager for MongoDB Atlas credentials. Inst
 # Local MongoDB Configuration (for development only)
 MONGODB_LOCAL_ROOT_USER=admin
 MONGODB_LOCAL_ROOT_PASSWORD=supersecret
-MONGODB_DB_NAME=moms_recipe_box
-MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box?authSource=admin
+MONGODB_DB_NAME=moms_recipe_box_dev
+MONGODB_LOCAL_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box_dev?authSource=admin
 MONGODB_MODE=local  # Set to 'atlas' to use MongoDB Atlas
 ```
 
@@ -87,7 +87,7 @@ To migrate your existing data from local MongoDB to Atlas:
 
 ```powershell
 # Export from local MongoDB (adjust as needed)
-mongodump --host localhost:27017 --username admin --password "your-password" --db moms_recipe_box --out ./mongodb_export
+mongodump --host localhost:27017 --username admin --password "your-password" --db moms_recipe_box_dev --out ./mongodb_export
 
 # Import to MongoDB Atlas
 mongorestore --uri "

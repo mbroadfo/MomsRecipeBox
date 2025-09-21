@@ -23,8 +23,8 @@ dotenv.config();
 // Configuration
 const CONFIG = {
   mongodb: {
-    uri: "mongodb://admin:supersecret@localhost:27017/moms_recipe_box?authSource=admin",
-    dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+    uri: "mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin",
+    dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev'
   }
 };
 

@@ -74,12 +74,12 @@ This will use the connection information from your `.env` file.
 You can specify connection strings directly:
 
 ```powershell
-.\scripts\Compare-MongoDB.ps1 -LocalUri "mongodb://<username>:<password>@localhost:27017/moms_recipe_box" -AtlasUri "
+.\scripts\Compare-MongoDB.ps1 -LocalUri "mongodb://<username>:<password>@localhost:27017/moms_recipe_box_dev" -AtlasUri "
 ```
 
 ### Additional Parameters
 
-- `-DatabaseName`: Specify a different database name (default: moms_recipe_box)
+- `-DatabaseName`: Specify a different database name (default: moms_recipe_box_dev)
 - `-DetailedOutput`: Show additional output information
 
 ## How It Works

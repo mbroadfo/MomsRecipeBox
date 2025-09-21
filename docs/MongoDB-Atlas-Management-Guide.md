@@ -313,7 +313,7 @@ Configure your `.env` file with the following variables:
 MONGODB_MODE=local
 
 # Database name (shared between local and Atlas)
-MONGODB_DB_NAME=moms_recipe_box
+MONGODB_DB_NAME=moms_recipe_box_dev
 
 # Local MongoDB credentials (for Docker)
 MONGODB_ROOT_USER=admin
@@ -366,7 +366,7 @@ Edit your `.env` file in the project root:
 # MongoDB Configuration
 MONGODB_MODE=atlas
 MONGODB_ATLAS_URI=
-MONGODB_DB_NAME=momsrecipebox
+MONGODB_DB_NAME=moms_recipe_box_dev
 ```
 
 Replace:

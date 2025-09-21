@@ -153,7 +153,7 @@ npm run db:analyze        # Verify improvements
 
 ### Environment Variables
 ```bash
-MONGODB_DB_NAME=moms_recipe_box  # Target database
+MONGODB_DB_NAME=moms_recipe_box_dev  # Target database
 ```
 
 ### Default Settings

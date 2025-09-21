@@ -13,10 +13,10 @@ Your MongoDB database containing precious family recipes has been transformed fr
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Simple Backup Tools** | Daily operations | `scripts/backup/backup-simple.ps1` |
-| **Advanced Management** | Enterprise features | `scripts/backup/manage-backups.ps1` |
-| **Comprehensive Suite** | Full automation | `scripts/backup/backup-mongodb.ps1` |
-| **Quick Start Guide** | Easy onboarding | `scripts/backup/QUICKSTART.md` |
+| **Simple Backup Tools** | Daily operations | `scripts/local_db/backup-mongodb.ps1` |
+| **Advanced Management** | Enterprise features | `scripts/local_db/manage-backups.ps1` |
+| **Comprehensive Suite** | Full automation | `scripts/local_db/backup-mongodb.ps1` |
+| **Quick Start Guide** | Easy onboarding | `scripts/local_db/QUICKSTART.md` |
 
 ### 2. **Database Protection Capabilities**
 
@@ -44,13 +44,13 @@ Criticality: HIGH (irreplaceable family data)
 ### Daily Operations
 ```powershell
 # Create backup
-.\scripts\backup\backup-simple.ps1 -Operation backup
+.\scripts\local_db\backup-mongodb.ps1 -Type full
 
 # Check status  
-.\scripts\backup\backup-simple.ps1 -Operation status
+.\scripts\local_db\manage-backups.ps1 -Operation status
 
 # Emergency restore
-.\scripts\backup\restore-simple.ps1 -BackupPath ".\backups\backup_2025-09-09_09-07-12"
+.\scripts\local_db\restore-mongodb.ps1 -BackupPath ".\backups\backup_2025-09-21_14-30-00"
 ```
 
 ### Advanced Management
@@ -160,5 +160,5 @@ Criticality: HIGH (irreplaceable family data)
 
 *Your culinary heritage is now secure for generations to come.* 👨‍🍳📚🔒
 
-**Emergency Contact**: See `scripts/backup/QUICKSTART.md` for immediate assistance  
-**Full Documentation**: `scripts/backup/README.md` for complete reference
+**Emergency Contact**: See `scripts/local_db/QUICKSTART.md` for immediate assistance  
+**Full Documentation**: `scripts/local_db/README.md` for complete reference

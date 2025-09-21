@@ -49,7 +49,7 @@ function initializeHealthChecker() {
 function getMongoConnectionString() {
   // Check which MongoDB mode to use (default: local)
   const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
-  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
   
   // For MongoDB Atlas
   if (mongoMode === 'atlas') {
@@ -95,7 +95,7 @@ export async function getDb() {
   if (cachedDb) return cachedDb;
   
   const uri = getMongoConnectionString();
-  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
   if (!uri) throw new Error('Could not construct MongoDB connection string');
   
   // Initialize health checker before connecting to database

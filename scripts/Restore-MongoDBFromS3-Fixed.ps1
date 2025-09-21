@@ -24,7 +24,7 @@ try {
     $Username = "mrbapp"
     $Password = "zjF5MNeHDeCs9@XBzjF5MNeHDeCs9@XB"
     $ServerAddress = "momsrecipebox-cluster.vohcix5.mongodb.net"
-    $Database = "moms_recipe_box"  # Match the Atlas user permissions (with underscores)
+    $Database = "moms_recipe_box_dev"  # Match the Atlas user permissions (with underscores)
     
     # URL encode the password (@ becomes %40)
     $EncodedPassword = $Password -replace "@", "%40"
@@ -34,7 +34,7 @@ try {
     Write-Host "Successfully constructed connection string with URL-encoded password" -ForegroundColor Green
     
     # Validate local backup path
-    $backupPath = Join-Path $PSScriptRoot "..\backups\$BackupName\moms_recipe_box"
+    $backupPath = Join-Path $PSScriptRoot "..\backups\$BackupName\moms_recipe_box_dev"
     
     if (-not (Test-Path $backupPath)) {
         Write-Error "Local backup not found: $backupPath"

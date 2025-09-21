@@ -38,34 +38,61 @@ if ($mongodbMode -eq "atlas") {
     }
 }
 
-# Stop any existing containers - be more thorough
-Write-Host "Stopping all app containers..." -ForegroundColor Yellow
-docker-compose down
+# Stop any existing app containers - only stop what's actually running
+Write-Host "Checking for running app containers..." -ForegroundColor Yellow
 
-# Stop containers by profile to be sure
-Write-Host "Stopping local profile containers..." -ForegroundColor Yellow
-docker-compose --profile local down 2>$null
-Write-Host "Stopping atlas profile containers..." -ForegroundColor Yellow
-docker-compose --profile atlas down 2>$null
+# Check what app containers are currently running
+$runningContainers = @()
+$localContainer = docker ps -q --filter "name=momsrecipebox-app-local" 2>$null
+$atlasContainer = docker ps -q --filter "name=momsrecipebox-app-atlas" 2>$null
+$genericContainer = docker ps -q --filter "name=momsrecipebox-app" --filter "name!=momsrecipebox-app-local" --filter "name!=momsrecipebox-app-atlas" 2>$null
 
-# Force remove any lingering app containers
-docker container rm -f momsrecipebox-app 2>$null
-docker container rm -f momsrecipebox-app-local 2>$null
-docker container rm -f momsrecipebox-app-atlas 2>$null
+if ($localContainer) {
+    $runningContainers += "local"
+    Write-Host "Found running local container: momsrecipebox-app-local" -ForegroundColor Cyan
+}
+if ($atlasContainer) {
+    $runningContainers += "atlas"
+    Write-Host "Found running atlas container: momsrecipebox-app-atlas" -ForegroundColor Cyan
+}
+if ($genericContainer) {
+    $runningContainers += "generic"
+    Write-Host "Found running generic container: momsrecipebox-app" -ForegroundColor Cyan
+}
 
-# Also check for any containers still using port 3000
-Write-Host "Checking for containers using port 3000..." -ForegroundColor Yellow
-$containersOnPort3000 = docker ps --filter "publish=3000" --format "table {{.Names}}\t{{.Ports}}"
-if ($containersOnPort3000) {
-    Write-Host "Found containers using port 3000:" -ForegroundColor Red
-    Write-Host $containersOnPort3000
+if ($runningContainers.Count -eq 0) {
+    Write-Host "No app containers currently running - nothing to stop" -ForegroundColor Green
+} else {
+    Write-Host "Stopping $($runningContainers.Count) running app container(s)..." -ForegroundColor Yellow
     
-    # Get container IDs using port 3000 and stop them
-    $containerIds = docker ps --filter "publish=3000" -q
-    if ($containerIds) {
-        Write-Host "Stopping containers using port 3000..." -ForegroundColor Yellow
-        docker stop $containerIds
-        docker rm $containerIds
+    # Stop containers by profile based on what we found running
+    if ($runningContainers -contains "local") {
+        Write-Host "Stopping local profile containers..." -ForegroundColor Yellow
+        docker-compose --profile local down 2>$null
+    }
+    if ($runningContainers -contains "atlas") {
+        Write-Host "Stopping atlas profile containers..." -ForegroundColor Yellow
+        docker-compose --profile atlas down 2>$null
+    }
+    if ($runningContainers -contains "generic") {
+        Write-Host "Stopping generic containers..." -ForegroundColor Yellow
+        docker-compose down 2>$null
+    }
+    
+    # Also check for any containers still using port 3000 (safety check)
+    Write-Host "Checking for containers using port 3000..." -ForegroundColor Yellow
+    $containersOnPort3000 = docker ps --filter "publish=3000" --format "table {{.Names}}\t{{.Ports}}"
+    if ($containersOnPort3000) {
+        Write-Host "Found containers using port 3000:" -ForegroundColor Red
+        Write-Host $containersOnPort3000
+        
+        # Get container IDs using port 3000 and stop them
+        $containerIds = docker ps --filter "publish=3000" -q
+        if ($containerIds) {
+            Write-Host "Stopping containers using port 3000..." -ForegroundColor Yellow
+            docker stop $containerIds
+            docker rm $containerIds
+        }
     }
 }
 
@@ -78,11 +105,5 @@ Write-Host "Starting with MongoDB mode: $mongodbMode" -ForegroundColor Green
 docker-compose --profile $mongodbMode build
 docker-compose --profile $mongodbMode up -d
 
-# Print environment variables inside the container for debugging
-Write-Host "Checking environment variables in the container:"
-try {
-    $containerName = "momsrecipebox-app-$mongodbMode"
-    docker-compose --profile $mongodbMode exec $containerName node -e "console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY)"
-} catch {
-    Write-Host "Could not check environment variables. Container may not be running yet."
-}
+Write-Host ""
+Write-Host "Container started successfully!" -ForegroundColor Green

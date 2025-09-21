@@ -1,53 +1,142 @@
 // File: admin_handlers/system_status.js
 import AWS from 'aws-sdk';
-import { MongoClient } from 'mongodb';
+import { getHealthChecker } from '../../app.js';
 
 const s3 = new AWS.S3();
 const lambda = new AWS.Lambda();
 const apigateway = new AWS.APIGateway();
 
 /**
- * Test MongoDB connectivity and get database statistics
+ * Get database health from the centralized health system
  */
-async function testMongoDBConnectivity() {
+async function getDatabaseHealth() {
   try {
-    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    const healthChecker = getHealthChecker();
+    const currentHealth = healthChecker.getCurrentHealth();
     
-    if (!mongoUri) {
+    // Determine if we're using local or Atlas
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    const isAtlas = mongoUri && mongoUri.includes('mongodb.net');
+    const isLocal = mongoUri && (mongoUri.includes('localhost') || mongoUri.includes('127.0.0.1'));
+    
+    let environment = 'Unknown';
+    if (isAtlas) environment = 'MongoDB Atlas';
+    else if (isLocal) environment = 'Local MongoDB';
+    
+    if (currentHealth?.components?.database) {
+      const dbHealth = currentHealth.components.database;
+      return {
+        status: dbHealth.overall || 'unknown',
+        message: `${environment} - ${dbHealth.message || 'Database status from health system'}`,
+        stats: {
+          environment: environment,
+          totalRecipes: dbHealth.recipe_count || 0,
+          connectionTime: dbHealth.connectivity_time_ms || 0,
+          dataQualityPercentage: dbHealth.data_quality_percentage || 0,
+          lastChecked: currentHealth.timestamp,
+          dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+        }
+      };
+    }
+    
+    // Fallback: trigger a fresh health check
+    const health = await healthChecker.performFullHealthCheck();
+    const dbHealth = health.components?.database;
+    
+    if (dbHealth) {
+      return {
+        status: dbHealth.overall || 'operational',
+        message: `${environment} - ${dbHealth.message || 'Database connected successfully'}`,
+        stats: {
+          environment: environment,
+          totalRecipes: dbHealth.recipe_count || 0,
+          connectionTime: dbHealth.connectivity_time_ms || 0,
+          dataQualityPercentage: dbHealth.data_quality_percentage || 0,
+          lastChecked: health.timestamp,
+          dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+        }
+      };
+    }
+    
+    return {
+      status: 'error',
+      message: 'Unable to determine database health',
+      stats: {
+        environment: environment,
+        dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+      }
+    };
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    const isAtlas = mongoUri && mongoUri.includes('mongodb.net');
+    const environment = isAtlas ? 'MongoDB Atlas' : 'Local MongoDB';
+    
+    return {
+      status: 'error',
+      message: `${environment} - Database health error: ${error.message}`,
+      stats: {
+        environment: environment,
+        dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+      }
+    };
+  }
+}
+
+/**
+ * Test Auth0 service connectivity
+ */
+async function testAuth0Connectivity() {
+  try {
+    const auth0Domain = process.env.AUTH0_DOMAIN;
+    const clientId = process.env.AUTH0_M2M_CLIENT_ID;
+    
+    if (!auth0Domain || !clientId) {
       return {
         status: 'error',
-        message: 'MongoDB URI not configured',
+        message: 'Auth0 configuration missing',
         stats: null
       };
     }
 
     const startTime = Date.now();
-    const client = new MongoClient(mongoUri);
     
-    await client.connect();
-    const db = client.db();
-    
-    // Get recipe count
-    const recipesCollection = db.collection('recipes');
-    const totalRecipes = await recipesCollection.countDocuments();
+    // Test Auth0 token endpoint
+    const response = await fetch(`https://${auth0Domain}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: process.env.AUTH0_M2M_CLIENT_SECRET,
+        audience: `https://${auth0Domain}/api/v2/`,
+        grant_type: 'client_credentials'
+      })
+    });
     
     const connectionTime = Date.now() - startTime;
     
-    await client.close();
-    
-    return {
-      status: 'operational',
-      message: `MongoDB connected successfully`,
-      stats: {
-        totalRecipes,
-        connectionTime
-      }
-    };
+    if (response.ok) {
+      return {
+        status: 'operational',
+        message: 'Auth0 service accessible',
+        stats: {
+          responseTime: connectionTime,
+          domain: auth0Domain,
+          lastChecked: new Date().toISOString()
+        }
+      };
+    } else {
+      return {
+        status: 'error',
+        message: `Auth0 responded with ${response.status}`,
+        stats: { responseTime: connectionTime }
+      };
+    }
   } catch (error) {
-    console.error('MongoDB connectivity test failed:', error);
+    console.error('Auth0 connectivity test failed:', error);
     return {
       status: 'error',
-      message: `MongoDB error: ${error.message}`,
+      message: `Auth0 error: ${error.message}`,
       stats: null
     };
   }
@@ -330,12 +419,16 @@ export async function handler(event) {
       
       switch (specificService.toLowerCase()) {
         case 'mongodb':
-          serviceResult = await testMongoDBConnectivity();
+          serviceResult = await getDatabaseHealth();
           serviceName = 'mongodb';
           break;
         case 's3':
           serviceResult = await testS3Connectivity();
           serviceName = 's3';
+          break;
+        case 'auth0':
+          serviceResult = await testAuth0Connectivity();
+          serviceName = 'auth0';
           break;
         case 'api_gateway':
         case 'apigateway':
@@ -373,7 +466,7 @@ export async function handler(event) {
             body: JSON.stringify({
               success: false,
               error: 'Invalid service name',
-              availableServices: ['mongodb', 's3', 'api_gateway', 'lambda', 'backup', 'terraform', 'security', 'performance']
+              availableServices: ['mongodb', 's3', 'auth0', 'api_gateway', 'lambda', 'backup', 'terraform', 'security', 'performance']
             })
           };
       }
@@ -400,6 +493,7 @@ export async function handler(event) {
     const [
       mongoTest,
       s3Test,
+      auth0Test,
       apiGatewayTest,
       lambdaTest,
       backupTest,
@@ -407,8 +501,9 @@ export async function handler(event) {
       securityTest,
       performanceTest
     ] = await Promise.allSettled([
-      testMongoDBConnectivity(),
+      getDatabaseHealth(),
       testS3Connectivity(),
+      testAuth0Connectivity(),
       testAPIGateway(),
       testLambdaFunctions(),
       checkBackupStatus(),
@@ -427,6 +522,11 @@ export async function handler(event) {
       s3: s3Test.status === 'fulfilled' ? s3Test.value : {
         status: 'error',
         message: 'S3 test failed to execute',
+        stats: null
+      },
+      auth0: auth0Test.status === 'fulfilled' ? auth0Test.value : {
+        status: 'error',
+        message: 'Auth0 test failed to execute',
         stats: null
       },
       api_gateway: apiGatewayTest.status === 'fulfilled' ? apiGatewayTest.value : {
@@ -461,8 +561,8 @@ export async function handler(event) {
       }
     };
 
-    // Overall system status
-    const criticalServices = [services.mongodb, services.s3];
+    // Overall system status - MongoDB and Auth0 are critical
+    const criticalServices = [services.mongodb, services.auth0];
     const systemOperational = criticalServices.every(service => 
       service.status === 'operational' || service.status === 'success'
     );

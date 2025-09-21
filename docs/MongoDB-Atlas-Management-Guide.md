@@ -93,9 +93,9 @@ This guide replaces multiple individual documents with a single, comprehensive s
 | `LAMBDA_CIDR_BLOCK`        | `10.0.0.0/16` or empty string| CIDR block for AWS Lambda (if used)           |
 | `MONGODB_URI`              | `mongodb+srv://...`          | Full MongoDB connection string                |
 
-5. Name the secret `moms-recipe-secrets-dev` (for development environment)
-6. Add description: "MongoDB Atlas credentials for MomsRecipeBox"
-7. Complete the creation wizard with default settings
+1. Name the secret `moms-recipe-secrets-dev` (for development environment)
+2. Add description: "MongoDB Atlas credentials for MomsRecipeBox"
+3. Complete the creation wizard with default settings
 
 ##### Option B: Using AWS CLI
 

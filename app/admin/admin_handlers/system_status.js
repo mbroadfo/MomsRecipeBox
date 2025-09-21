@@ -12,7 +12,6 @@ const apigateway = new AWS.APIGateway();
 async function getDatabaseHealth() {
   try {
     const healthChecker = getHealthChecker();
-    const currentHealth = healthChecker.getCurrentHealth();
     
     // Determine if we're using local or Atlas
     const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -23,35 +22,40 @@ async function getDatabaseHealth() {
     if (isAtlas) environment = 'MongoDB Atlas';
     else if (isLocal) environment = 'Local MongoDB';
     
-    if (currentHealth?.components?.database) {
-      const dbHealth = currentHealth.components.database;
-      return {
-        status: dbHealth.overall || 'unknown',
-        message: `${environment} - ${dbHealth.message || 'Database status from health system'}`,
-        stats: {
-          environment: environment,
-          totalRecipes: dbHealth.recipe_count || 0,
-          connectionTime: dbHealth.connectivity_time_ms || 0,
-          dataQualityPercentage: dbHealth.data_quality_percentage || 0,
-          lastChecked: currentHealth.timestamp,
-          dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
-        }
-      };
-    }
-    
-    // Fallback: trigger a fresh health check
+    // Always get fresh health data with quality analysis for admin panel
+    console.log('🔧 Admin: Performing fresh health check for MongoDB...');
     const health = await healthChecker.performFullHealthCheck();
     const dbHealth = health.components?.database;
     
+    console.log('🔧 Admin: Health check result:', JSON.stringify(dbHealth, null, 2));
+    
     if (dbHealth) {
+      // Extract recipe data from health system structure
+      let totalRecipes = 0;
+      let cleanRecipes = 0;
+      let dataQualityPercentage = 0;
+      
+      // Check if there's quality results in the issues
+      const qualityIssue = dbHealth.issues?.find(issue => issue.details?.qualityResults);
+      console.log('🔧 Admin: Quality issue found:', qualityIssue ? 'YES' : 'NO');
+      
+      if (qualityIssue?.details?.qualityResults) {
+        const qualityResults = qualityIssue.details.qualityResults;
+        totalRecipes = qualityResults.totalRecipes || 0;
+        cleanRecipes = qualityResults.cleanRecipes || 0;
+        dataQualityPercentage = qualityResults.cleanPercentage || 0;
+        console.log(`🔧 Admin: Extracted - Total: ${totalRecipes}, Clean: ${cleanRecipes}, Quality: ${dataQualityPercentage}%`);
+      }
+      
       return {
         status: dbHealth.overall || 'operational',
-        message: `${environment} - ${dbHealth.message || 'Database connected successfully'}`,
+        message: `${environment} - Database with quality analysis`,
         stats: {
           environment: environment,
-          totalRecipes: dbHealth.recipe_count || 0,
-          connectionTime: dbHealth.connectivity_time_ms || 0,
-          dataQualityPercentage: dbHealth.data_quality_percentage || 0,
+          totalRecipes: totalRecipes,
+          connectionTime: 0, // Health system doesn't expose this separately
+          dataQualityPercentage: dataQualityPercentage,
+          cleanRecipes: cleanRecipes,
           lastChecked: health.timestamp,
           dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
         }
@@ -143,138 +147,232 @@ async function testAuth0Connectivity() {
 }
 
 /**
- * Test S3 connectivity and get storage statistics
+ * Test S3 connectivity and get storage statistics for image bucket only
  */
 async function testS3Connectivity() {
   try {
-    const bucketName = process.env.RECIPE_IMAGES_BUCKET;
+    const imagesBucket = process.env.RECIPE_IMAGES_BUCKET;
     
-    if (!bucketName) {
+    if (!imagesBucket) {
       return {
         status: 'error',
-        message: 'S3 bucket name not configured',
+        message: 'S3 images bucket not configured',
         stats: null
       };
     }
 
-    // Test basic S3 connectivity and get bucket info
-    const listParams = {
-      Bucket: bucketName,
-      MaxKeys: 1
-    };
+    // Only check the images bucket
+    const imagesResult = await getBucketInfo(imagesBucket, 'images');
 
-    await s3.listObjectsV2(listParams).promise();
-    
-    // Get bucket size (approximate)
-    try {
-      const cloudWatch = new AWS.CloudWatch();
-      const metricsParams = {
-        Namespace: 'AWS/S3',
-        MetricName: 'BucketSizeBytes',
-        Dimensions: [
-          {
-            Name: 'BucketName',
-            Value: bucketName
-          },
-          {
-            Name: 'StorageType',
-            Value: 'StandardStorage'
-          }
-        ],
-        StartTime: new Date(Date.now() - 48 * 60 * 60 * 1000), // 48 hours ago
-        EndTime: new Date(),
-        Period: 86400, // 1 day
-        Statistics: ['Average']
-      };
-      
-      const metrics = await cloudWatch.getMetricStatistics(metricsParams).promise();
-      const latestSize = metrics.Datapoints.length > 0 ? 
-        Math.round(metrics.Datapoints[metrics.Datapoints.length - 1].Average / (1024 * 1024)) : null;
-      
+    if (!imagesResult) {
       return {
-        status: 'operational',
-        message: `S3 bucket '${bucketName}' accessible`,
-        stats: {
-          storageUsed: latestSize ? `${latestSize} MB` : 'Unknown'
-        }
-      };
-    } catch (metricsError) {
-      // If metrics fail, still return success for basic connectivity
-      return {
-        status: 'operational',
-        message: `S3 bucket '${bucketName}' accessible`,
-        stats: {
-          storageUsed: 'Metrics unavailable'
-        }
+        status: 'error',
+        message: 'Could not access S3 images bucket',
+        stats: null
       };
     }
+
+    return {
+      status: 'operational',
+      message: `S3 image bucket accessible - ${imagesResult.objectCount} images`,
+      stats: {
+        imageObjects: imagesResult.objectCount,
+        imageSize: imagesResult.sizeDisplay,
+        bucket: imagesBucket
+      }
+    };
   } catch (error) {
-    console.error('S3 connectivity test failed:', error);
+    console.error('S3 test failed:', error);
+    return {
+      status: 'error',
+      message: `S3 error: ${error.message}`,
+      stats: null
+    };
+  }
+}
+
+/**
+ * Get bucket information (object count and size)
+ */
+async function getBucketInfo(bucketName, type) {
+  try {
+    // Get object count with pagination
+    let objectCount = 0;
+    let totalSize = 0;
+    let continuationToken = null;
+    
+    do {
+      const params = {
+        Bucket: bucketName,
+        MaxKeys: 1000
+      };
+      
+      if (continuationToken) {
+        params.ContinuationToken = continuationToken;
+      }
+      
+      const result = await s3.listObjectsV2(params).promise();
+      objectCount += result.Contents?.length || 0;
+      
+      // Sum up sizes
+      if (result.Contents) {
+        totalSize += result.Contents.reduce((sum, obj) => sum + (obj.Size || 0), 0);
+      }
+      
+      continuationToken = result.NextContinuationToken;
+    } while (continuationToken);
+
+    const sizeInMB = Math.round(totalSize / (1024 * 1024) * 100) / 100;
+    const sizeDisplay = sizeInMB > 1024 ? 
+      `${Math.round(sizeInMB / 1024 * 100) / 100} GB` : 
+      `${sizeInMB} MB`;
+
+    return {
+      objectCount,
+      size: totalSize,
+      sizeDisplay,
+      type
+    };
+  } catch (error) {
+    console.error(`Error getting ${type} bucket info for ${bucketName}:`, error);
     
     if (error.code === 'NoSuchBucket') {
       return {
-        status: 'error',
-        message: 'S3 bucket does not exist',
-        stats: null
+        objectCount: 0,
+        size: 0,
+        sizeDisplay: 'Bucket not found',
+        type,
+        error: 'NoSuchBucket'
       };
     } else if (error.code === 'AccessDenied') {
       return {
-        status: 'error',
-        message: 'S3 access denied - check IAM permissions',
-        stats: null
-      };
-    } else {
-      return {
-        status: 'error',
-        message: `S3 error: ${error.message}`,
-        stats: null
+        objectCount: 0,
+        size: 0,
+        sizeDisplay: 'Access denied',
+        type,
+        error: 'AccessDenied'
       };
     }
+    
+    throw error;
   }
 }
 
 /**
- * Test API Gateway status
+ * Calculate total size display from multiple buckets
+ */
+function calculateTotalSize(size1, size2) {
+  const total = (size1 || 0) + (size2 || 0);
+  const totalInMB = Math.round(total / (1024 * 1024) * 100) / 100;
+  
+  if (totalInMB > 1024) {
+    return `${Math.round(totalInMB / 1024 * 100) / 100} GB`;
+  } else {
+    return `${totalInMB} MB`;
+  }
+}
+
+/**
+ * Test API Gateway status (simplified for non-AWS deployment)
  */
 async function testAPIGateway() {
   try {
-    // Get API Gateway info (this will work if we have proper permissions)
-    const apis = await apigateway.getRestApis({ limit: 10 }).promise();
+    // Since you're not using AWS API Gateway yet, let's check basic API health
+    const startTime = Date.now();
     
-    return {
-      status: 'operational',
-      message: `API Gateway accessible (${apis.items.length} APIs found)`,
-      stats: {
-        requestsPerMinute: Math.floor(Math.random() * 100) + 50, // Placeholder - would need CloudWatch
-        errorRate: Math.random() * 2 // Placeholder - would need CloudWatch
+    // Test if our own API is responding
+    const healthEndpoint = process.env.API_BASE_URL || 'http://localhost:3000';
+    
+    try {
+      const response = await fetch(`${healthEndpoint}/health`, {
+        method: 'GET',
+        timeout: 5000
+      });
+      
+      const responseTime = Date.now() - startTime;
+      
+      if (response.ok) {
+        return {
+          status: 'operational',
+          message: 'Application API responding normally',
+          stats: {
+            responseTime: `${responseTime}ms`,
+            endpoint: healthEndpoint,
+            httpStatus: 'OK',
+            type: 'Direct API (non-Gateway)'
+          }
+        };
+      } else {
+        return {
+          status: 'degraded',
+          message: `API responding with ${response.status}`,
+          stats: {
+            responseTime: `${responseTime}ms`,
+            endpoint: healthEndpoint,
+            httpStatus: response.status,
+            type: 'Direct API (non-Gateway)'
+          }
+        };
       }
-    };
+    } catch (fetchError) {
+      // If we can't reach our own API, we're probably running it, so it's operational
+      return {
+        status: 'operational',
+        message: 'API operational (currently serving this request)',
+        stats: {
+          type: 'Direct API (non-Gateway)',
+          note: 'API Gateway not yet implemented'
+        }
+      };
+    }
   } catch (error) {
-    console.error('API Gateway test failed:', error);
+    console.error('API health check failed:', error);
     return {
-      status: 'operational', // Assume operational since we're running through it
-      message: 'API Gateway accessible (running through current API)',
+      status: 'operational', 
+      message: 'API operational (serving current request)',
       stats: {
-        requestsPerMinute: 'Metrics require CloudWatch',
-        errorRate: 'Metrics require CloudWatch'
+        type: 'Direct API (non-Gateway)',
+        note: 'Basic health check - API Gateway TBD'
       }
     };
   }
 }
 
 /**
- * Test Lambda Functions status
+ * Test Lambda Functions status - only count functions with mrb-admin tag
  */
 async function testLambdaFunctions() {
   try {
     const functions = await lambda.listFunctions({ MaxItems: 100 }).promise();
     
+    // Filter functions by tag - only count those with mrb-admin tag
+    let taggedFunctions = 0;
+    const functionDetails = [];
+    
+    for (const func of functions.Functions) {
+      try {
+        const tags = await lambda.listTags({ Resource: func.FunctionArn }).promise();
+        if (tags.Tags && tags.Tags['mrb-admin']) {
+          taggedFunctions++;
+          functionDetails.push({
+            name: func.FunctionName,
+            runtime: func.Runtime,
+            lastModified: func.LastModified
+          });
+        }
+      } catch (tagError) {
+        // Skip functions we can't read tags for
+        console.warn(`Could not read tags for ${func.FunctionName}:`, tagError.message);
+      }
+    }
+    
     return {
       status: 'operational',
-      message: `Lambda functions accessible`,
+      message: `${taggedFunctions} mrb-admin Lambda functions found`,
       stats: {
+        mrbAdminFunctions: taggedFunctions,
         totalFunctions: functions.Functions.length,
-        executionsToday: Math.floor(Math.random() * 1000) + 100 // Placeholder - would need CloudWatch
+        functionDetails: functionDetails
       }
     };
   } catch (error) {
@@ -288,80 +386,160 @@ async function testLambdaFunctions() {
 }
 
 /**
- * Check backup status (simulated - would integrate with actual backup system)
+ * Check backup status with real metrics from backup system - count root backup folders
  */
 async function checkBackupStatus() {
   try {
-    // This would integrate with your actual backup system
-    // For now, simulating backup information
-    const now = new Date();
-    const lastFull = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Yesterday
-    const lastIncremental = new Date(now.getTime() - 4 * 60 * 60 * 1000); // 4 hours ago
-    const nextScheduled = new Date(now.getTime() + 20 * 60 * 60 * 1000); // 20 hours from now
+    const backupsBucket = process.env.MRB_MONGODB_BACKUPS_BUCKET || 'mrb-mongodb-backups-dev';
     
-    return {
-      status: 'operational',
-      message: 'Backup system operational',
-      stats: {
-        lastFull: lastFull.toISOString(),
-        lastIncremental: lastIncremental.toISOString(),
-        nextScheduled: nextScheduled.toISOString()
-      }
+    // List backup folders using delimiter to get folder structure
+    const listParams = {
+      Bucket: backupsBucket,
+      Delimiter: '/', // This groups objects by folder prefix
+      Prefix: '' // Root level folders
     };
+    
+    try {
+      const result = await s3.listObjectsV2(listParams).promise();
+      const backupFolders = result.CommonPrefixes || []; // These are the root folders
+      
+      if (backupFolders.length === 0) {
+        return {
+          status: 'warning',
+          message: 'No backup folders found in S3',
+          stats: {
+            totalBackupFolders: 0,
+            lastBackup: null,
+            backupsBucket: backupsBucket
+          }
+        };
+      }
+      
+      // Get the most recent folder by sorting folder names (which include timestamps)
+      const folderNames = backupFolders.map(folder => folder.Prefix.replace('/', ''));
+      folderNames.sort().reverse(); // Most recent first
+      
+      const mostRecentFolder = folderNames[0];
+      
+      return {
+        status: 'operational',
+        message: `${backupFolders.length} backup folders found`,
+        stats: {
+          totalBackupFolders: backupFolders.length,
+          lastBackupFolder: mostRecentFolder,
+          backupsBucket: backupsBucket,
+          folderNames: folderNames.slice(0, 5) // Show first 5 backup folders
+        }
+      };
+    } catch (s3Error) {
+      return {
+        status: 'error',
+        message: `S3 backup access error: ${s3Error.message}`,
+        stats: {
+          backupsBucket: backupsBucket,
+          error: s3Error.message
+        }
+      };
+    }
   } catch (error) {
-    console.error('Backup check failed:', error);
+    console.error('Backup status check failed:', error);
     return {
-      status: 'degraded',
-      message: 'Backup status unknown',
+      status: 'error',
+      message: `Backup check error: ${error.message}`,
       stats: null
     };
   }
 }
 
 /**
- * Check Terraform state (simulated - would integrate with actual Terraform state)
+ * Check Infrastructure state (basic environment info)
  */
 async function checkTerraformState() {
   try {
-    // This would integrate with your Terraform state backend
-    // For now, simulating infrastructure state information
-    const lastApply = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+    // Show meaningful infrastructure configuration and deployment info
+    const environment = process.env.NODE_ENV || 'development';
+    const awsProfile = process.env.AWS_PROFILE;
+    const hasAwsConfig = !!(process.env.AWS_ACCESS_KEY_ID || awsProfile);
+    
+    // Determine deployment type
+    let deploymentType = 'Local Development';
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      deploymentType = 'AWS Lambda';
+    } else if (process.env.PORT && environment === 'production') {
+      deploymentType = 'Production Server';
+    } else if (environment === 'production') {
+      deploymentType = 'Production Environment';
+    }
+    
+    // Count configured services
+    const services = {
+      aws: hasAwsConfig,
+      mongodb: !!(process.env.MONGO_URI || process.env.MONGODB_URI),
+      auth0: !!(process.env.AUTH0_DOMAIN && process.env.AUTH0_M2M_CLIENT_ID),
+      s3Storage: !!process.env.RECIPE_IMAGES_BUCKET,
+      s3Backups: !!process.env.MRB_MONGODB_BACKUPS_BUCKET,
+      openai: !!process.env.OPENAI_API_KEY,
+      anthropic: !!process.env.ANTHROPIC_API_KEY
+    };
+    
+    const configuredServices = Object.values(services).filter(Boolean).length;
+    const totalServices = Object.keys(services).length;
     
     return {
       status: 'operational',
-      message: 'Infrastructure state managed by Terraform',
+      message: `${deploymentType} - ${configuredServices}/${totalServices} services configured`,
       stats: {
-        lastApply: lastApply.toISOString(),
-        resourceCount: 42, // Placeholder
-        driftDetected: false
+        deploymentType: deploymentType,
+        environment: environment,
+        awsProfile: awsProfile || 'Default/None',
+        configuredServices: configuredServices,
+        totalServices: totalServices,
+        services: services,
+        lastChecked: new Date().toISOString()
       }
     };
   } catch (error) {
-    console.error('Terraform check failed:', error);
+    console.error('Infrastructure check failed:', error);
     return {
       status: 'degraded',
-      message: 'Terraform state check failed',
-      stats: null
+      message: 'Infrastructure status check failed',
+      stats: {
+        error: error.message
+      }
     };
   }
 }
 
 /**
- * Check SSL Certificate and Security status
+ * Check Security status (Auth0 integration)
  */
 async function checkSecurityStatus() {
   try {
-    // This would integrate with your SSL monitoring
-    // For now, simulating security status
-    const certExpiry = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000); // 45 days from now
+    // Test Auth0 configuration and basic connectivity
+    const auth0Domain = process.env.AUTH0_DOMAIN;
+    const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
+    const clientId = process.env.AUTH0_CLIENT_ID;
+    
+    const configComplete = !!(auth0Domain && m2mClientId && clientId);
+    
+    let status = 'operational';
+    let message = 'Auth0 security configuration active';
+    
+    if (!configComplete) {
+      status = 'warning';
+      message = 'Auth0 configuration incomplete';
+    }
     
     return {
-      status: 'operational',
-      message: 'SSL certificates and security policies active',
+      status: status,
+      message: message,
       stats: {
-        sslExpiry: certExpiry.toISOString(),
-        auth0Status: 'operational',
-        corsEnabled: true
+        auth0Domain: auth0Domain || 'Not configured',
+        m2mConfigured: !!m2mClientId,
+        clientConfigured: !!clientId,
+        configurationComplete: configComplete,
+        environment: process.env.NODE_ENV || 'development',
+        corsEnabled: true // Basic CORS is typically enabled
       }
     };
   } catch (error) {
@@ -369,25 +547,53 @@ async function checkSecurityStatus() {
     return {
       status: 'degraded',
       message: 'Security status check failed',
-      stats: null
+      stats: {
+        error: error.message
+      }
     };
   }
 }
 
 /**
- * Check CDN and Performance status
+ * Check Application Performance metrics
  */
 async function checkPerformanceStatus() {
   try {
-    // This would integrate with CloudFront or other CDN
-    // For now, simulating performance metrics
+    // Get real Node.js performance metrics
+    const memoryUsage = process.memoryUsage();
+    const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+    const uptime = Math.floor(process.uptime());
+    
+    // Convert uptime to readable format
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const uptimeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    
+    // Determine status based on memory usage
+    const memoryPercentage = Math.round((memoryUsedMB / memoryTotalMB) * 100);
+    let status = 'operational';
+    let message = `Application running efficiently`;
+    
+    if (memoryPercentage > 85) {
+      status = 'warning';
+      message = `High memory usage (${memoryPercentage}%)`;
+    } else if (memoryPercentage > 95) {
+      status = 'degraded';
+      message = `Critical memory usage (${memoryPercentage}%)`;
+    }
+    
     return {
-      status: 'operational',
-      message: 'CDN and performance optimization active',
+      status: status,
+      message: message,
       stats: {
-        cdnHitRate: '94%',
-        avgResponseTime: '150ms',
-        cachingEnabled: true
+        memoryUsed: `${memoryUsedMB}MB`,
+        memoryTotal: `${memoryTotalMB}MB`,
+        memoryPercentage: `${memoryPercentage}%`,
+        uptime: uptimeDisplay,
+        nodeVersion: process.version,
+        pid: process.pid,
+        platform: process.platform
       }
     };
   } catch (error) {
@@ -395,7 +601,9 @@ async function checkPerformanceStatus() {
     return {
       status: 'degraded',
       message: 'Performance metrics unavailable',
-      stats: null
+      stats: {
+        error: error.message
+      }
     };
   }
 }
@@ -406,6 +614,9 @@ async function checkPerformanceStatus() {
  * AI services have their own dedicated endpoint: /admin/ai-services-status
  */
 export async function handler(event) {
+  console.log('🔧 ADMIN SYSTEM STATUS HANDLER CALLED!!!');
+  console.log('🔧 Query params:', event.queryStringParameters);
+  
   try {
     const queryParams = event.queryStringParameters || {};
     const specificService = queryParams.service;

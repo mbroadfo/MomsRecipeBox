@@ -31,6 +31,7 @@ import { deleteUserHandler } from './admin/admin_handlers/delete_user.js';
 import { handler as systemStatusHandler } from './admin/admin_handlers/system_status.js';
 import { handler as aiServicesStatusHandler } from './admin/admin_handlers/ai_services_status.js';
 import { handler as userAnalyticsHandler } from './admin/admin_handlers/user_analytics.js';
+import { handler as recipeIdsHandler } from './admin/admin_handlers/recipe_ids.js';
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
@@ -149,6 +150,9 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/user-analytics') {
       return await userAnalyticsHandler(event);
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/recipe-ids') {
+      return await recipeIdsHandler(event);
     }
 
     // Health check endpoint

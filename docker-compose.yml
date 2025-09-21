@@ -20,9 +20,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Only start this service if MONGODB_MODE is not set or set to 'local'
+    # Only start this service in local mode (not atlas)
     profiles:
-      - ${MONGODB_MODE:-local}
+      - local
 
   # MongoDB Express - only run in local mode
   mongo-express:
@@ -41,9 +41,9 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
     ports:
       - "8081:8081"
-    # Only start this service if MONGODB_MODE is not set or set to 'local'
+    # Only start this service in local mode (not atlas)
     profiles:
-      - ${MONGODB_MODE:-local}
+      - local
 
   # DB init is only needed in local mode and only if using a fresh DB
   # This should typically be run manually when needed, not automatically

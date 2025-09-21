@@ -93,7 +93,7 @@ db.adminCommand('ping')
             Write-BackupLog "MongoDB connection successful"
             return $true
         } else {
-            Write-BackupLog "MongoDB connection failed" "ERROR"
+            Write-BackupLog "MongoDB connection failed: $testResult" "ERROR"
             return $false
         }
     } catch {
@@ -184,7 +184,7 @@ function Invoke-FullBackup {
         $dumpResult = & $dockerCommand[0] $dockerCommand[1..($dockerCommand.Length-1)]
         
         if ($LASTEXITCODE -ne 0) {
-            throw "mongodump failed with exit code $LASTEXITCODE"
+            throw "mongodump failed with exit code $LASTEXITCODE. Output: $dumpResult"
         }
         
         # Copy backup from container to host

@@ -1,6 +1,7 @@
 # Test-MongoDBBackup.ps1
 # This script tests the MongoDB Atlas backup strategy by performing a manual backup
 # Uses AWS Secrets Manager to retrieve MongoDB credentials securely
+# Updated to use mrb-api AWS profile by default
 
 param(
     [Parameter(Mandatory=$false)]
@@ -13,7 +14,10 @@ param(
     [string]$OutputFolder = ".\backups\mongodb_atlas",
     
     [Parameter(Mandatory=$false)]
-    [switch]$Force
+    [switch]$Force,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$AwsProfile = "mrb-api"
 )
 
 Write-Host "MongoDB Atlas Backup Test" -ForegroundColor Cyan
@@ -51,6 +55,11 @@ if ($mongoDumpPath -eq "mongodump") {
 # Get MongoDB URI from AWS Secrets Manager
 try {
     Write-Host "Getting MongoDB credentials from AWS Secrets Manager..." -ForegroundColor Gray
+    Write-Host "  Using AWS Profile: $AwsProfile" -ForegroundColor Gray
+    
+    # Set AWS profile environment variable
+    $env:AWS_PROFILE = $AwsProfile
+    
     $secretJson = aws secretsmanager get-secret-value --secret-id $SecretName --region $Region 2>$null | ConvertFrom-Json
     
     if ($secretJson) {

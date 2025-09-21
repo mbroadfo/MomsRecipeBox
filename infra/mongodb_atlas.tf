@@ -45,7 +45,9 @@ resource "mongodbatlas_cluster" "momsrecipebox_cluster" {
       backing_provider_name
     ]
   }
-}# Create a Database User
+}
+
+# Create a Database User
 resource "mongodbatlas_database_user" "momsrecipebox_user" {
   username           = "mrbapp"
   password           = local.mongodb_atlas_password

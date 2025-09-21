@@ -520,6 +520,12 @@ resource "aws_iam_policy" "mrb_api_s3_access" {
   })
 }
 
+# Note: This policy attachment should be done manually in AWS Console
+# resource "aws_iam_user_policy_attachment" "mrb_api_backup_access" {
+#   user       = "mrb-api"
+#   policy_arn = aws_iam_policy.mrb_api_s3_access.arn
+# }
+
 ##############################################
 # API Gateway method GET /recipe/{id}/image (get_image)
 ##############################################

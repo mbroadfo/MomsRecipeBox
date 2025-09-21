@@ -1,8 +1,9 @@
 # DumpIamPolicies.ps1
+# Updated to use terraform-mrb as default user
 
 param (
-    [string]$UserName = "terraform",
-    [string]$OutputDir = ".\TerraformPolicies"
+    [string]$UserName = "terraform-mrb",
+    [string]$OutputDir = ".\TerraformMrbPolicies"
 )
 
 # Ensure AWSPowerShell.NetCore is loaded

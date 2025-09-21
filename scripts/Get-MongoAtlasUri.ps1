@@ -14,8 +14,14 @@ param(
 )
 
 try {
+    # Build AWS CLI command with profile if set
+    $awsCommand = "aws secretsmanager get-secret-value --secret-id $SecretName --region $Region"
+    if ($env:AWS_PROFILE) {
+        $awsCommand += " --profile $env:AWS_PROFILE"
+    }
+    
     # Get MongoDB URI from AWS Secrets Manager
-    $secretJson = aws secretsmanager get-secret-value --secret-id $SecretName --region $Region 2>$null | ConvertFrom-Json
+    $secretJson = Invoke-Expression "$awsCommand 2>`$null" | ConvertFrom-Json
     
     if ($secretJson) {
         $secrets = $secretJson.SecretString | ConvertFrom-Json

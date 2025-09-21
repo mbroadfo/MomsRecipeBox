@@ -1,12 +1,13 @@
 # Restore-MongoDBFromS3.ps1
 # Script to restore MongoDB Atlas from an S3 backup
+# Updated to use terraform-mrb AWS profile and handle BSON file backups
 
 param(
     [Parameter(Mandatory=$false)]
     [string]$BackupKey,
     
     [Parameter(Mandatory=$false)]
-    [string]$BucketName = "moms-recipe-box-backups",
+    [string]$BucketName = "mrb-mongodb-backups-dev",
     
     [Parameter(Mandatory=$false)]
     [string]$TempPath = "$env:TEMP\mongodb_restore",
@@ -15,32 +16,44 @@ param(
     [switch]$ListBackups,
     
     [Parameter(Mandatory=$false)]
-    [switch]$Force
+    [switch]$Force,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$AwsProfile = "terraform-mrb"
 )
 
 function Get-BackupList {
     param (
-        [string]$BucketName
+        [string]$BucketName,
+        [string]$AwsProfile
     )
     
     try {
-        Write-Host "📋 Listing available backups in S3 bucket: $BucketName" -ForegroundColor Cyan
+        Write-Host "📋 Listing available backups in S3 bucket: $BucketName (using profile: $AwsProfile)" -ForegroundColor Cyan
+        
+        # Set AWS profile environment variable
+        $env:AWS_PROFILE = $AwsProfile
+        
+        # List backup directories (not individual files)
         $backups = aws s3 ls "s3://$BucketName/" --output text
         
         if (-not $backups) {
-            Write-Warning "No backup files found in the bucket"
+            Write-Warning "No backup directories found in the bucket"
             return @()
         }
         
         $backupList = @()
         $backups -split "`n" | ForEach-Object {
-            $parts = $_ -split "\s+", 3
-            if ($parts.Count -ge 3) {
-                $backupList += [PSCustomObject]@{
-                    LastModified = $parts[0] + " " + $parts[1]
-                    Size = [long]$parts[2]
-                    Key = $parts[3]
-                    SizeMB = [math]::Round($parts[2] / 1MB, 2)
+            $line = $_.Trim()
+            if ($line -and $line.Contains("PRE ")) {
+                # This is a directory/prefix
+                $parts = $line -split "\s+", 4
+                if ($parts.Count -ge 4 -and $parts[3].EndsWith("/")) {
+                    $backupList += [PSCustomObject]@{
+                        LastModified = $parts[0] + " " + $parts[1]
+                        Type = "Directory"
+                        Key = $parts[3].TrimEnd("/")
+                    }
                 }
             }
         }
@@ -55,11 +68,12 @@ function Get-BackupList {
 
 function Get-LatestBackup {
     param (
-        [string]$BucketName
+        [string]$BucketName,
+        [string]$AwsProfile
     )
     
     try {
-        $backupList = Get-BackupList -BucketName $BucketName
+        $backupList = Get-BackupList -BucketName $BucketName -AwsProfile $AwsProfile
         
         if ($backupList.Count -eq 0) {
             Write-Error "No backups found in bucket: $BucketName"
@@ -77,14 +91,15 @@ function Get-LatestBackup {
     }
 }
 
-function Get-BackupFile {
+function Get-BackupFiles {
     param (
         [string]$BucketName,
         [string]$BackupKey,
-        [string]$TempPath
+        [string]$TempPath,
+        [string]$AwsProfile
     )
     
-    $zipFilePath = Join-Path $TempPath (Split-Path $BackupKey -Leaf)
+    $downloadPath = Join-Path $TempPath $BackupKey
     
     try {
         # Create the temp directory if it doesn't exist
@@ -92,117 +107,99 @@ function Get-BackupFile {
             New-Item -ItemType Directory -Path $TempPath -Force | Out-Null
         }
         
-        Write-Host "⬇️ Downloading backup from S3: $BackupKey" -ForegroundColor Cyan
-        aws s3 cp "s3://$BucketName/$BackupKey" $zipFilePath
+        # Create backup-specific directory
+        if (-not (Test-Path $downloadPath)) {
+            New-Item -ItemType Directory -Path $downloadPath -Force | Out-Null
+        }
         
-        if (-not (Test-Path $zipFilePath)) {
-            Write-Error "Failed to download backup file"
+        Write-Host "⬇️ Downloading backup files from S3: $BackupKey" -ForegroundColor Cyan
+        
+        # Set AWS profile environment variable
+        $env:AWS_PROFILE = $AwsProfile
+        
+        # Download all files from the backup directory
+        aws s3 cp "s3://$BucketName/$BackupKey/" $downloadPath --recursive
+        
+        if (-not (Get-ChildItem -Path $downloadPath -File)) {
+            Write-Error "Failed to download backup files"
             exit 1
         }
         
-        return $zipFilePath
+        Write-Host "✅ Successfully downloaded backup files to: $downloadPath" -ForegroundColor Green
+        return $downloadPath
     }
     catch {
-        Write-Error "Error downloading backup file: $_"
-        exit 1
-    }
-}
-
-function Expand-BackupFile {
-    param (
-        [string]$ZipFilePath,
-        [string]$TempPath
-    )
-    
-    $extractPath = Join-Path $TempPath "extract"
-    
-    try {
-        # Create the extract directory if it doesn't exist
-        if (Test-Path $extractPath) {
-            Remove-Item -Path $extractPath -Recurse -Force
-        }
-        
-        New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
-        
-        Write-Host "📦 Extracting backup archive..." -ForegroundColor Cyan
-        Expand-Archive -Path $ZipFilePath -DestinationPath $extractPath -Force
-        
-        return $extractPath
-    }
-    catch {
-        Write-Error "Error extracting backup file: $_"
+        Write-Error "Error downloading backup files: $_"
         exit 1
     }
 }
 
 function Restore-MongoDB {
     param (
-        [string]$BackupPath
+        [string]$BackupPath,
+        [string]$AwsProfile
     )
     
     try {
-        # Get MongoDB credentials from AWS Secrets Manager
-        $scriptPath = $PSScriptRoot
-        $backupScript = Join-Path $scriptPath "Test-MongoDBBackup.ps1"
+        Write-Host "🔗 Getting MongoDB Atlas connection string from terraform..." -ForegroundColor Cyan
         
-        if (-not (Test-Path $backupScript)) {
-            Write-Error "Required script not found: $backupScript"
+        # Set AWS profile environment variable
+        $env:AWS_PROFILE = $AwsProfile
+        
+        # Get connection string from terraform output
+        $currentLocation = Get-Location
+        try {
+            Set-Location (Join-Path $PSScriptRoot "..\infra")
+            $connectionString = terraform output -raw mongodb_connection_string
+            
+            if (-not $connectionString -or $connectionString -eq "") {
+                Write-Error "Failed to get MongoDB connection string from terraform output"
+                exit 1
+            }
+            
+            Write-Host "✅ Successfully retrieved connection string from terraform" -ForegroundColor Green
+        }
+        finally {
+            Set-Location $currentLocation
+        }
+        
+        # Validate backup path contains BSON files
+        $bsonFiles = Get-ChildItem -Path $BackupPath -Filter "*.bson" -File
+        if ($bsonFiles.Count -eq 0) {
+            Write-Error "No BSON files found in backup path: $BackupPath"
             exit 1
         }
         
-        # Get MongoDB connection info from the backup script
-        . $backupScript -GetConnectionInfoOnly
-        
-        # Make sure we got the connection string
-        if (-not $global:MongoConnectionInfo -or -not $global:MongoConnectionInfo.ConnectionString) {
-            Write-Error "Failed to get MongoDB connection information"
-            exit 1
-        }
-        
-        # Extract the database name from the connection string
-        $dbName = $global:MongoConnectionInfo.ConnectionString -split "/" | Select-Object -Last 1
-        
-        if (-not $dbName) {
-            Write-Error "Could not determine database name from connection string"
-            exit 1
-        }
-        
-        # Find the dump directory
-        $dumpPath = Get-ChildItem -Path $BackupPath -Filter "dump" -Directory | Select-Object -First 1 -ExpandProperty FullName
-        
-        if (-not $dumpPath) {
-            Write-Error "Could not find 'dump' directory in the extracted backup"
-            exit 1
-        }
-        
-        Write-Host "🔄 Restoring MongoDB database: $dbName" -ForegroundColor Yellow
+        Write-Host "� Found $($bsonFiles.Count) BSON files to restore" -ForegroundColor Cyan
+        $bsonFiles | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Gray }
         
         # Confirm before proceeding with restore
         if (-not $Force) {
-            $confirmation = Read-Host "WARNING: This will overwrite the existing database. Continue? (y/n)"
+            Write-Host "`n⚠️  WARNING: This will overwrite the existing Atlas database!" -ForegroundColor Yellow
+            Write-Host "   This will replace all data in the MongoDB Atlas cluster." -ForegroundColor Yellow
+            $confirmation = Read-Host "`nAre you sure you want to continue? (y/n)"
             if ($confirmation -ne 'y') {
                 Write-Host "Restore cancelled by user." -ForegroundColor Red
                 exit 0
             }
         }
         
-        # Perform the restore using mongorestore
-        $connectionUri = $global:MongoConnectionInfo.ConnectionString
-        $username = $global:MongoConnectionInfo.Username
-        $password = $global:MongoConnectionInfo.Password
+        Write-Host "`n🔄 Starting MongoDB restore to Atlas..." -ForegroundColor Yellow
+        Write-Host "   Source: $BackupPath" -ForegroundColor Gray
+        Write-Host "   Target: MongoDB Atlas (momsrecipebox database)" -ForegroundColor Gray
         
-        Write-Host "Running mongorestore command..." -ForegroundColor Cyan
+        # Execute mongorestore with --drop to replace existing data
+        $restoreCmd = "mongorestore --uri=`"$connectionString`" --drop `"$BackupPath`""
         
-        # Build mongorestore command
-        $restoreCmd = "mongorestore --uri `"$connectionUri`" --username `"$username`" --password `"$password`" --drop $dumpPath"
-        
-        # Execute mongorestore
-        Invoke-Expression $restoreCmd
+        Write-Host "`n🔧 Running mongorestore..." -ForegroundColor Cyan
+        $result = Invoke-Expression $restoreCmd
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ Database restore completed successfully!" -ForegroundColor Green
+            Write-Host "`n✅ Database restore completed successfully!" -ForegroundColor Green
+            Write-Host "   Atlas database now contains the restored data from backup." -ForegroundColor Green
         } else {
             Write-Error "Database restore failed with exit code $LASTEXITCODE"
+            Write-Host "Restore output: $result" -ForegroundColor Red
             exit 1
         }
     }
@@ -232,9 +229,13 @@ function Remove-TempFiles {
 
 # Main script execution
 try {
+    Write-Host "🚀 MongoDB Atlas Restore Script" -ForegroundColor Cyan
+    Write-Host "   Using AWS Profile: $AwsProfile" -ForegroundColor Gray
+    Write-Host "   S3 Bucket: $BucketName" -ForegroundColor Gray
+    
     # If ListBackups is specified, just list the backups and exit
     if ($ListBackups) {
-        $backups = Get-BackupList -BucketName $BucketName
+        $backups = Get-BackupList -BucketName $BucketName -AwsProfile $AwsProfile
         
         if ($backups.Count -eq 0) {
             Write-Host "No backups found in bucket: $BucketName" -ForegroundColor Yellow
@@ -243,36 +244,45 @@ try {
         
         Write-Host "`nAvailable MongoDB Backups in S3 Bucket: $BucketName`n" -ForegroundColor Cyan
         Write-Host "------------------------------------------------------------"
-        $backups | Format-Table -Property @{Label="Date"; Expression={$_.LastModified}}, @{Label="Size (MB)"; Expression={$_.SizeMB}}, @{Label="Backup Key"; Expression={$_.Key}}
+        $backups | Format-Table -Property @{Label="Date"; Expression={$_.LastModified}}, @{Label="Type"; Expression={$_.Type}}, @{Label="Backup Directory"; Expression={$_.Key}}
         
         Write-Host "`nTo restore a specific backup, run:" -ForegroundColor Yellow
-        Write-Host ".\Restore-MongoDBFromS3.ps1 -BackupKey 'BACKUP_KEY_HERE'" -ForegroundColor Yellow
+        Write-Host ".\Restore-MongoDBFromS3.ps1 -BackupKey 'BACKUP_DIRECTORY_NAME'" -ForegroundColor Yellow
+        Write-Host "Example: .\Restore-MongoDBFromS3.ps1 -BackupKey 'backup_2025-09-20_07-37-07'" -ForegroundColor Yellow
         Write-Host "------------------------------------------------------------`n"
         exit 0
     }
     
     # If no BackupKey specified, use the latest backup
     if (-not $BackupKey) {
-        $latestBackup = Get-LatestBackup -BucketName $BucketName
+        $latestBackup = Get-LatestBackup -BucketName $BucketName -AwsProfile $AwsProfile
         $BackupKey = $latestBackup.Key
         Write-Host "No backup key specified. Using the latest backup: $BackupKey" -ForegroundColor Yellow
     }
     
-    # Download the backup file
-    $zipFilePath = Get-BackupFile -BucketName $BucketName -BackupKey $BackupKey -TempPath $TempPath
+    # Download the backup files from S3
+    $downloadPath = Get-BackupFiles -BucketName $BucketName -BackupKey $BackupKey -TempPath $TempPath -AwsProfile $AwsProfile
     
-    # Extract the backup
-    $extractPath = Expand-BackupFile -ZipFilePath $zipFilePath -TempPath $TempPath
+    # The backup is in moms_recipe_box subdirectory
+    $actualBackupPath = Join-Path $downloadPath "moms_recipe_box"
     
-    # Restore MongoDB from the extracted backup
-    Restore-MongoDB -BackupPath $extractPath
+    if (-not (Test-Path $actualBackupPath)) {
+        Write-Error "Expected backup subdirectory not found: $actualBackupPath"
+        exit 1
+    }
+    
+    # Restore MongoDB from the downloaded backup
+    Restore-MongoDB -BackupPath $actualBackupPath -AwsProfile $AwsProfile
     
     # Clean up temporary files
     Remove-TempFiles -TempPath $TempPath
     
-    Write-Host "`n✅ MongoDB restore process completed successfully!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "MongoDB Atlas restore process completed successfully!" -ForegroundColor Green
+    Write-Host "Your Atlas database now contains the restored recipe data." -ForegroundColor Green
 }
 catch {
-    Write-Error "Error during restore process: $_"
+    Write-Error "Error during restore process"
+    Write-Error $_.Exception.Message
     exit 1
 }

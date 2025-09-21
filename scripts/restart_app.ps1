@@ -20,7 +20,9 @@ Write-Host "Using MongoDB mode: $mongodbMode"
 if ($mongodbMode -eq "atlas") {
     $getUriScript = ".\scripts\Get-MongoAtlasUri.ps1"
     if (Test-Path $getUriScript) {
-        Write-Host "Getting MongoDB Atlas URI from AWS Secrets Manager..." -ForegroundColor Yellow
+        Write-Host "Getting MongoDB Atlas URI from AWS Secrets Manager using mrb-api profile..." -ForegroundColor Yellow
+        # Set AWS profile for the secret retrieval
+        $env:AWS_PROFILE = "mrb-api"
         $mongoUri = & $getUriScript
         if ($?) {
             Write-Host "✅ Successfully retrieved MongoDB Atlas URI" -ForegroundColor Green

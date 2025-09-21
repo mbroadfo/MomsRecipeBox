@@ -7,12 +7,9 @@ if (-not $current) {
     $env:AWS_PROFILE = "mrb-api"
     Write-Host "Switched to: mrb-api (was unset)"
 } elseif ($current -eq "mrb-api") {
-    $env:AWS_PROFILE = "terraform"
-    Write-Host "Switched to: terraform"
-} elseif ($current -eq "terraform") {
-    $env:AWS_PROFILE = "cruise-finder"
-    Write-Host "Switched to: cruise-finder"
-} elseif ($current -eq "cruise-finder") {
+    $env:AWS_PROFILE = "terraform-mrb"
+    Write-Host "Switched to: terraform-mrb"
+} elseif ($current -eq "terraform-mrb") {
     $env:AWS_PROFILE = "mrb-api"
     Write-Host "Switched to: mrb-api"
 } else {

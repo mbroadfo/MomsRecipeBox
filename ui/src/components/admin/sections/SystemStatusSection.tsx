@@ -10,7 +10,7 @@ const SystemStatusContent: React.FC = () => {
   // Service name mapping for API calls
   const serviceApiNames: { [key: string]: string } = {
     'MongoDB Database': 'mongodb',
-    'S3 Storage': 's3',
+    'S3 Image Bucket': 's3',
     'API Gateway': 'api_gateway',
     'Lambda Functions': 'lambda',
     'Backup System': 'backup',
@@ -61,10 +61,10 @@ const SystemStatusContent: React.FC = () => {
       stats: status?.services?.mongodb?.stats || null
     },
     {
-      name: 'S3 Storage',
+      name: 'S3 Image Bucket',
       status: status?.services?.s3?.status || 'unknown',
-      icon: '�',
-      message: status?.services?.s3?.message || 'Storage service status unknown',
+      icon: '🖼️',
+      message: status?.services?.s3?.message || 'Image storage status unknown',
       stats: status?.services?.s3?.stats || null
     },
     {
@@ -144,80 +144,64 @@ const SystemStatusContent: React.FC = () => {
                 {/* Key Metrics - Col 5-8 */}
                 <div className="col-span-4 text-right pr-3 text-xs text-slate-600 min-w-0">
                   {/* MongoDB Metrics */}
-                  {service.name === 'MongoDB Database' && (
-                    service.stats?.totalRecipes ? (
-                      <span className="truncate">{service.stats.totalRecipes.toLocaleString()} recipes</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'MongoDB Database' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.environment || 'MongoDB'} • {service.stats.totalRecipes || 0} recipes
+                    </span>
                   )}
                   
-                  {/* S3 Metrics */}
-                  {service.name === 'S3 Storage' && (
-                    service.stats?.storageUsed && service.stats.storageUsed !== "Metrics unavailable" ? (
-                      <span className="truncate">{service.stats.storageUsed}</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {/* S3 Image Bucket Metrics */}
+                  {service.name === 'S3 Image Bucket' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.imageObjects || 0} images • {service.stats.imageSize || '0 MB'}
+                    </span>
                   )}
                   
                   {/* API Gateway Metrics */}
-                  {service.name === 'API Gateway' && (
-                    service.stats?.requestsPerMinute && service.stats.requestsPerMinute !== "Metrics require CloudWatch" ? (
-                      <span className="truncate">{service.stats.requestsPerMinute}/min</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'API Gateway' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.responseTime || 'N/A'} • {service.stats.httpStatus || 'N/A'}
+                    </span>
                   )}
                   
                   {/* Lambda Metrics */}
-                  {service.name === 'Lambda Functions' && (
-                    service.stats?.totalFunctions ? (
-                      <span className="truncate">{service.stats.totalFunctions} functions</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'Lambda Functions' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.mrbAdminFunctions || 0} mrb-admin • {service.stats.totalFunctions || 0} total
+                    </span>
                   )}
                   
                   {/* Backup Metrics */}
-                  {service.name === 'Backup System' && (
-                    service.stats?.lastFull ? (
-                      <span className="truncate">Last: {new Date(service.stats.lastFull).toLocaleDateString()}</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'Backup System' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.totalBackupFolders || 0} backup folders
+                    </span>
                   )}
                   
                   {/* Infrastructure Metrics */}
-                  {service.name === 'Infrastructure' && (
-                    service.stats?.resourceCount ? (
-                      <span className="truncate">{service.stats.resourceCount} resources</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'Infrastructure' && service.stats && (
+                    <span className="truncate">
+                      {service.stats.environment || 'unknown'} • {service.stats.awsConfigured ? 'AWS ✓' : 'AWS ✗'}
+                    </span>
                   )}
                   
                   {/* Security Metrics */}
-                  {service.name === 'Security & SSL' && (
-                    service.stats?.auth0Status ? (
-                      <span className="truncate">Auth0: {service.stats.auth0Status}</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'Security & SSL' && service.stats && (
+                    <span className="truncate">
+                      Auth0: {service.stats.configurationComplete ? 'Complete' : 'Incomplete'} • CORS: {service.stats.corsEnabled ? '✓' : '✗'}
+                    </span>
                   )}
                   
                   {/* Performance Metrics */}
-                  {service.name === 'Performance & CDN' && (
-                    service.stats?.cdnHitRate ? (
-                      <span className="truncate">{service.stats.cdnHitRate} hit rate</span>
-                    ) : (
-                      <span className="text-slate-400 truncate">Coming Soon!</span>
-                    )
+                  {service.name === 'Performance & CDN' && service.stats && (
+                    <span className="truncate">
+                      Memory: {service.stats.memoryPercentage || 'N/A'} • {service.stats.uptime || 'N/A'}
+                    </span>
                   )}
                   
-                  {/* Default/No Stats */}
+                  {/* Fallback for services without stats */}
                   {!service.stats && (
-                    <span className="text-slate-400 truncate">Coming Soon!</span>
+                    <span className="text-slate-400 truncate">No metrics available</span>
                   )}
                 </div>
 

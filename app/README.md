@@ -21,7 +21,7 @@ For a complete setup guide, see the [Getting Started Guide](../docs/guides/getti
 
 ## Key Features
 
-- **Recipe Management**: Create, read, update, delete recipes with ingredients and instructions
+- **Recipe Management**: Create, read, update, delete recipes with ingredients and instructions. Recipe deletion includes automatic cleanup of associated S3 images to prevent orphaned storage.
 - **AI Recipe Assistant**: Chat interface to help create recipes from URLs or text ([AI Services Documentation](../docs/technical/ai_services.md))
 - **Shopping List**: Add, update, delete shopping list items; mark as checked or clear list ([Shopping List Documentation](../docs/technical/shopping_list.md))
 - **Image Handling**: Upload, update, retrieve, and delete images for recipes

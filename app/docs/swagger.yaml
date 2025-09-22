@@ -112,6 +112,7 @@ paths:
       tags:
         - recipes
       summary: Delete a recipe by ID
+      description: Delete a recipe and all associated images from S3 storage
       parameters:
       - in: path
         name: id
@@ -120,7 +121,54 @@ paths:
           type: string
       responses:
         '200':
-          description: Recipe deleted
+          description: Recipe deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Recipe deleted successfully"
+                  deletedImages:
+                    type: integer
+                    description: Number of images successfully deleted from S3
+                    example: 3
+                  imageErrors:
+                    type: array
+                    description: Array of any S3 deletion errors (if applicable)
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: S3 object key that failed to delete
+                        error:
+                          type: string
+                          description: Error message
+                required:
+                  - message
+                  - deletedImages
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Recipe not found"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal server error"
 
   /recipes/{id}/comments:
     post:

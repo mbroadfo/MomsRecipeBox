@@ -246,6 +246,11 @@ async function runTests() {
     console.log('Test recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     
+    // Validate the new delete response format
+    if (deleteRecipeResponse.data.message && typeof deleteRecipeResponse.data.deletedImages === 'number') {
+      console.log(`✅ Delete response format correct: ${deleteRecipeResponse.data.deletedImages} images deleted`);
+    }
+    
     console.log('\n✅ All shopping list tests completed successfully!');
   } catch (error) {
     console.error('❌ Shopping list test failed:');

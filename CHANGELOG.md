@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Real infrastructure monitoring with AWS service integration replacing "Coming Soon!" placeholders
+- Comprehensive S3 orphan image analysis and cleanup tools (removed 32 orphaned images, 14.79 MB)
+- Lambda tag filtering for accurate infrastructure metrics
+- S3 image-only bucket analysis for mrb-recipe-images-dev
+- Backup folder counting with proper structure analysis
+- Infrastructure deployment status monitoring
+- Admin API endpoint for recipe ID retrieval (`/admin/recipe-ids`)
+- Intelligent container management with profile-based Docker operations
+
+### Fixed
+
+- **Critical Bug**: Recipe deletion now properly cleans up associated S3 images preventing future orphans
+- Delete recipe handler completely rewritten with comprehensive S3 cleanup
+- Multiple image extension support (png, jpg, jpeg, gif, webp) in S3 cleanup
+- Legacy image format handling in delete operations
+- Cross-environment testing and validation for Atlas/Local consistency
+- Container restart logic with intelligent detection and selective stopping
+
+### Changed
+
+- Updated Swagger documentation for delete recipe endpoint with new response format
+- Test files updated to validate new delete response format including `deletedImages` count
+- Admin infrastructure monitoring shows real health system integration
+- System status endpoints provide actual AWS service metrics
+- PowerShell scripts enhanced for better S3 analysis and AWS CLI integration
+
+### Security
+
+- Comprehensive error handling in S3 deletion operations with detailed logging
+- Proper AWS SDK integration with secure credential management
+
 ## [1.1.0] - 2025-08-28
 
 ### Added

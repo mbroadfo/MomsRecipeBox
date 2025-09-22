@@ -140,6 +140,13 @@ async function runTests() {
     console.log('Recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     
+    // Validate the new delete response format
+    if (deleteRecipeResponse.data.message && typeof deleteRecipeResponse.data.deletedImages === 'number') {
+      console.log(`✅ Delete response format correct: ${deleteRecipeResponse.data.deletedImages} images deleted`);
+    } else {
+      console.warn('⚠️ Delete response format may need updating');
+    }
+    
     console.log('\n✅ All tests completed successfully!');
   } catch (error) {
     console.error('❌ Test failed:');

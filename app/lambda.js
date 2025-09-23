@@ -33,145 +33,188 @@ import { handler as aiServicesStatusHandler } from './admin/admin_handlers/ai_se
 import { handler as userAnalyticsHandler } from './admin/admin_handlers/user_analytics.js';
 import { handler as recipeIdsHandler } from './admin/admin_handlers/recipe_ids.js';
 
+/**
+ * Add CORS headers to the response
+ * @param {object} response - The response object
+ * @returns {object} Response with CORS headers
+ */
+function addCorsHeaders(response) {
+  return {
+    ...response,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Max-Age': '86400',
+      ...(response.headers || {})
+    }
+  };
+}
+
+/**
+ * Handle OPTIONS requests for CORS preflight
+ * @param {object} event - API Gateway event
+ * @returns {object} CORS preflight response
+ */
+function handleCorsOptions(event) {
+  return addCorsHeaders({
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message: 'CORS preflight successful' })
+  });
+}
+
 // AWS Lambda entrypoint
 export async function handler(event, context) {
-  // No need to log event here, local_server already logs it
+  console.log('🚀 Lambda handler started');
+  console.log('📥 Received event:', JSON.stringify(event, null, 2));
+  
+  // Handle CORS preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    console.log('🔄 Handling CORS preflight');
+    return handleCorsOptions(event);
+  }
+
   const originalPath = event.path || '';
   const pathOnly = originalPath.split('?')[0];
+  console.log(`🛣️  Processing path: ${pathOnly}, method: ${event.httpMethod}`);
 
   try {
     const db = await getDb();
 
     // Image (GET)
     if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
-      return await getImage(event);
+      return addCorsHeaders(await getImage(event));
     }
     // Recipe detail
     if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
-      return await getRecipe(event);
+      return addCorsHeaders(await getRecipe(event));
     }
     // Recipe list (supports query string)
     if (event.httpMethod === 'GET' && pathOnly === '/recipes') {
-      return await listRecipes(event);
+      return addCorsHeaders(await listRecipes(event));
     }
     // Create
     if (event.httpMethod === 'POST' && pathOnly === '/recipes') {
-      return await createRecipe(db, JSON.parse(event.body));
+      return addCorsHeaders(await createRecipe(db, JSON.parse(event.body)));
     }
     // Update
     if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
-      return await updateRecipe(event);
+      return addCorsHeaders(await updateRecipe(event));
     }
     // Delete
     if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
-      return await deleteRecipe(event);
+      return addCorsHeaders(await deleteRecipe(event));
     }
     // Comments
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/comments$/.test(pathOnly)) {
-      return await postComment(event);
+      return addCorsHeaders(await postComment(event));
     }
     if (event.httpMethod === 'PUT' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
-      return await updateComment(event);
+      return addCorsHeaders(await updateComment(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
-      return await deleteComment(event);
+      return addCorsHeaders(await deleteComment(event));
     }
     if (event.httpMethod === 'GET' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
-      return await getComment(event);
+      return addCorsHeaders(await getComment(event));
     }
     // Likes
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/like$/.test(pathOnly)) {
-      return await toggleFavorite(event);
+      return addCorsHeaders(await toggleFavorite(event));
     }
     // Image update/delete
     if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       const contentType = event.headers['content-type'] || '';
-      if (contentType.startsWith('multipart/form-data')) return await uploadImage(event);
-      return await updateImage(event);
+      if (contentType.startsWith('multipart/form-data')) return addCorsHeaders(await uploadImage(event));
+      return addCorsHeaders(await updateImage(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
-      return await deleteImage(event);
+      return addCorsHeaders(await deleteImage(event));
     }
     // Copy image (for new recipes)
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/copy-image$/.test(pathOnly)) {
-      return await copyImage(event);
+      return addCorsHeaders(await copyImage(event));
     }
     
     // Shopping List routes
     if (event.httpMethod === 'GET' && pathOnly === '/shopping-list') {
-      return await getShoppingList(event);
+      return addCorsHeaders(await getShoppingList(event));
     }
     if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/add') {
-      return await addShoppingListItems(event);
+      return addCorsHeaders(await addShoppingListItems(event));
     }
     if (event.httpMethod === 'PUT' && /^\/shopping-list\/item\/[\w-]+$/.test(pathOnly)) {
       const itemId = pathOnly.split('/').pop();
       event.pathParameters = { itemId };
-      return await updateShoppingListItem(event);
+      return addCorsHeaders(await updateShoppingListItem(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/shopping-list\/item\/[\w-]+$/.test(pathOnly)) {
       const itemId = pathOnly.split('/').pop();
       event.pathParameters = { itemId };
-      return await deleteShoppingListItem(event);
+      return addCorsHeaders(await deleteShoppingListItem(event));
     }
     if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/clear') {
-      return await clearShoppingList(event);
+      return addCorsHeaders(await clearShoppingList(event));
     }
     // AI ingredient categorization
     if (event.httpMethod === 'POST' && pathOnly === '/shopping-list/categorize') {
-      return await categorizeIngredients(event);
+      return addCorsHeaders(await categorizeIngredients(event));
     }
     
     // AI recipe assistant routes
     if (event.httpMethod === 'POST' && pathOnly === '/ai/chat') {
-      return await aiRecipeAssistant(event);
+      return addCorsHeaders(await aiRecipeAssistant(event));
     }
     if (event.httpMethod === 'POST' && pathOnly === '/ai/extract') {
-      return await aiRecipeAssistant(event);
+      return addCorsHeaders(await aiRecipeAssistant(event));
     }
     
     // Admin routes
     if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
-      return await listUsersHandler(event);
+      return addCorsHeaders(await listUsersHandler(event));
     }
     if (event.httpMethod === 'POST' && pathOnly === '/admin/users/invite') {
-      return await inviteUserHandler(event);
+      return addCorsHeaders(await inviteUserHandler(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/admin\/users\/[\w|@.-]+$/.test(pathOnly)) {
       const userId = decodeURIComponent(pathOnly.split('/').pop());
       event.pathParameters = { id: userId };
-      return await deleteUserHandler(event);
+      return addCorsHeaders(await deleteUserHandler(event));
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
-      return await systemStatusHandler(event);
+      return addCorsHeaders(await systemStatusHandler(event));
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/ai-services-status') {
-      return await aiServicesStatusHandler(event);
+      return addCorsHeaders(await aiServicesStatusHandler(event));
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/user-analytics') {
-      return await userAnalyticsHandler(event);
+      return addCorsHeaders(await userAnalyticsHandler(event));
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/recipe-ids') {
-      return await recipeIdsHandler(event);
+      return addCorsHeaders(await recipeIdsHandler(event));
     }
 
     // Health check endpoint
     if (event.httpMethod === 'GET' && pathOnly === '/health') {
-      return {
+      return addCorsHeaders({
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'healthy',
           timestamp: new Date().toISOString(),
           version: '1.0.0',
-          environment: process.env.NODE_ENV || 'development'
+          environment: process.env.NODE_ENV || 'development',
+          mode: 'lambda'
         })
-      };
+      });
     }
 
-    return { statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) };
+    return addCorsHeaders({ statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) });
   } catch (err) {
     console.error('❌ Error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
+    return addCorsHeaders({ statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) });
   }
 }

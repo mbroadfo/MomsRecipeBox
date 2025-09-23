@@ -14,9 +14,5 @@ COPY app/ .
 # Copy the tools directory for health checks
 COPY tools/ ../tools/
 
-# Make sure local_server.js and lambda.js are in place
-COPY app/local_server.js .
-COPY app/lambda.js .
-
 # Default command will be overridden in docker-compose based on APP_MODE
 CMD [ "lambda.handler" ]

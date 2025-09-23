@@ -74,17 +74,15 @@ resource "mongodbatlas_database_user" "momsrecipebox_user" {
 resource "mongodbatlas_project_ip_access_list" "app_ip_list" {
   project_id = local.mongodb_atlas_project_id
   # Allow your current development IP
-  # You can use "0.0.0.0/0" for open access, but this is not recommended for production
   cidr_block = local.development_cidr_block
   comment    = "Development access"
 }
 
-# Optional: Allow AWS Lambda access if you're using Lambda
-resource "mongodbatlas_project_ip_access_list" "lambda_ip_list" {
-  count      = local.lambda_cidr_block != "" ? 1 : 0
+# Allow Lambda internet access (free architecture)
+resource "mongodbatlas_project_ip_access_list" "lambda_internet" {
   project_id = local.mongodb_atlas_project_id
-  cidr_block = local.lambda_cidr_block
-  comment    = "AWS Lambda access"
+  cidr_block = "0.0.0.0/0"
+  comment    = "Lambda internet access (free tier architecture)"
 }
 
 # Output the connection string

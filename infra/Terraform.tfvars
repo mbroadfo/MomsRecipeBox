@@ -2,6 +2,9 @@
 
 vpc_id = "vpc-0bca063e5a0ff38c7"
 
+# Enable Lambda App API deployment
+enable_app_api = true
+
 # MongoDB Atlas credentials from AWS Secrets Manager
 # DO NOT COMMIT THIS FILE TO VERSION CONTROL
 mongodb_atlas_public_key  = "kiuiofnq"

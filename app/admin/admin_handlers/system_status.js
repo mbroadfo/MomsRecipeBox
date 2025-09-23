@@ -461,40 +461,66 @@ async function checkTerraformState() {
     const awsProfile = process.env.AWS_PROFILE;
     const hasAwsConfig = !!(process.env.AWS_ACCESS_KEY_ID || awsProfile);
     
-    // Determine deployment type
+    // Determine deployment type with enhanced Lambda detection
     let deploymentType = 'Local Development';
+    let lambdaInfo = null;
+    
     if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
       deploymentType = 'AWS Lambda';
+      lambdaInfo = {
+        functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+        runtime: process.env.AWS_EXECUTION_ENV || 'Unknown',
+        region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'Unknown',
+        memorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE || 'Unknown',
+        timeout: process.env.AWS_LAMBDA_FUNCTION_TIMEOUT || 'Unknown',
+        version: process.env.AWS_LAMBDA_FUNCTION_VERSION || 'Unknown'
+      };
+    } else if (process.env.APP_MODE === 'lambda') {
+      deploymentType = 'Lambda (Local Test)';
     } else if (process.env.PORT && environment === 'production') {
       deploymentType = 'Production Server';
     } else if (environment === 'production') {
       deploymentType = 'Production Environment';
     }
     
-    // Count configured services
+    // Count configured services with enhanced Lambda awareness
     const services = {
       aws: hasAwsConfig,
-      mongodb: !!(process.env.MONGO_URI || process.env.MONGODB_URI),
+      mongodb: !!(process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI),
+      mongodbMode: process.env.MONGODB_MODE || 'local',
       auth0: !!(process.env.AUTH0_DOMAIN && process.env.AUTH0_M2M_CLIENT_ID),
       s3Storage: !!process.env.RECIPE_IMAGES_BUCKET,
       s3Backups: !!process.env.MRB_MONGODB_BACKUPS_BUCKET,
+      secretsManager: !!process.env.AWS_SECRET_NAME,
       openai: !!process.env.OPENAI_API_KEY,
-      anthropic: !!process.env.ANTHROPIC_API_KEY
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      groq: !!process.env.GROQ_API_KEY,
+      google: !!process.env.GOOGLE_API_KEY,
+      deepseek: !!process.env.DEEPSEEK_API_KEY
     };
     
     const configuredServices = Object.values(services).filter(Boolean).length;
     const totalServices = Object.keys(services).length;
     
+    const stats = {
+      deploymentType,
+      environment,
+      configuredServices,
+      totalServices,
+      services
+    };
+    
+    // Add Lambda-specific information if available
+    if (lambdaInfo) {
+      stats.lambda = lambdaInfo;
+    }
+    
     return {
       status: 'operational',
       message: `${deploymentType} - ${configuredServices}/${totalServices} services configured`,
       stats: {
-        deploymentType: deploymentType,
-        environment: environment,
+        ...stats,
         awsProfile: awsProfile || 'Default/None',
-        configuredServices: configuredServices,
-        totalServices: totalServices,
-        services: services,
         lastChecked: new Date().toISOString()
       }
     };
@@ -795,6 +821,15 @@ export async function handler(event) {
         timestamp: new Date().toISOString(),
         overall_status: systemOperational ? (hasWarnings ? 'degraded' : 'operational') : 'degraded',
         services,
+        runtime: {
+          platform: process.platform,
+          nodeVersion: process.version,
+          environment: process.env.NODE_ENV || 'development',
+          appMode: process.env.APP_MODE || 'express',
+          uptime: process.uptime(),
+          memoryUsage: process.memoryUsage(),
+          isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME
+        },
         note: 'Comprehensive infrastructure status - AI services available at /admin/ai-services-status'
       })
     };

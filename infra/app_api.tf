@@ -37,15 +37,13 @@ resource "aws_iam_role" "app_lambda_role" {
   })
 }
 
+
+
+
+
 ##############################################
 # Attach policies to the Lambda role
 ##############################################
-resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  count = var.enable_app_api ? 1 : 0
-  role       = aws_iam_role.app_lambda_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   count = var.enable_app_api ? 1 : 0
   role       = aws_iam_role.app_lambda_role[count.index].name
@@ -69,9 +67,35 @@ resource "aws_lambda_function" "app_lambda" {
   image_uri     = "${aws_ecr_repository.app_repo[count.index].repository_url}:dev"
   timeout       = 15
   memory_size   = 256
+  
   environment {
     variables = {
-      # Removed undeclared resources
+      # ==============================================
+      # Application Configuration
+      # ==============================================
+      NODE_ENV = "production"
+      APP_MODE = "lambda"
+      
+      # ==============================================
+      # MongoDB Atlas Configuration
+      # ==============================================
+      MONGODB_MODE = "atlas"
+      MONGODB_DB_NAME = "moms_recipe_box"
+      
+      # ==============================================
+      # AWS Configuration
+      # ==============================================
+      AWS_SECRET_NAME = var.aws_secret_name
+      RECIPE_IMAGES_BUCKET = var.recipe_images_bucket
+      
+      # ==============================================
+      # Health Check Configuration
+      # ==============================================
+      ENABLE_STARTUP_HEALTH_CHECKS = "true"
+      ENABLE_PERIODIC_HEALTH_CHECKS = "false"
+      FAIL_ON_CRITICAL_HEALTH = "false"
+      ENABLE_DATA_QUALITY_CHECKS = "true"
+      HEALTH_CHECK_TIMEOUT_MS = "15000"
     }
   }
 }
@@ -164,6 +188,7 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
   depends_on = [
     aws_api_gateway_integration.recipes_get_integration,
     aws_api_gateway_integration.recipes_post_integration,
+    aws_api_gateway_integration.recipes_options_integration,
     aws_api_gateway_integration.recipe_get_integration,
     aws_api_gateway_integration.recipe_put_integration,
     aws_api_gateway_integration.recipe_delete_integration,
@@ -545,7 +570,7 @@ resource "aws_api_gateway_integration" "recipe_image_get_integration" {
   rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id             = aws_api_gateway_resource.recipe_image[count.index].id
   http_method             = aws_api_gateway_method.recipe_image_get[count.index].http_method
-  integration_http_method = "GET"
+  integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
 }

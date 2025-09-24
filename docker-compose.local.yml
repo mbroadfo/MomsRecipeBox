@@ -1,0 +1,78 @@
+# Docker Compose Override for Local Development Mode
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
+
+services:
+  # MongoDB local instance with development optimizations
+  mongo:
+    container_name: momsrecipebox-mongo-local
+    environment:
+      # Development-friendly settings
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB_NAME:-moms_recipe_box_dev}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata-local:/data/db
+      # Add development utilities
+      - ./db/scripts:/docker-entrypoint-initdb.d
+    command: mongod --auth --bind_ip_all --logLevel 1
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_LOCAL_ROOT_USER:-admin}", "-p", "${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}", "--authenticationDatabase", "admin"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # MongoDB Express for development
+  mongo-express:
+    container_name: momsrecipebox-mongo-express-local
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_LOCAL_ROOT_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}
+      ME_CONFIG_SITE_BASEURL: /mongo-express/
+    ports:
+      - "8081:8081"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  # App container optimized for local development
+  app-local:
+    container_name: momsrecipebox-app-local-dev
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      target: development  # Use development stage if multi-stage
+    environment:
+      MONGODB_URI: ${MONGODB_LOCAL_URI:-mongodb://${MONGODB_LOCAL_ROOT_USER:-admin}:${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box_dev}?authSource=admin}
+      MONGODB_MODE: local
+      APP_MODE: express
+      NODE_ENV: development
+      DEBUG: "true"
+      WATCH_FILES: "true"
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    volumes:
+      # Enable hot reload in development
+      - ./app:/app
+      - /app/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: ["node", "--inspect=0.0.0.0:9229", "local_server.js"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodata-local:
+    driver: local

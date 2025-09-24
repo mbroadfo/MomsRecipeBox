@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 3 Modernization - MongoDB Mode Switcher**: Critical PowerShell script migration to Node.js
+  - `scripts/switch-mode.js` - Cross-platform replacement for `Toggle-MongoDbConnection.ps1`
+  - Complete feature parity with PowerShell version including ASCII banner and CLI interface
+  - npm scripts for MongoDB mode management: `mode:switch`, `mode:local`, `mode:atlas`, `mode:current`, `mode:toggle`
+  - Docker compose profile management for local/atlas mode switching
+  - AWS Secrets Manager integration for secure Atlas URI retrieval
+  - Comprehensive error handling and user-friendly help system
+  - Parallel operation support - both PowerShell and Node.js scripts functional
 - **Phase 2 Modernization**: Cross-platform Node.js tooling for core DevOps operations
   - `scripts/test-lambda.js` - Lambda connectivity testing with safety features
   - `scripts/db-tunnel.js` - SSH tunnel management through AWS bastion
@@ -28,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Phase 3 Cross-Platform Compatibility**: Eliminated PowerShell dependency for MongoDB mode switching
+  - Fixed Docker compose profile management for reliable container switching
+  - Enhanced error handling with user-friendly messages and recovery suggestions
+  - Improved AWS Secrets Manager integration with proper credential handling
 - **Critical Windows Fix**: ES modules path detection for Node.js scripts on Windows
   - Fixed `import.meta.url` vs `process.argv[1]` path format mismatch
   - Scripts now use `fileURLToPath()` and `resolve()` for cross-platform compatibility

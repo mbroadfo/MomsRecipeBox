@@ -32,6 +32,12 @@
     "validate:env": "node scripts/setup-environment.js validate",
     "validate:docker": "docker-compose config > nul && echo ✅ Docker configuration valid",
     
+    "mode:switch": "node scripts/switch-mode.js",
+    "mode:local": "node scripts/switch-mode.js local",
+    "mode:atlas": "node scripts/switch-mode.js atlas",
+    "mode:current": "node scripts/switch-mode.js --show-current",
+    "mode:toggle": "node scripts/switch-mode.js",
+    
     "aws:mrb-api": "node scripts/aws-profile.js mrb-api",
     "aws:terraform": "node scripts/aws-profile.js terraform-mrb",
     "aws:toggle": "node scripts/aws-profile.js toggle",

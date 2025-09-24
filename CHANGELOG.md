@@ -29,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Migration Progress
 - ✅ **MongoDB Mode Switcher** (1/5 critical PowerShell scripts) - **COMPLETE**
-- ⏳ **Container Build Pipeline** (2/5) - Next target: `PushAppTierContainer.ps1`
-- ⏳ **Database Backup Scripts** (3/5) - Target: Backup/restore PowerShell automation
+- ✅ **Container Build Pipeline** (2/5) - **COMPLETE** - `scripts/build-container.js` replaces `PushAppTierContainer.ps1`
+- ⏳ **Database Backup Scripts** (3/5) - Next target: Backup/restore PowerShell automation
 - ⏳ **AWS Profile Management** (4/5) - Target: `toggle-aws-profile.ps1`
 - ⏳ **Development Environment Setup** (5/5) - Target: Various setup scripts
 
@@ -41,7 +41,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [Phase 3.2] - 2024-12-19
+
+### Added ✅ CONTAINER BUILD PIPELINE MIGRATION COMPLETE
+- **Cross-platform Container Builder** - `scripts/build-container.js` replaces PowerShell-only `PushAppTierContainer.ps1`
+- **npm Build Integration** - 3 new commands: `build:container`, `build:push`, `build:dry-run`
+- **Enhanced ECR Management** - Automatic Docker login with proper error handling
+- **Lambda-Compatible Builds** - Correct platform settings (`linux/amd64`, disabled attestations/SBOM)
+- **Multi-Tag Strategy** - Automatic tagging with `latest`, `dev`, and `git-<sha>` tags
+- **Lambda Function Updates** - Optional automatic Lambda function code updates
+
+### Enhanced Build Features
+- **Pre-flight Checks** - Validates Docker running and AWS credentials before build
+- **Progress Indicators** - Real-time colored output showing build progress
+- **Build Summary** - Comprehensive report with tags, duration, and Lambda status
+- **Dry Run Mode** - Safe configuration preview without executing builds
+- **Help System** - Detailed examples and migration guidance from PowerShell
+
+### Technical Implementation
+- **Parallel Operation** - New Node.js script operates alongside existing PowerShell script
+- **Feature Parity** - 100% compatibility with PowerShell container build process
+- **Cross-Platform** - Works on Windows, macOS, and Linux without PowerShell dependency
+- **Error Recovery** - Comprehensive error handling with recovery suggestions
+- **Git Integration** - Automatic SHA detection for container tagging
+
+### Migration Progress Update
+- ✅ **MongoDB Mode Switcher** (1/5 critical PowerShell scripts) - **COMPLETE**
+- ✅ **Container Build Pipeline** (2/5 critical PowerShell scripts) - **COMPLETE** 
+- ⏳ **Database Backup Scripts** (3/5) - Next target: Backup/restore PowerShell automation
+- ⏳ **AWS Profile Management** (4/5) - Target: `toggle-aws-profile.ps1`
+- ⏳ **Development Environment Setup** (5/5) - Target: Various setup scripts
+
+### Developer Experience
+- **Faster Execution** - Node.js startup significantly faster than PowerShell
+- **IDE Integration** - Works in any terminal or IDE environment
+- **CI/CD Ready** - Compatible with GitHub Actions and other automation platforms
+- **Comprehensive Help** - Built-in usage examples and troubleshooting
+
+---
 
 ### Added
 

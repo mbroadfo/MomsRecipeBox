@@ -171,13 +171,15 @@ async function restartAppContainer(mode) {
   
   try {
     if (mode === 'local') {
-      // For local mode, stop atlas containers and start local containers
+      // For local mode, stop and remove atlas containers, then start local containers
       try {
-        execSync('docker-compose --profile atlas stop', { stdio: 'pipe' });
+        log('Stopping Atlas containers...', 'blue');
+        execSync('docker-compose --profile atlas down', { stdio: 'pipe' });
       } catch (error) {
         // Ignore if atlas containers aren't running
       }
       
+      log('Starting local containers...', 'blue');
       execSync('docker-compose --profile local up -d', { stdio: 'inherit' });
       
       // Check if MongoDB container is running
@@ -193,14 +195,16 @@ async function restartAppContainer(mode) {
       try {
         const mongoUri = await getMongoAtlasUri();
         
-        // Stop local containers
+        // Stop and remove local containers
         try {
-          execSync('docker-compose --profile local stop', { stdio: 'pipe' });
+          log('Stopping local containers...', 'blue');
+          execSync('docker-compose --profile local down', { stdio: 'pipe' });
         } catch (error) {
           // Ignore if local containers aren't running
         }
         
         // Set the Atlas URI in environment and start atlas containers
+        log('Starting Atlas containers...', 'blue');
         process.env.MONGODB_ATLAS_URI = mongoUri;
         execSync('docker-compose --profile atlas up -d', { 
           stdio: 'inherit',
@@ -307,6 +311,7 @@ Arguments:
 Options:
   --show-current   Display current MongoDB mode and status
   --no-restart     Update .env file but don't restart containers
+  --cleanup        Remove all stopped containers and clean up Docker
   --help          Show this help message
 
 Examples:
@@ -315,6 +320,7 @@ Examples:
   node scripts/switch-mode.js atlas              # Switch to atlas mode
   node scripts/switch-mode.js --show-current     # Show current mode
   node scripts/switch-mode.js local --no-restart # Switch mode but don't restart
+  node scripts/switch-mode.js --cleanup          # Clean up stopped containers
 
 npm script shortcuts:
   npm run mode:switch         # Toggle mode
@@ -331,6 +337,7 @@ function parseArgs() {
     mode: null,
     showCurrent: false,
     noRestart: false,
+    cleanup: false,
     help: false
   };
   
@@ -341,6 +348,8 @@ function parseArgs() {
       result.showCurrent = true;
     } else if (arg === '--no-restart') {
       result.noRestart = true;
+    } else if (arg === '--cleanup') {
+      result.cleanup = true;
     } else if (arg === '--help' || arg === '-h') {
       result.help = true;
     } else if (['local', 'atlas'].includes(arg)) {
@@ -349,6 +358,55 @@ function parseArgs() {
   }
   
   return result;
+}
+
+// Cleanup stopped containers
+async function cleanupContainers() {
+  log('🧹 Cleaning up Docker containers...', 'cyan');
+  
+  try {
+    // Stop and remove all profile containers
+    log('Stopping and removing all MomsRecipeBox containers...', 'blue');
+    
+    try {
+      execSync('docker-compose --profile local down', { stdio: 'pipe' });
+      log('✅ Local containers cleaned up', 'green');
+    } catch (error) {
+      // Ignore if no local containers
+    }
+    
+    try {
+      execSync('docker-compose --profile atlas down', { stdio: 'pipe' });
+      log('✅ Atlas containers cleaned up', 'green');
+    } catch (error) {
+      // Ignore if no atlas containers
+    }
+    
+    // Clean up any other stopped containers related to this project
+    try {
+      const { stdout } = await execAsync('docker ps -a --filter "name=momsrecipebox" --format "{{.Names}}"');
+      const containers = stdout.trim().split('\n').filter(name => name);
+      
+      if (containers.length > 0) {
+        log(`Found ${containers.length} additional containers to clean up...`, 'yellow');
+        for (const container of containers) {
+          try {
+            execSync(`docker rm -f ${container}`, { stdio: 'pipe' });
+            log(`✅ Removed container: ${container}`, 'green');
+          } catch (error) {
+            log(`⚠️  Could not remove ${container}: ${error.message}`, 'yellow');
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore if no additional containers found
+    }
+    
+    log('🎉 Docker cleanup complete!', 'green');
+  } catch (error) {
+    log(`❌ Cleanup failed: ${error.message}`, 'red');
+    process.exit(1);
+  }
 }
 
 // Main execution
@@ -367,6 +425,11 @@ async function main() {
   
   if (args.showCurrent) {
     await showCurrentStatus();
+    return;
+  }
+  
+  if (args.cleanup) {
+    await cleanupContainers();
     return;
   }
   

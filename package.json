@@ -37,6 +37,7 @@
     "mode:atlas": "node scripts/switch-mode.js atlas",
     "mode:current": "node scripts/switch-mode.js --show-current",
     "mode:toggle": "node scripts/switch-mode.js",
+    "mode:cleanup": "node scripts/switch-mode.js --cleanup",
     
     "aws:mrb-api": "node scripts/aws-profile.js mrb-api",
     "aws:terraform": "node scripts/aws-profile.js terraform-mrb",

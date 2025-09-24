@@ -61,6 +61,9 @@
     
     "build": "cd app && docker build -t mrb-app .",
     "build:lambda": "cd app && docker build -f Dockerfile -t mrb-app-lambda .",
+    "build:container": "node scripts/build-container.js",
+    "build:push": "node scripts/build-container.js --update-lambda",
+    "build:dry-run": "node scripts/build-container.js --dry-run",
     "logs": "docker-compose logs -f",
     "logs:app": "docker-compose logs -f app-local app-atlas",
     "logs:db": "docker-compose logs -f mongo"

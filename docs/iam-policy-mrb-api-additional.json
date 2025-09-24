@@ -1,0 +1,70 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "MRBCoreOperations",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "MRBLambdaOperations", 
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:ListFunctions",
+        "lambda:ListVersionsByFunction"
+      ],
+      "Resource": [
+        "arn:aws:lambda:us-west-2:491696534851:function:mrb-app-api*",
+        "arn:aws:lambda:us-west-2:491696534851:function:mrb-*"
+      ]
+    },
+    {
+      "Sid": "MRBBastionAccess",
+      "Effect": "Allow", 
+      "Action": [
+        "ec2:DescribeInstances"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Region": "us-west-2"
+        }
+      }
+    },
+    {
+      "Sid": "MRBSSMTunneling",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:StartSession",
+        "ssm:DescribeSessions", 
+        "ssm:TerminateSession"
+      ],
+      "Resource": [
+        "arn:aws:ec2:us-west-2:491696534851:instance/*",
+        "arn:aws:ssm:*:*:document/AWS-StartPortForwardingSessionToRemoteHost"
+      ],
+      "Condition": {
+        "BoolIfExists": {
+          "ssm:SessionDocumentAccessCheck": "true"
+        }
+      }
+    },
+    {
+      "Sid": "MRBECRAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

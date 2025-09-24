@@ -24,7 +24,7 @@ For new users, visit our [Getting Started Guide](docs/guides/getting_started.md)
 /db           Seed scripts & JSON recipe fixtures (MongoDB)
 /app          Backend API (handlers, lambda-style router, tests)
 /ui           React/Vite frontend (editing & viewing recipes)
-/scripts      PowerShell helper scripts / automation
+/scripts      Cross-platform Node.js automation & PowerShell helpers
 /docs         Project documentation
 ```
 
@@ -74,13 +74,38 @@ The application includes a comprehensive health monitoring system with embedded 
 
 For database quality tools:
 
-```powershell
+```bash
 # Analyze database quality
 npm run db:analyze
 
 # Clean database (apply auto-fixes)
 npm run db:clean-apply
 ```
+
+## 🔧 Development & DevOps
+
+The project includes modern cross-platform tooling for development and deployment:
+
+```bash
+# Lambda testing and connectivity
+npm run test:lambda
+npm run test:lambda -- --invoke
+
+# Database tunnel management
+npm run tunnel:start
+npm run tunnel:status
+npm run tunnel:stop
+
+# AWS profile management
+npm run aws:status
+npm run aws:switch
+
+# Infrastructure deployment
+npm run deploy:lambda
+npm run deploy:lambda -- --tag production
+```
+
+Legacy PowerShell scripts are also available for Windows-specific operations.
 
 ## 🛡️ Database Backup & Restore
 

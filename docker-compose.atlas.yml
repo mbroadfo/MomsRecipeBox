@@ -1,0 +1,50 @@
+# Docker Compose Override for Atlas (Remote DB) Mode
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.atlas.yml up -d
+
+services:
+  # App container configured for Atlas connection
+  app-atlas:
+    container_name: momsrecipebox-app-atlas
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      target: production  # Use production stage
+    environment:
+      # Atlas connection will be provided via MONGODB_ATLAS_URI
+      MONGODB_URI: ${MONGODB_ATLAS_URI}
+      MONGODB_MODE: atlas
+      APP_MODE: express
+      NODE_ENV: ${NODE_ENV:-development}
+      
+      # AWS configuration for Atlas credentials
+      AWS_REGION: ${AWS_REGION:-us-west-2}
+      AWS_SECRET_NAME: ${AWS_SECRET_NAME:-moms-recipe-secrets-dev}
+      
+      # Enhanced timeouts for cloud connections
+      HEALTH_CHECK_TIMEOUT_MS: 15000
+      MONGODB_CONNECT_TIMEOUT_MS: 10000
+      
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  # Development utilities (can still be useful with Atlas)
+  atlas-tools:
+    image: mongo:latest
+    container_name: momsrecipebox-atlas-tools
+    environment:
+      MONGODB_URI: ${MONGODB_ATLAS_URI}
+    volumes:
+      - ./scripts:/scripts
+      - ./backups:/backups
+    profiles:
+      - tools
+    command: tail -f /dev/null  # Keep container running for manual tools
+
+# Note: No local MongoDB containers in Atlas mode
+# This saves resources and avoids port conflicts

@@ -1,0 +1,248 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  # Basic validation and testing
+  validate:
+    runs-on: ubuntu-latest
+    name: "Validate & Test"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: app/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        npm ci
+        
+    - name: Validate environment configuration
+      run: |
+        # Check that .env.example exists and has required variables
+        if [ ! -f .env.example ]; then
+          echo "❌ .env.example file missing"
+          exit 1
+        fi
+        
+        # Check for required environment variables
+        required_vars=("MONGODB_MODE" "APP_MODE" "MONGODB_DB_NAME")
+        for var in "${required_vars[@]}"; do
+          if ! grep -q "^$var=" .env.example && ! grep -q "^# $var=" .env.example; then
+            echo "❌ Required variable $var missing from .env.example"
+            exit 1
+          fi
+        done
+        echo "✅ Environment configuration validated"
+        
+    - name: Validate Docker configuration
+      run: |
+        # Check docker-compose.yml syntax
+        docker-compose config > /dev/null
+        echo "✅ Docker Compose configuration is valid"
+        
+    - name: Run unit tests
+      run: |
+        cd app
+        npm test
+        
+    - name: Check for security vulnerabilities
+      run: |
+        cd app
+        npm audit --audit-level=high
+        
+  # Test local deployment mode
+  test-local-mode:
+    runs-on: ubuntu-latest
+    name: "Test Local Mode"
+    needs: validate
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create test environment file
+      run: |
+        cp .env.example .env
+        # Configure for local mode
+        sed -i 's/MONGODB_MODE=.*/MONGODB_MODE=local/' .env
+        sed -i 's/APP_MODE=.*/APP_MODE=express/' .env
+        
+    - name: Start local environment
+      run: |
+        # Start MongoDB and app in local mode
+        docker-compose --profile local up -d --build
+        
+    - name: Wait for services to be ready
+      run: |
+        # Wait for MongoDB to be ready
+        timeout=60
+        while [ $timeout -gt 0 ]; do
+          if docker-compose logs mongo | grep -q "Waiting for connections"; then
+            echo "✅ MongoDB is ready"
+            break
+          fi
+          echo "Waiting for MongoDB... ($timeout seconds left)"
+          sleep 2
+          timeout=$((timeout - 2))
+        done
+        
+        if [ $timeout -eq 0 ]; then
+          echo "❌ MongoDB failed to start in time"
+          docker-compose logs
+          exit 1
+        fi
+        
+        # Wait for app to be ready
+        timeout=60
+        while [ $timeout -gt 0 ]; do
+          if curl -s http://localhost:3000/health > /dev/null; then
+            echo "✅ App is ready"
+            break
+          fi
+          echo "Waiting for app... ($timeout seconds left)"
+          sleep 2
+          timeout=$((timeout - 2))
+        done
+        
+        if [ $timeout -eq 0 ]; then
+          echo "❌ App failed to start in time"
+          docker-compose logs app-local
+          exit 1
+        fi
+        
+    - name: Run integration tests
+      run: |
+        # Test health endpoint
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health)
+        if [ "$response" != "200" ]; then
+          echo "❌ Health check failed with status $response"
+          exit 1
+        fi
+        echo "✅ Health check passed"
+        
+        # Test basic API endpoints
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/recipes)
+        if [ "$response" != "200" ] && [ "$response" != "401" ]; then
+          echo "❌ Recipes endpoint failed with status $response"
+          exit 1
+        fi
+        echo "✅ API endpoints responding"
+        
+    - name: Validate MongoDB connection
+      run: |
+        # Check MongoDB connection through app
+        response=$(curl -s http://localhost:3000/health/detailed)
+        if echo "$response" | grep -q '"database".*"healthy"'; then
+          echo "✅ MongoDB connection validated"
+        else
+          echo "❌ MongoDB connection failed"
+          echo "Health response: $response"
+          exit 1
+        fi
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        docker-compose --profile local down -v
+        
+  # Test configuration switching
+  test-mode-switching:
+    runs-on: ubuntu-latest
+    name: "Test Mode Switching"
+    needs: validate
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test environment configuration validation
+      run: |
+        # Test that our environment validation works
+        cp .env.example .env
+        
+        # Test local mode configuration
+        echo "MONGODB_MODE=local" >> .env
+        echo "APP_MODE=express" >> .env
+        
+        # Validate configuration is readable
+        source .env
+        if [ "$MONGODB_MODE" != "local" ] || [ "$APP_MODE" != "express" ]; then
+          echo "❌ Environment configuration not working"
+          exit 1
+        fi
+        echo "✅ Local mode configuration validated"
+        
+        # Test atlas mode configuration (without actually connecting)
+        sed -i 's/MONGODB_MODE=local/MONGODB_MODE=atlas/' .env
+        source .env
+        if [ "$MONGODB_MODE" != "atlas" ]; then
+          echo "❌ Atlas mode configuration not working"
+          exit 1
+        fi
+        echo "✅ Atlas mode configuration validated"
+        
+    - name: Validate Docker Compose profiles
+      run: |
+        # Test local profile
+        docker-compose --profile local config > /dev/null
+        echo "✅ Local profile configuration is valid"
+        
+        # Test atlas profile  
+        docker-compose --profile atlas config > /dev/null
+        echo "✅ Atlas profile configuration is valid"
+        
+  # Security and code quality checks
+  security-scan:
+    runs-on: ubuntu-latest
+    name: "Security & Quality"
+    needs: validate
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: 'app/'
+        format: 'table'
+        exit-code: '1'
+        severity: 'HIGH,CRITICAL'
+        
+    - name: Check for secrets in code
+      run: |
+        # Simple secret detection
+        if grep -r -E "(password|secret|key|token).*=" app/ --include="*.js" --include="*.json" | grep -v "process.env" | grep -v "example" | grep -v "placeholder"; then
+          echo "❌ Potential secrets found in code"
+          exit 1
+        fi
+        echo "✅ No hardcoded secrets detected"
+        
+    - name: Validate Docker security
+      run: |
+        # Check Dockerfile for security issues
+        if [ -f app/Dockerfile ]; then
+          # Check for running as root
+          if ! grep -q "USER " app/Dockerfile; then
+            echo "⚠️ Warning: Dockerfile doesn't specify non-root user"
+          fi
+          
+          # Check for latest tag usage
+          if grep -q "FROM.*:latest" app/Dockerfile; then
+            echo "⚠️ Warning: Dockerfile uses 'latest' tag"
+          fi
+        fi
+        echo "✅ Docker security check completed"

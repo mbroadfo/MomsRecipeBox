@@ -1,10 +1,5 @@
 # Variables for Mom's Recipe Box Terraform Setup
 
-variable "vpc_id" {
-  description = "The VPC ID where resources will be provisioned"
-  type        = string
-}
-
 variable "public_subnet_ids" {
   description = "Public subnets used by the bastion host"
   type        = list(string)

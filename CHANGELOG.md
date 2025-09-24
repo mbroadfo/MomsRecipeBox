@@ -5,6 +5,42 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Phase 3.1] - 2024-12-19
+
+### Added ✅ PHASE 3 MONGODB SWITCHER MIGRATION COMPLETE
+- **Cross-platform MongoDB Mode Switcher** - `scripts/switch-mode.js` replaces PowerShell-only `Toggle-MongoDbConnection.ps1`
+- **npm Script Integration** - 6 new commands: `mode:local`, `mode:atlas`, `mode:current`, `mode:toggle`, `mode:switch`, `mode:cleanup`
+- **Enhanced Container Management** - Uses `docker-compose down` instead of `stop` to keep Docker Desktop clean
+- **AWS Secrets Manager Integration** - Automatic Atlas credential retrieval for cloud database connections
+- **Improved Error Handling** - Comprehensive error messages and recovery guidance
+- **Cross-platform Compatibility** - Works on Windows, macOS, and Linux without PowerShell dependency
+
+### Enhanced
+- **Documentation** - Added comprehensive MongoDB mode switching guide (`docs/technical/mongodb_mode_switching.md`)
+- **README** - Updated with MongoDB mode management section and deployment modes documentation
+- **Container Lifecycle** - Improved cleanup to remove stopped containers completely
+- **User Experience** - Added ASCII banner, colored output, and progress indicators
+
+### Technical Implementation
+- **Parallel Operation** - New Node.js script operates alongside existing PowerShell script
+- **Feature Parity** - 100% compatibility with existing MongoDB switching functionality
+- **Docker Compose Profiles** - Leverages `local` and `atlas` profiles for clean environment isolation
+- **Environment Management** - Automatic `.env` file updates for seamless mode transitions
+
+### Migration Progress
+- ✅ **MongoDB Mode Switcher** (1/5 critical PowerShell scripts) - **COMPLETE**
+- ⏳ **Container Build Pipeline** (2/5) - Next target: `PushAppTierContainer.ps1`
+- ⏳ **Database Backup Scripts** (3/5) - Target: Backup/restore PowerShell automation
+- ⏳ **AWS Profile Management** (4/5) - Target: `toggle-aws-profile.ps1`
+- ⏳ **Development Environment Setup** (5/5) - Target: Various setup scripts
+
+### Notes
+- **Backward Compatibility** - PowerShell scripts preserved and continue to function
+- **Developer Choice** - Teams can use either PowerShell or npm-based commands
+- **Foundation for Phase 3** - Establishes pattern for remaining PowerShell modernization
+
+---
+
 ## [Unreleased]
 
 ### Added

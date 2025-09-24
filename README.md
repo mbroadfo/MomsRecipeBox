@@ -86,6 +86,36 @@ npm run db:clean-apply
 
 The project includes modern cross-platform tooling for development and deployment:
 
+### MongoDB Mode Management
+
+Switch between local and Atlas MongoDB with a single command:
+
+```bash
+# Switch to local MongoDB (with Docker containers)
+npm run mode:local
+
+# Switch to Atlas MongoDB (cloud database)
+npm run mode:atlas
+
+# Toggle between modes automatically
+npm run mode:toggle
+
+# Check current mode and container status  
+npm run mode:current
+
+# Clean up all Docker containers
+npm run mode:cleanup
+```
+
+The mode switcher handles:
+
+- Environment file (`.env`) updates
+- Docker container management with profiles
+- AWS Secrets Manager integration for Atlas
+- Automatic cleanup of unused containers
+
+### DevOps Automation
+
 ```bash
 # Lambda testing and connectivity
 npm run test:lambda
@@ -105,7 +135,7 @@ npm run deploy:lambda
 npm run deploy:lambda -- --tag production
 ```
 
-Legacy PowerShell scripts are also available for Windows-specific operations.
+**Cross-Platform Support**: All commands work on Windows, macOS, and Linux. Legacy PowerShell scripts are preserved for Windows-specific operations and backward compatibility.
 
 ## 🛡️ Database Backup & Restore
 
@@ -121,14 +151,47 @@ Your family recipes and user data are protected with a comprehensive backup and 
 
 For more details, see the [MongoDB Backup Guide](docs/technical/mongodb_guide.md#backup-and-restore).
 
-## ☁️ Cloud Deployment
+## ☁️ Deployment Modes
 
-The application supports two database deployment options:
+The application supports three flexible deployment modes:
 
-1. **MongoDB Atlas** (Recommended) - Cloud-based MongoDB with free tier option
-2. **Local MongoDB** - Self-hosted MongoDB for development
+### 🏠 **Local Development Mode**
 
-For detailed configuration, see the [MongoDB Guide](docs/technical/mongodb_guide.md).
+- **Backend**: Express server (local)
+- **Database**: MongoDB in Docker container
+- **Frontend**: Local React development server
+- **Best for**: Development, testing, offline work
+
+```bash
+npm run mode:local    # Switch to local mode
+npm run start:local   # Start all local services
+```
+
+### 🌐 **Remote Database Mode**
+
+- **Backend**: Express server (local)
+- **Database**: MongoDB Atlas (cloud)
+- **Frontend**: Local React development server  
+- **Best for**: Development with production data
+
+```bash
+npm run mode:atlas    # Switch to Atlas mode
+npm run start:atlas   # Start with Atlas database
+```
+
+### ☁️ **Production Mode**
+
+- **Backend**: AWS Lambda (serverless)
+- **Database**: MongoDB Atlas (cloud)
+- **Frontend**: S3 + CloudFront (planned)
+- **Best for**: Production deployment
+
+```bash
+npm run deploy:lambda    # Deploy to AWS Lambda
+npm run test:lambda     # Test Lambda deployment
+```
+
+Each mode is completely isolated with automatic container and environment management.
 
 ## 🛠 Contributing
 

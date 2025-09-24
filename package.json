@@ -2,54 +2,65 @@
   "type": "module",
   "scripts": {
     "db:analyze": "node tools/database/quality-analyzer.js",
-    "db:fields": "node tools/database/field-analyzer.js", 
+    "db:fields": "node tools/database/field-analyzer.js",
     "db:clean": "node tools/database/database-cleaner.js",
     "db:clean-preview": "node tools/database/database-cleaner.js",
     "db:clean-apply": "node tools/database/database-cleaner.js --apply",
     "db:clean-full": "node tools/database/database-cleaner.js --apply --remove-tests",
-    
     "dev:local": "npm run env:local && npm run start:local",
     "dev:atlas": "npm run env:atlas && npm run start:atlas",
     "dev:lambda": "npm run env:lambda && npm run start:lambda-local",
-    
     "env:local": "echo 'MONGODB_MODE=local' > .env && echo 'APP_MODE=express' >> .env",
-    "env:atlas": "echo 'MONGODB_MODE=atlas' > .env && echo 'APP_MODE=express' >> .env", 
+    "env:atlas": "echo 'MONGODB_MODE=atlas' > .env && echo 'APP_MODE=express' >> .env",
     "env:lambda": "echo 'MONGODB_MODE=atlas' > .env && echo 'APP_MODE=lambda' >> .env",
-    
     "start:local": "docker-compose --profile local up -d",
     "start:atlas": "docker-compose --profile atlas up -d",
     "start:lambda-local": "cd app && npm run start:lambda",
-    
     "stop": "docker-compose down",
     "stop:all": "docker-compose --profile local --profile atlas down -v",
     "restart": "npm run stop && sleep 2 && npm run start:local",
-    
     "test": "cd app && npm test",
-    "test:all": "npm run test:local && npm run test:atlas",
+    "test:all": "npm run test:local && npm run test:atlas && npm run test:lambda",
     "test:local": "npm run env:local && npm run start:local && sleep 10 && npm run test && npm run stop",
     "test:atlas": "echo 'Atlas testing requires valid MONGODB_ATLAS_URI in .env'",
-    
+    "test:lambda": "node scripts/test-lambda.js mrb-app-api",
+    "test:lambda:safe": "node scripts/test-lambda.js mrb-app-api",
+    "test:lambda:invoke": "node scripts/test-lambda.js mrb-app-api --invoke",
     "health": "curl -s http://localhost:3000/health",
     "health:detailed": "curl -s http://localhost:3000/health/detailed",
-    
     "validate": "node scripts/setup-environment.js validate",
     "validate:env": "node scripts/setup-environment.js validate",
     "validate:docker": "docker-compose config > nul && echo ✅ Docker configuration valid",
     
+    "aws:mrb-api": "node scripts/aws-profile.js mrb-api",
+    "aws:terraform": "node scripts/aws-profile.js terraform-mrb",
+    "aws:toggle": "node scripts/aws-profile.js toggle",
+    "aws:status": "node scripts/aws-profile.js status",
+    "aws:validate": "node scripts/aws-profile.js validate",
+    
+    "iam:setup": "node scripts/setup-iam-policy.js setup",
+    "iam:status": "node scripts/setup-iam-policy.js status",
+    "tunnel:start": "node scripts/db-tunnel.js start",
+    "tunnel:stop": "node scripts/db-tunnel.js stop",
+    "tunnel:status": "node scripts/db-tunnel.js status",
     "setup": "node scripts/setup-environment.js validate && cp .env.example .env && echo '✅ Environment file created. Please configure .env file.'",
     "setup:local": "node scripts/setup-environment.js setup local",
-    "setup:atlas": "node scripts/setup-environment.js setup atlas", 
+    "setup:atlas": "node scripts/setup-environment.js setup atlas",
     "setup:lambda": "node scripts/setup-environment.js setup lambda",
+    
+    "deploy:lambda": "node scripts/deploy-lambda.js",
+    "deploy:lambda:prod": "node scripts/deploy-lambda.js --image-tag production", 
+    "deploy:dry-run": "node scripts/deploy-lambda.js --dry-run",
     
     "build": "cd app && docker build -t mrb-app .",
     "build:lambda": "cd app && docker build -f Dockerfile -t mrb-app-lambda .",
-    
     "logs": "docker-compose logs -f",
     "logs:app": "docker-compose logs -f app-local app-atlas",
     "logs:db": "docker-compose logs -f mongo"
   },
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
+    "commander": "^14.0.1",
     "dotenv": "^17.2.1",
     "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",

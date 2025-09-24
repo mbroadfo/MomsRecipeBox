@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 2 Modernization**: Cross-platform Node.js tooling for core DevOps operations
+  - `scripts/test-lambda.js` - Lambda connectivity testing with safety features
+  - `scripts/db-tunnel.js` - SSH tunnel management through AWS bastion
+  - `scripts/deploy-lambda.js` - Modern container deployment with ECR integration
+  - `scripts/aws-profile.js` - AWS profile and identity management
+- Enhanced npm scripts with 25+ automation commands for deployment workflows
+- MRBDevOpsOperations IAM policy with comprehensive Lambda/ECR/SSM permissions
+- Database seeding functionality removed for production safety
 - Real infrastructure monitoring with AWS service integration replacing "Coming Soon!" placeholders
 - Comprehensive S3 orphan image analysis and cleanup tools (removed 32 orphaned images, 14.79 MB)
 - Lambda tag filtering for accurate infrastructure metrics
@@ -20,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Critical Windows Fix**: ES modules path detection for Node.js scripts on Windows
+  - Fixed `import.meta.url` vs `process.argv[1]` path format mismatch
+  - Scripts now use `fileURLToPath()` and `resolve()` for cross-platform compatibility
+  - All Node.js automation scripts now work correctly on Windows PowerShell
 - **Critical Bug**: Recipe deletion now properly cleans up associated S3 images preventing future orphans
 - Delete recipe handler completely rewritten with comprehensive S3 cleanup
 - Multiple image extension support (png, jpg, jpeg, gif, webp) in S3 cleanup
@@ -29,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Phase 2 Complete**: PowerShell scripts now have Node.js cross-platform alternatives
+- Enhanced package.json with comprehensive npm scripts for all deployment modes
+- AWS CLI integration standardized across all Node.js tooling
 - Updated Swagger documentation for delete recipe endpoint with new response format
 - Test files updated to validate new delete response format including `deletedImages` count
 - Admin infrastructure monitoring shows real health system integration
@@ -37,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- IAM permissions refined with principle of least privilege for MRBDevOpsOperations
+- Database seeding removed from production tooling for safety
 - Comprehensive error handling in S3 deletion operations with detailed logging
 - Proper AWS SDK integration with secure credential management
 

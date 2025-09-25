@@ -41,7 +41,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Phase 3.2] - 2024-12-19
+## [Phase 3.3] - 2024-12-19
+
+### Added ✅ DATABASE BACKUP/RESTORE PIPELINE MIGRATION COMPLETE
+- **Cross-platform Backup Manager** - `scripts/backup-mongodb.js` replaces comprehensive PowerShell backup system
+- **Cross-platform Restore Manager** - `scripts/restore-mongodb.js` replaces PowerShell restore scripts  
+- **npm Backup Integration** - 5 new commands: `backup:local`, `backup:atlas`, `backup:full`, `backup:archive`, `backup:dry-run`
+- **npm Restore Integration** - 4 new commands: `restore:from-local`, `restore:from-s3`, `restore:latest`, `restore:dry-run`
+- **S3 Cloud Storage** - Modern AWS SDK v3 integration for backup uploads and downloads
+- **Safety Features** - Pre-restore backup creation, dry-run modes, integrity verification
+
+### Enhanced Database Operations
+- **Local MongoDB Support** - Docker container mongodump/mongorestore operations
+- **Atlas Cloud Support** - Direct Atlas connection with AWS Secrets Manager credentials
+- **Compression Management** - ZIP archive creation and extraction with archiver library
+- **Metadata Tracking** - JSON metadata with database statistics and audit trails
+- **Collection Filtering** - Selective backup/restore of specific collections
+- **Integrity Verification** - BSON validation and document count verification
+
+### S3 Integration Features
+- **Automatic Upload** - Seamless backup upload to S3 with organized folder structure
+- **Backup Listing** - Query and display available S3 backups with size and date information
+- **Latest Selection** - Automatic identification and restore of most recent backup
+- **Download Management** - Automatic S3 download and local extraction for restore operations
+- **Profile Integration** - Uses terraform-mrb AWS profile for all cloud operations
+
+### Migration Scope
+**PowerShell Scripts Replaced:**
+- `scripts/Backup-MongoDBToS3.ps1` → `npm run backup:full`
+- `scripts/local_db/backup-mongodb.ps1` → `npm run backup:local`  
+- `scripts/Restore-MongoDBFromS3.ps1` → `npm run restore:latest`
+- `scripts/local_db/restore-mongodb.ps1` → Direct script execution
+- Multiple auxiliary backup/restore PowerShell utilities integrated
+
+### Technical Enhancements
+- **AWS SDK v3** - Modern cloud integration replacing AWS CLI-only approaches
+- **Enhanced Error Handling** - Comprehensive async error handling with recovery guidance
+- **Safety Backups** - Automatic pre-restore backup creation for rollback capability
+- **Progress Indicators** - Real-time colored output showing operation progress
+- **Cross-Platform Paths** - Proper path handling for Windows, macOS, and Linux
+
+### Migration Progress Update (60% Complete)
+- ✅ **MongoDB Mode Switcher** (1/5 critical PowerShell scripts) - **COMPLETE**
+- ✅ **Container Build Pipeline** (2/5 critical PowerShell scripts) - **COMPLETE**
+- ✅ **Database Backup/Restore** (3/5 critical PowerShell scripts) - **COMPLETE**
+- ⏳ **AWS Profile Management** (4/5) - Next target: `toggle-aws-profile.ps1`
+- ⏳ **Development Environment Setup** (5/5) - Final target: Various setup scripts
+
+---
 
 ### Added ✅ CONTAINER BUILD PIPELINE MIGRATION COMPLETE
 - **Cross-platform Container Builder** - `scripts/build-container.js` replaces PowerShell-only `PushAppTierContainer.ps1`
@@ -68,7 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Migration Progress Update
 - ✅ **MongoDB Mode Switcher** (1/5 critical PowerShell scripts) - **COMPLETE**
 - ✅ **Container Build Pipeline** (2/5 critical PowerShell scripts) - **COMPLETE** 
-- ⏳ **Database Backup Scripts** (3/5) - Next target: Backup/restore PowerShell automation
+- ✅ **Database Backup/Restore** (3/5 critical PowerShell scripts) - **COMPLETE** - `scripts/backup-mongodb.js` & `scripts/restore-mongodb.js`
 - ⏳ **AWS Profile Management** (4/5) - Target: `toggle-aws-profile.ps1`
 - ⏳ **Development Environment Setup** (5/5) - Target: Various setup scripts
 

@@ -64,14 +64,28 @@
     "build:container": "node scripts/build-container.js",
     "build:push": "node scripts/build-container.js --update-lambda",
     "build:dry-run": "node scripts/build-container.js --dry-run",
+    
+    "backup:local": "node scripts/backup-mongodb.js --type local",
+    "backup:atlas": "node scripts/backup-mongodb.js --type atlas --s3-upload",
+    "backup:full": "node scripts/backup-mongodb.js --type full --s3-upload",
+    "backup:archive": "node scripts/backup-mongodb.js --type archive --s3-upload",
+    "backup:dry-run": "node scripts/backup-mongodb.js --dry-run",
+    
+    "restore:from-local": "node scripts/restore-mongodb.js",
+    "restore:from-s3": "node scripts/restore-mongodb.js --from-s3",
+    "restore:latest": "node scripts/restore-mongodb.js --latest",
+    "restore:dry-run": "node scripts/restore-mongodb.js --dry-run --latest",
     "logs": "docker-compose logs -f",
     "logs:app": "docker-compose logs -f app-local app-atlas",
     "logs:db": "docker-compose logs -f mongo"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.698.0",
     "@types/react-router-dom": "^5.3.3",
+    "archiver": "^7.0.1",
     "commander": "^14.0.1",
     "dotenv": "^17.2.1",
+    "extract-zip": "^2.0.1",
     "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",

@@ -10,9 +10,24 @@
     "dev:local": "npm run env:local && npm run start:local",
     "dev:atlas": "npm run env:atlas && npm run start:atlas",
     "dev:lambda": "npm run env:lambda && npm run start:lambda-local",
-    "env:local": "echo 'MONGODB_MODE=local' > .env && echo 'APP_MODE=express' >> .env",
-    "env:atlas": "echo 'MONGODB_MODE=atlas' > .env && echo 'APP_MODE=express' >> .env",
-    "env:lambda": "echo 'MONGODB_MODE=atlas' > .env && echo 'APP_MODE=lambda' >> .env",
+    "ui:dev": "cd ui && npm run dev:local",
+    "ui:dev:local": "cd ui && npm run dev:local",
+    "ui:dev:atlas": "cd ui && npm run dev:atlas",
+    "ui:dev:lambda": "cd ui && npm run dev:lambda",
+    "ui:build": "cd ui && npm run build",
+    "ui:build:local": "cd ui && npm run build:local",
+    "ui:build:atlas": "cd ui && npm run build:atlas",
+    "ui:build:lambda": "cd ui && npm run build:lambda",
+    "ui:build:production": "cd ui && npm run build:production",
+    "ui:preview": "cd ui && npm run preview",
+    "ui:preview:local": "cd ui && npm run preview:local",
+    "ui:preview:atlas": "cd ui && npm run preview:atlas",
+    "ui:preview:lambda": "cd ui && npm run preview:lambda",
+    "fullstack:local": "concurrently \"npm run dev:local\" \"npm run ui:dev:local\"",
+    "fullstack:atlas": "concurrently \"npm run dev:atlas\" \"npm run ui:dev:atlas\"",
+    "env:local": "echo MONGODB_MODE=local > .env && echo APP_MODE=express >> .env",
+    "env:atlas": "echo MONGODB_MODE=atlas > .env && echo APP_MODE=express >> .env",
+    "env:lambda": "echo MONGODB_MODE=atlas > .env && echo APP_MODE=lambda >> .env",
     "start:local": "docker-compose --profile local up -d",
     "start:atlas": "docker-compose --profile atlas up -d",
     "start:lambda-local": "cd app && npm run start:lambda",
@@ -31,20 +46,17 @@
     "validate": "node scripts/setup-environment.js validate",
     "validate:env": "node scripts/setup-environment.js validate",
     "validate:docker": "docker-compose config > nul && echo ✅ Docker configuration valid",
-    
     "mode:switch": "node scripts/switch-mode.js",
     "mode:local": "node scripts/switch-mode.js local",
     "mode:atlas": "node scripts/switch-mode.js atlas",
     "mode:current": "node scripts/switch-mode.js --show-current",
     "mode:toggle": "node scripts/switch-mode.js",
     "mode:cleanup": "node scripts/switch-mode.js --cleanup",
-    
     "aws:mrb-api": "node scripts/aws-profile.js mrb-api",
     "aws:terraform": "node scripts/aws-profile.js terraform-mrb",
     "aws:toggle": "node scripts/aws-profile.js toggle",
     "aws:status": "node scripts/aws-profile.js status",
     "aws:validate": "node scripts/aws-profile.js validate",
-    
     "iam:setup": "node scripts/setup-iam-policy.js setup",
     "iam:status": "node scripts/setup-iam-policy.js status",
     "tunnel:start": "node scripts/db-tunnel.js start",
@@ -54,23 +66,19 @@
     "setup:local": "node scripts/setup-environment.js setup local",
     "setup:atlas": "node scripts/setup-environment.js setup atlas",
     "setup:lambda": "node scripts/setup-environment.js setup lambda",
-    
     "deploy:lambda": "node scripts/deploy-lambda.js",
-    "deploy:lambda:prod": "node scripts/deploy-lambda.js --image-tag production", 
+    "deploy:lambda:prod": "node scripts/deploy-lambda.js --image-tag production",
     "deploy:dry-run": "node scripts/deploy-lambda.js --dry-run",
-    
     "build": "cd app && docker build -t mrb-app .",
     "build:lambda": "cd app && docker build -f Dockerfile -t mrb-app-lambda .",
     "build:container": "node scripts/build-container.js",
     "build:push": "node scripts/build-container.js --update-lambda",
     "build:dry-run": "node scripts/build-container.js --dry-run",
-    
     "backup:local": "node scripts/backup-mongodb.js --type local",
     "backup:atlas": "node scripts/backup-mongodb.js --type atlas --s3-upload",
     "backup:full": "node scripts/backup-mongodb.js --type full --s3-upload",
     "backup:archive": "node scripts/backup-mongodb.js --type archive --s3-upload",
     "backup:dry-run": "node scripts/backup-mongodb.js --dry-run",
-    
     "restore:from-local": "node scripts/restore-mongodb.js",
     "restore:from-s3": "node scripts/restore-mongodb.js --from-s3",
     "restore:latest": "node scripts/restore-mongodb.js --latest",
@@ -91,5 +99,8 @@
     "jwks-rsa": "^3.2.0",
     "mongodb": "^6.18.0",
     "react-router-dom": "^7.7.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

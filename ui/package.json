@@ -4,10 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode development",
+    "dev:local": "cross-env VITE_ENVIRONMENT=local vite --mode development",
+    "dev:atlas": "cross-env VITE_ENVIRONMENT=atlas vite --mode development",
+    "dev:lambda": "cross-env VITE_ENVIRONMENT=lambda vite --mode development",
+    "build": "tsc -b && vite build --mode production",
+    "build:local": "cross-env VITE_ENVIRONMENT=local tsc -b && vite build --mode development",
+    "build:atlas": "cross-env VITE_ENVIRONMENT=atlas tsc -b && vite build --mode development",
+    "build:lambda": "cross-env VITE_ENVIRONMENT=lambda tsc -b && vite build --mode production",
+    "build:production": "cross-env VITE_ENVIRONMENT=production tsc -b && vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:local": "npm run build:local && vite preview",
+    "preview:atlas": "npm run build:atlas && vite preview",
+    "preview:lambda": "npm run build:lambda && vite preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.87.4",
@@ -26,6 +36,7 @@
     "@typescript-eslint/parser": "^6.x",
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",

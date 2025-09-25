@@ -109,6 +109,12 @@ variable "mongodb_backups_bucket" {
   default     = "mrb-mongodb-backups-dev"
 }
 
+variable "environment" {
+  description = "Environment name (dev, prod)"
+  type        = string
+  default     = "dev"
+}
+
 variable "ui_hosting_bucket" {
   description = "S3 bucket name for UI static hosting"
   type        = string

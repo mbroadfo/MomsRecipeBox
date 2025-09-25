@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "ui_hosting" {
   bucket = var.ui_hosting_bucket
 
   tags = {
-    Environment = "dev"
+    Environment = var.environment
     Name        = "MomsRecipeBox UI Hosting"
     Phase       = "4.2"
     Purpose     = "StaticWebsiteHosting"
@@ -159,7 +159,7 @@ resource "aws_cloudfront_distribution" "ui_hosting" {
   }
 
   tags = {
-    Environment = "dev"
+    Environment = var.environment
     Name        = "MomsRecipeBox UI CDN"
     Phase       = "4.2"
     Purpose     = "UIDistribution"

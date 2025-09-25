@@ -109,6 +109,12 @@ variable "mongodb_backups_bucket" {
   default     = "mrb-mongodb-backups-dev"
 }
 
+variable "ui_hosting_bucket" {
+  description = "S3 bucket name for UI static hosting"
+  type        = string
+  default     = "mrb-ui-hosting-dev"
+}
+
 variable "aws_secret_name" {
   description = "AWS Secrets Manager secret name for MongoDB Atlas credentials"
   type        = string

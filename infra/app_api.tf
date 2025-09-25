@@ -310,6 +310,8 @@ resource "aws_api_gateway_integration_response" "recipes_options_integration_res
     "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
+
+  depends_on = [aws_api_gateway_integration.recipes_options_integration]
 }
 ##############################################
 # Methods and Integrations for /recipe/{id}

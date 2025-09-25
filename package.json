@@ -25,6 +25,15 @@
     "ui:preview:lambda": "cd ui && npm run preview:lambda",
     "fullstack:local": "concurrently \"npm run dev:local\" \"npm run ui:dev:local\"",
     "fullstack:atlas": "concurrently \"npm run dev:atlas\" \"npm run ui:dev:atlas\"",
+    
+    "deploy:ui": "node scripts/deploy-ui.js",
+    "deploy:ui:dev": "node scripts/deploy-ui.js",
+    "deploy:ui:prod": "node scripts/deploy-ui.js --prod",
+    "deploy:ui:dry-run": "node scripts/deploy-ui.js --dry-run",
+    "deploy:ui:skip-build": "node scripts/deploy-ui.js --skip-build",
+    
+    "deploy:full:dev": "npm run deploy:lambda:dev && npm run deploy:ui:dev",
+    "deploy:full:prod": "npm run deploy:lambda:prod && npm run deploy:ui:prod",
     "env:local": "echo MONGODB_MODE=local > .env && echo APP_MODE=express >> .env",
     "env:atlas": "echo MONGODB_MODE=atlas > .env && echo APP_MODE=express >> .env",
     "env:lambda": "echo MONGODB_MODE=atlas > .env && echo APP_MODE=lambda >> .env",
@@ -88,6 +97,7 @@
     "logs:db": "docker-compose logs -f mongo"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.896.0",
     "@aws-sdk/client-s3": "^3.698.0",
     "@types/react-router-dom": "^5.3.3",
     "archiver": "^7.0.1",

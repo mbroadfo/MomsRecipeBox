@@ -61,7 +61,23 @@ Created `scripts/fix-markdown-lint.ps1` for automated markdown cleanup:
 2. **Implement Linting Checks**: Add markdown linting to CI/CD pipeline
 3. **Documentation Standards**: Establish ongoing markdown formatting guidelines
 
+## GitHub Actions Workflow Simplification
+
+**September 26, 2025**: Simplified GitHub Actions workflow to align with manual deployment approach:
+
+### Changes Made
+
+- ✅ **Simplified ci.yml**: Removed complex deployment testing, kept code quality validation only
+- ✅ **Updated Node.js version**: 18 → 20 (fixes markdownlint compatibility issues)
+- ✅ **Removed automatic deployment**: Deleted deploy.yaml workflow for full manual control
+- ✅ **Focused scope**: GitHub Actions now validates code quality, npm scripts handle deployment
+
+### Workflow Now
+
+1. **Code commits** → GitHub Actions validates quality (tests, security, Docker config)
+2. **Manual deployment** → Developer controls when/what to deploy via npm scripts
+
 ---
 
-**Cleanup Date**: September 25, 2025
+**Cleanup Date**: September 25-26, 2025
 **Part of**: Documentation reorganization project (Phase 3 completion)

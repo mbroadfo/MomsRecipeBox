@@ -1,6 +1,14 @@
 ﻿# MomsRecipeBox
 
-A secure, multi-family recipe sharing platform with a modular architecture: infrastructure (Terraform), backend API (Node.js + MongoDB), and modern React frontend with comprehensive admin monitoring.
+A secure, multi-family recipe sharing platform with a modular architecture: infrastructure## 🔧 Development & DevOps
+
+### GitHub Actions
+
+- **Code Quality Validation**: Automated testing, security audits, and Docker config validation
+
+- **Manual Deployment Control**: All deployments handled via npm scripts for full control
+
+The project includes modern cross-platform tooling for development and deployment:erraform), backend API (Node.js + MongoDB), and modern React frontend with comprehensive admin monitoring.
 
 ## ðŸš€ Quick Start
 

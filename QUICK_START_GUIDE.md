@@ -70,30 +70,36 @@ Adds sample recipes and shopping list items for testing.
 - Read [Development Guide](docs/developer/setup-development.md)
 - Explore [NPM Commands Reference](NPM_COMMANDS.md) - 80+ automation commands
 - Check [Database Guide](docs/developer/mongodb_guide.md)
+- **Note**: GitHub Actions validates code quality - use npm scripts for deployment
 
 ### For DevOps
-- See [Deployment Guide](docs/developer/deployment-guide.md) 
+
+- See [Deployment Guide](docs/developer/deployment-guide.md)
 - Review [Infrastructure Documentation](infra/README.md)
 
 ## Troubleshooting
 
 **Docker not starting?**
+
 ```bash
 npm run validate:docker
 ```
 
 **Port already in use?**
+
 ```bash
 npm run stop:all
 npm run start:local
 ```
 
 **Environment issues?**
+
 ```bash
 npm run validate:env
 ```
 
 **Need help?** All scripts support `--help`:
+
 ```bash
 node scripts/switch-mode.js --help
 ```

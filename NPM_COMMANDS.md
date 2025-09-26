@@ -22,14 +22,19 @@ npm run backup:atlas                 # Backup Atlas to S3
 npm run restore:latest               # Restore latest backup
 
 # Deployment
+
+```bash
 npm run deploy:lambda                # Deploy Lambda function
 npm run deploy:ui                    # Deploy UI to CloudFront
 npm run deploy:full:dev              # Deploy both Lambda and UI (dev)
+```
+
+**Note**: GitHub Actions validates code quality only - all deployment is manual via these commands
 
 # Maintenance
+
 npm run maintenance:find-orphans     # Find orphaned S3 images
 npm run aws:mrb-api                  # Switch to deployment AWS profile
-```
 
 ---
 

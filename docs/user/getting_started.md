@@ -7,8 +7,7 @@ This guide will help you quickly set up and start using MomsRecipeBox. Whether y
 Before you begin, ensure you have the following installed:
 
 - **Docker** and **Docker Compose**: Required for containerized deployment
-- **Node.js 18+**: For running tests and development tools
-- **PowerShell 5.1+**: For running helper scripts (Windows)
+- **Node.js 18+**: For running npm commands and development tools
 - **Git**: For cloning the repository
 - **AWS Account** (optional): Required only for cloud features
 
@@ -16,7 +15,7 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**:
 
-```powershell
+```bash
 git clone https://github.com/mbroadfo/MomsRecipeBox.git
 cd MomsRecipeBox
 ```
@@ -38,8 +37,12 @@ APP_MODE=local
 
 1. **Start the application**:
 
-```powershell
-docker compose up -d
+```bash
+# Start local development environment (recommended)
+npm run dev:local
+
+# Alternative: Start containers manually
+npm run start:local
 ```
 
 1. **Verify the installation**:
@@ -64,7 +67,11 @@ To use MongoDB Atlas instead of the local database:
 2. Configure credentials in AWS Secrets Manager or environment variables
 3. Switch to Atlas mode:
 
-```powershell
+```bash
+# Start with Atlas mode (modern approach)
+npm run dev:atlas
+
+# Alternative: Use legacy PowerShell script  
 .\scripts\Toggle-MongoDbConnection.ps1 -Mode atlas
 ```
 
@@ -91,7 +98,11 @@ For detailed AI setup instructions, see [AI Recipe Assistant Guide](./ai_recipe_
 
 Run the end-to-end tests to verify all functionality:
 
-```powershell
+```bash
+# Run all tests with npm automation
+npm run test:all
+
+# Alternative: Run tests manually
 cd app/tests
 npm install
 npm test
@@ -99,11 +110,16 @@ npm test
 
 To run specific test modules:
 
-```powershell
+```bash
 # Test recipe functionality
-node test_recipes.js
+npm run test:recipes
 
-# Test shopping list functionality
+# Test shopping list functionality  
+npm run test:shopping
+
+# Manual test execution
+cd app/tests
+node test_recipes.js
 node test_shopping_list.js
 ```
 

@@ -43,13 +43,23 @@ npm run health:detailed
 
 Should show all services running and healthy.
 
-## 5. Add Test Data (Optional)
+## 5. Add Test Data or Restore Backup
 
+### Option A: Add Test Data
 ```bash
 npm run test:data
 ```
 
-Adds sample recipes and shopping list items for testing.
+### Option B: Restore from Backup (if available)
+```bash
+# Restore from S3 backup
+npm run restore:from-s3
+
+# Or restore latest backup
+npm run restore:latest
+```
+
+This will populate your database with either test recipes or your backed-up family recipes.
 
 ---
 

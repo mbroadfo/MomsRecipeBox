@@ -90,20 +90,30 @@ The application supports two database deployment options:
 
 ### Switching Between Modes
 
-Use the provided script to switch between local and Atlas modes:
+Use the modern npm commands to switch between local and Atlas modes:
 
-```powershell
-# Switch to local MongoDB
-.\scripts\Toggle-MongoDbConnection.ps1 -Mode local
+```bash
+# Switch to local MongoDB (with automatic cleanup)
+npm run dev:local
 
-# Switch to MongoDB Atlas
-.\scripts\Toggle-MongoDbConnection.ps1 -Mode atlas
+# Switch to MongoDB Atlas (with automatic cleanup)
+npm run dev:atlas
 
 # Show current mode
-.\scripts\Toggle-MongoDbConnection.ps1 -ShowCurrent
+npm run mode:show
+
+# Manual mode switching without starting containers
+npm run mode:local    # Set .env to local mode
+npm run mode:atlas    # Set .env to atlas mode
 ```
 
-This script updates your `.env` file and restarts the appropriate containers.
+The `dev:local` and `dev:atlas` commands automatically stop any running containers and start the correct configuration. For backward compatibility, you can still use the PowerShell script:
+
+```powershell
+# Legacy PowerShell script (still supported)
+.\scripts\Toggle-MongoDbConnection.ps1 -Mode local
+.\scripts\Toggle-MongoDbConnection.ps1 -Mode atlas
+```
 
 ## Local MongoDB Setup
 

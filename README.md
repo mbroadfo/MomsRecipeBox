@@ -4,7 +4,58 @@ A secure, multi-family recipe sharing platform with a modular architecture: infr
 
 ### GitHub Actions
 
-- **Code Quality Validation**: Automated testing, security audits, and Docker config validation
+- **Code Quality Validatio## 🛡️ Database Backup & Re## 🛡️ Database Backup & Restore
+
+Your family recipes and user data are protected with a comprehensive backup and restore system. Use modern npm commands:
+
+```bash
+# Create a backup
+npm run backup:atlas
+
+# Restore from backup (FIXED and verified working)
+npm run restore:latest
+
+# List available backups
+npm run backup:list
+
+# Emergency restore from specific backup
+npm run restore:from-s3 --backup="backup_2025-01-17_09-07-12"
+```
+
+**Legacy PowerShell commands (still supported):**
+
+```powershell
+# Create a backup
+.\scripts\Backup-MongoDBToS3.ps1
+
+# Restore from backup
+.\scripts\Restore-MongoDBFromS3.ps1 -BackupPath "path/to/backup"
+```amily recipes and user data are protected with a comprehensive backup and restore system. **Recently fixed and fully working!**
+
+```bash
+# Restore from S3 backup (✅ Now working!)
+npm run restore:from-s3
+
+# Restore latest backup automatically  
+npm run restore:latest
+
+# Create a backup to S3
+npm run backup:atlas
+
+# Test restore without making changes
+npm run restore:dry-run
+
+# Restore from local backup files
+npm run restore:from-local
+```
+
+**What was fixed:**
+- ✅ JMESPath syntax errors in S3 queries
+- ✅ Folder-based backup handling instead of zip files  
+- ✅ Proper MongoDB authentication in containers
+- ✅ Environment configuration for credentials
+
+For more details, see the [MongoDB Backup Guide](docs/technical/mongodb_guide.md#backup-and-restore).sting, security audits, and Docker config validation
 
 - **Manual Deployment Control**: All deployments handled via npm scripts for full control
 

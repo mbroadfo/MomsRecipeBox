@@ -12,6 +12,47 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Phase 4.2] - 2025-09-29
+
+### 🔧 CRITICAL FIXES: NPM MODERNIZATION & BACKUP RESTORATION
+
+**Objective**: Fix critical issues from PowerShell to NPM modernization and ensure reliable backup/restore functionality.
+
+### Fixed
+
+- **MongoDB Restore Script Fixes**:
+  - ✅ Fixed JMESPath syntax error in S3 backup listing query
+  - ✅ Updated backup detection from zip files to folder-based backups  
+  - ✅ Fixed S3 download to use `aws s3 sync` for folder backups instead of `aws s3 cp`
+  - ✅ Added proper MongoDB authentication parameters for container restore
+  - ✅ Fixed backup path handling for nested directory structures
+  - ✅ Updated configuration to read MongoDB credentials from .env file
+
+- **Environment Configuration**:
+  - ✅ Fixed MongoDB URI to use container name `mongo:27017` instead of `localhost:27017`
+  - ✅ Added missing MongoDB credentials to .env template
+  - ✅ Ensured proper environment variable loading for all scripts
+
+- **NPM Command Improvements**:
+  - ✅ Enhanced `dev:*` commands with automatic container cleanup
+  - ✅ Fixed mode switching to prevent container conflicts
+  - ✅ Added comprehensive safety checks to prevent mixed-mode containers
+
+### Tested & Verified
+
+- ✅ **Complete local development setup**: `npm run dev:local`
+- ✅ **S3 backup restoration**: `npm run restore:from-s3`
+- ✅ **Data integrity**: 36 recipes, 79 favorites, 118 total documents restored
+- ✅ **Container orchestration**: Clean mode switching without conflicts
+- ✅ **Health monitoring**: All systems healthy after rebuild
+
+### Breaking Changes
+
+- Backup restore now requires proper .env configuration with MongoDB credentials
+- Container names must be used for internal Docker network communication
+
+---
+
 ## [Phase 4.1 STARTED] - 2025-09-24
 
 ### ðŸš€ PHASE 4: UI DEVOPS INTEGRATION BEGINS - ENVIRONMENT SETUP COMPLETE ðŸš€

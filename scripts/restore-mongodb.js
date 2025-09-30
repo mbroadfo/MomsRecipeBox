@@ -129,6 +129,8 @@ async function getRestoreConfig(options) {
       name: options.database || envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
       mode: envConfig.MONGODB_MODE || 'local',
       containerName: 'momsrecipebox-mongo',
+      user: envConfig.MONGODB_LOCAL_ROOT_USER || 'admin',
+      password: envConfig.MONGODB_LOCAL_ROOT_PASSWORD || 'supersecret',
       // Atlas configuration
       secretName: envConfig.AWS_SECRET_NAME || 'moms-recipe-secrets-dev'
     },
@@ -215,26 +217,29 @@ async function listS3Backups(config) {
     const result = await runCommand('aws', [
       's3api', 'list-objects-v2',
       '--bucket', config.restore.s3Bucket,
-      '--prefix', 'backups/',
-      '--query', 'Contents[?ends_with(Key, `.zip`)].{Key: Key, LastModified: LastModified, Size: Size}',
+      '--prefix', 'backup_',
+      '--delimiter', '/',
+      '--query', "CommonPrefixes[].Prefix",
       '--output', 'json'
     ], { silent: true });
     
-    const backups = JSON.parse(result);
+    const prefixes = JSON.parse(result);
     
-    if (!backups || backups.length === 0) {
+    if (!prefixes || prefixes.length === 0) {
       log('⚠️ No backups found in S3 bucket', 'yellow');
       return [];
     }
     
-    // Sort by last modified (newest first)
-    backups.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
+    // Convert prefixes to backup objects and sort by date (newest first)
+    const backups = prefixes.map(prefix => ({
+      Key: prefix,
+      Name: prefix.replace(/\/$/, ''),
+      Date: prefix.match(/backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})/)?.[1] || ''
+    })).sort((a, b) => b.Date.localeCompare(a.Date));
     
     log(`Found ${backups.length} backups:`, 'green');
     backups.forEach((backup, index) => {
-      const sizeMB = (backup.Size / 1024 / 1024).toFixed(2);
-      const date = new Date(backup.LastModified).toLocaleDateString();
-      log(`  ${index + 1}. ${path.basename(backup.Key)} (${sizeMB} MB, ${date})`, 'white');
+      log(`  ${index + 1}. ${backup.Name} (${backup.Date})`, 'white');
     });
     
     return backups;
@@ -254,8 +259,12 @@ async function downloadFromS3(config, s3Key, localPath) {
     // Set AWS profile
     process.env.AWS_PROFILE = config.aws.profile;
     
+    // Create local directory
+    await fs.mkdir(localPath, { recursive: true });
+    
+    // Use s3 sync for folder-based backups
     await runCommand('aws', [
-      's3', 'cp',
+      's3', 'sync',
       `s3://${config.restore.s3Bucket}/${s3Key}`,
       localPath,
       '--region', config.aws.region
@@ -384,30 +393,23 @@ async function performLocalRestore(config, backupPath, collections) {
       'exec', config.database.containerName,
       'rm', '-rf', containerBackupPath
     ], { silent: true });
-    
+
     await runCommand('docker', [
       'cp', backupPath, `${config.database.containerName}:${containerBackupPath}`
     ]);
-    
-    // Build mongorestore command
+
+    // Build mongorestore command - point to the database folder within the backup
     const restoreArgs = [
       'exec', config.database.containerName,
       'mongorestore',
+      '--host', 'localhost:27017',
+      '--username', config.database.user,
+      '--password', config.database.password,
+      '--authenticationDatabase', 'admin',
       '--db', config.database.name,
-      '--drop'  // Drop existing collections before restore
-    ];
-    
-    // Add specific collections if specified
-    if (collections && collections.length > 0) {
-      for (const collection of collections) {
-        restoreArgs.push('--collection', collection);
-        restoreArgs.push(path.join(containerBackupPath, `${collection}.bson`));
-      }
-    } else {
-      restoreArgs.push(containerBackupPath);
-    }
-    
-    await runCommand('docker', restoreArgs);
+      '--drop',  // Drop existing collections before restore
+      `${containerBackupPath}/moms_recipe_box`  // Point to the actual database backup folder
+    ];    await runCommand('docker', restoreArgs);
     
     // Clean up container backup
     await runCommand('docker', [
@@ -582,7 +584,7 @@ async function performRestore(options) {
       }
       
       // Download from S3
-      const downloadPath = path.join(config.restore.tempPath, path.basename(selectedBackup.Key));
+      const downloadPath = path.join(config.restore.tempPath, selectedBackup.Name);
       await fs.mkdir(config.restore.tempPath, { recursive: true });
       
       backupPath = await downloadFromS3(config, selectedBackup.Key, downloadPath);

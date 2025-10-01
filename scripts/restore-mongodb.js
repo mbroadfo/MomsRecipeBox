@@ -128,7 +128,7 @@ async function getRestoreConfig(options) {
     database: {
       name: options.database || envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
       mode: envConfig.MONGODB_MODE || 'local',
-      containerName: 'momsrecipebox-mongo',
+  containerName: 'momsrecipebox-mongo-local',
       user: envConfig.MONGODB_LOCAL_ROOT_USER || 'admin',
       password: envConfig.MONGODB_LOCAL_ROOT_PASSWORD || 'supersecret',
       // Atlas configuration
@@ -472,34 +472,58 @@ async function verifyRestore(config, metadata) {
     const isLocal = config.database.mode === 'local';
     
     // Get current database statistics
-    const statsCommand = `
-      db = db.getSiblingDB('${config.database.name}');
-      const stats = db.stats();
-      const collections = db.getCollectionNames();
-      let collectionStats = {};
-      collections.forEach(col => {
-        collectionStats[col] = db[col].countDocuments();
-      });
-      printjson({
-        collections: stats.collections,
-        collectionCounts: collectionStats
-      });
-    `;
+    // Compose stats command as a single line for shell compatibility
+    const statsCommand = `db = db.getSiblingDB('${config.database.name}'); const stats = db.stats(); const collections = db.getCollectionNames(); let collectionStats = {}; collections.forEach(col => { collectionStats[col] = db[col].countDocuments(); }); printjson({ collections: stats.collections, collectionCounts: collectionStats });`;
     
     let result;
     if (isLocal) {
-      result = await runCommand('docker', [
-        'exec', config.database.containerName,
-        'mongosh', '--eval', statsCommand, '--quiet'
-      ], { silent: true });
+      // Use --eval and --quiet, and connect directly to the correct database with authentication
+        result = await runCommand('docker', [
+          'exec', config.database.containerName,
+          'mongosh', 
+          config.database.name, 
+          '--quiet', 
+          '--username', config.database.user,
+          '--password', config.database.password,
+          '--authenticationDatabase', 'admin',
+          '--eval', `"${statsCommand}"`
+        ], { silent: true });
     } else {
       const atlasUri = await getAtlasUri(config);
       result = await runCommand('mongosh', [
-        atlasUri, '--eval', statsCommand, '--quiet'
+        atlasUri, '--eval', `"${statsCommand}"`, '--quiet'
       ], { silent: true });
     }
     
-    const currentStats = JSON.parse(result);
+  // Debug: print raw mongosh output
+  log('--- mongosh raw output ---', 'magenta');
+  log(result, 'magenta');
+  log('--- end mongosh output ---', 'magenta');
+  
+  // Extract the first JSON object from the result and manually parse it
+  try {
+    // Extract collections count
+    const collectionsMatch = result.match(/collections:\s*Long\(['"]?(\d+)['"]?\)/);
+    const collectionsCount = collectionsMatch ? parseInt(collectionsMatch[1]) : 0;
+    
+    // Extract collection stats using regex instead of JSON parsing
+    const collectionCounts = {};
+    
+    // Use regex to find collection names and their counts
+    const countMatches = result.matchAll(/(\w+):\s*(\d+)/g);
+    for (const match of countMatches) {
+      const collName = match[1];
+      const count = parseInt(match[2]);
+      if (collName !== 'collections') { // Skip the main collections count
+        collectionCounts[collName] = count;
+      }
+    }
+    
+    // Build our own stats object
+    const currentStats = {
+      collections: collectionsCount,
+      collectionCounts: collectionCounts
+    };
     
     if (metadata && metadata.preBackupStats) {
       const originalCounts = metadata.preBackupStats.collectionCounts || {};
@@ -515,6 +539,10 @@ async function verifyRestore(config, metadata) {
     
     log('✅ Restore verification completed', 'green');
     return true;
+  } catch (error) {
+    log(`⚠️ Restore verification JSON parsing failed: ${error.message}`, 'yellow');
+    return false;
+  }
   } catch (error) {
     log(`⚠️ Restore verification failed: ${error.message}`, 'yellow');
     return false;

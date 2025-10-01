@@ -16,7 +16,7 @@ services:
       - mongodata-local:/data/db
       # Add development utilities
       - ./db/scripts:/docker-entrypoint-initdb.d
-    command: mongod --auth --bind_ip_all --logLevel 1
+    command: mongod --auth --bind_ip_all
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_LOCAL_ROOT_USER:-admin}", "-p", "${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}", "--authenticationDatabase", "admin"]
       interval: 5s

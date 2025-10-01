@@ -6,7 +6,44 @@ A secure, multi-family recipe sharing platform with a modular architecture: infr
 
 - **Code Quality Validatio## 🛡️ Database Backup & Re## 🛡️ Database Backup & Restore
 
-Your family recipes and user data are protected with a comprehensive backup and restore system. Use modern npm commands:
+Your family recipes and user data are protected with a comprehensive ## 🛠 Contributing
+
+We welcome contributions to MomsRecipeBox! To contribute:
+
+1. Add or modify handlers under `/app/handlers` (return `{ statusCode, body }`)
+2. Update API documentation for new/changed endpoints
+3. Add tests in `/app/tests` (name `test_*.js`)
+4. Reflect data model changes in the appropriate documentation
+
+## 🗺️ Development Roadmap & Testing Plan
+
+### Current Testing Plan (September 2025)
+
+1. **Local Mode Testing (Completed)**
+   - ✅ Fix restore script for local MongoDB
+   - ✅ Verify restore from S3 backup
+   - ✅ Confirm data integrity and verification
+   - ✅ Test local API with restored data
+
+2. **Atlas Mode Testing (Next)**
+   - Switch to Atlas mode: `npm run mode:atlas`
+   - Restore from S3 to Atlas: `npm run restore:latest`
+   - Verify database integrity
+   - Test API connections with Atlas
+   - Confirm data model compatibility
+
+3. **Lambda Mode Testing (Final)**
+   - Switch to Lambda mode: `npm run mode:lambda`
+   - Deploy Lambda with latest code
+   - Test Lambda connectivity
+   - Verify API endpoints via Lambda
+   - Confirm end-to-end functionality
+
+### Completion Criteria
+- All three deployment modes working correctly
+- Restore process fully automated and verified
+- Documentation updated to reflect latest changes
+- All tests passing in each environmentd restore system. Our cross-platform Node.js scripts replace PowerShell with enhanced functionality:
 
 ```bash
 # Create a backup
@@ -21,6 +58,12 @@ npm run backup:list
 # Emergency restore from specific backup
 npm run restore:from-s3 --backup="backup_2025-01-17_09-07-12"
 ```
+
+**What was fixed:**
+- ✅ Container name consistency between scripts and Docker Compose
+- ✅ JSON parsing for MongoDB extended JSON types
+- ✅ Proper authentication for database operations
+- ✅ Enhanced error handling and debugging output
 
 **Legacy PowerShell commands (still supported):**
 

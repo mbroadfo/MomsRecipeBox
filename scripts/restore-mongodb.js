@@ -128,7 +128,7 @@ async function getRestoreConfig(options) {
     database: {
       name: options.database || envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
       mode: envConfig.MONGODB_MODE || 'local',
-  containerName: 'momsrecipebox-mongo-local',
+  containerName: 'momsrecipebox-mongo',
       user: envConfig.MONGODB_LOCAL_ROOT_USER || 'admin',
       password: envConfig.MONGODB_LOCAL_ROOT_PASSWORD || 'supersecret',
       // Atlas configuration

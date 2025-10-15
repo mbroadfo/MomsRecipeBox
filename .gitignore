@@ -5,6 +5,9 @@ node_modules/
 .env
 .env.*
 
+# Profile management
+config/current-profile.env
+
 # Terraform
 .terraform/
 *.tfstate

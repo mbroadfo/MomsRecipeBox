@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get Mom's Recipe Box running in under 5 minutes.
+Get Mom's Recipe Box running in under 5 minutes using the new four-profile deployment system.
 
 ## Prerequisites
 
@@ -24,26 +24,57 @@ npm run setup:local
 
 This creates your `.env` file with local development settings.
 
-## 3. Start the Application
+## 3. Choose Your Profile
 
+The application supports four deployment profiles:
+
+### 🏠 Local Profile (Recommended for First Run)
 ```bash
-npm run dev:local
+npm run profile:local    # Switch to local profile
+npm run profile:start    # Start local infrastructure
 ```
 
-This will:
-- Start MongoDB and app containers
-- Launch the API server on `http://localhost:3000`
-- You can add the UI with `npm run ui:dev` in another terminal
+### 🌍 Atlas Profile (For Cloud Database)
+```bash
+npm run profile:atlas    # Switch to atlas profile  
+npm run profile:start    # Start backend with Atlas DB
+```
 
-## 4. Verify Everything Works
+### ⚡ Lambda Profile (For Testing Production API)
+```bash
+npm run profile:lambda   # Switch to lambda profile
+# Connects directly to deployed Lambda - no local backend needed
+```
+
+### ☁️ Cloud Profile (Full Production)
+```bash
+npm run profile:cloud    # Switch to cloud profile
+# All services are cloud-deployed
+```
+
+## 4. Check Your Profile Status
 
 ```bash
-npm run health:detailed
+npm run profile:show     # Shows current profile and configuration
+```
+
+## 5. Start the UI (Optional)
+
+```bash
+cd ui && npm run dev     # Start React development server
+```
+
+The UI automatically connects to the correct backend based on your current profile.
+
+## 6. Verify Everything Works
+
+```bash
+npm run health:detailed  # Check API health
 ```
 
 Should show all services running and healthy.
 
-## 5. Add Test Data or Restore Backup
+## 7. Add Test Data or Restore Backup
 
 ### Option A: Add Test Data
 ```bash

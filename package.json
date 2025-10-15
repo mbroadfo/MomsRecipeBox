@@ -3,10 +3,6 @@
   "scripts": {
     "db:analyze": "node tools/database/quality-analyzer.js",
     "db:fields": "node tools/database/field-analyzer.js",
-    "db:clean": "node tools/database/database-cleaner.js",
-    "db:clean-preview": "node tools/database/database-cleaner.js",
-    "db:clean-apply": "node tools/database/database-cleaner.js --apply",
-    "db:clean-full": "node tools/database/database-cleaner.js --apply --remove-tests",
     "dev": "npm run dev:local",
     "dev:local": "npm run stop:all && npm run mode:local && npm run start:local",
     "dev:atlas": "npm run stop:all && npm run mode:atlas && npm run start:atlas",

@@ -46,7 +46,7 @@ function initializeHealthChecker() {
  * Supports toggling between local Docker MongoDB and MongoDB Atlas.
  * @returns {string} The MongoDB connection string
  */
-function getMongoConnectionString() {
+export function getMongoConnectionString() {
   // Check which MongoDB mode to use (default: local)
   const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
   const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';

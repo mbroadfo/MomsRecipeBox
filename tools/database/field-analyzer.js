@@ -15,16 +15,12 @@
  */
 
 import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 // Configuration
 const CONFIG = {
   mongodb: {
-    uri: "mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin",
-    dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev'
+    uri: 'mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin',
+    dbName: 'moms_recipe_box_dev'
   }
 };
 
@@ -32,19 +28,38 @@ const CONFIG = {
  * Analyze field usage across all recipes
  */
 async function analyzeRecipeFields() {
-  console.log('📊 Mom\'s Recipe Box - Field Usage Analyzer');
+  // Force direct console output
+  console.log = console.dir;
+  console.log('\n📊 Mom\'s Recipe Box - Field Usage Analyzer');
   console.log('═'.repeat(50));
-
-  const client = new MongoClient(CONFIG.mongodb.uri);
-
+  
+  console.log('Starting analysis...');
+  
+  // Connect to MongoDB
+  const client = new MongoClient(CONFIG.mongodb.uri, {
+    serverSelectionTimeoutMS: 5000
+  });
+  
   try {
+    // Connect with a short timeout
+    console.log('Connecting to MongoDB...');
     await client.connect();
+    console.log('Connected successfully!');
+    
     const db = client.db(CONFIG.mongodb.dbName);
+    
+    // Test connection with a simple admin command
+    await db.command({ ping: 1 });
+    console.log('Ping successful!');
+    
     const recipesCollection = db.collection('recipes');
-
+    
+    console.log('Loading recipes...');
     // Get all recipes
     const recipes = await recipesCollection.find({}).toArray();
-    console.log(`\n📋 Analyzing ${recipes.length} recipes...\n`);
+    console.log(`Found ${recipes.length} recipes`);
+    
+    console.log(`\nAnalyzing ${recipes.length} recipes...\n`);
 
     // Track field usage
     const fieldCounts = {};
@@ -184,9 +199,21 @@ async function analyzeRecipeFields() {
   }
 }
 
-// Run analysis if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  analyzeRecipeFields().catch(console.error);
-}
+// Set a reasonable timeout
+setTimeout(() => {
+  console.log('ERROR: Script timed out after 10 seconds');
+  process.exit(1);
+}, 10000);
+
+// Run the analysis
+analyzeRecipeFields()
+  .catch(err => {
+    console.error('ERROR:', err.message);
+    process.exit(1);
+  })
+  .then(() => {
+    console.log('Analysis complete!');
+    process.exit(0);
+  });
 
 export { analyzeRecipeFields };

@@ -299,7 +299,66 @@ For more details, see the [MongoDB Backup Guide](docs/technical/mongodb_guide.md
 
 ## â˜ï¸ Deployment Modes
 
-The application supports three flexible deployment modes:
+## ☁️ Deployment Profiles
+
+The application now uses a unified four-profile deployment system for clean, consistent environment management:
+
+### 🏠 **Local Profile**
+- **Database**: Local MongoDB Docker container
+- **Backend**: Local Express app Docker container  
+- **Frontend**: Vite dev server with proxy to localhost:3000
+- **Best for**: Full local development with isolated data
+
+```bash
+npm run profile:local    # Switch to local profile
+npm run profile:start    # Start local infrastructure
+```
+
+### 🌍 **Atlas Profile**  
+- **Database**: MongoDB Atlas cloud database
+- **Backend**: Local Express app Docker container
+- **Frontend**: Vite dev server with proxy to localhost:3000
+- **Best for**: Local development with shared cloud data
+
+```bash
+npm run profile:atlas    # Switch to atlas profile
+npm run profile:start    # Start local backend with Atlas DB
+```
+
+### ⚡ **Lambda Profile**
+- **Database**: MongoDB Atlas cloud database
+- **Backend**: AWS Lambda deployed functions
+- **Frontend**: Vite dev server with direct Lambda calls
+- **Best for**: Testing against deployed serverless backend
+
+```bash
+npm run profile:lambda   # Switch to lambda profile
+# No local backend needed - connects directly to Lambda
+```
+
+### ☁️ **Cloud Profile**
+- **Database**: MongoDB Atlas cloud database
+- **Backend**: AWS Lambda deployed functions
+- **Frontend**: CloudFront distributed static site
+- **Best for**: Full production deployment
+
+```bash
+npm run profile:cloud    # Switch to cloud profile
+# All services are cloud-deployed
+```
+
+### Profile Management Commands
+
+```bash
+npm run profile:show     # Show current profile details
+npm run profile:list     # List all available profiles
+npm run profile:set <profile>  # Switch to specific profile
+npm run profile:validate # Validate current profile config
+npm run profile:start    # Start infrastructure for current profile
+npm run profile:stop     # Stop all infrastructure
+```
+
+Each profile automatically configures all environment variables, Docker services, and API endpoints consistently. No more conflicting .env files!
 
 ### ðŸ  **Local Development Mode**
 

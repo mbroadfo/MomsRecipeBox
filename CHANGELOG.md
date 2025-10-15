@@ -5,6 +5,41 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-15
+
+### Added - Four-Profile Deployment System
+
+#### 🎯 Major Feature: Unified Profile Management
+- **Four-Profile Architecture**: Replaced scattered mode configuration with unified profile system
+  - `local`: Local MongoDB + Local Express + UI Proxy (full local development)
+  - `atlas`: Atlas MongoDB + Local Express + UI Proxy (shared cloud database)  
+  - `lambda`: Atlas MongoDB + AWS Lambda + UI Direct (serverless testing)
+  - `cloud`: Atlas MongoDB + AWS Lambda + CloudFront (full production)
+
+- **Profile Management Script**: New `scripts/profile-manager.js` with comprehensive profile management
+- **NPM Scripts**: Added `profile:*` commands for clean profile switching
+- **Dynamic Environment Generation**: `config/current-profile.env` (git-ignored)
+- **Profile Definitions**: `config/deployment-profiles.json` with all four profiles
+
+#### 🔧 Configuration Management
+- **Single Source of Truth**: Eliminated conflicting .env files across directories
+- **Environment Variable Substitution**: Automatic resolution of static to dynamic variables
+- **Cross-Platform**: Node.js script replaces platform-specific solutions
+
+#### 📚 Documentation Updates
+- Updated README.md with new Deployment Profiles section
+- Updated QUICK_START_GUIDE.md with profile selection workflow
+- Added comprehensive architecture documentation in `docs/`
+
+### Fixed
+- **Mode Configuration Conflicts**: Resolved conflicting environment variables
+- **Inconsistent Mode Names**: Standardized mode values across all components  
+- **Scattered Configuration**: Consolidated environment management
+
+### Changed
+- Environment file structure with static/dynamic separation
+- Profile switching now configures all components consistently
+
 # Changelog
 
 All notable changes to the MomsRecipeBox project will be documented in this file.

@@ -17,7 +17,19 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
-  const imageUrl = recipe.image_url || fallbackImage;
+  // Handle mixed image URL formats (S3 URLs and API URLs)
+  let imageUrl = recipe.image_url || fallbackImage;
+  
+  // Convert API image URLs to direct S3 URLs
+  if (imageUrl && imageUrl.startsWith('/api/recipes/') && imageUrl.endsWith('/image')) {
+    // Extract recipe ID from /api/recipes/{id}/image format
+    const match = imageUrl.match(/\/api\/recipes\/([^\/]+)\/image/);
+    if (match) {
+      const recipeId = match[1];
+      // Convert to direct S3 URL - try .png first, then .jpg if .png fails
+      imageUrl = `https://mrb-recipe-images-dev.s3.amazonaws.com/${recipeId}.png`;
+    }
+  }
 
   const favorites = typeof recipe.likes_count === 'number'
     ? recipe.likes_count
@@ -50,8 +62,25 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
           alt={recipe.title}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', maxWidth: '275px', maxHeight: '275px', padding: 0 }}
           onError={(e) => {
+            const currentSrc = e.currentTarget.src;
             e.currentTarget.onerror = null;
-            e.currentTarget.src = fallbackImage;
+            
+            // If it was a converted API URL ending in .png, try .jpg
+            if (currentSrc.includes('mrb-recipe-images-dev.s3.amazonaws.com') && currentSrc.endsWith('.png')) {
+              const jpgUrl = currentSrc.replace('.png', '.jpg');
+              e.currentTarget.src = jpgUrl;
+            } else if (currentSrc.includes('mrb-recipe-images-dev.s3.amazonaws.com') && currentSrc.endsWith('.jpg')) {
+              // If .jpg also failed, try .jpeg
+              const jpegUrl = currentSrc.replace('.jpg', '.jpeg');
+              e.currentTarget.src = jpegUrl;
+            } else if (currentSrc.includes('mrb-recipe-images-dev.s3.amazonaws.com') && currentSrc.endsWith('.jpeg')) {
+              // If .jpeg also failed, try .webp
+              const webpUrl = currentSrc.replace('.jpeg', '.webp');
+              e.currentTarget.src = webpUrl;
+            } else {
+              // Final fallback to default image
+              e.currentTarget.src = fallbackImage;
+            }
           }}
         />
       </div>

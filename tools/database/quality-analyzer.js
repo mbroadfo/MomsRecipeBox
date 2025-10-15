@@ -16,19 +16,15 @@
  * - Detailed reporting
  */
 
-import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import { MongoClient } from 'mongodb';
 
 // Configuration
 const CONFIG = {
   mongodb: {
-    uri: "mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin",
-    dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev'
+    uri: 'mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin',
+    dbName: 'moms_recipe_box_dev'
   },
   reporting: {
     outputDir: path.join(process.cwd(), 'tools', 'reports', 'quality_reports'),
@@ -439,13 +435,31 @@ class RecipeDataQualityAnalyzer {
  * Main analysis function
  */
 async function analyzeRecipeDataQuality() {
+  // Force direct console output
+  console.log = console.dir;
+  console.log('\n📊 Mom\'s Recipe Box - Quality Analyzer');
+  console.log('═'.repeat(50));
+  
   const analyzer = new RecipeDataQualityAnalyzer();
-  const client = new MongoClient(CONFIG.mongodb.uri);
+  
+  // Connect to MongoDB
+  const client = new MongoClient(CONFIG.mongodb.uri, {
+    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 5000
+  });
 
   try {
+    console.log('Connecting to MongoDB...');
     await client.connect();
+    console.log('Connected successfully!');
+    
+    // Test connection with a simple admin command
     const db = client.db(CONFIG.mongodb.dbName);
+    await db.command({ ping: 1 });
+    console.log('Ping successful!');
+    
     const recipesCollection = db.collection('recipes');
+    console.log('Got recipes collection');
 
     // Get all recipes
     const recipes = await recipesCollection.find({}).toArray();
@@ -491,9 +505,21 @@ async function analyzeRecipeDataQuality() {
   }
 }
 
-// Run analysis if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  analyzeRecipeDataQuality().catch(console.error);
-}
+// Set a reasonable timeout
+setTimeout(() => {
+  console.log('ERROR: Script timed out after 20 seconds');
+  process.exit(1);
+}, 20000);
+
+// Run the analysis
+analyzeRecipeDataQuality()
+  .catch(err => {
+    console.log('ERROR: ' + err.message);
+    process.exit(1);
+  })
+  .then(() => {
+    console.log('Analysis complete!');
+    process.exit(0);
+  });
 
 export { analyzeRecipeDataQuality, RecipeDataQualityAnalyzer };

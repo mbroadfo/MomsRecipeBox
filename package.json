@@ -39,7 +39,7 @@
     "start:atlas": "docker-compose --profile atlas up -d",
     "start:lambda-local": "cd app && npm run start:lambda",
     "stop": "docker-compose down",
-    "stop:all": "docker-compose --profile local --profile atlas down -v",
+    "stop:all": "docker-compose --profile local --profile atlas down",
     "restart": "npm run stop:all && npm run dev",
     "test": "cd app && npm test",
     "test:all": "npm run test:local && npm run test:atlas && npm run test:lambda",

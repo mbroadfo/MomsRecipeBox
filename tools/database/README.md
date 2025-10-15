@@ -19,23 +19,6 @@ Comprehensive analysis tool that examines every recipe and identifies data quali
 - Detailed JSON report in `tools/reports/quality_reports/`
 - Issue categorization by severity and auto-fix capability
 
-### Database Cleaner (`database-cleaner.js`)
-Automated repair tool that fixes structural and standardization issues.
-
-**What it fixes:**
-- Removes duplicate fields (steps when instructions exist)
-- Converts legacy fields (steps → instructions)
-- Adds missing required fields (owner_id, visibility)
-- Removes deprecated fields (status)
-- Cleans empty entries
-- Standardizes data formats
-
-**Safety features:**
-- Dry-run mode (default)
-- Detailed change logging
-- Before/after value tracking
-- Error handling and rollback capability
-
 ### Field Analyzer (`field-analyzer.js`)
 Simple diagnostic tool for understanding field usage patterns.
 
@@ -51,15 +34,6 @@ Simple diagnostic tool for understanding field usage patterns.
 # Analyze database quality
 node tools/database/quality-analyzer.js
 
-# Preview cleanup changes
-node tools/database/database-cleaner.js
-
-# Apply cleanup fixes
-node tools/database/database-cleaner.js --apply
-
-# Remove test recipes too
-node tools/database/database-cleaner.js --apply --remove-tests
-
 # Check field usage
 node tools/database/field-analyzer.js
 ```
@@ -74,10 +48,8 @@ Tools use these environment variables:
 
 ```
 tools/reports/
-├── quality_reports/
-│   └── recipe_quality_report_YYYY-MM-DDTHH-MM-SS.json
-└── cleanup_reports/
-    └── cleanup_report_YYYY-MM-DDTHH-MM-SS.json
+└── quality_reports/
+    └── recipe_quality_report_YYYY-MM-DDTHH-MM-SS.json
 ```
 
 ## Integration Notes
@@ -91,6 +63,5 @@ tools/reports/
 
 **Recommended frequency:**
 - **Weekly:** Run quality analyzer to monitor health
-- **Before releases:** Run full cleanup sequence
 - **After bulk imports:** Run field analyzer and quality check
 - **Monthly:** Review and archive old reports

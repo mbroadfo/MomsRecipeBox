@@ -407,7 +407,7 @@ class RecipeDataQualityAnalyzer {
         .forEach(([issueType, count]) => {
           console.log(`${issueType.padEnd(30)} : ${count} recipes`);
         });
-      console.log('\nThese issues can be automatically fixed with database-cleaner.js');
+      console.log('\nThese are auto-fixable issues that could be addressed manually');
     }
   }
 
@@ -491,7 +491,7 @@ async function analyzeRecipeDataQuality() {
       console.log('\n✅ Analysis complete!');
       console.log('\n💡 Next steps:');
       console.log('   - Review critical issues first');
-      console.log('   - Run database-cleaner.js to fix auto-fixable issues');
+      console.log('   - Consider manual fixes for auto-fixable issues');
       console.log('   - Consider AI enhancement for missing content');
     }
 

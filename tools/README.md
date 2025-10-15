@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains tools for maintaining, analyzing, and ensuring the quality of the MomsRecipeBox database. These tools support ongoing quality assurance, maintenance, and developer workflows.
+This directory contains tools for analyzing and ensuring the quality of the MomsRecipeBox database. These tools support ongoing quality assurance, maintenance, and developer workflows.
 
 ## Quick Start
 
@@ -10,11 +10,8 @@ This directory contains tools for maintaining, analyzing, and ensuring the quali
 # Analyze database quality
 npm run db:analyze
 
-# Preview cleanup changes
-npm run db:clean
-
-# Apply database fixes
-npm run db:clean-apply
+# Analyze field usage
+npm run db:fields
 ```
 
 For a complete setup guide, see the [Getting Started Guide](../docs/guides/getting_started.md).
@@ -22,10 +19,8 @@ For a complete setup guide, see the [Getting Started Guide](../docs/guides/getti
 ## Key Features
 
 - **Quality Analysis**: Comprehensive data quality assessment
-- **Automated Cleanup**: Fix common data issues automatically
 - **Field Analysis**: Understand data structure and usage patterns
 - **Reporting**: Detailed reports on database health
-- **Safe Operations**: Preview mode for all changes
 
 ## Directory Structure
 
@@ -34,12 +29,10 @@ tools/
 ├── README.md                  # This documentation
 ├── database/
 │   ├── quality-analyzer.js   # Comprehensive data quality analysis
-│   ├── database-cleaner.js   # Automated database cleanup and standardization
 │   ├── field-analyzer.js     # Field usage analysis
 │   └── README.md             # Detailed database tools documentation
 └── reports/                  # Analysis reports (git-ignored)
-    ├── quality_reports/      # Quality analysis outputs
-    └── cleanup_reports/      # Cleanup operation logs
+    └── quality_reports/      # Quality analysis outputs
 ```
 
 ## Available Tools
@@ -52,17 +45,7 @@ Performs comprehensive analysis of recipe data quality, identifying structural i
 npm run db:analyze
 ```
 
-### 2. Database Cleaner
-
-Automatically fixes structural and standardization issues in the database.
-
-```bash
-npm run db:clean         # Preview changes
-npm run db:clean-apply   # Apply fixes
-npm run db:clean-full    # Apply fixes + remove tests
-```
-
-### 3. Field Analyzer
+### 2. Field Analyzer
 
 Quickly analyzes field usage patterns and structure across all recipes.
 
@@ -72,10 +55,9 @@ npm run db:fields
 
 ## Reports
 
-All tools generate reports saved to the `tools/reports/` directory (git-ignored):
+Quality Analyzer generates reports saved to the `tools/reports/` directory (git-ignored):
 
 - **Quality Reports**: Detailed analysis with issue categorization
-- **Cleanup Reports**: Logs of changes with before/after comparisons
 
 ## Recommended Workflows
 

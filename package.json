@@ -1,8 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "db:analyze": "node tools/database/quality-analyzer.js",
-    "db:fields": "node tools/database/field-analyzer.js",
+    "db:test": "node db-test.js",
     "dev": "npm run dev:local",
     "dev:local": "npm run stop:all && npm run mode:local && npm run start:local",
     "dev:atlas": "npm run stop:all && npm run mode:atlas && npm run start:atlas",

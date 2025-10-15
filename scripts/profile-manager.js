@@ -156,7 +156,6 @@ function setProfile(profileName) {
   
   // Update current profile in config
   profiles.currentProfile = profileName;
-  profiles.metadata.lastUpdated = new Date().toISOString();
   saveProfiles(profiles);
   
   // Generate current profile environment file

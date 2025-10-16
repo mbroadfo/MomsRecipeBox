@@ -17,6 +17,33 @@ const PROFILES_FILE = path.join(CONFIG_DIR, 'deployment-profiles.json');
 const CURRENT_PROFILE_FILE = path.join(CONFIG_DIR, 'current-profile.env');
 const ROOT_ENV_FILE = path.join(ROOT_DIR, '.env');
 
+/**
+ * Fetch MongoDB Atlas URI from AWS Secrets Manager
+ */
+async function fetchMongoAtlasUri(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
+  try {
+    // Build AWS CLI command with profile if set
+    let awsCommand = `aws secretsmanager get-secret-value --secret-id ${secretName} --region ${region} --output json`;
+    if (process.env.AWS_PROFILE) {
+      awsCommand += ` --profile ${process.env.AWS_PROFILE}`;
+    }
+    
+    // Execute AWS CLI command
+    const result = execSync(awsCommand, { encoding: 'utf8', stdio: 'pipe' });
+    const secretData = JSON.parse(result);
+    
+    if (secretData && secretData.SecretString) {
+      const secrets = JSON.parse(secretData.SecretString);
+      return secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI;
+    }
+    
+    return null;
+  } catch (error) {
+    // Silently fail and return null - caller will handle the missing value
+    return null;
+  }
+}
+
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
@@ -140,7 +167,7 @@ function generateCurrentProfileEnv(profileName, profile, staticEnv) {
 }
 
 // Set current profile
-function setProfile(profileName) {
+async function setProfile(profileName) {
   const profiles = loadProfiles();
   
   if (!profiles.profiles[profileName]) {
@@ -150,9 +177,29 @@ function setProfile(profileName) {
   }
   
   const profile = profiles.profiles[profileName];
-  const staticEnv = loadStaticEnv();
+  let staticEnv = loadStaticEnv();
   
   log(`🔄 Setting profile to: ${profileName} (${profile.name})`, 'blue');
+  
+  // For profiles using Atlas, try to fetch MongoDB URI from AWS Secrets Manager
+  if (profile.database.type === 'atlas') {
+    const secretName = staticEnv.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
+    const region = staticEnv.AWS_REGION || 'us-west-2';
+    
+    log(`🔐 Fetching MongoDB Atlas URI from AWS Secrets Manager...`, 'yellow');
+    const atlasUri = await fetchMongoAtlasUri(secretName, region);
+    
+    if (atlasUri) {
+      // Set the environment variable for this session
+      process.env.MONGODB_ATLAS_URI = atlasUri;
+      staticEnv.MONGODB_ATLAS_URI = atlasUri;
+      log(`✅ Successfully retrieved MongoDB Atlas URI from AWS Secrets Manager`, 'green');
+    } else {
+      log(`⚠️  Could not fetch MongoDB Atlas URI from AWS Secrets Manager`, 'yellow');
+      log(`   Make sure AWS credentials are configured and you have access to secret: ${secretName}`, 'yellow');
+      log(`   Falling back to environment variable or .env file`, 'yellow');
+    }
+  }
   
   // Update current profile in config
   profiles.currentProfile = profileName;
@@ -286,6 +333,8 @@ function validateProfile() {
   if (currentProfile.database.type === 'atlas') {
     if (!staticEnv.MONGODB_ATLAS_URI && !process.env.MONGODB_ATLAS_URI) {
       log(`❌ Missing MONGODB_ATLAS_URI for atlas database`, 'red');
+      log(`   💡 Try: npm run profile:set ${profiles.currentProfile} (will fetch from AWS Secrets Manager)`, 'yellow');
+      log(`   💡 Or set MONGODB_ATLAS_URI environment variable manually`, 'yellow');
       valid = false;
     }
   }
@@ -337,7 +386,7 @@ NPM Shortcuts:
 }
 
 // Main function
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   
   if (args.length === 0) {
@@ -361,7 +410,7 @@ function main() {
         log('Usage: npm run profile:set <profile>', 'yellow');
         process.exit(1);
       }
-      setProfile(args[1]);
+      await setProfile(args[1]);
       break;
     case 'start':
       startInfrastructure();
@@ -389,7 +438,14 @@ function main() {
 }
 
 // Run main function
-main();
+(async () => {
+  try {
+    await main();
+  } catch (error) {
+    log(`❌ Error: ${error.message}`, 'red');
+    process.exit(1);
+  }
+})();
 
 export { 
   loadProfiles, 

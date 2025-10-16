@@ -10,7 +10,6 @@ interface Props {
 export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploadTime }) => {
   const inputRef = useRef<HTMLInputElement|null>(null);
   const [effectiveUrl, setEffectiveUrl] = useState<string | undefined>(url);
-  const [cacheBuster, setCacheBuster] = useState(() => Date.now());
   const [urlKey, setUrlKey] = useState(Date.now().toString());
 
   // Add logging for debugging
@@ -18,7 +17,7 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
     console.log('ImagePane received URL prop:', url);
   }, [url]);
 
-  // Process the url to ensure it's a proper API path
+  // Convert URL to direct S3 URL for better performance and reliability
   useEffect(() => {
     if (!url) {
       console.log('No URL provided, using default image');
@@ -28,34 +27,83 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
 
     // For S3 or other external URLs (http/https), use them exactly as provided
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      console.log('Using external URL as-is:', url);
+      console.log('Processing external URL:', url);
       
-      // For S3 URLs, set up CORS headers if needed
-      if (url.includes('s3.amazonaws.com')) {
-        console.log('Detected S3 URL:', url);
+      // If it's already an S3 URL but missing region, fix it
+      if (url.includes('mrb-recipe-images-dev.s3.amazonaws.com')) {
+        // Replace the generic amazonaws.com URL with the region-specific one
+        const fixedUrl = url.replace(
+          'mrb-recipe-images-dev.s3.amazonaws.com',
+          'mrb-recipe-images-dev.s3.us-west-2.amazonaws.com'
+        );
+        console.log('Fixed S3 URL with region:', fixedUrl);
+        setEffectiveUrl(fixedUrl);
+        return;
       }
       
+      // For other external URLs, use as-is
+      console.log('Using external URL as-is:', url);
       setEffectiveUrl(url);
       return;
     }
     
-    // If the URL is just a filename (without path), add the API prefix
-    if (!url.includes('/')) {
-      // Extract the ID part to use as the API path
-      const idMatch = url.match(/^([^.]+)/);
-      if (idMatch && idMatch[1]) {
-        const apiUrl = `/api/recipes/${idMatch[1]}/image?t=${cacheBuster}`;
-        console.log('Converting filename to API URL:', apiUrl);
-        setEffectiveUrl(apiUrl);
-        return;
+    // Convert to direct S3 URL (same logic as RecipeCard)
+    const convertToS3Url = (imageUrl: string): string => {
+      // If it's already an S3 URL, use it as-is
+      if (imageUrl.includes('s3.amazonaws.com')) {
+        return imageUrl;
       }
-    }
+      
+      let recipeId = '';
+      let extension = '';
+      
+      // Extract recipe ID from various URL formats
+      if (imageUrl.includes('/api/recipes/')) {
+        // Format: /api/recipes/{id}/image
+        const match = imageUrl.match(/\/api\/recipes\/([^\/]+)\/image/);
+        if (match) {
+          recipeId = match[1];
+          extension = 'png'; // Default extension for API URLs
+        }
+      } else if (imageUrl.includes('/')) {
+        // Format: some/path/{id}.{ext}
+        const parts = imageUrl.split('/');
+        const filename = parts[parts.length - 1];
+        const fileParts = filename.split('.');
+        if (fileParts.length >= 2) {
+          recipeId = fileParts[0];
+          extension = fileParts[fileParts.length - 1];
+        }
+      } else {
+        // Format: {id}.{ext} or just {id}
+        const fileParts = imageUrl.split('.');
+        if (fileParts.length >= 2) {
+          recipeId = fileParts[0];
+          extension = fileParts[fileParts.length - 1];
+        } else {
+          recipeId = imageUrl;
+          extension = 'png'; // Default extension
+        }
+      }
+      
+      if (!recipeId) {
+        console.warn('Could not extract recipe ID from URL:', imageUrl);
+        return imageUrl; // Return original if we can't parse it
+      }
+      
+      // Try different extensions in order of preference
+      const extensions = extension ? [extension] : ['png', 'jpg', 'jpeg', 'webp'];
+      const baseUrl = 'https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com';
+      
+      // Return the first extension to try
+      const s3Url = `${baseUrl}/${recipeId}.${extensions[0]}`;
+      console.log(`Converted "${imageUrl}" to S3 URL: ${s3Url}`);
+      return s3Url;
+    };
     
-    // For local API URLs, add cache busting
-    const finalUrl = `${url}${url.includes('?') ? '&' : '?'}t=${cacheBuster}`;
-    console.log('Using local API URL with cache busting:', finalUrl);
-    setEffectiveUrl(finalUrl);
-  }, [url, cacheBuster]);
+    const s3Url = convertToS3Url(url);
+    setEffectiveUrl(s3Url);
+  }, [url]);
   
   // Reset urlKey when url changes to force re-render
   useEffect(() => {
@@ -64,72 +112,53 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
     }
   }, [url]);
   
-  // Track retry attempts to avoid infinite loops
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
-
-  // Handle image load errors with exponential backoff retry
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  // Handle image load errors with fallback to different extensions
+  const handleImageError = () => {
     console.warn('Image failed to load:', effectiveUrl);
-    console.warn('Error details:', e);
     
-    if (retryCount < maxRetries) {
-      // Calculate backoff delay - 1s, 2s, 4s for progressive retries
-      const backoffDelay = Math.pow(2, retryCount) * 1000;
-      
-      console.log(`Retry ${retryCount + 1}/${maxRetries} in ${backoffDelay}ms...`);
-      setRetryCount(prev => prev + 1);
-      
-      // Set a timeout with exponential backoff
-      setTimeout(() => {
-        if (effectiveUrl?.includes('s3.amazonaws.com')) {
-          console.log('Retrying S3 URL with cache-busting...');
-          const retryUrl = `${effectiveUrl.split('?')[0]}?retry=${Date.now()}`;
-          setEffectiveUrl(retryUrl);
-          return;
-        } else {
-          // If not an S3 URL, try adding/updating cache buster
-          const newCacheBuster = Date.now();
-          setCacheBuster(newCacheBuster);
-          console.log(`Retrying with new cache buster: ${newCacheBuster}`);
-        }
-      }, backoffDelay);
+    if (!effectiveUrl || !effectiveUrl.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com')) {
+      console.warn('Not our S3 URL or no URL, falling back to default');
+      setEffectiveUrl(undefined);
+      return;
+    }
+    
+    // Extract recipe ID and current extension
+    const urlParts = effectiveUrl.split('/');
+    const filename = urlParts[urlParts.length - 1].split('?')[0]; // Remove query params
+    const fileParts = filename.split('.');
+    
+    if (fileParts.length < 2) {
+      console.warn('Could not parse filename from S3 URL');
+      setEffectiveUrl(undefined);
+      return;
+    }
+    
+    const recipeId = fileParts[0];
+    const currentExt = fileParts[1];
+    
+    // Define fallback extensions
+    const fallbackExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+    const currentIndex = fallbackExtensions.indexOf(currentExt);
+    
+    if (currentIndex >= 0 && currentIndex < fallbackExtensions.length - 1) {
+      // Try next extension
+      const nextExt = fallbackExtensions[currentIndex + 1];
+      const baseUrl = 'https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com';
+      const nextUrl = `${baseUrl}/${recipeId}.${nextExt}`;
+      console.log(`Trying fallback extension: ${nextUrl}`);
+      setEffectiveUrl(nextUrl);
     } else {
-      console.warn(`Max retries (${maxRetries}) reached, falling back to default image`);
-      setEffectiveUrl(undefined); // Fall back to default image
+      console.warn('All fallback extensions exhausted, using default image');
+      setEffectiveUrl(undefined);
     }
   };
   
-  // Update the cache buster when upload completes or lastUploadTime changes
+  // Update when upload completes
   useEffect(() => {
     if (lastUploadTime) {
-      // If we have a new upload time, update the cache buster to force a reload
-      setCacheBuster(lastUploadTime);
-    } else if (!uploading) {
-      // Also handle the case when upload finishes
-      setCacheBuster(Date.now());
-    }
-  }, [uploading, lastUploadTime]);
-  
-  // Reset urlKey when url changes to force complete re-render
-  useEffect(() => {
-    if (url && url !== effectiveUrl) {
-      console.log('URL changed, updating urlKey to force re-render:', url);
       setUrlKey(Date.now().toString());
     }
-  }, [url, effectiveUrl]);
-
-  // Force re-render periodically after initial mount when we have a URL
-  useEffect(() => {
-    if (url && !uploading) {
-      console.log('Setting up auto-refresh for image');
-      const timer = setTimeout(() => {
-        console.log('Auto-refreshing image');
-        setCacheBuster(Date.now());
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [url, uploading]);
+  }, [lastUploadTime]);
 
   return (
     <div className="recipe-image-wrapper">
@@ -157,7 +186,7 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
           src={effectiveUrl} 
           alt="recipe" 
           onError={handleImageError} 
-          key={`img-${urlKey}-${cacheBuster}`} // Using both URL and cache buster for key
+          key={`img-${urlKey}`} // Force re-render when URL changes
         />
       ) : (
         <img src={defaultImage} alt="recipe" />

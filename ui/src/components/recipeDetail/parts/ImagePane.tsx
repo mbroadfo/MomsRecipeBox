@@ -14,20 +14,21 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
 
   // Add logging for debugging
   useEffect(() => {
-    console.log('ImagePane received URL prop:', url);
+    // Only log when there's an unexpected URL format or issue
+    if (url && !url.startsWith('http') && !url.startsWith('/api/recipes/')) {
+      console.log('ImagePane: Unexpected URL format:', url);
+    }
   }, [url]);
 
   // Convert URL to direct S3 URL for better performance and reliability
   useEffect(() => {
     if (!url) {
-      console.log('No URL provided, using default image');
       setEffectiveUrl(undefined);
       return;
     }
 
     // For S3 or other external URLs (http/https), use them exactly as provided
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      console.log('Processing external URL:', url);
       
       // If it's already an S3 URL but missing region, fix it
       if (url.includes('mrb-recipe-images-dev.s3.amazonaws.com')) {
@@ -36,13 +37,11 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
           'mrb-recipe-images-dev.s3.amazonaws.com',
           'mrb-recipe-images-dev.s3.us-west-2.amazonaws.com'
         );
-        console.log('Fixed S3 URL with region:', fixedUrl);
         setEffectiveUrl(fixedUrl);
         return;
       }
       
       // For other external URLs, use as-is
-      console.log('Using external URL as-is:', url);
       setEffectiveUrl(url);
       return;
     }
@@ -97,7 +96,6 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
       
       // Return the first extension to try
       const s3Url = `${baseUrl}/${recipeId}.${extensions[0]}`;
-      console.log(`Converted "${imageUrl}" to S3 URL: ${s3Url}`);
       return s3Url;
     };
     
@@ -114,10 +112,8 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
   
   // Handle image load errors with fallback to different extensions
   const handleImageError = () => {
-    console.warn('Image failed to load:', effectiveUrl);
     
     if (!effectiveUrl || !effectiveUrl.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com')) {
-      console.warn('Not our S3 URL or no URL, falling back to default');
       setEffectiveUrl(undefined);
       return;
     }
@@ -128,7 +124,6 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
     const fileParts = filename.split('.');
     
     if (fileParts.length < 2) {
-      console.warn('Could not parse filename from S3 URL');
       setEffectiveUrl(undefined);
       return;
     }
@@ -145,10 +140,9 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
       const nextExt = fallbackExtensions[currentIndex + 1];
       const baseUrl = 'https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com';
       const nextUrl = `${baseUrl}/${recipeId}.${nextExt}`;
-      console.log(`Trying fallback extension: ${nextUrl}`);
       setEffectiveUrl(nextUrl);
     } else {
-      console.warn('All fallback extensions exhausted, using default image');
+      // All extensions exhausted, use default image
       setEffectiveUrl(undefined);
     }
   };

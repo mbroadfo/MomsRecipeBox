@@ -1,0 +1,19 @@
+fix: resolve recipe detail image display issues with direct S3 URLs
+
+- Fix ImagePane component to use direct S3 URLs with proper region (us-west-2)
+- Update S3 bucket name to correct mrb-recipe-images-dev bucket
+- Implement smart extension fallback chain: .png → .jpg → .jpeg → .webp
+- Handle existing S3 URLs missing region specification
+- Update RecipeCard component for consistency with same S3 URL format
+- Remove complex retry logic in favor of simple, reliable fallback mechanism
+
+Resolves issue where recipe detail screens showed default images instead of actual recipe photos.
+All recipe images now display correctly in both card view and detail view.
+
+Technical changes:
+- ImagePane.tsx: Updated URL conversion and fallback logic
+- RecipeCard.tsx: Standardized S3 URL format with region
+- Verified against S3 bucket mrb-recipe-images-dev in us-west-2
+- Tested with recipes stored as .jpg files (Pressure Cooker Chilli, Summer Berry Trifle)
+
+Impact: Recipe detail pages now show actual recipe photos instead of default placeholders.

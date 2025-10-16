@@ -5,7 +5,18 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-15
+## [Unreleased] - 2025-10-16
+
+### Fixed - Recipe Detail Image Display
+
+#### 🖼️ Image Display Resolution
+- **Recipe Detail Images**: Fixed recipe detail screens showing default images instead of actual recipe photos
+- **Direct S3 URLs**: Updated ImagePane component to use direct S3 URLs with proper region (us-west-2)
+- **Correct Bucket**: Updated to use correct `mrb-recipe-images-dev` bucket name
+- **Smart Fallback**: Implemented extension fallback chain (.png → .jpg → .jpeg → .webp)
+- **Region Handling**: Added support for existing S3 URLs missing region specification
+- **Consistency**: Updated RecipeCard component to use same S3 URL format
+- **Performance**: Removed complex retry logic in favor of simple, reliable fallback mechanism
 
 ### Added - Four-Profile Deployment System
 

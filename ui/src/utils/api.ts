@@ -13,12 +13,10 @@ export const getCurrentUserId = (): string => {
   const isTestEnv = process.env.NODE_ENV === 'test';
   
   if (isTestEnv || isLocalhost) {
-    console.log('Using test user ID: auth0|testuser');
     return 'auth0|testuser';
   }
   
   const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
-  console.log('Current user ID:', userId);
   return userId;
 };
 
@@ -29,7 +27,6 @@ export const getCurrentUserId = (): string => {
  * @throws Error if the response is not ok
  */
 const handleResponse = async (response: Response) => {
-  console.log(`API response status: ${response.status} from ${response.url}`);
   
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
@@ -37,12 +34,8 @@ const handleResponse = async (response: Response) => {
     throw new Error(`API Error ${response.status}: ${errorText}`);
   }
   
-  const contentType = response.headers.get('content-type');
-  console.log(`Response content type: ${contentType}`);
-  
   try {
     const data = await response.json();
-    console.log('Raw API response data:', data);
     return data;
   } catch (error) {
     console.error('Error parsing JSON response:', error);

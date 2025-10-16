@@ -193,7 +193,13 @@ async function setProfile(profileName) {
       // Set the environment variable for this session
       process.env.MONGODB_ATLAS_URI = atlasUri;
       staticEnv.MONGODB_ATLAS_URI = atlasUri;
+      
+      // Also write to a temp file that can be sourced
+      const envFile = path.join(CONFIG_DIR, '.mongodb_atlas_uri');
+      fs.writeFileSync(envFile, `MONGODB_ATLAS_URI=${atlasUri}\n`);
+      
       log(`✅ Successfully retrieved MongoDB Atlas URI from AWS Secrets Manager`, 'green');
+      log(`💡 Environment variable set for Docker Compose`, 'cyan');
     } else {
       log(`⚠️  Could not fetch MongoDB Atlas URI from AWS Secrets Manager`, 'yellow');
       log(`   Make sure AWS credentials are configured and you have access to secret: ${secretName}`, 'yellow');
@@ -276,9 +282,34 @@ function startInfrastructure() {
     const dockerProfile = currentProfile.docker.profile;
     if (dockerProfile) {
       log(`🐳 Starting Docker services with profile: ${dockerProfile}`, 'blue');
+      
+      // Load environment variables for Docker
+      const staticEnv = loadStaticEnv();
+      const dockerEnv = { 
+        ...process.env,
+        ...staticEnv
+      };
+      
+      // Load MongoDB Atlas URI from temp file if it exists
+      const envFile = path.join(CONFIG_DIR, '.mongodb_atlas_uri');
+      if (fs.existsSync(envFile)) {
+        const envContent = fs.readFileSync(envFile, 'utf8');
+        const match = envContent.match(/MONGODB_ATLAS_URI=(.+)/);
+        if (match) {
+          dockerEnv.MONGODB_ATLAS_URI = match[1].trim();
+          log(`🔗 Using MongoDB Atlas URI from AWS Secrets Manager`, 'cyan');
+        }
+      }
+      
+      // For atlas profiles, ensure MONGODB_ATLAS_URI is available
+      if (currentProfile.database.type === 'atlas' && !dockerEnv.MONGODB_ATLAS_URI) {
+        log(`⚠️  No MongoDB Atlas URI available - check AWS Secrets Manager access`, 'yellow');
+      }
+      
       execSync(`docker-compose --profile ${dockerProfile} up -d`, { 
         stdio: 'inherit',
-        cwd: ROOT_DIR
+        cwd: ROOT_DIR,
+        env: dockerEnv
       });
       log(`✅ Infrastructure started successfully`, 'green');
     }
@@ -296,10 +327,18 @@ function stopInfrastructure() {
   log(`🛑 Stopping infrastructure for profile: ${currentProfileName}`, 'blue');
   
   try {
+    // Load environment variables for Docker
+    const staticEnv = loadStaticEnv();
+    const dockerEnv = { 
+      ...process.env,
+      ...staticEnv
+    };
+    
     // Stop all profiles to ensure clean state
     execSync('docker-compose --profile local --profile atlas down', { 
       stdio: 'inherit',
-      cwd: ROOT_DIR
+      cwd: ROOT_DIR,
+      env: dockerEnv
     });
     log(`✅ Infrastructure stopped successfully`, 'green');
   } catch (error) {

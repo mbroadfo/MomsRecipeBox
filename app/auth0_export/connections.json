@@ -1,0 +1,29 @@
+[
+  {
+    "id": "con_RLodvCKmCKEXpFPk",
+    "strategy": "google-oauth2",
+    "name": "google-oauth2",
+    "is_domain_connection": false,
+    "realms": [
+      "google-oauth2"
+    ],
+    "enabled_clients": []
+  },
+  {
+    "id": "con_APc6ory6rVkeRZez",
+    "strategy": "auth0",
+    "name": "Username-Password-Authentication",
+    "is_domain_connection": false,
+    "realms": [
+      "Username-Password-Authentication"
+    ],
+    "enabled_clients": [
+      "T4DfYZIkgr35OdkgxaSEJeiDccWhBvAt",
+      "S1OEnnP6SOqx9cVr6SbCq0tFDuAuJUqg",
+      "JxMne1oIvGhxsIvffOwZfLVjBhzFhQEM",
+      "uKRWXc9K33ZohLi0GcMeUsCcXdj5kwL1",
+      "cWyvoIKHMZZL7KhhU0LlZYFBzSbBywFJ",
+      "otrmPluYp6aRAEAwf9idFzUvH9OnMNyS"
+    ]
+  }
+]

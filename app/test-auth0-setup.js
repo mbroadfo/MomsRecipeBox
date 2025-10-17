@@ -25,7 +25,7 @@ async function testAuth0Setup() {
     'AUTH0_DOMAIN',
     'AUTH0_M2M_CLIENT_ID',
     'AUTH0_M2M_CLIENT_SECRET',
-    'AUTH0_MRB_CLIENT_ID',
+    'REACT_APP_AUTH0_CLIENT_ID',
     'AUTH0_API_AUDIENCE'
   ];
 

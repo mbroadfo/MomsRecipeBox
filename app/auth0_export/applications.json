@@ -1,0 +1,275 @@
+[
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "name": "Cruise Viewer SPA",
+    "callbacks": [
+      "http://localhost:5173",
+      "https://da389rkfiajdk.cloudfront.net/",
+      "http://localhost:4173"
+    ],
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": false,
+      "infinite_idle_token_lifetime": false,
+      "token_lifetime": 1209600,
+      "idle_token_lifetime": 14400,
+      "rotation_type": "rotating"
+    },
+    "allowed_clients": [],
+    "native_social_login": {
+      "apple": {
+        "enabled": false
+      },
+      "facebook": {
+        "enabled": false
+      }
+    },
+    "logo_uri": "https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg",
+    "allowed_logout_urls": [
+      "http://localhost:5173",
+      "https://da389rkfiajdk.cloudfront.net/",
+      "http://localhost:4173"
+    ],
+    "description": "Restricted access to the Cruise Viewer",
+    "client_id": "cWyvoIKHMZZL7KhhU0LlZYFBzSbBywFJ",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 3600,
+      "secret_encoded": false
+    },
+    "client_aliases": [],
+    "token_endpoint_auth_method": "none",
+    "app_type": "spa",
+    "grant_types": [
+      "authorization_code",
+      "implicit",
+      "refresh_token"
+    ],
+    "web_origins": [
+      "http://localhost:5173",
+      "https://da389rkfiajdk.cloudfront.net/",
+      "http://localhost:4173"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "name": "Cruise Viewer M2M",
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "cross_origin_authentication": false,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "non-expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": true,
+      "infinite_idle_token_lifetime": true,
+      "token_lifetime": 31557600,
+      "idle_token_lifetime": 2592000,
+      "rotation_type": "non-rotating"
+    },
+    "client_id": "otrmPluYp6aRAEAwf9idFzUvH9OnMNyS",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 36000,
+      "secret_encoded": false
+    },
+    "token_endpoint_auth_method": "client_secret_post",
+    "app_type": "non_interactive",
+    "grant_types": [
+      "client_credentials"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "name": "Cruise Admin API (Test Application)",
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "cross_origin_authentication": false,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "non-expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": true,
+      "infinite_idle_token_lifetime": true,
+      "token_lifetime": 31557600,
+      "idle_token_lifetime": 2592000,
+      "rotation_type": "non-rotating"
+    },
+    "client_id": "T4DfYZIkgr35OdkgxaSEJeiDccWhBvAt",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 36000,
+      "secret_encoded": false
+    },
+    "token_endpoint_auth_method": "client_secret_post",
+    "app_type": "non_interactive",
+    "grant_types": [
+      "client_credentials"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "name": "Moms Recipe Box M2M",
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "cross_origin_authentication": false,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "non-expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": true,
+      "infinite_idle_token_lifetime": true,
+      "token_lifetime": 31557600,
+      "idle_token_lifetime": 2592000,
+      "rotation_type": "non-rotating"
+    },
+    "client_id": "S1OEnnP6SOqx9cVr6SbCq0tFDuAuJUqg",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 36000,
+      "secret_encoded": false
+    },
+    "token_endpoint_auth_method": "client_secret_post",
+    "app_type": "non_interactive",
+    "grant_types": [
+      "client_credentials"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "name": "MomsRecipeBox Admin API (Test Application)",
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "cross_origin_authentication": false,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "non-expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": true,
+      "infinite_idle_token_lifetime": true,
+      "token_lifetime": 31557600,
+      "idle_token_lifetime": 2592000,
+      "rotation_type": "non-rotating"
+    },
+    "client_id": "JxMne1oIvGhxsIvffOwZfLVjBhzFhQEM",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 36000,
+      "secret_encoded": false
+    },
+    "token_endpoint_auth_method": "client_secret_post",
+    "app_type": "non_interactive",
+    "grant_types": [
+      "client_credentials"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "global": false,
+    "is_token_endpoint_ip_header_trusted": false,
+    "async_approval_notification_channels": [
+      "guardian-push"
+    ],
+    "name": "MomsRecipeBox-SPA",
+    "is_first_party": true,
+    "oidc_conformant": true,
+    "cross_origin_authentication": false,
+    "sso_disabled": false,
+    "cross_origin_auth": false,
+    "refresh_token": {
+      "expiration_type": "expiring",
+      "leeway": 0,
+      "token_lifetime": 2592000,
+      "idle_token_lifetime": 1296000,
+      "infinite_token_lifetime": false,
+      "infinite_idle_token_lifetime": false,
+      "rotation_type": "rotating"
+    },
+    "allowed_clients": [],
+    "allowed_logout_urls": [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://staging.momsrecipebox.app",
+      "https://momsrecipebox.app"
+    ],
+    "callbacks": [
+      "http://localhost:3000/callback",
+      "http://localhost:5173/callback",
+      "https://staging.momsrecipebox.app/callback",
+      "https://momsrecipebox.app/callback"
+    ],
+    "native_social_login": {
+      "apple": {
+        "enabled": false
+      },
+      "facebook": {
+        "enabled": false
+      }
+    },
+    "client_id": "uKRWXc9K33ZohLi0GcMeUsCcXdj5kwL1",
+    "callback_url_template": false,
+    "jwt_configuration": {
+      "alg": "RS256",
+      "lifetime_in_seconds": 36000,
+      "secret_encoded": false
+    },
+    "client_aliases": [],
+    "token_endpoint_auth_method": "none",
+    "app_type": "spa",
+    "grant_types": [
+      "authorization_code",
+      "implicit",
+      "refresh_token"
+    ],
+    "custom_login_page_on": true
+  },
+  {
+    "global": true,
+    "tenant": "dev-jdsnf3lqod8nxlnv",
+    "callbacks": [],
+    "is_first_party": true,
+    "name": "All Applications",
+    "refresh_token": {
+      "expiration_type": "non-expiring",
+      "leeway": 0,
+      "infinite_token_lifetime": true,
+      "infinite_idle_token_lifetime": true,
+      "token_lifetime": 2592000,
+      "idle_token_lifetime": 1296000,
+      "rotation_type": "non-rotating"
+    },
+    "owners": [
+      "mr|auth0|67e1bd59b42b38f42164619a"
+    ],
+    "client_id": "bbEAljpZxxW7QJwaVeYfjZTUD4PJYpy1"
+  }
+]

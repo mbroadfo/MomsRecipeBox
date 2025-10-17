@@ -294,10 +294,16 @@ const server = http.createServer(async (req, res) => {
     req.headers['content-type'] &&
     req.headers['content-type'].startsWith('multipart/form-data')
   ) {
+    // Strip /api prefix for Lambda handler compatibility
+    let apiPath = req.url;
+    if (apiPath.startsWith('/api/')) {
+      apiPath = apiPath.substring(4); // Remove '/api' prefix
+    }
+    
     // For multipart, pass the raw req object to the handler
     const event = {
       httpMethod: req.method,
-      path: req.url,
+      path: apiPath,
       headers: req.headers,
       body: req, // Pass the raw request object
       pathParameters,
@@ -393,9 +399,16 @@ const server = http.createServer(async (req, res) => {
         ) {
           req.headers['content-length'] = Buffer.byteLength(body);
         }
+        
+        // Strip /api prefix for Lambda handler compatibility
+        let apiPath = req.url;
+        if (apiPath.startsWith('/api/')) {
+          apiPath = apiPath.substring(4); // Remove '/api' prefix
+        }
+        
         const event = {
           httpMethod: req.method,
-          path: req.url,
+          path: apiPath,
           headers: req.headers,
           body: body || null,
           pathParameters,

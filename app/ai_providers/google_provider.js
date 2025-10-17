@@ -18,7 +18,7 @@ export class GoogleGeminiProvider extends BaseAIProvider {
   getConfig() {
     return {
       name: 'Google Gemini',
-      endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
       apiKey: process.env.GOOGLE_API_KEY,
       headers: {
         'Content-Type': 'application/json'

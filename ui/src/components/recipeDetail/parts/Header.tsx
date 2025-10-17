@@ -107,7 +107,7 @@ export const Header: React.FC<Props> = ({
           {!editing ? (
             title
           ) : (
-            <h1
+            <div
               ref={(el) => {
                 if (el && !h1Ref.current) {
                   h1Ref.current = el;

@@ -93,7 +93,7 @@ services:
       context: .
       dockerfile: app/Dockerfile
     env_file:
-      - .env
+      - config/current-profile.env
     environment:
       # MONGODB_ATLAS_URI is expected to be provided by the environment when using Atlas mode
       # It will be retrieved from AWS Secrets Manager by Toggle-MongoDbConnection.ps1

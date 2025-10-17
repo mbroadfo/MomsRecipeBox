@@ -34,7 +34,7 @@ The system is implemented as a modular component with well-defined interfaces, m
 
 | Provider | Model | API Key Format | Features | Strengths |
 |----------|-------|----------------|----------|-----------|
-| **Google Gemini** | `gemini-1.5-flash` | `AIza...` | Primary provider | High accuracy, good at parsing web content |
+| **Google Gemini** | `gemini-2.5-flash` | `AIza...` | Primary provider | High accuracy, good at parsing web content |
 | **OpenAI** | `gpt-3.5-turbo` | `sk-...` | Reliable fallback | Consistent responses, good conversation flow |
 | **Groq** | `llama-3.1-8b-instant` | `gsk_...` | Fast responses | Very fast inference, free tier available |
 | **Anthropic Claude** | `claude-3-haiku-20240307` | `sk-ant-...` | High-quality reasoning | Excellent instruction following |
@@ -295,7 +295,7 @@ GET /admin/ai-services-status
       "status": "configured",
       "isConfigured": true,
       "apiKeyValid": true,
-      "model": "gemini-1.5-flash"
+      "model": "gemini-2.5-flash"
     },
     // Other providers...
   ]
@@ -328,7 +328,7 @@ With query parameter `?test=basic`:
       "responseTime": 370,  // ms
       "isConfigured": true,
       "apiKeyValid": true,
-      "model": "gemini-1.5-flash"
+      "model": "gemini-2.5-flash"
     },
     // Other providers with actual test results...
   ]

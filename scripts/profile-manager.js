@@ -20,7 +20,8 @@ const ROOT_ENV_FILE = path.join(ROOT_DIR, '.env');
 /**
  * Fetch MongoDB Atlas URI from AWS Secrets Manager
  */
-async function fetchMongoAtlasUri(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
+// Fetch secrets from AWS Secrets Manager
+async function fetchSecretsFromAWS(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
   try {
     // Build AWS CLI command with profile if set
     let awsCommand = `aws secretsmanager get-secret-value --secret-id ${secretName} --region ${region} --output json`;
@@ -33,13 +34,22 @@ async function fetchMongoAtlasUri(secretName = 'moms-recipe-secrets-dev', region
     const secretData = JSON.parse(result);
     
     if (secretData && secretData.SecretString) {
-      const secrets = JSON.parse(secretData.SecretString);
-      return secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI;
+      return JSON.parse(secretData.SecretString);
     }
     
-    return null;
+    return {};
   } catch (error) {
-    // Silently fail and return null - caller will handle the missing value
+    // Silently fail and return empty object - caller will handle the missing values
+    return {};
+  }
+}
+
+// Legacy function for backward compatibility
+async function fetchMongoAtlasUri(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
+  try {
+    const secrets = await fetchSecretsFromAWS(secretName, region);
+    return secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI || null;
+  } catch (error) {
     return null;
   }
 }
@@ -155,6 +165,22 @@ function generateCurrentProfileEnv(profileName, profile, staticEnv) {
     lines.push(`API_BASE_URL=${apiUrl}`);
   }
   
+  // Add AI API keys if available in staticEnv
+  const aiKeyNames = ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPSEEK_API_KEY'];
+  const addedAiKeys = [];
+  
+  for (const keyName of aiKeyNames) {
+    if (staticEnv[keyName]) {
+      lines.push(`${keyName}=${staticEnv[keyName]}`);
+      addedAiKeys.push(keyName);
+    }
+  }
+  
+  if (addedAiKeys.length > 0) {
+    lines.splice(-addedAiKeys.length, 0, ''); // Add empty line before AI keys
+    lines.splice(-addedAiKeys.length, 0, '# AI Provider API Keys');
+  }
+  
   const content = lines.join('\n') + '\n';
   
   try {
@@ -181,14 +207,16 @@ async function setProfile(profileName) {
   
   log(`🔄 Setting profile to: ${profileName} (${profile.name})`, 'blue');
   
-  // For profiles using Atlas, try to fetch MongoDB URI from AWS Secrets Manager
+  // For profiles using Atlas, try to fetch secrets from AWS Secrets Manager
   if (profile.database.type === 'atlas') {
     const secretName = staticEnv.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
     const region = staticEnv.AWS_REGION || 'us-west-2';
     
-    log(`🔐 Fetching MongoDB Atlas URI from AWS Secrets Manager...`, 'yellow');
-    const atlasUri = await fetchMongoAtlasUri(secretName, region);
+    log(`🔐 Fetching secrets from AWS Secrets Manager...`, 'yellow');
+    const secrets = await fetchSecretsFromAWS(secretName, region);
     
+    // Handle MongoDB Atlas URI
+    const atlasUri = secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI;
     if (atlasUri) {
       // Set the environment variable for this session
       process.env.MONGODB_ATLAS_URI = atlasUri;
@@ -199,12 +227,35 @@ async function setProfile(profileName) {
       fs.writeFileSync(envFile, `MONGODB_ATLAS_URI=${atlasUri}\n`);
       
       log(`✅ Successfully retrieved MongoDB Atlas URI from AWS Secrets Manager`, 'green');
-      log(`💡 Environment variable set for Docker Compose`, 'cyan');
     } else {
       log(`⚠️  Could not fetch MongoDB Atlas URI from AWS Secrets Manager`, 'yellow');
+    }
+    
+    // Handle AI API Keys
+    const aiKeyNames = ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPSEEK_API_KEY'];
+    const foundAiKeys = [];
+    
+    for (const keyName of aiKeyNames) {
+      if (secrets[keyName]) {
+        process.env[keyName] = secrets[keyName];
+        staticEnv[keyName] = secrets[keyName];
+        foundAiKeys.push(keyName);
+      }
+    }
+    
+    if (foundAiKeys.length > 0) {
+      log(`✅ Successfully retrieved ${foundAiKeys.length} AI API key(s): ${foundAiKeys.join(', ')}`, 'green');
+    } else {
+      log(`⚠️  No AI API keys found in AWS Secrets Manager`, 'yellow');
+      log(`   AI Recipe Assistant will not be available`, 'yellow');
+    }
+    
+    if (!atlasUri && foundAiKeys.length === 0) {
       log(`   Make sure AWS credentials are configured and you have access to secret: ${secretName}`, 'yellow');
       log(`   Falling back to environment variable or .env file`, 'yellow');
     }
+    
+    log(`💡 Environment variables set for Docker Compose`, 'cyan');
   }
   
   // Update current profile in config

@@ -5,7 +5,23 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-16
+## [Unreleased] - 2025-10-17
+
+### Fixed - Google Gemini API Integration
+
+#### 🤖 AI Provider Restoration
+- **Google Gemini API**: Updated to use current `gemini-2.5-flash` model (was `gemini-1.5-flash`)
+- **API Endpoint**: Updated from `/v1/` to `/v1beta/` as required by current Google Gemini API
+- **Atlas Docker**: Fixed Lambda entrypoint issue preventing Express server startup in Atlas mode
+- **Database Connection**: Resolved MongoDB URI override preventing Atlas connection in docker-compose
+- **Provider Testing**: All 5 AI providers (Google, OpenAI, Groq, Anthropic, DeepSeek) now operational
+
+#### 🛠️ Technical Improvements
+- **Docker Entrypoint**: Added `entrypoint: [""]` override for Lambda base image compatibility
+- **Environment Variables**: Fixed `MONGODB_URI` configuration in docker-compose.atlas.yml
+- **API Documentation**: Updated technical documentation to reflect current model versions
+
+## [Previous] - 2025-10-16
 
 ### Fixed - Recipe Detail Image Display
 

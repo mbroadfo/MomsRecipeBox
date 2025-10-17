@@ -24,6 +24,7 @@ import { handler as clearShoppingList } from './handlers/clear_shopping_list.js'
 // AI-powered handlers
 import { handler as categorizeIngredients } from './handlers/categorize_ingredients.js';
 import { handler as aiRecipeAssistant } from './handlers/ai_recipe_assistant.js';
+import { AIProviderFactory } from './ai_providers/index.js';
 // Admin handlers
 import { listUsersHandler } from './admin/admin_handlers/list_users.js';
 import { inviteUserHandler } from './admin/admin_handlers/invite_user.js';
@@ -49,6 +50,35 @@ function addCorsHeaders(response) {
       ...(response.headers || {})
     }
   };
+}
+
+/**
+ * Get available AI providers
+ * @param {object} event - The API Gateway event
+ * @returns {object} Response with available AI providers
+ */
+async function getAiProviders(event) {
+  try {
+    const availableProviders = AIProviderFactory.getAvailableProviders();
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        providers: availableProviders
+      })
+    };
+  } catch (error) {
+    console.error('Error getting AI providers:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        success: false,
+        message: 'Failed to get AI providers',
+        error: error.message
+      })
+    };
+  }
 }
 
 /**
@@ -170,6 +200,9 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'POST' && pathOnly === '/ai/extract') {
       return addCorsHeaders(await aiRecipeAssistant(event));
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/ai/providers') {
+      return addCorsHeaders(await getAiProviders(event));
     }
     
     // Admin routes

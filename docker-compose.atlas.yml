@@ -8,10 +8,13 @@ services:
     build:
       context: .
       dockerfile: app/Dockerfile
-      target: production  # Use production stage
+    env_file:
+      - config/current-profile.env
+    entrypoint: [""]
+    command: ["node", "local_server.js"]
     environment:
-      # Atlas connection will be provided via MONGODB_ATLAS_URI
-      MONGODB_URI: ${MONGODB_ATLAS_URI}
+      # Atlas connection - use the URI from the profile env file
+      # MONGODB_URI is already set in current-profile.env
       MONGODB_MODE: atlas
       APP_MODE: express
       NODE_ENV: ${NODE_ENV:-development}

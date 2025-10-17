@@ -6,6 +6,13 @@ interface Message {
   content: string;
 }
 
+interface AIProvider {
+  name: string;
+  key: string;
+  status: 'available' | 'rate-limited' | 'unavailable';
+  rateLimitExpiry?: number | null;
+}
+
 interface ParsedRecipe {
   title?: string;
   subtitle?: string;
@@ -32,6 +39,8 @@ export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVis
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('auto');
+  const [availableProviders, setAvailableProviders] = useState<AIProvider[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
   // Add initial greeting when the component mounts
@@ -51,6 +60,42 @@ Simply type your request or paste a recipe or URL to get started!`
       }
     ]);
   }, []);
+
+  // Fetch available AI providers
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        setProvidersLoading(true);
+        const response = await fetch('/api/ai/providers');
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.providers) {
+            setAvailableProviders(data.providers);
+            
+            // If the currently selected model is not available, reset to auto
+            const selectedProviderAvailable = data.providers.some(
+              (p: AIProvider) => p.key === selectedModel && p.status === 'available'
+            );
+            
+            if (selectedModel !== 'auto' && !selectedProviderAvailable) {
+              setSelectedModel('auto');
+            }
+          }
+        } else {
+          console.error('Failed to fetch AI providers');
+        }
+      } catch (error) {
+        console.error('Error fetching AI providers:', error);
+      } finally {
+        setProvidersLoading(false);
+      }
+    };
+
+    if (isVisible) {
+      fetchProviders();
+    }
+  }, [isVisible, selectedModel]);
 
   // Scroll to bottom of chat when messages update
   useEffect(() => {
@@ -216,13 +261,20 @@ Simply type your request or paste a recipe or URL to get started!`
               className="recipe-ai-model-select"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={providersLoading}
             >
               <option value="auto">Auto-select Best Model</option>
-              <option value="google">Google Gemini</option>
-              <option value="openai">OpenAI GPT</option>
-              <option value="groq">Groq</option>
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="deepseek">DeepSeek</option>
+              {providersLoading ? (
+                <option value="">Loading providers...</option>
+              ) : (
+                availableProviders
+                  .filter(provider => provider.status === 'available')
+                  .map(provider => (
+                    <option key={provider.key} value={provider.key}>
+                      {provider.name}
+                    </option>
+                  ))
+              )}
             </select>
           </div>
         </div>

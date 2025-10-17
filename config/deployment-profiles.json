@@ -32,7 +32,16 @@
         "MONGODB_MODE": "local",
         "APP_MODE": "express",
         "VITE_API_MODE": "proxy",
-        "VITE_ENVIRONMENT": "local"
+        "VITE_ENVIRONMENT": "local",
+        "AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "AUTH0_M2M_CLIENT_ID": "${AUTH0_M2M_CLIENT_ID}",
+        "AUTH0_M2M_CLIENT_SECRET": "${AUTH0_M2M_CLIENT_SECRET}",
+        "AUTH0_API_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "REACT_APP_AUTH0_CLIENT_ID": "${AUTH0_MRB_CLIENT_ID}",
+        "REACT_APP_AUTH0_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_REDIRECT_URI": "http://localhost:3000/callback",
+        "REACT_APP_AUTH0_LOGOUT_URI": "http://localhost:3000"
       }
     },
     "atlas": {
@@ -65,7 +74,16 @@
         "MONGODB_MODE": "atlas",
         "APP_MODE": "express",
         "VITE_API_MODE": "proxy",
-        "VITE_ENVIRONMENT": "atlas"
+        "VITE_ENVIRONMENT": "atlas",
+        "AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "AUTH0_M2M_CLIENT_ID": "${AUTH0_M2M_CLIENT_ID}",
+        "AUTH0_M2M_CLIENT_SECRET": "${AUTH0_M2M_CLIENT_SECRET}",
+        "AUTH0_API_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "REACT_APP_AUTH0_CLIENT_ID": "${AUTH0_MRB_CLIENT_ID}",
+        "REACT_APP_AUTH0_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_REDIRECT_URI": "http://localhost:3000/callback",
+        "REACT_APP_AUTH0_LOGOUT_URI": "http://localhost:3000"
       }
     },
     "lambda": {
@@ -96,7 +114,16 @@
         "MONGODB_MODE": "atlas",
         "APP_MODE": "lambda",
         "VITE_API_MODE": "direct",
-        "VITE_ENVIRONMENT": "lambda"
+        "VITE_ENVIRONMENT": "lambda",
+        "AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "AUTH0_M2M_CLIENT_ID": "${AUTH0_M2M_CLIENT_ID}",
+        "AUTH0_M2M_CLIENT_SECRET": "${AUTH0_M2M_CLIENT_SECRET}",
+        "AUTH0_API_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "REACT_APP_AUTH0_CLIENT_ID": "${AUTH0_MRB_CLIENT_ID}",
+        "REACT_APP_AUTH0_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_REDIRECT_URI": "https://staging.momsrecipebox.app/callback",
+        "REACT_APP_AUTH0_LOGOUT_URI": "https://staging.momsrecipebox.app"
       }
     },
     "cloud": {
@@ -127,7 +154,16 @@
         "MONGODB_MODE": "atlas",
         "APP_MODE": "lambda",
         "VITE_API_MODE": "production",
-        "VITE_ENVIRONMENT": "production"
+        "VITE_ENVIRONMENT": "production",
+        "AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "AUTH0_M2M_CLIENT_ID": "${AUTH0_M2M_CLIENT_ID}",
+        "AUTH0_M2M_CLIENT_SECRET": "${AUTH0_M2M_CLIENT_SECRET}",
+        "AUTH0_API_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_DOMAIN": "${AUTH0_DOMAIN}",
+        "REACT_APP_AUTH0_CLIENT_ID": "${AUTH0_MRB_CLIENT_ID}",
+        "REACT_APP_AUTH0_AUDIENCE": "${AUTH0_API_AUDIENCE}",
+        "REACT_APP_AUTH0_REDIRECT_URI": "https://momsrecipebox.app/callback",
+        "REACT_APP_AUTH0_LOGOUT_URI": "https://momsrecipebox.app"
       }
     }
   },

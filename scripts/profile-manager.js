@@ -249,6 +249,33 @@ async function setProfile(profileName) {
       log(`⚠️  No AI API keys found in AWS Secrets Manager`, 'yellow');
       log(`   AI Recipe Assistant will not be available`, 'yellow');
     }
+
+    // Handle Auth0 Credentials
+    const auth0KeyNames = [
+      'AUTH0_DOMAIN',
+      'AUTH0_M2M_CLIENT_ID', 
+      'AUTH0_M2M_CLIENT_SECRET',
+      'AUTH0_MRB_CLIENT_ID',
+      'AUTH0_MRB_CLIENT_SECRET',
+      'AUTH0_API_AUDIENCE',
+      'AUTH0_MANAGEMENT_AUDIENCE'
+    ];
+    const foundAuth0Keys = [];
+    
+    for (const keyName of auth0KeyNames) {
+      if (secrets[keyName]) {
+        process.env[keyName] = secrets[keyName];
+        staticEnv[keyName] = secrets[keyName];
+        foundAuth0Keys.push(keyName);
+      }
+    }
+    
+    if (foundAuth0Keys.length > 0) {
+      log(`✅ Successfully retrieved ${foundAuth0Keys.length} Auth0 credential(s): ${foundAuth0Keys.join(', ')}`, 'green');
+    } else {
+      log(`⚠️  No Auth0 credentials found in AWS Secrets Manager`, 'yellow');
+      log(`   Auth0 authentication will not be available`, 'yellow');
+    }
     
     if (!atlasUri && foundAiKeys.length === 0) {
       log(`   Make sure AWS credentials are configured and you have access to secret: ${secretName}`, 'yellow');

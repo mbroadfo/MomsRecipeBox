@@ -80,7 +80,7 @@ try {
     $backupInfo = @{
         timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         source = "MongoDB Atlas (Docker Backup)"
-        uri = $mongoUri.Replace($secrets.MONGODB_ATLAS_PASSWORD, "********") # Mask password in logs
+        uri = $mongoUri -replace "://[^@]*@", "://****:****@" # Mask credentials in logs
         path = $backupPath
     } | ConvertTo-Json -Depth 5
     

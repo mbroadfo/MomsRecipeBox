@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-const uri = 'mongodb+srv://mrbapp:zjF5MNeHDeCs9%40XBzjF5MNeHDeCs9%40XB@momsrecipebox-cluster.vohcix5.mongodb.net/moms_recipe_box?retryWrites=true&w=majority';
+const uri = process.env.MONGODB_ATLAS_URI || 'mongodb+srv://mrbapp:${MONGODB_PASSWORD}@momsrecipebox-cluster.vohcix5.mongodb.net/moms_recipe_box?retryWrites=true&w=majority';
 
 async function queryAtlas() {
   const client = new MongoClient(uri);

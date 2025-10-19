@@ -1,14 +1,44 @@
-// db-test.js - Simple MongoDB connection and query test script
+// db-test.js - Profile-aware MongoDB connection test script
 import { MongoClient } from 'mongodb';
+import dotenv from 'dotenv';
+import { readFileSync } from 'fs';
 
-// Direct connection string
-const uri = 'mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin';
+// Load both .env and current-profile.env (profile overrides .env)
+dotenv.config();
+dotenv.config({ path: 'config/current-profile.env', override: true });
 
 async function testDatabase() {
-  console.log('🔍 Testing MongoDB Connection');
+  // Use the same environment variables as the application
+  const uri = process.env.MONGODB_URI;
+  const dbName = process.env.MONGODB_DB_NAME;
+  const mode = process.env.MONGODB_MODE || 'local';
+  
+  console.log(`🔍 Testing MongoDB Connection (${mode.toUpperCase()} mode)`);
+  
+  if (!uri) {
+    console.error('❌ MONGODB_URI environment variable not set');
+    process.exit(1);
+  }
+  
+  if (!dbName) {
+    console.error('❌ MONGODB_DB_NAME environment variable not set');
+    process.exit(1);
+  }
+  
+  console.log(`Database: ${dbName}`);
+  console.log(`Mode: ${mode}`);
+  
+  // Show first part of URI for debugging (mask password but show structure)
+  if (mode === 'atlas') {
+    const maskedUri = uri.replace(/:([^@]+)@/, ':****@');
+    console.log(`URI Structure: ${maskedUri}`);
+    
+    // Also check if MONGODB_ATLAS_URI is set
+    console.log(`MONGODB_ATLAS_URI available: ${!!process.env.MONGODB_ATLAS_URI}`);
+  }
   
   const client = new MongoClient(uri, { 
-    serverSelectionTimeoutMS: 5000 
+    serverSelectionTimeoutMS: 10000 
   });
   
   try {
@@ -16,7 +46,7 @@ async function testDatabase() {
     await client.connect();
     console.log('✅ Connected successfully!\n');
     
-    const db = client.db('moms_recipe_box_dev');
+    const db = client.db(dbName);
     const collections = await db.listCollections().toArray();
     console.log('Collections:', collections.map(c => c.name));
     

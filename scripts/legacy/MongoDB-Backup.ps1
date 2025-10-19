@@ -116,17 +116,8 @@ function Get-MongoDBConnectionInfo {
             $secrets = $secretJson.SecretString | ConvertFrom-Json
             $MongoUri = $secrets.MONGODB_URI
             
-            # If MONGODB_URI is not present, try to build it from other fields
-            if (-not $MongoUri -and $secrets.MONGODB_ATLAS_PASSWORD) {
-                $host = $secrets.MONGODB_HOST
-                $username = $secrets.MONGODB_USER
-                $password = $secrets.MONGODB_ATLAS_PASSWORD
-                $dbName = $secrets.MONGODB_DBNAME
-                
-                if ($host -and $username -and $password -and $dbName) {
-                    $MongoUri = "mongodb+srv://$username:$password@$host/$dbName?retryWrites=true&w=majority"
-                }
-            }
+            # Note: Individual MongoDB components (host, user, password) are no longer supported
+            # Please ensure MONGODB_URI is set in AWS Secrets Manager
         }
         
         if (-not $MongoUri) {

@@ -53,21 +53,10 @@ export function getMongoConnectionString() {
   
   // For MongoDB Atlas
   if (mongoMode === 'atlas') {
-    // First check if a full connection string is provided
+    // Check if a full connection string is provided
     if (process.env.MONGODB_ATLAS_URI) {
       console.log('📦 Using MongoDB Atlas (connection string provided)');
       return process.env.MONGODB_ATLAS_URI;
-    }
-    
-    // Check if we have the components to build a connection string
-    const host = process.env.MONGODB_ATLAS_HOST;
-    const user = process.env.MONGODB_ATLAS_USER;
-    const password = process.env.MONGODB_ATLAS_PASSWORD;
-    
-    if (host && user && password) {
-      const atlasUri = `mongodb+srv://${user}:${encodeURIComponent(password)}@${host}/${dbName}?retryWrites=true&w=majority`;
-      console.log('📦 Using MongoDB Atlas (constructed from components)');
-      return atlasUri;
     }
     
     // If we don't have a valid Atlas configuration, warn but fall back to local

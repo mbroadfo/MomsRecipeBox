@@ -90,18 +90,9 @@ function getHealthCheckConnectionString() {
   
   // For MongoDB Atlas
   if (mongoMode === 'atlas') {
-    // First check if a full connection string is provided
+    // Check if a full connection string is provided
     if (process.env.MONGODB_ATLAS_URI) {
       return process.env.MONGODB_ATLAS_URI;
-    }
-    
-    // Check if we have the components to build a connection string
-    const host = process.env.MONGODB_ATLAS_HOST;
-    const user = process.env.MONGODB_ATLAS_USER;
-    const password = process.env.MONGODB_ATLAS_PASSWORD;
-    
-    if (host && user && password) {
-      return `mongodb+srv://${user}:${encodeURIComponent(password)}@${host}/${dbName}?retryWrites=true&w=majority`;
     }
   }
   

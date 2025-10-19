@@ -1,0 +1,166 @@
+{
+  "domain": "dev-jdsnf3lqod8nxlnv.us.auth0.com",
+  "exportDate": "2025-10-18T01:03:31.267Z",
+  "sections": {
+    "branding": {
+      "success": true,
+      "data": {
+        "colors": {
+          "page_background": "#000000",
+          "primary": "#635dff"
+        }
+      }
+    },
+    "theme": {
+      "success": true,
+      "data": {
+        "colors": {
+          "primary_button": "#635dff",
+          "primary_button_label": "#ffffff",
+          "secondary_button_border": "#c9cace",
+          "secondary_button_label": "#1e212a",
+          "base_focus_color": "#635dff",
+          "base_hover_color": "#000000",
+          "links_focused_components": "#635dff",
+          "header": "#1e212a",
+          "body_text": "#1e212a",
+          "widget_background": "#ffffff",
+          "widget_border": "#c9cace",
+          "input_labels_placeholders": "#65676e",
+          "input_filled_text": "#000000",
+          "input_border": "#c9cace",
+          "input_background": "#ffffff",
+          "icons": "#65676e",
+          "error": "#d03c38",
+          "success": "#13a688",
+          "captcha_widget_theme": "light"
+        },
+        "fonts": {
+          "font_url": "",
+          "reference_text_size": 16,
+          "title": {
+            "bold": false,
+            "size": 150
+          },
+          "subtitle": {
+            "bold": false,
+            "size": 87.5
+          },
+          "body_text": {
+            "bold": false,
+            "size": 87.5
+          },
+          "buttons_text": {
+            "bold": false,
+            "size": 100
+          },
+          "input_labels": {
+            "bold": false,
+            "size": 100
+          },
+          "links": {
+            "bold": true,
+            "size": 87.5
+          },
+          "links_style": "normal"
+        },
+        "borders": {
+          "button_border_weight": 1,
+          "buttons_style": "rounded",
+          "button_border_radius": 3,
+          "input_border_weight": 1,
+          "inputs_style": "rounded",
+          "input_border_radius": 3,
+          "widget_corner_radius": 5,
+          "widget_border_weight": 0,
+          "show_widget_shadow": true
+        },
+        "widget": {
+          "logo_position": "center",
+          "logo_url": "https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg",
+          "logo_height": 100,
+          "header_text_alignment": "center",
+          "social_buttons_layout": "bottom"
+        },
+        "page_background": {
+          "page_layout": "center",
+          "background_color": "#000000",
+          "background_image_url": ""
+        },
+        "displayName": "Unnamed Theme",
+        "themeId": "anyUjxzFfXYzMPUhJXG32YBoyUE2TVGT"
+      }
+    },
+    "universalLogin": {
+      "success": false,
+      "error": "http_error",
+      "status": 402,
+      "data": {
+        "statusCode": 402,
+        "error": "Payment Required",
+        "message": "A paid subscription is required for this feature."
+      }
+    },
+    "prompts": {
+      "success": true,
+      "data": {
+        "universal_login_experience": "new",
+        "identifier_first": false
+      }
+    },
+    "customLoginText": {
+      "success": true,
+      "data": {
+        "login": {
+          "title": "Welcome to the Lindblad Available Cruise Viewer",
+          "pageTitle": "Log in",
+          "description": "Log in to view available cruises"
+        }
+      }
+    },
+    "emailTemplates": {
+      "reset_email": {
+        "success": true,
+        "data": {
+          "template": "reset_email",
+          "syntax": "liquid",
+          "body": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>Set Your Password</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f6f7fb;font-family:'Inter',sans-serif;\">\n  <div style=\"max-width:600px;margin:0 auto;padding:2rem;text-align:center;background-color:#ffffff;border-radius:12px;\">\n    <!-- Logo -->\n    <img src=\"https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg\"\n         alt=\"Cruise Logo\"\n         style=\"width:80px;border-radius:12px;margin-bottom:1rem;\">\n\n    <!-- Header -->\n    <h2 style=\"color:#333;margin:0 0 1rem 0;font-weight:600;\">\n      Welcome to the Lindblad Available Cruise Viewer\n    </h2>\n\n    <!-- Subtext -->\n    <p style=\"color:#555;font-size:14px;margin-bottom:2rem;\">\n      Click the button below to set your password and activate your account.\n    </p>\n\n    <!-- Button -->\n    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" style=\"margin:auto;\">\n      <tr>\n        <td align=\"center\" bgcolor=\"#7065f0\" style=\"border-radius:8px;\">\n          <a href=\"{{ url }}\"\n             target=\"_blank\"\n             style=\"display:inline-block;padding:14px 24px;font-size:16px;line-height:20px;color:#ffffff;text-decoration:none;font-weight:600;font-family:'Inter', sans-serif;\">\n            Set Your Password\n          </a>\n        </td>\n      </tr>\n    </table>\n  </div>\n</body>\n</html>\n",
+          "from": "noreply@xaminisalamini.com",
+          "subject": "Welcome to the Lindblad Available Cruise Finder",
+          "resultUrl": "https://da389rkfiajdk.cloudfront.net/",
+          "urlLifetimeInSeconds": 431999,
+          "enabled": true
+        }
+      },
+      "change_password": {
+        "success": false,
+        "error": "not_found",
+        "status": 404
+      },
+      "verify_email": {
+        "success": true,
+        "data": {
+          "template": "verify_email",
+          "syntax": "liquid",
+          "body": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>{% if user.logins_count == 0 or user.logins_count == blank %}Set Your Password{% else %}Change Your Password{% endif %}</title>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap\" rel=\"stylesheet\">\n  <style>\n    html, body {\n      margin: 0;\n      padding: 0;\n      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n      background-color: #f6f7fb;\n    }\n\n    .table {\n      display: table;\n      position: absolute;\n      height: 100%;\n      width: 100%;\n    }\n\n    .cell {\n      display: table-cell;\n      vertical-align: middle;\n    }\n\n    .content {\n      margin: 0 auto;\n      width: 100%;\n      max-width: 420px;\n      background: #fff;\n      padding: 2.5rem 2rem;\n      border-radius: 12px;\n      box-shadow: 0 8px 40px rgba(0,0,0,0.08);\n      text-align: center;\n    }\n\n    .content img {\n      width: 80px;\n      height: 80px;\n      border-radius: 12px;\n      margin-bottom: 1rem;\n    }\n\n    .title {\n      font-size: 20px;\n      font-weight: 600;\n      color: #333;\n      margin-bottom: 0.5rem;\n    }\n\n    .subtitle {\n      font-size: 14px;\n      color: #555;\n      margin-bottom: 2rem;\n    }\n\n    /* Ghostbuster styles — target only layout containers */\n    .auth0-lock.auth0-lock .auth0-lock-header,\n    .auth0-lock.auth0-lock .auth0-lock-widget,\n    .auth0-lock.auth0-lock .auth0-lock-content,\n    .auth0-lock.auth0-lock .auth0-lock-cred-pane,\n    .auth0-lock.auth0-lock .auth0-lock-form {\n      background: transparent !important;\n      box-shadow: none !important;\n      border: none !important;\n    }\n\n    .auth0-lock.auth0-lock .auth0-lock-content-body {\n      padding-top: 0 !important;\n    }\n\n    .auth0-lock.auth0-lock {\n      font-family: 'Inter', sans-serif !important;\n    }\n\n    .auth0-lock.auth0-lock .auth0-lock-header-logo {\n      display: none !important;\n    }\n\n    .auth0-lock-submit {\n      background-color: #7065f0 !important;\n      border-radius: 8px !important;\n      font-size: 16px !important;\n      font-weight: 600 !important;\n      color: white !important;\n    }\n\n    .auth0-lock-submit span {\n      display: inline-block !important;\n      padding: 0.25rem 0 !important;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"table\">\n    <div class=\"cell\">\n      <div class=\"content\">\n        <img src=\"https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg\" alt=\"Cruise Logo\" />\n\n        <div class=\"title\">\n          {% if user.logins_count == 0 or user.logins_count == blank %}\n            Set Your Password\n          {% else %}\n            Change Your Password\n          {% endif %}\n        </div>\n\n        <div class=\"subtitle\">\n          {% if user.logins_count == 0 or user.logins_count == blank %}\n            Welcome to the Lindblad Available Cruise Viewer<br>\n            Please set your password for {{ email }}\n          {% else %}\n            Enter a new password for {{ email }}\n          {% endif %}\n        </div>\n\n        <div id=\"change-password-widget-container\"></div>\n      </div>\n    </div>\n  </div>\n\n  <script src=\"https://cdn.auth0.com/js/change-password-1.5.min.js\"></script>\n  <script>\n    new Auth0ChangePassword({\n      container: \"change-password-widget-container\",\n      email: \"{{ email | escape }}\",\n      csrf_token: \"{{ csrf_token }}\",\n      ticket: \"{{ ticket }}\",\n      password_policy: \"{{ password_policy }}\",\n      password_complexity_options: {{ password_complexity_options }},\n      theme: {\n        icon: \"\",\n        primaryColor: \"#7065f0\"\n      },\n      dict: {\n        title: \"\",\n        headerText: \"\"\n      }\n    });\n  </script>\n</body>\n</html>\n",
+          "from": "Cruise Viewer <noreply@xaminisalamini.com>",
+          "subject": "Welcome to Cruise Viewer – Please Set Your Password",
+          "urlLifetimeInSeconds": 432000,
+          "resultUrl": "https://da389rkfiajdk.cloudfront.net/",
+          "enabled": true
+        }
+      },
+      "welcome_email": {
+        "success": true,
+        "data": {
+          "template": "welcome_email",
+          "syntax": "liquid",
+          "body": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Welcome to Cruise Viewer</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      background-color: #f9fafb;\n      color: #333;\n      padding: 20px;\n      max-width: 600px;\n      margin: auto;\n    }\n    h1 {\n      color: #2563eb;\n    }\n    .section {\n      margin-bottom: 16px;\n    }\n    .badge {\n      display: inline-block;\n      background-color: #dbeafe;\n      color: #1e40af;\n      padding: 4px 8px;\n      border-radius: 9999px;\n      font-size: 12px;\n      font-weight: bold;\n    }\n    .button {\n      display: inline-block;\n      margin-top: 20px;\n      padding: 10px 20px;\n      background-color: #2563eb;\n      color: #fff;\n      border-radius: 6px;\n      text-decoration: none;\n      font-weight: bold;\n    }\n    p {\n      font-size: 15px;\n    }\n    .auth0-lock-header-bg {\n      background: url('https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg') center center / cover no-repeat !important;\n      background-color: transparent !important;\n    }\n    .auth0-lock-header-bg-blur,\n    .auth0-lock-header-bg-solid {\n      display: none !important;\n    }\n  </style>\n</head>\n<body>\n  <h1>👋 Welcome to Cruise Viewer!</h1>\n  <p>Thank you for joining. We’re excited to help you find your next great expedition. Here's what you can do now:</p>\n\n  <div class=\"section\">\n    <div class=\"badge\">🌍 Explore Trips</div>\n    <p>View available trips, ships, and departure options with live availability updated daily.</p>\n  </div>\n\n  <div class=\"section\">\n    <div class=\"badge\">📱 Mobile & Dark Mode Ready</div>\n    <p>Our interface adapts to your device and theme for a smooth experience anywhere, anytime.</p>\n  </div>\n\n  <div class=\"section\">\n    <div class=\"badge\">🎯 Smart Filters</div>\n    <p>Filter trips by date, destination, ship, duration, and more. Find exactly what you're looking for.</p>\n  </div>\n\n  <div class=\"section\">\n    <div class=\"badge\">❤️ Favorites</div>\n    <p>Click the heart icon to favorite trips. Then filter to just your favorites in one tap.</p>\n  </div>\n\n  <div class=\"section\">\n    <div class=\"badge\">🔑 Forgot Your Account?</div>\n    <p>No worries! If you can't remember your password, just click “Forgot Password” on the login page. We'll send a reset link to your registered email so you can get back in quickly.</p>\n  </div>\n\n  <p style=\"margin-top: 24px;\">Ready to dive in?</p>\n  <a href=\"https://da389rkfiajdk.cloudfront.net\" class=\"button\">🚢 Launch Cruise Viewer</a>\n\n  <p style=\"margin-top: 40px;\">— The Cruise Viewer Team</p>\n</body>\n</html>\n",
+          "from": "Cruise Viewer <support@xaminisalamini.com>",
+          "subject": "Welcome to the Cruise Viewer App",
+          "enabled": true
+        }
+      }
+    }
+  }
+}

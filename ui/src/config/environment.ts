@@ -9,6 +9,8 @@ export interface EnvironmentConfig {
   environment: 'local' | 'atlas' | 'lambda' | 'production';
   isProduction: boolean;
   enableDevTools: boolean;
+  S3_RECIPE_IMAGES_BASE_URL: string;
+  AWS_REGION: string;
 }
 
 /**
@@ -56,6 +58,22 @@ function getApiTimeout(environment: string): number {
 }
 
 /**
+ * Get AWS region from environment variables or default
+ */
+function getAwsRegion(): string {
+  return import.meta.env.VITE_AWS_REGION || 'us-west-2';
+}
+
+/**
+ * Get S3 recipe images base URL
+ */
+function getS3RecipeImagesBaseUrl(): string {
+  const bucket = import.meta.env.VITE_RECIPE_IMAGES_BUCKET || 'mrb-recipe-images-dev';
+  const region = getAwsRegion();
+  return `https://${bucket}.s3.${region}.amazonaws.com`;
+}
+
+/**
  * Current environment configuration
  * Automatically determined from VITE_ENVIRONMENT variable
  */
@@ -67,6 +85,8 @@ export const config: EnvironmentConfig = {
   environment: currentEnv,
   isProduction: currentEnv === 'production',
   enableDevTools: currentEnv !== 'production',
+  S3_RECIPE_IMAGES_BASE_URL: getS3RecipeImagesBaseUrl(),
+  AWS_REGION: getAwsRegion(),
 };
 
 /**

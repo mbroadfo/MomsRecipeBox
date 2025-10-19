@@ -6,7 +6,7 @@ async function queryAtlas() {
   const client = new MongoClient(uri);
   try {
     await client.connect();
-    const db = client.db('moms_recipe_box_dev');
+    const db = client.db(process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev');
     const recipes = await db.collection('recipes').find({}, {
       projection: { _id: 1, title: 1, owner_id: 1, visibility: 1 }
     }).toArray();

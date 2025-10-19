@@ -22,6 +22,13 @@ services:
       # AWS configuration for Atlas credentials
       AWS_REGION: ${AWS_REGION:-us-west-2}
       AWS_SECRET_NAME: ${AWS_SECRET_NAME:-moms-recipe-secrets-dev}
+      RECIPE_IMAGES_BUCKET: ${RECIPE_IMAGES_BUCKET:-mrb-recipe-images-dev}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-moms_recipe_box_dev}
+      
+      # AWS credentials from host environment
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
       
       # Enhanced timeouts for cloud connections
       HEALTH_CHECK_TIMEOUT_MS: 15000

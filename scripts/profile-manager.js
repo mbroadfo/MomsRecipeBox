@@ -165,14 +165,18 @@ function generateCurrentProfileEnv(profileName, profile, staticEnv) {
     lines.push(`API_BASE_URL=${apiUrl}`);
   }
   
-  // Add required base environment variables from .env
-  const requiredBaseVars = ['MONGODB_DB_NAME', 'AWS_REGION', 'RECIPE_IMAGES_BUCKET'];
-  for (const varName of requiredBaseVars) {
-    if (staticEnv[varName]) {
-      lines.push(`${varName}=${staticEnv[varName]}`);
-    }
+  // Add required base environment variables from .env with defaults
+  const requiredBaseVars = [
+    { name: 'MONGODB_DB_NAME', default: 'moms_recipe_box_dev' },
+    { name: 'AWS_REGION', default: 'us-west-2' },
+    { name: 'RECIPE_IMAGES_BUCKET', default: 'mrb-recipe-images-dev' }
+  ];
+  
+  for (const { name, default: defaultValue } of requiredBaseVars) {
+    const value = staticEnv[name] || defaultValue;
+    lines.push(`${name}=${value}`);
   }
-
+  
   // Add AI API keys if available in staticEnv
   const aiKeyNames = ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPSEEK_API_KEY'];
   const addedAiKeys = [];

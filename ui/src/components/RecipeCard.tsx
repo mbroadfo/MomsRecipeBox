@@ -1,5 +1,6 @@
 import React from 'react';
 import fallbackImage from '../assets/default.png';
+import { config } from '../config/environment';
 
 interface Recipe {
   _id?: string;
@@ -27,7 +28,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
     if (match) {
       const recipeId = match[1];
       // Convert to direct S3 URL - try .png first, then .jpg if .png fails
-      imageUrl = `https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com/${recipeId}.png`;
+      imageUrl = `${config.S3_RECIPE_IMAGES_BASE_URL}/${recipeId}.png`;
     }
   }
 
@@ -66,14 +67,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             e.currentTarget.onerror = null;
             
             // If it was a converted API URL ending in .png, try .jpg
-            if (currentSrc.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com') && currentSrc.endsWith('.png')) {
+            if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.png')) {
               const jpgUrl = currentSrc.replace('.png', '.jpg');
               e.currentTarget.src = jpgUrl;
-            } else if (currentSrc.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com') && currentSrc.endsWith('.jpg')) {
+            } else if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.jpg')) {
               // If .jpg also failed, try .jpeg
               const jpegUrl = currentSrc.replace('.jpg', '.jpeg');
               e.currentTarget.src = jpegUrl;
-            } else if (currentSrc.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com') && currentSrc.endsWith('.jpeg')) {
+            } else if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.jpeg')) {
               // If .jpeg also failed, try .webp
               const webpUrl = currentSrc.replace('.jpeg', '.webp');
               e.currentTarget.src = webpUrl;

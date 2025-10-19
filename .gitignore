@@ -7,6 +7,8 @@ node_modules/
 
 # Profile management
 config/current-profile.env
+config/.mongodb_atlas_uri
+config/.mongodb_*
 
 # Terraform
 .terraform/

@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed - Google Gemini API Integration
 
 #### 🤖 AI Provider Restoration
+
 - **Google Gemini API**: Updated to use current `gemini-2.5-flash` model (was `gemini-1.5-flash`)
 - **API Endpoint**: Updated from `/v1/` to `/v1beta/` as required by current Google Gemini API
 - **Atlas Docker**: Fixed Lambda entrypoint issue preventing Express server startup in Atlas mode
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Provider Testing**: All 5 AI providers (Google, OpenAI, Groq, Anthropic, DeepSeek) now operational
 
 #### 🛠️ Technical Improvements
+
 - **Docker Entrypoint**: Added `entrypoint: [""]` override for Lambda base image compatibility
 - **Environment Variables**: Fixed `MONGODB_URI` configuration in docker-compose.atlas.yml
 - **API Documentation**: Updated technical documentation to reflect current model versions
@@ -58,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed - Recipe Detail Image Display
 
 #### 🖼️ Image Display Resolution
+
 - **Recipe Detail Images**: Fixed recipe detail screens showing default images instead of actual recipe photos
 - **Direct S3 URLs**: Updated ImagePane component to use direct S3 URLs with proper region (us-west-2)
 - **Correct Bucket**: Updated to use correct `mrb-recipe-images-dev` bucket name
@@ -69,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added - Four-Profile Deployment System
 
 #### 🎯 Major Feature: Unified Profile Management
+
 - **Four-Profile Architecture**: Replaced scattered mode configuration with unified profile system
   - `local`: Local MongoDB + Local Express + UI Proxy (full local development)
   - `atlas`: Atlas MongoDB + Local Express + UI Proxy (shared cloud database)  
@@ -81,30 +85,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Profile Definitions**: `config/deployment-profiles.json` with all four profiles
 
 #### 🔧 Configuration Management
+
 - **Single Source of Truth**: Eliminated conflicting .env files across directories
 - **Environment Variable Substitution**: Automatic resolution of static to dynamic variables
 - **Cross-Platform**: Node.js script replaces platform-specific solutions
 
 #### 📚 Documentation Updates
+
 - Updated README.md with new Deployment Profiles section
 - Updated QUICK_START_GUIDE.md with profile selection workflow
 - Added comprehensive architecture documentation in `docs/`
 
 ### Fixed
+
 - **Mode Configuration Conflicts**: Resolved conflicting environment variables
 - **Inconsistent Mode Names**: Standardized mode values across all components  
 - **Scattered Configuration**: Consolidated environment management
 
 ### Changed
+
 - Environment file structure with static/dynamic separation
 - Profile switching now configures all components consistently
-
-# Changelog
-
-All notable changes to the MomsRecipeBox project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Phase 4.2] - 2025-09-29
 

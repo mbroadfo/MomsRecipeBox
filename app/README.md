@@ -36,11 +36,13 @@ The application uses **container-native secret retrieval** for enhanced security
 ### 🔒 **Security Model**
 
 **Container Mode (Recommended):**
+
 - Secrets automatically retrieved from AWS Secrets Manager at container startup
 - No secrets stored in files - only configuration placeholders in profile files
 - Enhanced security with runtime-only secret access
 
 **Host Development Mode:**
+
 - Scripts automatically fetch secrets from AWS when needed
 - Seamless development experience with secure credential management
 

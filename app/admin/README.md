@@ -642,11 +642,12 @@ The system includes comprehensive logging:
 
 ## 🔒 Security Considerations
 
-1. **Environment Variables**: Never commit `.env` files
-2. **JWT Validation**: Always validate tokens server-side
-3. **Permissions**: Use principle of least privilege
-4. **Token Storage**: M2M tokens are memory-cached only
-5. **Error Messages**: Avoid exposing sensitive information
+1. **Container-Native Secrets**: Auth0 credentials retrieved from AWS Secrets Manager at runtime - no secrets in files
+2. **JWT Validation**: Always validate tokens server-side with Auth0 signature verification
+3. **Permissions**: Use principle of least privilege for role-based access control
+4. **Token Storage**: M2M tokens are memory-cached only with automatic expiration handling
+5. **Error Messages**: Avoid exposing sensitive information in API responses
+6. **AWS Integration**: Secure credential management through AWS Secrets Manager with proper IAM permissions
 
 ## 📝 Contributing
 

@@ -51,6 +51,9 @@ The application uses **container-native secret retrieval** for enhanced security
 | Variable | Source | Purpose |
 |----------|--------|---------|
 | `MONGODB_URI` | AWS Secrets Manager | Database connection (runtime retrieval) |
+| `AUTH0_DOMAIN` | AWS Secrets Manager | Auth0 tenant configuration (runtime retrieval) |
+| `AUTH0_M2M_CLIENT_ID` | AWS Secrets Manager | Auth0 Management API access (runtime retrieval) |
+| `AUTH0_M2M_CLIENT_SECRET` | AWS Secrets Manager | Auth0 Management API secret (runtime retrieval) |
 | `RECIPE_IMAGES_BUCKET` | Profile Config | S3 bucket for image storage |
 | `AWS_REGION` | Profile Config | AWS region configuration |
 | AI Provider Keys | AWS Secrets Manager | AI service credentials (runtime retrieval) |

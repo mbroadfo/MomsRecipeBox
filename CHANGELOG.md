@@ -29,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **No Secrets in Version Control**: All profile files safe for git commits
 - **Container Restart Security**: Fresh secret retrieval on every container startup
+
+#### 🔐 **Auth0 Integration with Container-Native Security**
+
+- **Extended Security Model**: Applied container-native secret retrieval pattern to Auth0 Management API
+- **AWS Secret Integration**: Auth0 credentials (`AUTH0_DOMAIN`, `AUTH0_M2M_CLIENT_ID`, `AUTH0_M2M_CLIENT_SECRET`) now retrieved from AWS Secrets Manager
+- **Configuration-Based Auth0**: All Auth0 functions updated to use `getAuth0Config()` with AWS fallback instead of hardcoded environment variables
+- **Token Caching**: Implemented Management API token caching with expiration tracking to minimize AWS API calls
+- **Comprehensive Testing**: Added `test-auth0-setup.js` for validating Auth0 connectivity and secret retrieval
+- **Consistent Security**: Auth0 utilities now match MongoDB security patterns for credential management
 - **Enhanced Audit Trail**: All secret access through AWS CloudTrail via Secrets Manager
 - **Principle of Least Exposure**: Secrets only accessible during active container runtime
 

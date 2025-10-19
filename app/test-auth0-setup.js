@@ -16,79 +16,61 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables from parent directory
 config({ path: path.join(__dirname, '../.env') });
+config({ path: path.join(__dirname, '../config/current-profile.env'), override: true });
 
 async function testAuth0Setup() {
-  console.log('🔍 Testing Auth0 Setup...\n');
+  console.log('🔍 Testing Auth0 Setup with Container-Native Secret Retrieval...\n');
 
-  // Check required environment variables
-  const requiredVars = [
-    'AUTH0_DOMAIN',
-    'AUTH0_M2M_CLIENT_ID',
-    'AUTH0_M2M_CLIENT_SECRET',
-    'REACT_APP_AUTH0_CLIENT_ID',
-    'AUTH0_API_AUDIENCE'
-  ];
-
-  let allVarsPresent = true;
-
-  console.log('1️⃣ Checking Environment Variables:');
-  for (const varName of requiredVars) {
-    const value = process.env[varName];
-    if (value) {
-      console.log(`   ✅ ${varName}: ${value.substring(0, 10)}...`);
-    } else {
-      console.log(`   ❌ ${varName}: Not set`);
-      allVarsPresent = false;
-    }
+  // Check if we're using placeholder values (need AWS retrieval)
+  console.log('1️⃣ Checking Auth0 Configuration Source:');
+  const needsAWSSecrets = !process.env.AUTH0_DOMAIN || 
+                         process.env.AUTH0_DOMAIN.includes('${') ||
+                         !process.env.AUTH0_M2M_CLIENT_ID ||
+                         process.env.AUTH0_M2M_CLIENT_ID.includes('${');
+  
+  if (needsAWSSecrets) {
+    console.log('   🔐 Auth0 secrets will be retrieved from AWS Secrets Manager');
+    console.log('   📋 Profile file contains placeholders - this is expected and secure');
+  } else {
+    console.log('   📝 Using resolved environment variables');
   }
 
-  if (!allVarsPresent) {
-    console.log('\n❌ Missing Auth0 environment variables.');
-    console.log('Please ensure your profile is set and Auth0 credentials are in AWS Secrets Manager.');
-    console.log('\nTo fix this:');
-    console.log('1. Set your AWS profile: $env:AWS_PROFILE="mrb-api"');
-    console.log('2. Set your deployment profile: npm run profile:set atlas');
-    console.log('3. Update AWS Secrets Manager with Auth0 credentials');
-    process.exit(1);
-  }
-
-  // Test Auth0 connectivity
-  console.log('\n2️⃣ Testing Auth0 Connectivity:');
+  // Test Auth0 connectivity using the updated auth0_utils
+  console.log('\n2️⃣ Testing Auth0 Management API Connectivity:');
   
   try {
-    const { getManagementToken } = await import('./admin/auth0_utils.js');
+    console.log('   📦 Importing auth0_utils...');
+    const { getManagementToken, listAuth0Users } = await import('./admin/auth0_utils.js');
+    console.log('   ✅ auth0_utils imported successfully');
     
     console.log('   🔐 Attempting to get Management API token...');
     const token = await getManagementToken();
     console.log('   ✅ Successfully obtained Management API token');
     console.log(`   📊 Token preview: ${token.substring(0, 20)}...`);
 
-    console.log('\n3️⃣ Testing Management API Access:');
-    
-    const { listAuth0Users } = await import('./admin/auth0_utils.js');
     const result = await listAuth0Users();
     console.log(`   ✅ Successfully connected to Auth0 Management API`);
     console.log(`   👥 Found ${result.users ? result.users.length : 0} users`);
     console.log(`   📊 Total users: ${result.total || 0}`);
 
     console.log('\n🎉 Auth0 Setup Test: PASSED');
-    console.log('\n✅ All Auth0 credentials are properly configured!');
-    console.log('✅ Management API connectivity is working!');
-    console.log('\nYou can now run the Auth0 export script:');
-    console.log('   cd app && node auth0-export.js');
+    console.log('\n✅ Container-native secret retrieval working!');
+    console.log('✅ Auth0 Management API connectivity is working!');
+    console.log('\nThe Auth0 system is ready for user management integration.');
 
   } catch (error) {
     console.log(`\n❌ Auth0 connectivity test failed: ${error.message}`);
     console.log('\nTroubleshooting steps:');
-    console.log('1. Verify Auth0 M2M application has correct scopes');
-    console.log('2. Check that client ID and secret are correct');
-    console.log('3. Ensure Auth0 domain is accessible');
+    console.log('1. Verify AWS credentials are properly configured');
+    console.log('2. Check that Auth0 secrets are in AWS Secrets Manager');
+    console.log('3. Verify Auth0 M2M application has correct scopes');
+    console.log('4. Ensure Auth0 domain and credentials are correct in AWS secrets');
     process.exit(1);
   }
 }
 
 // Check if we're being run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url.startsWith('file:') && process.argv[1] && import.meta.url.includes(process.argv[1].replace(/\\/g, '/'))) {
   testAuth0Setup();
 }
 

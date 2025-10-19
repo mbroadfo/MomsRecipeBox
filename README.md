@@ -377,9 +377,9 @@ The application implements **container-native secret retrieval** for enhanced se
 
 ### 🛡️ **Zero Secret Files**
 
-- Profile files (`current-profile.env`) contain only configuration placeholders like `${MONGODB_ATLAS_URI}`
+- Profile files (`current-profile.env`) contain only configuration placeholders like `${MONGODB_ATLAS_URI}`, `${AUTH0_DOMAIN}`
 - No actual secrets are ever stored in files or committed to version control
-- All secrets retrieved fresh from AWS Secrets Manager at container startup
+- All secrets (MongoDB, Auth0, API keys) retrieved fresh from AWS Secrets Manager at container startup
 
 ### 🔄 **Runtime Secret Management**
 

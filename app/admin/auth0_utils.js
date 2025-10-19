@@ -3,16 +3,76 @@ import axios from 'axios';
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 // Load .env from parent directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 config({ path: path.join(__dirname, '../../.env') });
+config({ path: path.join(__dirname, '../../config/current-profile.env'), override: true });
 
-const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
-const AUTH0_M2M_CLIENT_ID = process.env.AUTH0_M2M_CLIENT_ID;
-const AUTH0_M2M_CLIENT_SECRET = process.env.AUTH0_M2M_CLIENT_SECRET;
-const AUTH0_MANAGEMENT_AUDIENCE = `https://${AUTH0_DOMAIN}/api/v2/`;
+// Cache for AWS secrets to avoid repeated calls
+let secretsCache = null;
+
+// Function to retrieve secrets from AWS Secrets Manager
+async function getSecretsFromAWS() {
+  if (secretsCache) {
+    return secretsCache;
+  }
+  
+  try {
+    const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
+    const region = process.env.AWS_REGION || 'us-west-2';
+    
+    console.log('🔐 Retrieving Auth0 secrets from AWS Secrets Manager...');
+    
+    const command = `aws secretsmanager get-secret-value --secret-id "${secretName}" --region "${region}" --query SecretString --output text`;
+    const secretJson = execSync(command, { encoding: 'utf-8' }).trim();
+    
+    const secrets = JSON.parse(secretJson);
+    console.log('✅ Auth0 secrets retrieved successfully from AWS');
+    
+    // Cache the secrets
+    secretsCache = secrets;
+    return secrets;
+  } catch (error) {
+    console.error('❌ Failed to retrieve Auth0 secrets from AWS:', error.message);
+    throw error;
+  }
+}
+
+// Function to get Auth0 configuration with fallback to environment variables
+export async function getAuth0Config() {
+  // Check if we have placeholder values that need AWS retrieval
+  const needsAWSSecrets = !process.env.AUTH0_DOMAIN || 
+                         process.env.AUTH0_DOMAIN.includes('${') ||
+                         !process.env.AUTH0_M2M_CLIENT_ID ||
+                         process.env.AUTH0_M2M_CLIENT_ID.includes('${') ||
+                         !process.env.AUTH0_M2M_CLIENT_SECRET ||
+                         process.env.AUTH0_M2M_CLIENT_SECRET.includes('${');
+  
+  if (needsAWSSecrets) {
+    const secrets = await getSecretsFromAWS();
+    return {
+      AUTH0_DOMAIN: secrets.AUTH0_DOMAIN,
+      AUTH0_M2M_CLIENT_ID: secrets.AUTH0_M2M_CLIENT_ID,
+      AUTH0_M2M_CLIENT_SECRET: secrets.AUTH0_M2M_CLIENT_SECRET,
+      AUTH0_API_AUDIENCE: secrets.AUTH0_API_AUDIENCE || `https://${secrets.AUTH0_DOMAIN}/api/v2/`,
+      AUTH0_MRB_CLIENT_ID: secrets.AUTH0_MRB_CLIENT_ID,
+      AUTH0_MANAGEMENT_AUDIENCE: `https://${secrets.AUTH0_DOMAIN}/api/v2/`
+    };
+  }
+  
+  // Use environment variables if they're already resolved
+  return {
+    AUTH0_DOMAIN: process.env.AUTH0_DOMAIN,
+    AUTH0_M2M_CLIENT_ID: process.env.AUTH0_M2M_CLIENT_ID,
+    AUTH0_M2M_CLIENT_SECRET: process.env.AUTH0_M2M_CLIENT_SECRET,
+    AUTH0_API_AUDIENCE: process.env.AUTH0_API_AUDIENCE,
+    AUTH0_MRB_CLIENT_ID: process.env.AUTH0_MRB_CLIENT_ID,
+    AUTH0_MANAGEMENT_AUDIENCE: `https://${process.env.AUTH0_DOMAIN}/api/v2/`
+  };
+}
 
 // Token cache - stores token and expiration
 let tokenCache = {
@@ -28,12 +88,16 @@ export async function getManagementToken() {
   }
 
   console.log('🔑 Fetching new M2M token from Auth0');
-  const url = `https://${AUTH0_DOMAIN}/oauth/token`;
+  
+  // Get Auth0 configuration (from AWS or environment)
+  const config = await getAuth0Config();
+  
+  const url = `https://${config.AUTH0_DOMAIN}/oauth/token`;
   const body = {
     grant_type: 'client_credentials',
-    client_id: AUTH0_M2M_CLIENT_ID,
-    client_secret: AUTH0_M2M_CLIENT_SECRET,
-    audience: AUTH0_MANAGEMENT_AUDIENCE
+    client_id: config.AUTH0_M2M_CLIENT_ID,
+    client_secret: config.AUTH0_M2M_CLIENT_SECRET,
+    audience: config.AUTH0_MANAGEMENT_AUDIENCE
   };
   
   try {
@@ -59,7 +123,8 @@ export async function getManagementToken() {
 
 export async function listAuth0Users() {
   const token = await getManagementToken();
-  const url = `https://${AUTH0_DOMAIN}/api/v2/users?include_totals=true&search_engine=v3`;
+  const config = await getAuth0Config();
+  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users?include_totals=true&search_engine=v3`;
   
   try {
     const response = await axios.get(url, {
@@ -74,7 +139,8 @@ export async function listAuth0Users() {
 
 export async function getAuth0UserDetails(userId) {
   const token = await getManagementToken();
-  const url = `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(userId)}`;
+  const config = await getAuth0Config();
+  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(userId)}`;
   
   try {
     const response = await axios.get(url, {
@@ -89,7 +155,8 @@ export async function getAuth0UserDetails(userId) {
 
 export async function inviteAuth0User(email, firstName, lastName, roles = []) {
   const token = await getManagementToken();
-  const url = `https://${AUTH0_DOMAIN}/api/v2/users`;
+  const config = await getAuth0Config();
+  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users`;
   
   const userData = {
     email,
@@ -121,7 +188,8 @@ export async function inviteAuth0User(email, firstName, lastName, roles = []) {
 
 export async function deleteAuth0User(userId) {
   const token = await getManagementToken();
-  const url = `https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(userId)}`;
+  const config = await getAuth0Config();
+  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(userId)}`;
   
   try {
     const response = await axios.delete(url, {

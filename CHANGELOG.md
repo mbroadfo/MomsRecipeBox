@@ -5,7 +5,39 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-17
+## [Unreleased] - 2025-10-19
+
+### Added - Container-Native Secret Retrieval System
+
+#### 🔒 **MAJOR SECURITY ENHANCEMENT**: Eliminated Profile File Secret Exposure
+
+- **Container-Native Secret Retrieval**: Containers now fetch secrets directly from AWS Secrets Manager at startup
+- **Zero Secret Files**: Profile files (`current-profile.env`) now contain only configuration placeholders, no actual secrets
+- **Runtime Security**: Secrets exist only in memory during container execution, never persisted to disk
+- **AWS CLI Integration**: Added AWS CLI and `jq` to Docker containers for secure secret retrieval
+- **Host Script Compatibility**: Enhanced `db-test.js` to retrieve secrets from AWS when running on host machine
+
+#### 🛠️ **Technical Implementation**
+
+- **Enhanced Dockerfile**: Added `yum install -y aws-cli jq` for runtime secret management capabilities
+- **Secure Entrypoint**: Docker Compose entrypoint script retrieves all secrets before application startup
+- **AWS Credential Mounting**: Host AWS credentials directory mounted read-only into containers
+- **Profile Manager Simplification**: Removed secret fetching from `profile-manager.js`, now generates config-only files
+- **Application Code Cleanup**: Removed credential fallback code from `app.js` and `database-health.js`
+
+#### 🎯 **Security Benefits**
+
+- **No Secrets in Version Control**: All profile files safe for git commits
+- **Container Restart Security**: Fresh secret retrieval on every container startup
+- **Enhanced Audit Trail**: All secret access through AWS CloudTrail via Secrets Manager
+- **Principle of Least Exposure**: Secrets only accessible during active container runtime
+
+#### 🧪 **Verification & Testing**
+
+- **Container Integration**: ✅ Containers successfully retrieve secrets and connect to MongoDB Atlas
+- **Host Script Compatibility**: ✅ `npm run db:test` works with AWS secret retrieval
+- **Application Health**: ✅ All health endpoints operational with secure secret management
+- **Profile File Security**: ✅ `current-profile.env` contains only placeholders like `${MONGODB_ATLAS_URI}`
 
 ### Fixed - Google Gemini API Integration
 

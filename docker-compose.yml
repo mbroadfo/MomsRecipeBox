@@ -90,24 +90,57 @@ services:
   app-atlas:
     container_name: momsrecipebox-app-atlas
     build:
-      context: .
-      dockerfile: app/Dockerfile
+      context: app
+      dockerfile: Dockerfile
     env_file:
-      - config/current-profile.env
+      - .env  # Only base configuration, no secrets
     environment:
-      # MONGODB_ATLAS_URI is expected to be provided by the environment when using Atlas mode
-      # It will be retrieved from AWS Secrets Manager by Toggle-MongoDbConnection.ps1
-      MONGODB_URI: ${MONGODB_ATLAS_URI}
       APP_MODE: ${APP_MODE:-express}
       MONGODB_MODE: atlas
+      AWS_SECRET_NAME: ${AWS_SECRET_NAME:-moms-recipe-secrets-dev}
+      AWS_REGION: ${AWS_REGION:-us-west-2}
+      AWS_PROFILE: ${AWS_PROFILE}
+      HOME: /root
+    volumes:
+      # Mount AWS credentials from host
+      - ${USERPROFILE}/.aws:/root/.aws:ro
     ports:
       - "3000:3000"
     entrypoint: >
-      sh -c "if [ \"$APP_MODE\" = 'lambda' ]; then
-               /lambda-entrypoint.sh lambda.handler;
-             else
-               node local_server.js;
-             fi"
+      sh -c "
+        echo '🔐 Retrieving secrets from AWS Secrets Manager...';
+        
+        SECRET_JSON=$$(aws secretsmanager get-secret-value --secret-id \"$${AWS_SECRET_NAME:-moms-recipe-secrets-dev}\" --region \"$${AWS_REGION:-us-west-2}\" --query SecretString --output text);
+        
+        if [ $$? -ne 0 ]; then
+          echo '❌ Failed to retrieve secrets from AWS Secrets Manager';
+          exit 1;
+        fi;
+        
+        echo '✅ Secrets retrieved successfully';
+        
+        export MONGODB_ATLAS_URI=$$(echo \"$$SECRET_JSON\" | jq -r '.MONGODB_ATLAS_URI // empty');
+        export MONGODB_URI=\"$$MONGODB_ATLAS_URI\";
+        export OPENAI_API_KEY=$$(echo \"$$SECRET_JSON\" | jq -r '.OPENAI_API_KEY // empty');
+        export GOOGLE_API_KEY=$$(echo \"$$SECRET_JSON\" | jq -r '.GOOGLE_API_KEY // empty');
+        export GROQ_API_KEY=$$(echo \"$$SECRET_JSON\" | jq -r '.GROQ_API_KEY // empty');
+        export ANTHROPIC_API_KEY=$$(echo \"$$SECRET_JSON\" | jq -r '.ANTHROPIC_API_KEY // empty');
+        export DEEPSEEK_API_KEY=$$(echo \"$$SECRET_JSON\" | jq -r '.DEEPSEEK_API_KEY // empty');
+        export AUTH0_DOMAIN=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_DOMAIN // empty');
+        export AUTH0_M2M_CLIENT_ID=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_M2M_CLIENT_ID // empty');
+        export AUTH0_M2M_CLIENT_SECRET=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_M2M_CLIENT_SECRET // empty');
+        export AUTH0_MRB_CLIENT_ID=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_MRB_CLIENT_ID // empty');
+        export AUTH0_API_AUDIENCE=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_API_AUDIENCE // empty');
+        export AUTH0_MANAGEMENT_AUDIENCE=$$(echo \"$$SECRET_JSON\" | jq -r '.AUTH0_MANAGEMENT_AUDIENCE // empty');
+        
+        echo '🚀 Starting application with secrets loaded...';
+        
+        if [ \"$$APP_MODE\" = 'lambda' ]; then
+          /lambda-entrypoint.sh lambda.handler;
+        else
+          node local_server.js;
+        fi
+      "
     profiles:
       - atlas
 

@@ -18,41 +18,9 @@ const CURRENT_PROFILE_FILE = path.join(CONFIG_DIR, 'current-profile.env');
 const ROOT_ENV_FILE = path.join(ROOT_DIR, '.env');
 
 /**
- * Fetch MongoDB Atlas URI from AWS Secrets Manager
+ * Container-native secret retrieval approach
+ * Secrets are now retrieved by containers at runtime for enhanced security
  */
-// Fetch secrets from AWS Secrets Manager
-async function fetchSecretsFromAWS(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
-  try {
-    // Build AWS CLI command with profile if set
-    let awsCommand = `aws secretsmanager get-secret-value --secret-id ${secretName} --region ${region} --output json`;
-    if (process.env.AWS_PROFILE) {
-      awsCommand += ` --profile ${process.env.AWS_PROFILE}`;
-    }
-    
-    // Execute AWS CLI command
-    const result = execSync(awsCommand, { encoding: 'utf8', stdio: 'pipe' });
-    const secretData = JSON.parse(result);
-    
-    if (secretData && secretData.SecretString) {
-      return JSON.parse(secretData.SecretString);
-    }
-    
-    return {};
-  } catch (error) {
-    // Silently fail and return empty object - caller will handle the missing values
-    return {};
-  }
-}
-
-// Legacy function for backward compatibility
-async function fetchMongoAtlasUri(secretName = 'moms-recipe-secrets-dev', region = 'us-west-2') {
-  try {
-    const secrets = await fetchSecretsFromAWS(secretName, region);
-    return secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI || null;
-  } catch (error) {
-    return null;
-  }
-}
 
 // ANSI color codes
 const colors = {
@@ -177,21 +145,10 @@ function generateCurrentProfileEnv(profileName, profile, staticEnv) {
     lines.push(`${name}=${value}`);
   }
   
-  // Add AI API keys if available in staticEnv
-  const aiKeyNames = ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPSEEK_API_KEY'];
-  const addedAiKeys = [];
-  
-  for (const keyName of aiKeyNames) {
-    if (staticEnv[keyName]) {
-      lines.push(`${keyName}=${staticEnv[keyName]}`);
-      addedAiKeys.push(keyName);
-    }
-  }
-  
-  if (addedAiKeys.length > 0) {
-    lines.splice(-addedAiKeys.length, 0, ''); // Add empty line before AI keys
-    lines.splice(-addedAiKeys.length, 0, '# AI Provider API Keys');
-  }
+  // Note: Secrets (AI keys, Auth0 credentials, MongoDB URI) are retrieved by containers at runtime
+  lines.push('');
+  lines.push('# Secrets are retrieved by containers from AWS Secrets Manager at startup');
+  lines.push('# No secrets are stored in this file for enhanced security');
   
   const content = lines.join('\n') + '\n';
   
@@ -219,82 +176,15 @@ async function setProfile(profileName) {
   
   log(`🔄 Setting profile to: ${profileName} (${profile.name})`, 'blue');
   
-  // For profiles using Atlas, try to fetch secrets from AWS Secrets Manager
+  // Atlas profiles use container-native secret retrieval
   if (profile.database.type === 'atlas') {
     const secretName = staticEnv.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
     const region = staticEnv.AWS_REGION || 'us-west-2';
     
-    log(`🔐 Fetching secrets from AWS Secrets Manager...`, 'yellow');
-    const secrets = await fetchSecretsFromAWS(secretName, region);
-    
-    // Handle MongoDB Atlas URI
-    const atlasUri = secrets.MONGODB_URI || secrets.MONGODB_ATLAS_URI;
-    if (atlasUri) {
-      // Set the environment variable for this session
-      process.env.MONGODB_ATLAS_URI = atlasUri;
-      staticEnv.MONGODB_ATLAS_URI = atlasUri;
-      
-      // Also write to a temp file that can be sourced
-      const envFile = path.join(CONFIG_DIR, '.mongodb_atlas_uri');
-      fs.writeFileSync(envFile, `MONGODB_ATLAS_URI=${atlasUri}\n`);
-      
-      log(`✅ Successfully retrieved MongoDB Atlas URI from AWS Secrets Manager`, 'green');
-    } else {
-      log(`⚠️  Could not fetch MongoDB Atlas URI from AWS Secrets Manager`, 'yellow');
-    }
-    
-    // Handle AI API Keys
-    const aiKeyNames = ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPSEEK_API_KEY'];
-    const foundAiKeys = [];
-    
-    for (const keyName of aiKeyNames) {
-      if (secrets[keyName]) {
-        process.env[keyName] = secrets[keyName];
-        staticEnv[keyName] = secrets[keyName];
-        foundAiKeys.push(keyName);
-      }
-    }
-    
-    if (foundAiKeys.length > 0) {
-      log(`✅ Successfully retrieved ${foundAiKeys.length} AI API key(s): ${foundAiKeys.join(', ')}`, 'green');
-    } else {
-      log(`⚠️  No AI API keys found in AWS Secrets Manager`, 'yellow');
-      log(`   AI Recipe Assistant will not be available`, 'yellow');
-    }
-
-    // Handle Auth0 Credentials
-    const auth0KeyNames = [
-      'AUTH0_DOMAIN',
-      'AUTH0_M2M_CLIENT_ID', 
-      'AUTH0_M2M_CLIENT_SECRET',
-      'AUTH0_MRB_CLIENT_ID',
-      'AUTH0_MRB_CLIENT_SECRET',
-      'AUTH0_API_AUDIENCE',
-      'AUTH0_MANAGEMENT_AUDIENCE'
-    ];
-    const foundAuth0Keys = [];
-    
-    for (const keyName of auth0KeyNames) {
-      if (secrets[keyName]) {
-        process.env[keyName] = secrets[keyName];
-        staticEnv[keyName] = secrets[keyName];
-        foundAuth0Keys.push(keyName);
-      }
-    }
-    
-    if (foundAuth0Keys.length > 0) {
-      log(`✅ Successfully retrieved ${foundAuth0Keys.length} Auth0 credential(s): ${foundAuth0Keys.join(', ')}`, 'green');
-    } else {
-      log(`⚠️  No Auth0 credentials found in AWS Secrets Manager`, 'yellow');
-      log(`   Auth0 authentication will not be available`, 'yellow');
-    }
-    
-    if (!atlasUri && foundAiKeys.length === 0) {
-      log(`   Make sure AWS credentials are configured and you have access to secret: ${secretName}`, 'yellow');
-      log(`   Falling back to environment variable or .env file`, 'yellow');
-    }
-    
-    log(`💡 Environment variables set for Docker Compose`, 'cyan');
+    log(`🔐 Atlas profile configured - secrets will be retrieved by container at runtime`, 'yellow');
+    log(`✅ Container will fetch secrets from AWS Secrets Manager on startup`, 'green');
+    log(`💡 Secret: ${secretName} in region: ${region}`, 'cyan');
+    log(`💡 No secrets stored in profile files for enhanced security`, 'cyan');
   }
   
   // Update current profile in config

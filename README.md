@@ -360,6 +360,37 @@ npm run profile:stop     # Stop all infrastructure
 
 Each profile automatically configures all environment variables, Docker services, and API endpoints consistently. No more conflicting .env files!
 
+## 🔒 Container-Native Security
+
+The application implements **container-native secret retrieval** for enhanced security:
+
+### 🛡️ **Zero Secret Files**
+
+- Profile files (`current-profile.env`) contain only configuration placeholders like `${MONGODB_ATLAS_URI}`
+- No actual secrets are ever stored in files or committed to version control
+- All secrets retrieved fresh from AWS Secrets Manager at container startup
+
+### 🔄 **Runtime Secret Management**
+
+- Containers automatically fetch secrets when starting/restarting
+- Secrets exist only in memory during runtime
+- Enhanced security audit trail through AWS CloudTrail
+
+### 🧪 **Host Script Compatibility**
+
+- Host scripts (like `npm run db:test`) automatically retrieve secrets from AWS when needed
+- Seamless development experience with enhanced security
+
+```bash
+# Container automatically retrieves secrets at startup
+npm run profile:start
+
+# Host scripts securely fetch secrets when needed  
+npm run db:test
+```
+
+This approach eliminates the security risk of credential exposure in profile files while maintaining full functionality.
+
 ### ðŸ  **Local Development Mode**
 
 - **Backend**: Express server (local)

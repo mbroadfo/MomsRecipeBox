@@ -31,18 +31,29 @@ For a complete setup guide, see the [Getting Started Guide](../docs/guides/getti
 
 ## Environment Setup
 
-Before running the application, create a `.env` file in the project root directory with required variables. See the [Environment Variables Guide](../docs/technical/environment_variables.md) for a complete list of variables and their usage.
+The application uses **container-native secret retrieval** for enhanced security. Environment configuration is handled through deployment profiles that automatically fetch secrets from AWS Secrets Manager at runtime.
 
-### Essential Environment Variables
+### 🔒 **Security Model**
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `MONGODB_URI` | Yes | Database connection |
-| `RECIPE_IMAGES_BUCKET` | Yes | S3 bucket for image storage |
-| `AWS_ACCESS_KEY_ID` | Yes | AWS credentials |
-| `AWS_SECRET_ACCESS_KEY` | Yes | AWS credentials |
-| `AWS_REGION` | Yes | AWS region |
-| AI Provider Keys | One required | At least one AI provider key is required |
+**Container Mode (Recommended):**
+- Secrets automatically retrieved from AWS Secrets Manager at container startup
+- No secrets stored in files - only configuration placeholders in profile files
+- Enhanced security with runtime-only secret access
+
+**Host Development Mode:**
+- Scripts automatically fetch secrets from AWS when needed
+- Seamless development experience with secure credential management
+
+### Configuration Variables
+
+| Variable | Source | Purpose |
+|----------|--------|---------|
+| `MONGODB_URI` | AWS Secrets Manager | Database connection (runtime retrieval) |
+| `RECIPE_IMAGES_BUCKET` | Profile Config | S3 bucket for image storage |
+| `AWS_REGION` | Profile Config | AWS region configuration |
+| AI Provider Keys | AWS Secrets Manager | AI service credentials (runtime retrieval) |
+
+**Note:** For deployment profile configuration, see the [Profile Management Guide](../docs/technical/deployment_profiles.md).
 
 ## Directory Structure
 

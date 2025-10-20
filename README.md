@@ -164,10 +164,14 @@ Mom's Recipe Box uses **Auth0** for authentication with **shared tenant support*
 
 ✅ **Enhanced Admin Navigation & Access Control** (October 2025):
 - Fixed admin panel visibility in user dropdown (now only visible to admin users)
-- Resolved admin page routing issues and race conditions
+- Resolved admin page routing issues and race conditions  
 - Improved authentication flow timing and initialization
 - Enhanced error handling for failed authentication attempts
-- Added comprehensive debug logging for authentication troubleshooting
+- **Added User Invitation System**: Green "Invite New User" button with modal interface
+- **Fixed API routing conflicts**: Separated frontend routes (`/admin/*`) from API endpoints (`/api/admin/*`)
+- **Improved button styling**: Resolved CSS override issues with proper color contrast
+- **Enhanced loading states**: Better handling of Ctrl+F5 refreshes and authentication initialization
+- **Cleaned up debug logging**: Removed development console output for production readiness
 
 ## ðŸ—‚ï¸ Repository Structure
 

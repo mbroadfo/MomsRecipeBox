@@ -11,12 +11,21 @@ export default defineConfig(({ mode }) => {
     server: {
       // Only use proxy in local development mode
       proxy: isLocal ? {
+        // Regular API routes
         '/api': {
           target: 'http://localhost:3000',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
+          rewrite: (path) => {
+            // Convert /api/admin/* to /admin/*
+            if (path.startsWith('/api/admin')) {
+              return path.replace('/api/admin', '/admin');
+            }
+            // Convert /api/* to /*
+            return path.replace(/^\/api/, '');
+          },
         },
-        '/admin': {
+        // Health check
+        '/health': {
           target: 'http://localhost:3000',
           changeOrigin: true,
         },

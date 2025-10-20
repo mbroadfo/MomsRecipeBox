@@ -12,15 +12,6 @@ export const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ childr
   const { isAuthenticated, isAdmin, login, token } = useAdminAuth();
   const navigate = useNavigate();
 
-  // Debug logging to see what's happening
-  console.log('🔍 AdminProtectedRoute state:', {
-    isLoading,
-    isAuthenticated,
-    isAdmin,
-    hasToken: !!token,
-    tokenLength: token?.length
-  });
-
   // Wait for both Auth0 and AdminContext to fully initialize
   const isInitializing = isLoading || (isAuthenticated && !token);
 

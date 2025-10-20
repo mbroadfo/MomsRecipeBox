@@ -27,15 +27,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     try {
       setAuthError(null); // Clear any previous errors
       
-      console.log('🔄 AdminContext: Initializing auth...', {
-        auth0IsAuthenticated,
-        hasAuth0User: !!auth0User,
-        userEmail: auth0User?.email
-      });
-      
       if (auth0IsAuthenticated && auth0User) {
-        console.log('🔍 Getting access token with audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
-        
         // Get the access token for API calls
         const accessToken = await getAccessTokenSilently({
           authorizationParams: {
@@ -45,40 +37,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         
         setToken(accessToken);
         setIsAdmin(isUserAdmin(auth0User));
-        
-        console.log('🔐 Auth0 authenticated:', {
-          user: auth0User.email,
-          isAdmin: isUserAdmin(auth0User),
-          tokenLength: accessToken.length,
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE
-        });
-        
-        // Debug: Let's also decode and log the token payload to see what audience it contains
-        try {
-          const payload = JSON.parse(atob(accessToken.split('.')[1]));
-          console.log('🎫 Token payload:', {
-            aud: payload.aud,
-            iss: payload.iss,
-            sub: payload.sub,
-            exp: new Date(payload.exp * 1000).toISOString(),
-            scope: payload.scope
-          });
-        } catch (e) {
-          console.log('🎫 Could not decode token payload:', e);
-        }
-        
-        // Debug: Log the full user object to see what's available
-        console.log('🔍 Full Auth0 user object:', auth0User);
-        console.log('🔍 User app_metadata:', auth0User.app_metadata);
-        console.log('🔍 User custom claims (shared tenant):', {
-          momsRoles: auth0User[`https://momsrecipebox.app/roles`],
-          cruiseRoles: auth0User[`https://cruise-viewer.app/roles`],
-          appMetadataRole: auth0User.app_metadata?.role
-        });
-      } else {
-        // User not authenticated
-        setToken(null);
-        setIsAdmin(false);
       }
     } catch (error) {
       console.error('Error getting Auth0 access token:', error);
@@ -86,7 +44,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       
       // Fallback to development mode for now
       if (import.meta.env.DEV) {
-        console.log('🔧 Development mode: Using mock admin for testing');
         setupTestAdmin();
       }
     }
@@ -94,7 +51,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   // Retry authentication (useful for token refresh issues)
   const retryAuth = async () => {
-    console.log('🔄 Retrying authentication...');
     await initializeAuth();
   };
 
@@ -104,8 +60,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     
     setToken(testToken);
     setIsAdmin(true);
-    
-    console.log('⚠️ Using mock admin token for development');
   };
 
   const login = () => {

@@ -21,9 +21,6 @@ import AnalyticsPage from './pages/AnalyticsPage';
 const AuthenticatedApp: React.FC = () => {
   const { isLoading, isAuthenticated, loginWithRedirect, error } = useAuth0();
 
-  // Debug logging
-  console.log('Auth0 State:', { isLoading, isAuthenticated, error });
-
   // Show loading spinner while Auth0 initializes
   if (isLoading) {
     return (
@@ -38,7 +35,6 @@ const AuthenticatedApp: React.FC = () => {
 
   // Show error if Auth0 failed to initialize
   if (error) {
-    console.error('Auth0 Error:', error);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto">

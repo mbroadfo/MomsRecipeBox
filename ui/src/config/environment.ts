@@ -116,15 +116,8 @@ export const getApiUrl = (path: string = ''): string => {
 /**
  * Development logging helper
  */
-export const devLog = (...args: any[]) => {
-  if (config.enableDevTools && import.meta.env.DEV) {
-    console.log(`[${config.environment.toUpperCase()}]`, ...args);
-  }
+export const devLog = (..._args: any[]) => {
+  // Logging disabled in production builds
 };
 
-// Log current configuration in development
-if (config.enableDevTools && import.meta.env.DEV) {
-  console.log(`🚀 MomsRecipeBox UI - Environment: ${config.environment.toUpperCase()}`);
-  console.log(`📡 API Base URL: ${config.API_BASE_URL}`);
-  console.log(`⏱️  API Timeout: ${config.API_TIMEOUT}ms`);
-}
+// Production build - no environment logging

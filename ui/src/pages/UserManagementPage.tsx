@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { UserStatistics } from '../components/admin/UserStatistics';
 import { adminApi } from '../utils/adminApi';
 import { useAdminAuth } from '../contexts/AdminContext';
+import { useAuth0 } from '@auth0/auth0-react';
 import type { AdminUser, InviteUserRequest } from '../auth/types';
 
 export const UserManagementPage: React.FC = () => {
-  const { token, isAuthenticated, isAdmin } = useAdminAuth();
+  const { token, isAuthenticated, isAdmin, retryAuth, authError } = useAdminAuth();
+  const { isLoading } = useAuth0();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,14 +22,9 @@ export const UserManagementPage: React.FC = () => {
     lastName: '',
     roles: ['user']
   });
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && isAdmin && token) {
-      loadUsers();
-    }
-  }, [currentPage, searchTerm, isAuthenticated, isAdmin, token]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     if (!token) {
       setError('No authentication token available');
       return;
@@ -46,7 +43,27 @@ export const UserManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, currentPage, searchTerm]);
+
+  useEffect(() => {
+    // Mark auth as initialized once Auth0 finishes loading
+    if (!isLoading) {
+      setAuthInitialized(true);
+    }
+    
+    if (isAuthenticated && isAdmin && token) {
+      loadUsers();
+    } else if (isAuthenticated && !isAdmin) {
+      setError('You do not have admin privileges to access this page');
+      setLoading(false);
+    } else if (isAuthenticated && !token) {
+      setError('Authentication token not available. Please try refreshing the page.');
+      setLoading(false);
+    } else if (authInitialized && !isAuthenticated) {
+      setError('Please log in to access the admin panel');
+      setLoading(false);
+    }
+  }, [currentPage, searchTerm, isAuthenticated, isAdmin, token, loadUsers, authInitialized, isLoading]);
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,12 +122,14 @@ export const UserManagementPage: React.FC = () => {
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading && users.length === 0) {
+  if (isLoading || (!authInitialized && !isAuthenticated)) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading users...</p>
+          <p className="text-gray-600">
+            {isLoading ? 'Initializing authentication...' : 'Loading users...'}
+          </p>
         </div>
       </div>
     );
@@ -126,17 +145,27 @@ export const UserManagementPage: React.FC = () => {
         </div>
         <button
           onClick={() => setShowInviteModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="invite-user-btn"
         >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Invite User
+          Invite New User
         </button>
       </div>
 
       {/* Statistics */}
       <UserStatistics stats={stats} users={users} />
+
+      {/* Loading indicator for data fetching */}
+      {loading && users.length === 0 && !error && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-gray-600 text-sm">Loading users...</p>
+          </div>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
@@ -148,12 +177,22 @@ export const UserManagementPage: React.FC = () => {
             <div>
               <h3 className="text-red-800 font-medium">Error loading users</h3>
               <p className="text-red-600 text-sm mt-1">{error}</p>
-              <button 
-                onClick={loadUsers}
-                className="mt-2 text-sm text-red-800 hover:text-red-900 underline"
-              >
-                Try again
-              </button>
+              <div className="mt-2 space-x-2">
+                <button 
+                  onClick={loadUsers}
+                  className="text-sm text-red-800 hover:text-red-900 underline"
+                >
+                  Try again
+                </button>
+                {authError && (
+                  <button 
+                    onClick={retryAuth}
+                    className="text-sm text-red-800 hover:text-red-900 underline"
+                  >
+                    Retry Authentication
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -281,67 +320,88 @@ export const UserManagementPage: React.FC = () => {
 
       {/* Invite User Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Invite New User</h3>
-              <form onSubmit={handleInviteUser}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={inviteForm.email}
-                      onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={inviteForm.firstName}
-                      onChange={(e) => setInviteForm({...inviteForm, firstName: e.target.value})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={inviteForm.lastName}
-                      onChange={(e) => setInviteForm({...inviteForm, lastName: e.target.value})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={inviteLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    {inviteLoading ? 'Inviting...' : 'Invite User'}
-                  </button>
-                </div>
-              </form>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative p-6 border-0 w-full max-w-md shadow-2xl rounded-xl bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Invite New User</h3>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
+            <form onSubmit={handleInviteUser}>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={inviteForm.email}
+                    onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={inviteForm.firstName}
+                    onChange={(e) => setInviteForm({...inviteForm, firstName: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    placeholder="John"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={inviteForm.lastName}
+                    onChange={(e) => setInviteForm({...inviteForm, lastName: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(false)}
+                  className="cancel-btn"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteLoading}
+                  className="submit-invite-btn"
+                >
+                  {inviteLoading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending Invite...
+                    </span>
+                  ) : (
+                    'Send Invitation'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

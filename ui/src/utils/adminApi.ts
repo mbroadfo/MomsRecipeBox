@@ -9,12 +9,6 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
  * Token should be passed from React component using useAdminAuth() hook
  */
 const getAuthHeaders = (token?: string | null): Record<string, string> => {
-  console.log('🔧 AdminAPI: Getting auth headers, token:', token ? 'present' : 'missing');
-  
-  if (!token) {
-    console.warn('🔧 AdminAPI: No token provided for authenticated request');
-  }
-  
   return {
     'Authorization': `Bearer ${token || ''}`,
     'Content-Type': 'application/json'
@@ -25,16 +19,12 @@ const getAuthHeaders = (token?: string | null): Record<string, string> => {
  * Handle API responses and errors
  */
 const handleResponse = async (response: Response) => {
-  console.log('🔧 AdminAPI: Response received', { status: response.status, ok: response.ok });
-  
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-    console.error('🔧 AdminAPI: Error response', errorData);
     throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
   }
   
   const data = await response.json();
-  console.log('🔧 AdminAPI: Success response', data);
   return data;
 };
 
@@ -46,8 +36,6 @@ export const adminApi = {
    * List all users with statistics
    */
   async listUsers(token: string | null, page: number = 1, search?: string): Promise<AdminUserListResponse> {
-    console.log('🔧 AdminAPI: listUsers called', { page, search });
-    
     const params = new URLSearchParams({
       page: page.toString(),
       per_page: '20'
@@ -57,27 +45,21 @@ export const adminApi = {
       params.append('search', search);
     }
     
-    const url = `${API_BASE_URL}/admin/users?${params}`;
-    console.log('🔧 AdminAPI: Making request to', url);
+    const url = `${API_BASE_URL}/api/admin/users?${params}`;
     
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token)
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('🔧 AdminAPI: listUsers error', error);
-      throw error;
-    }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(token)
+    });
+    
+    return handleResponse(response);
   },
 
   /**
    * Invite a new user
    */
   async inviteUser(token: string | null, userData: InviteUserRequest): Promise<InviteUserResponse> {
-    const response = await fetch(`${API_BASE_URL}/admin/users/invite`, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/invite`, {
       method: 'POST',
       headers: getAuthHeaders(token),
       body: JSON.stringify(userData)
@@ -90,7 +72,7 @@ export const adminApi = {
    * Delete a user
    */
   async deleteUser(token: string | null, userId: string): Promise<DeleteUserResponse> {
-    const response = await fetch(`${API_BASE_URL}/admin/users/${encodeURIComponent(userId)}`, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
       headers: getAuthHeaders(token)
     });
@@ -102,30 +84,17 @@ export const adminApi = {
    * Test admin API connectivity
    */
   async testConnection(token: string | null): Promise<{ status: string; message: string }> {
-    console.log('🔧 AdminAPI: testConnection called');
+    const url = `${API_BASE_URL}/api/admin/users?page=1&per_page=1`;
     
-    try {
-      const url = `${API_BASE_URL}/admin/users?page=1&per_page=1`;
-      console.log('🔧 AdminAPI: Testing connection to', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token)
-      });
-      
-      if (response.ok) {
-        console.log('🔧 AdminAPI: Connection test successful');
-        return { status: 'success', message: 'Admin API connection successful' };
-      } else {
-        console.log('🔧 AdminAPI: Connection test failed', response.status);
-        return { status: 'error', message: `HTTP ${response.status}: ${response.statusText}` };
-      }
-    } catch (error) {
-      console.error('🔧 AdminAPI: Connection test error', error);
-      return { 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Unknown error occurred' 
-      };
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(token)
+    });
+    
+    if (response.ok) {
+      return { status: 'success', message: 'Admin API connection successful' };
+    } else {
+      return { status: 'error', message: `HTTP ${response.status}: ${response.statusText}` };
     }
   },
 
@@ -149,7 +118,7 @@ export const adminApi = {
     console.log('🔧 AdminAPI: testSystemStatus called');
     
     try {
-      const url = `${API_BASE_URL}/admin/system-status`;
+      const url = `${API_BASE_URL}/api/admin/system-status`;
       console.log('🔧 AdminAPI: Testing system status at', url);
       
       const response = await fetch(url, {
@@ -191,7 +160,7 @@ export const adminApi = {
     console.log('🔧 AdminAPI: testIndividualService called', serviceName);
     
     try {
-      const url = `${API_BASE_URL}/admin/system-status?service=${encodeURIComponent(serviceName)}`;
+      const url = `${API_BASE_URL}/api/admin/system-status?service=${encodeURIComponent(serviceName)}`;
       console.log('🔧 AdminAPI: Testing individual service at', url);
       
       const response = await fetch(url, {
@@ -252,7 +221,7 @@ export const adminApi = {
       if (options?.test) params.append('test', 'basic'); // Changed from 'true' to 'basic'
       if (options?.includeUnavailable) params.append('includeUnavailable', 'true');
       
-      const url = `${API_BASE_URL}/admin/ai-services-status${params.toString() ? '?' + params : ''}`;
+      const url = `${API_BASE_URL}/api/admin/ai-services-status${params.toString() ? '?' + params : ''}`;
       console.log('🔧 AdminAPI: Fetching AI services status from', url);
       
       const response = await fetch(url, {
@@ -287,7 +256,7 @@ export const adminApi = {
     console.log('🔧 AdminAPI: testAIProvider called', providerKey);
     
     try {
-      const url = `${API_BASE_URL}/admin/ai-services-status?provider=${encodeURIComponent(providerKey)}`;
+      const url = `${API_BASE_URL}/api/admin/ai-services-status?provider=${encodeURIComponent(providerKey)}`;
       console.log('🔧 AdminAPI: Testing specific AI provider at', url);
       
       const response = await fetch(url, {
@@ -311,7 +280,7 @@ export const adminApi = {
     console.log('🔧 AdminAPI: getUserAnalytics called', { dateRange });
     
     try {
-      const url = `${API_BASE_URL}/admin/user-analytics?range=${encodeURIComponent(dateRange)}`;
+      const url = `${API_BASE_URL}/api/admin/user-analytics?range=${encodeURIComponent(dateRange)}`;
       console.log('🔧 AdminAPI: Fetching analytics from', url);
       
       const response = await fetch(url, {

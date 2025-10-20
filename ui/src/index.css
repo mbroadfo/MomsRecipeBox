@@ -129,3 +129,66 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Admin button overrides */
+.invite-user-btn {
+  background-color: #16a34a !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.invite-user-btn:hover {
+  background-color: #15803d !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.cancel-btn {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.cancel-btn:hover {
+  background-color: #e5e7eb !important;
+}
+
+.submit-invite-btn {
+  background-color: #16a34a !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.submit-invite-btn:hover:not(:disabled) {
+  background-color: #15803d !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.submit-invite-btn:disabled {
+  background-color: #9ca3af !important;
+  cursor: not-allowed !important;
+}

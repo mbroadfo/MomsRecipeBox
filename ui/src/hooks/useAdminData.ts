@@ -2,13 +2,43 @@ import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../utils/adminApi';
 import type { AdminUserListResponse } from '../auth/types';
 
+// Helper function to handle authentication errors
+const handleAuthError = (error: unknown) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorCode = (error as { code?: string })?.code;
+  
+  if (errorMessage.includes('Missing Authorization header') || 
+      errorMessage.includes('AUTH_FAILED') ||
+      errorCode === 'AUTH_FAILED') {
+    console.warn('🔐 Authentication token expired or missing, will retry when token is refreshed');
+    return;
+  }
+  throw error;
+};
+
 // User Statistics Hook
 export const useUserStats = (token: string | null) => {
   return useQuery<AdminUserListResponse>({
     queryKey: ['admin', 'users', 'stats'],
-    queryFn: () => adminApi.listUsers(token, 1),
+    queryFn: async () => {
+      if (!token) throw new Error('No authentication token available');
+      try {
+        return await adminApi.listUsers(token, 1);
+      } catch (error) {
+        handleAuthError(error);
+        throw error;
+      }
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: !!token,
+    retry: (failureCount, error) => {
+      // Don't retry auth failures, let the context handle token refresh
+      if (error?.message?.includes('AUTH_FAILED') || 
+          error?.message?.includes('Missing Authorization header')) {
+        return false;
+      }
+      return failureCount < 2; // Retry other errors up to 2 times
+    },
   });
 };
 
@@ -16,10 +46,25 @@ export const useUserStats = (token: string | null) => {
 export const useSystemStatus = (token: string | null) => {
   return useQuery({
     queryKey: ['admin', 'system', 'status'],
-    queryFn: () => adminApi.testSystemStatus(token),
+    queryFn: async () => {
+      if (!token) throw new Error('No authentication token available');
+      try {
+        return await adminApi.testSystemStatus(token);
+      } catch (error) {
+        handleAuthError(error);
+        throw error;
+      }
+    },
     staleTime: 1 * 60 * 1000, // 1 minute
     refetchInterval: 2 * 60 * 1000, // Refresh every 2 minutes
     enabled: !!token,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('AUTH_FAILED') || 
+          error?.message?.includes('Missing Authorization header')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 };
 
@@ -48,9 +93,24 @@ export const useConnectionTest = (token: string | null) => {
 export const useRecentUsers = (token: string | null) => {
   return useQuery<AdminUserListResponse>({
     queryKey: ['admin', 'users', 'recent'],
-    queryFn: () => adminApi.listUsers(token, 1),
+    queryFn: async () => {
+      if (!token) throw new Error('No authentication token available');
+      try {
+        return await adminApi.listUsers(token, 1);
+      } catch (error) {
+        handleAuthError(error);
+        throw error;
+      }
+    },
     staleTime: 30 * 1000, // 30 seconds
     enabled: !!token,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('AUTH_FAILED') || 
+          error?.message?.includes('Missing Authorization header')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     select: (data) => ({
       ...data,
       users: data.users.slice(0, 4), // Only take first 4 for recent list

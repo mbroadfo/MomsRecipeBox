@@ -14,6 +14,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const { user: auth0User, isAuthenticated: auth0IsAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect, logout: auth0Logout } = useAuth0();
   const [token, setToken] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize auth state when Auth0 loads
@@ -24,6 +25,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   const initializeAuth = async () => {
     try {
+      setAuthError(null); // Clear any previous errors
+      
+      console.log('🔄 AdminContext: Initializing auth...', {
+        auth0IsAuthenticated,
+        hasAuth0User: !!auth0User,
+        userEmail: auth0User?.email
+      });
+      
       if (auth0IsAuthenticated && auth0User) {
         console.log('🔍 Getting access token with audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
         
@@ -73,12 +82,20 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error getting Auth0 access token:', error);
+      setAuthError(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
       // Fallback to development mode for now
       if (import.meta.env.DEV) {
         console.log('🔧 Development mode: Using mock admin for testing');
         setupTestAdmin();
       }
     }
+  };
+
+  // Retry authentication (useful for token refresh issues)
+  const retryAuth = async () => {
+    console.log('🔄 Retrying authentication...');
+    await initializeAuth();
   };
 
   const setupTestAdmin = () => {
@@ -112,7 +129,9 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     token,
     login,
     logout,
-    checkAdminStatus
+    checkAdminStatus,
+    retryAuth,
+    authError
   };
 
   return (

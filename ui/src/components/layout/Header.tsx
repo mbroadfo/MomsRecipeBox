@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { isUserAdmin } from '../../auth/types';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
@@ -12,6 +13,20 @@ export const Header: React.FC<HeaderProps> = () => {
   const location = useLocation();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const { user, logout } = useAuth0();
+
+  // Check if current user has admin privileges
+  const userIsAdmin = user ? isUserAdmin(user) : false;
+
+  // Debug: Log admin status for verification
+  if (user && import.meta.env.DEV) {
+    console.log('🔍 Header admin check:', {
+      userEmail: user.email,
+      isAdmin: userIsAdmin,
+      momsRoles: user['https://momsrecipebox.app/roles'],
+      cruiseRoles: user['https://cruise-viewer.app/roles'],
+      appMetadata: user.app_metadata?.role
+    });
+  }
 
   const handleLogout = () => {
     logout({
@@ -80,14 +95,21 @@ export const Header: React.FC<HeaderProps> = () => {
               )}
               <button className="avatar-dropdown-item" onClick={() => {/* TODO: Edit profile logic */ setAvatarMenuOpen(false); }}>Edit Profile</button>
               <div className="avatar-dropdown-divider"></div>
-              <Link 
-                to="/admin" 
-                className="avatar-dropdown-item avatar-dropdown-admin"
-                onClick={() => setAvatarMenuOpen(false)}
-              >
-                Admin Panel
-              </Link>
-              <div className="avatar-dropdown-divider"></div>
+              {userIsAdmin && (
+                <>
+                  <Link 
+                    to="/admin" 
+                    className="avatar-dropdown-item avatar-dropdown-admin"
+                    onClick={() => {
+                      console.log('🔗 Admin panel link clicked');
+                      setAvatarMenuOpen(false);
+                    }}
+                  >
+                    Admin Panel
+                  </Link>
+                  <div className="avatar-dropdown-divider"></div>
+                </>
+              )}
               <button 
                 className="avatar-dropdown-item" 
                 onClick={() => {

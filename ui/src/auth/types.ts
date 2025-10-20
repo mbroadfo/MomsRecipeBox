@@ -60,6 +60,8 @@ export interface AuthContextType {
   login: () => void;
   logout: () => void;
   checkAdminStatus: () => boolean;
+  retryAuth?: () => Promise<void>;
+  authError?: string | null;
 }
 
 // Admin role checking utilities

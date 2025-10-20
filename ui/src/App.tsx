@@ -11,6 +11,7 @@ import CallbackPage from './pages/CallbackPage';
 // Admin Components
 import { AdminProvider } from './contexts/AdminContext';
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
+import AdminErrorBoundary from './components/admin/AdminErrorBoundary';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import UserManagementPage from './pages/UserManagementPage';
@@ -84,15 +85,15 @@ const AuthenticatedApp: React.FC = () => {
       {/* Auth0 Callback Route */}
       <Route path="/callback" element={<CallbackPage />} />
       
-      {/* Regular App Routes - no AdminProvider needed */}
-      <Route path="/*" element={<AppRoutes />} />
-      
       {/* Admin Routes - wrapped with AdminProvider only for admin section */}
       <Route path="/admin/*" element={
         <AdminProvider>
           <AdminRoutes />
         </AdminProvider>
       } />
+      
+      {/* Regular App Routes */}
+      <Route path="/*" element={<AppRoutes />} />
     </Routes>
   );
 };
@@ -115,14 +116,16 @@ const AppRoutes = () => {
 const AdminRoutes = () => {
   return (
     <AdminProtectedRoute>
-      <AdminLayout>
-        <Routes>
-          <Route path="/" element={<AdminDashboard />} />
-          <Route path="/users" element={<UserManagementPage />} />
-          <Route path="/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-        </Routes>
-      </AdminLayout>
+      <AdminErrorBoundary>
+        <AdminLayout>
+          <Routes>
+            <Route path="/" element={<AdminDashboard />} />
+            <Route path="/users" element={<UserManagementPage />} />
+            <Route path="/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+          </Routes>
+        </AdminLayout>
+      </AdminErrorBoundary>
     </AdminProtectedRoute>
   );
 };

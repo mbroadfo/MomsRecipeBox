@@ -6,16 +6,17 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 
 /**
  * Get authorization header with current user token
+ * Token should be passed from React component using useAdminAuth() hook
  */
-const getAuthHeaders = (): Record<string, string> => {
-  // For now, we'll need to get the token from wherever it's stored
-  // This will be updated once we understand your current auth implementation
-  const token = localStorage.getItem('auth_token') || '';
-  
+const getAuthHeaders = (token?: string | null): Record<string, string> => {
   console.log('🔧 AdminAPI: Getting auth headers, token:', token ? 'present' : 'missing');
   
+  if (!token) {
+    console.warn('🔧 AdminAPI: No token provided for authenticated request');
+  }
+  
   return {
-    'Authorization': `Bearer ${token}`,
+    'Authorization': `Bearer ${token || ''}`,
     'Content-Type': 'application/json'
   };
 };
@@ -44,7 +45,7 @@ export const adminApi = {
   /**
    * List all users with statistics
    */
-  async listUsers(page: number = 1, search?: string): Promise<AdminUserListResponse> {
+  async listUsers(token: string | null, page: number = 1, search?: string): Promise<AdminUserListResponse> {
     console.log('🔧 AdminAPI: listUsers called', { page, search });
     
     const params = new URLSearchParams({
@@ -62,7 +63,7 @@ export const adminApi = {
     try {
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       return handleResponse(response);
@@ -75,10 +76,10 @@ export const adminApi = {
   /**
    * Invite a new user
    */
-  async inviteUser(userData: InviteUserRequest): Promise<InviteUserResponse> {
+  async inviteUser(token: string | null, userData: InviteUserRequest): Promise<InviteUserResponse> {
     const response = await fetch(`${API_BASE_URL}/admin/users/invite`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(token),
       body: JSON.stringify(userData)
     });
     
@@ -88,10 +89,10 @@ export const adminApi = {
   /**
    * Delete a user
    */
-  async deleteUser(userId: string): Promise<DeleteUserResponse> {
+  async deleteUser(token: string | null, userId: string): Promise<DeleteUserResponse> {
     const response = await fetch(`${API_BASE_URL}/admin/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(token)
     });
     
     return handleResponse(response);
@@ -100,7 +101,7 @@ export const adminApi = {
   /**
    * Test admin API connectivity
    */
-  async testConnection(): Promise<{ status: string; message: string }> {
+  async testConnection(token: string | null): Promise<{ status: string; message: string }> {
     console.log('🔧 AdminAPI: testConnection called');
     
     try {
@@ -109,7 +110,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       if (response.ok) {
@@ -131,7 +132,7 @@ export const adminApi = {
   /**
    * Test system connectivity (S3, infrastructure only)
    */
-  async testSystemStatus(): Promise<{
+  async testSystemStatus(token: string | null): Promise<{
     overall_status: 'operational' | 'degraded';
     services: {
       s3: { status: string; message: string; stats?: any };
@@ -153,7 +154,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       const data = await handleResponse(response);
@@ -177,7 +178,7 @@ export const adminApi = {
   /**
    * Test individual infrastructure service
    */
-  async testIndividualService(serviceName: string): Promise<{
+  async testIndividualService(token: string | null, serviceName: string): Promise<{
     success: boolean;
     timestamp: string;
     service: string;
@@ -195,7 +196,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       const data = await handleResponse(response);
@@ -210,7 +211,7 @@ export const adminApi = {
   /**
    * Get comprehensive AI services status for all providers
    */
-  async getAIServicesStatus(options?: {
+  async getAIServicesStatus(token: string | null, options?: {
     test?: boolean;
     includeUnavailable?: boolean;
   }): Promise<{
@@ -256,7 +257,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       const data = await handleResponse(response);
@@ -271,7 +272,7 @@ export const adminApi = {
   /**
    * Test specific AI provider connectivity
    */
-  async testAIProvider(providerKey: string): Promise<{
+  async testAIProvider(token: string | null, providerKey: string): Promise<{
     success: boolean;
     timestamp: string;
     provider: {
@@ -291,7 +292,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       const data = await handleResponse(response);
@@ -306,7 +307,7 @@ export const adminApi = {
   /**
    * Get comprehensive user analytics and engagement metrics
    */
-  async getUserAnalytics(dateRange: string = '30'): Promise<any> {
+  async getUserAnalytics(token: string | null, dateRange: string = '30'): Promise<any> {
     console.log('🔧 AdminAPI: getUserAnalytics called', { dateRange });
     
     try {
@@ -315,7 +316,7 @@ export const adminApi = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(token)
       });
       
       const data = await handleResponse(response);

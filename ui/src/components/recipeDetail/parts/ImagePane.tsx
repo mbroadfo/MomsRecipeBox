@@ -59,7 +59,7 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
       // Extract recipe ID from various URL formats
       if (imageUrl.includes('/api/recipes/')) {
         // Format: /api/recipes/{id}/image
-        const match = imageUrl.match(/\/api\/recipes\/([^\/]+)\/image/);
+        const match = imageUrl.match(/\/api\/recipes\/([^/]+)\/image/);
         if (match) {
           recipeId = match[1];
           extension = 'png'; // Default extension for API URLs

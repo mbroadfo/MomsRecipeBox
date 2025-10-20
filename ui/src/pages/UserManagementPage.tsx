@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { UserStatistics } from '../components/admin/UserStatistics';
 import { adminApi } from '../utils/adminApi';
+import { useAdminAuth } from '../contexts/AdminContext';
 import type { AdminUser, InviteUserRequest } from '../auth/types';
 
 export const UserManagementPage: React.FC = () => {
+  const { token, isAuthenticated, isAdmin } = useAdminAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,15 +22,22 @@ export const UserManagementPage: React.FC = () => {
   });
 
   useEffect(() => {
-    loadUsers();
-  }, [currentPage, searchTerm]);
+    if (isAuthenticated && isAdmin && token) {
+      loadUsers();
+    }
+  }, [currentPage, searchTerm, isAuthenticated, isAdmin, token]);
 
   const loadUsers = async () => {
+    if (!token) {
+      setError('No authentication token available');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      const response = await adminApi.listUsers(currentPage, searchTerm || undefined);
+      const response = await adminApi.listUsers(token, currentPage, searchTerm || undefined);
       setUsers(response.users);
       setStats(response.stats);
     } catch (err) {
@@ -41,9 +50,14 @@ export const UserManagementPage: React.FC = () => {
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      setError('No authentication token available');
+      return;
+    }
+    
     try {
       setInviteLoading(true);
-      await adminApi.inviteUser(inviteForm);
+      await adminApi.inviteUser(token, inviteForm);
       
       // Reset form and close modal
       setInviteForm({
@@ -71,8 +85,13 @@ export const UserManagementPage: React.FC = () => {
       return;
     }
 
+    if (!token) {
+      setError('No authentication token available');
+      return;
+    }
+
     try {
-      await adminApi.deleteUser(userId);
+      await adminApi.deleteUser(token, userId);
       alert('User deleted successfully!');
       await loadUsers();
     } catch (err) {

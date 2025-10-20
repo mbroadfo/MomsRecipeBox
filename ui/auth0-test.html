@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth0 Test</title>
+</head>
+<body>
+    <h1>Auth0 Configuration Test</h1>
+    <p>Domain: dev-jdsnf3lqod8nxlnv.us.auth0.com</p>
+    <p>Client ID: uKRWXc9K33ZohLi0GcMeUsCcXdj5kwL1</p>
+    <p>Redirect URI: http://localhost:5173/callback</p>
+    
+    <button onclick="testAuth0()">Test Auth0 Login</button>
+    
+    <script>
+        function testAuth0() {
+            const domain = 'dev-jdsnf3lqod8nxlnv.us.auth0.com';
+            const clientId = 'uKRWXc9K33ZohLi0GcMeUsCcXdj5kwL1';
+            const redirectUri = 'http://localhost:5173/callback';
+            
+            const authUrl = `https://${domain}/authorize?` + 
+                `client_id=${clientId}&` +
+                `response_type=code&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `scope=openid profile email`;
+                
+            console.log('Auth URL:', authUrl);
+            window.location.href = authUrl;
+        }
+    </script>
+</body>
+</html>

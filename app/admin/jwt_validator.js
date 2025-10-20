@@ -93,9 +93,13 @@ export function validateJWT(token, requiredAudience = null) {
               }
 
               // Check user roles in custom claims
-              const rolesClaimKey = `https://momsrecipebox.app/roles`;
-              const rolesClaim = decoded[rolesClaimKey];
-              console.log(`👥 Found roles claim: ${JSON.stringify(rolesClaim)}`);
+              // Support both namespaces since apps share Auth0 tenant
+              const momsRolesClaimKey = `https://momsrecipebox.app/roles`;
+              const cruiseRolesClaimKey = `https://cruise-viewer.app/roles`;
+              const rolesClaim = decoded[momsRolesClaimKey] || decoded[cruiseRolesClaimKey];
+              console.log(`👥 Found roles claim (MomsRecipeBox): ${JSON.stringify(decoded[momsRolesClaimKey])}`);
+              console.log(`👥 Found roles claim (CruiseViewer): ${JSON.stringify(decoded[cruiseRolesClaimKey])}`);
+              console.log(`👥 Using roles claim: ${JSON.stringify(rolesClaim)}`);
               
               // Also check app_metadata for role (Auth0 standard approach)
               const appMetadataKey = `https://momsrecipebox.app/app_metadata`;

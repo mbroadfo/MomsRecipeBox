@@ -30,7 +30,7 @@ export const IngredientsView: React.FC<{
     try {
       const savedItems = localStorage.getItem(`recipe_${recipeId}_checked_ingredients`);
       return savedItems ? JSON.parse(savedItems) : {};
-    } catch (error) {
+    } catch (_error) {
       return {};
     }
   });

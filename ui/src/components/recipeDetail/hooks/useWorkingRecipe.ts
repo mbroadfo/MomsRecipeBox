@@ -120,7 +120,7 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
       ingredients: [{ items: w.ingredients[0].items.map((it, ii) => ii === itemIdx ? { ...it, [field]: value } : it) }]
     }));
   };
-  const addIngredient = (_groupIdx: number) => setWorking(w => ({ ...w, ingredients: [{ items: [...w.ingredients[0].items, { name: '', quantity: '' }] }] }));
+  const addIngredient = () => setWorking(w => ({ ...w, ingredients: [{ items: [...w.ingredients[0].items, { name: '', quantity: '' }] }] }));
   const removeIngredient = (_groupIdx: number, itemIdx: number) => setWorking(w => ({ ...w, ingredients: [{ items: w.ingredients[0].items.filter((_, ii) => ii !== itemIdx) }] }));
   const moveIngredientItem = (_groupIdx: number, fromIdx: number, toIdx: number) => setWorking(w => {
     if (fromIdx === toIdx) return w;

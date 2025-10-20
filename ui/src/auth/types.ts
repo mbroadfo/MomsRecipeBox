@@ -66,9 +66,13 @@ export interface AuthContextType {
 export const checkUserIsAdmin = (user: any): boolean => {
   if (!user) return false;
   
-  // Check for admin role in custom claims
-  const rolesClaimKey = `https://momsrecipebox.app/roles`;
-  const rolesClaim = user[rolesClaimKey];
+  // Check for admin role in custom claims  
+  // Support both namespaces since apps share Auth0 tenant
+  const momsRolesClaimKey = `https://momsrecipebox.app/roles`;
+  const cruiseRolesClaimKey = `https://cruise-viewer.app/roles`;
+  
+  // Prefer MomsRecipeBox namespace, fallback to CruiseViewer
+  const rolesClaim = user[momsRolesClaimKey] || user[cruiseRolesClaimKey];
   
   let roles: string[] = [];
   if (Array.isArray(rolesClaim)) {

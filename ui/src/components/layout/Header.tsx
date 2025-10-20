@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
@@ -10,6 +11,15 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = () => {
   const location = useLocation();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const { user, logout } = useAuth0();
+
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin
+      }
+    });
+  };
 
   return (
     <header className="app-header flex items-center justify-between">
@@ -58,6 +68,16 @@ export const Header: React.FC<HeaderProps> = () => {
           </span>
           {avatarMenuOpen && (
             <div className="avatar-dropdown">
+              {user && (
+                <>
+                  <div className="px-4 py-2 text-sm text-gray-600 border-b">
+                    <div className="font-medium">{user.name || user.email}</div>
+                    {user.name && user.email && (
+                      <div className="text-xs text-gray-500">{user.email}</div>
+                    )}
+                  </div>
+                </>
+              )}
               <button className="avatar-dropdown-item" onClick={() => {/* TODO: Edit profile logic */ setAvatarMenuOpen(false); }}>Edit Profile</button>
               <div className="avatar-dropdown-divider"></div>
               <Link 
@@ -68,7 +88,15 @@ export const Header: React.FC<HeaderProps> = () => {
                 Admin Panel
               </Link>
               <div className="avatar-dropdown-divider"></div>
-              <button className="avatar-dropdown-item" onClick={() => {/* TODO: Logout logic */ setAvatarMenuOpen(false); }}>Logout</button>
+              <button 
+                className="avatar-dropdown-item" 
+                onClick={() => {
+                  setAvatarMenuOpen(false);
+                  handleLogout();
+                }}
+              >
+                Logout
+              </button>
             </div>
           )}
         </div>

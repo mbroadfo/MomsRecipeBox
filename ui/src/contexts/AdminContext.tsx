@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import type { ReactNode } from 'react';
 import type { AuthContextType } from '../auth/types';
-import { isUserAdmin } from '../auth/types';
+import { isUserAdmin, checkUserIsAdmin, checkAppMetadataRole } from '../auth/types';
 
 interface AdminProviderProps {
   children: ReactNode;
@@ -10,87 +11,103 @@ interface AdminProviderProps {
 const AdminContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+  const { user: auth0User, isAuthenticated: auth0IsAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect, logout: auth0Logout } = useAuth0();
   const [token, setToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Initialize auth state
-    initializeAuth();
-  }, []);
+    // Initialize auth state when Auth0 loads
+    if (!isLoading) {
+      initializeAuth();
+    }
+  }, [isLoading, auth0IsAuthenticated, auth0User]);
 
   const initializeAuth = async () => {
     try {
-      // For development/testing - we'll update this with your actual auth implementation
-      const storedToken = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('user_data');
-      
-      if (storedToken && storedUser) {
-        const userData = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(userData);
-        setIsAuthenticated(true);
-        setIsAdmin(isUserAdmin(userData));
-      } else {
-        // Check if we're in development mode and set up test admin
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Development mode: Setting up test admin user');
-          setupTestAdmin();
+      if (auth0IsAuthenticated && auth0User) {
+        console.log('🔍 Getting access token with audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
+        
+        // Get the access token for API calls
+        const accessToken = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        });
+        
+        setToken(accessToken);
+        setIsAdmin(isUserAdmin(auth0User));
+        
+        console.log('🔐 Auth0 authenticated:', {
+          user: auth0User.email,
+          isAdmin: isUserAdmin(auth0User),
+          tokenLength: accessToken.length,
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE
+        });
+        
+        // Debug: Let's also decode and log the token payload to see what audience it contains
+        try {
+          const payload = JSON.parse(atob(accessToken.split('.')[1]));
+          console.log('🎫 Token payload:', {
+            aud: payload.aud,
+            iss: payload.iss,
+            sub: payload.sub,
+            exp: new Date(payload.exp * 1000).toISOString(),
+            scope: payload.scope
+          });
+        } catch (e) {
+          console.log('🎫 Could not decode token payload:', e);
         }
+        
+        // Debug: Log the full user object to see what's available
+        console.log('🔍 Full Auth0 user object:', auth0User);
+        console.log('🔍 User app_metadata:', auth0User.app_metadata);
+        console.log('🔍 User custom claims (shared tenant):', {
+          momsRoles: auth0User[`https://momsrecipebox.app/roles`],
+          cruiseRoles: auth0User[`https://cruise-viewer.app/roles`],
+          appMetadataRole: auth0User.app_metadata?.role
+        });
+      } else {
+        // User not authenticated
+        setToken(null);
+        setIsAdmin(false);
       }
     } catch (error) {
-      console.error('Error initializing auth:', error);
+      console.error('Error getting Auth0 access token:', error);
+      // Fallback to development mode for now
+      if (import.meta.env.DEV) {
+        console.log('🔧 Development mode: Using mock admin for testing');
+        setupTestAdmin();
+      }
     }
   };
 
   const setupTestAdmin = () => {
-    // For development testing - create a mock admin user
-    const testAdminUser = {
-      sub: 'auth0|testadmin',
-      email: 'admin@test.com',
-      name: 'Test Admin',
-      given_name: 'Test',
-      family_name: 'Admin',
-      'https://momsrecipebox.app/roles': ['admin'],
-      app_metadata: {
-        role: 'admin'
-      }
-    };
-    
+    // Only for development when Auth0 fails - simplified mock
     const testToken = 'test-admin-token';
     
-    setUser(testAdminUser);
     setToken(testToken);
-    setIsAuthenticated(true);
     setIsAdmin(true);
     
-    // Store for persistence during development
-    localStorage.setItem('auth_token', testToken);
-    localStorage.setItem('user_data', JSON.stringify(testAdminUser));
+    console.log('⚠️ Using mock admin token for development');
   };
 
   const login = () => {
-    // This will be implemented with your actual Auth0 login
-    console.log('Login function called - implement with Auth0');
+    loginWithRedirect();
   };
 
   const logout = () => {
-    setUser(null);
     setToken(null);
-    setIsAuthenticated(false);
     setIsAdmin(false);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   };
 
   const checkAdminStatus = (): boolean => {
-    return isAdmin && user && isUserAdmin(user);
+    return isAdmin && !!auth0User && isUserAdmin(auth0User);
   };
 
   const contextValue: AuthContextType = {
-    user,
-    isAuthenticated,
+    user: auth0User,
+    isAuthenticated: auth0IsAuthenticated,
     isAdmin,
     token,
     login,

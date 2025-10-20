@@ -29,12 +29,15 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const [saving, setSaving] = useState(false);
   const [showAIChat, setShowAIChat] = useState(isNew); // Show AI chat by default for new recipes
   
-  // For existing recipes
-  const { recipe: existingRecipe, loading: existingLoading, error: existingError, refresh } = 
-    !isNew && recipeId ? useRecipe(recipeId) : { recipe: null, loading: false, error: null, refresh: () => {} };
-  
-  // For new recipes
+  // Always call hooks, but conditionally use their results
+  const existingRecipeHook = useRecipe(recipeId || '');
   const newRecipeHook = useNewRecipe();
+  
+  // For existing recipes - use hook results only when not isNew and have recipeId
+  const { recipe: existingRecipe, loading: existingLoading, error: existingError, refresh } = 
+    !isNew && recipeId ? existingRecipeHook : { recipe: null, loading: false, error: null, refresh: () => {} };
+  
+  // For new recipes - use hook results only when isNew
   const { recipe: newRecipe, loading: newLoading, error: newError } = 
     isNew ? newRecipeHook : { recipe: null, loading: false, error: null };
   const saveNewRecipe = isNew ? newRecipeHook.saveNewRecipe : null;
@@ -463,7 +466,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                           
                           // After successful image upload, we need to verify the image is properly saved in MongoDB
                           // Add a significantly longer delay to ensure S3 processing completes and MongoDB update is done
-                          let maxAttempts = 5;
+                          const maxAttempts = 5;
                           let attempt = 0;
                           let imageUrlConfirmed = false;
                           

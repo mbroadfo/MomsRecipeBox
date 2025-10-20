@@ -96,7 +96,7 @@ interface AnalyticsData {
 }
 
 const AnalyticsPage: React.FC = () => {
-  const { isAuthenticated, isAdmin } = useAdminAuth();
+  const { token, isAuthenticated, isAdmin } = useAdminAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +107,7 @@ const AnalyticsPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const data = await adminApi.getUserAnalytics(range);
+      const data = await adminApi.getUserAnalytics(token, range);
       setAnalytics(data);
     } catch (err) {
       console.error('Error fetching analytics:', err);

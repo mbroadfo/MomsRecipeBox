@@ -133,7 +133,36 @@ For new users, visit our [Getting Started Guide](docs/guides/getting_started.md)
 
 - **Modern UI**: Responsive design with intuitive navigation
 
-## ðŸ—‚ï¸ Repository Structure
+## 🔒 Authentication & Security
+
+Mom's Recipe Box uses **Auth0** for authentication with **shared tenant support** and **JWT token security**:
+
+### Core Authentication Features
+
+- **Universal Login**: Secure Auth0 hosted authentication pages
+- **Shared Auth0 Tenant**: Supports multiple applications (Mom's Recipe Box and Cruise Viewer) with namespace isolation
+- **Dual Namespace Support**: Role detection from both `https://momsrecipebox.app/roles` and `https://cruise-viewer.app/roles` custom claims
+- **JWT Token Security**: Secure API communication with audience-based token validation
+- **Role-Based Access Control**: Admin and user roles with granular permissions
+- **Account Management**: User profile management and authentication flows
+
+### Admin System Authentication
+
+- **Secure Admin Dashboard**: JWT token validation with proper audience verification (`https://momsrecipebox-admin-api`)
+- **Cross-Application Compatibility**: Admin roles recognized from both Mom's Recipe Box and Cruise Viewer namespaces for shared Auth0 tenant scenarios
+- **Machine-to-Machine API**: Secure M2M authentication for admin operations
+- **Token Debugging**: Enhanced authentication flow with detailed console logging for troubleshooting
+
+### Recent Authentication Improvements
+
+✅ **Fixed Auth0 Authentication Issues** (Latest Update):
+- Resolved infinite loading on admin authentication
+- Fixed JWT token authentication for all API calls  
+- Implemented dual namespace support for shared Auth0 tenant
+- Corrected audience parameter configuration for backend API authentication
+- Enhanced admin role detection with proper custom claims namespace matching
+
+## ðŸ—‚ï¸ Repository Structure
 
 ```text
 /infra        Terraform IaC (MongoDB Atlas, S3, Lambdas, etc.)

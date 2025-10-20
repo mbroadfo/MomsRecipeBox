@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesStatus, useAIServicesConnectivity } from '../../hooks/useAdminData';
+import { useAdminAuth } from '../../contexts/AdminContext';
 
 interface AIQuickControlsProps {
   className?: string;
@@ -8,13 +9,14 @@ interface AIQuickControlsProps {
 const AIQuickControls: React.FC<AIQuickControlsProps> = ({ className = '' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [testMode, setTestMode] = useState<'basic' | 'connectivity'>('basic');
+  const { token } = useAdminAuth();
   
-  const { data: basicStatus, refetch: refetchBasic } = useAIServicesStatus();
+  const { data: basicStatus, refetch: refetchBasic } = useAIServicesStatus(token);
   const { 
     data: connectivityStatus, 
     refetch: refetchConnectivity,
     isLoading: connectivityLoading 
-  } = useAIServicesConnectivity({ enabled: testMode === 'connectivity' });
+  } = useAIServicesConnectivity(token, { enabled: testMode === 'connectivity' });
 
   const currentData = testMode === 'connectivity' ? connectivityStatus : basicStatus;
 

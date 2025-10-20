@@ -14,7 +14,11 @@ Authorization: Bearer <your_jwt_token>
 
 ### Token Types Accepted:
 1. **Machine-to-Machine (M2M) Token**: Automatically grants admin access
-2. **User Token with Admin Role**: User must have `admin` role in `https://momsrecipebox.app/roles` claim
+2. **User Token with Admin Role**: User must have `admin` role in either:
+   - `https://momsrecipebox.app/roles` claim (primary namespace)
+   - `https://cruise-viewer.app/roles` claim (shared tenant support)
+
+**Shared Auth0 Tenant Support**: The admin system supports shared Auth0 tenants by recognizing admin roles from both Mom's Recipe Box and Cruise Viewer custom claims namespaces. This enables cost-effective Auth0 tenant sharing between multiple applications while maintaining security isolation.
 
 ## Admin Endpoints
 

@@ -1,10 +1,12 @@
 import React from 'react';
 import { useRecentUsers } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../contexts/AdminContext';
 import { SectionWrapper } from '../ErrorBoundary';
 import { RecentUsersSkeleton } from '../skeletons';
 
 const RecentUsersContent: React.FC = () => {
-  const { data: users, isLoading, error, refetch } = useRecentUsers();
+  const { token } = useAdminAuth();
+  const { data: users, isLoading, error, refetch } = useRecentUsers(token);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never';

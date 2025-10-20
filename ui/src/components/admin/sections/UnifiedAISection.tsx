@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesConnectivity } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../contexts/AdminContext';
 import { adminApi } from '../../../utils/adminApi';
 import { SectionWrapper } from '../ErrorBoundary';
 import { AIServicesSkeleton } from '../skeletons';
@@ -18,13 +19,14 @@ interface AIProvider {
 
 const UnifiedAISectionContent: React.FC = () => {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const { token } = useAdminAuth();
   
   const { 
     data: aiData, 
     isLoading, 
     error, 
     refetch 
-  } = useAIServicesConnectivity({ 
+  } = useAIServicesConnectivity(token, { 
     enabled: true,
     includeUnavailable: true 
   });
@@ -32,7 +34,7 @@ const UnifiedAISectionContent: React.FC = () => {
   const testSpecificProvider = async (providerKey: string) => {
     setTestingProvider(providerKey);
     try {
-      await adminApi.testAIProvider(providerKey);
+      await adminApi.testAIProvider(token, providerKey);
       refetch();
     } catch (error) {
       console.error('Provider test failed:', error);

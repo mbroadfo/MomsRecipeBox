@@ -24,7 +24,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   // Convert API image URLs to direct S3 URLs
   if (imageUrl && imageUrl.startsWith('/api/recipes/') && imageUrl.endsWith('/image')) {
     // Extract recipe ID from /api/recipes/{id}/image format
-    const match = imageUrl.match(/\/api\/recipes\/([^\/]+)\/image/);
+    const match = imageUrl.match(/\/api\/recipes\/([^/]+)\/image/);
     if (match) {
       const recipeId = match[1];
       // Convert to direct S3 URL - try .png first, then .jpg if .png fails

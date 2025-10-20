@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useSystemStatus } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../contexts/AdminContext';
 import { SectionWrapper } from '../ErrorBoundary';
 import { SystemStatusSkeleton } from '../skeletons';
 
 const SystemStatusContent: React.FC = () => {
-  const { data: status, isLoading, error, refetch } = useSystemStatus();
+  const { token } = useAdminAuth();
+  const { data: status, isLoading, error, refetch } = useSystemStatus(token);
   const [testingService, setTestingService] = useState<string | null>(null);
   
   // Service name mapping for API calls

@@ -1,10 +1,12 @@
 import React from 'react';
 import { useUserStats } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../contexts/AdminContext';
 import { SectionWrapper } from '../ErrorBoundary';
 import { StatsCardSkeleton } from '../skeletons';
 
 const UserStatsContent: React.FC = () => {
-  const { data: stats, isLoading, error, refetch } = useUserStats();
+  const { token } = useAdminAuth();
+  const { data: stats, isLoading, error, refetch } = useUserStats(token);
 
   return (
     <SectionWrapper

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecipe } from './hooks/useRecipe';
+import type { RawRecipe } from './hooks/useRecipe';
 import { useNewRecipe } from './hooks/useNewRecipe';
 import { useWorkingRecipe, buildSavePayload } from './hooks/useWorkingRecipe';
+import { getCurrentUserId } from '../../types/global';
 import { useImageUpload } from './hooks/useImageUpload';
 import { Header as RecipeHeader } from './parts/Header';
 import { Tags } from './parts/Tags';
@@ -21,6 +23,20 @@ import { Description } from './parts/Description';
 import '../RecipeDetail.css';
 import './parts/RecipeAIChat.css';
 import '../../components/shoppingList/ShoppingListPage.css';
+
+// Extend RawRecipe to include liked property for this component
+interface RecipeWithLiked extends RawRecipe {
+  liked?: boolean;
+  comments?: Array<Record<string, unknown>>;
+}
+
+// Type for window global user context  
+interface WindowWithUser extends Window {
+  currentUser?: { id: string };
+  currentUserId?: string;
+}
+
+declare const window: WindowWithUser;
 
 interface Props { recipeId?: string; isNew?: boolean; onBack: () => void; }
 export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false, onBack }) => {
@@ -100,21 +116,22 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   );
 
   const [liked, setLiked] = useState(() => {
-    const raw: any = recipe;
-    return !!raw?.liked;
+    const recipeWithLiked = recipe as RecipeWithLiked;
+    return !!recipeWithLiked?.liked;
   });
 
   // Sync liked state when a fresh recipe payload arrives (e.g., after navigation or refresh())
   useEffect(() => {
     if (recipe && Object.prototype.hasOwnProperty.call(recipe, 'liked')) {
-      setLiked(!!(recipe as any).liked);
+      const recipeWithLiked = recipe as RecipeWithLiked;
+      setLiked(!!recipeWithLiked.liked);
     }
-  }, [recipe?._id, (recipe as any)?.liked]);
+  }, [recipe]);
 
   const toggleLike = async () => {
     setLiked((l: boolean) => !l);
     try {
-      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+      const userId = getCurrentUserId();
       const resp = await fetch(`/api/recipes/${recipeId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,9 +251,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           alert(`Failed to update recipe: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
-    } catch (e: any) { 
+    } catch (e: Error | unknown) { 
       console.error("Error in save function:", e);
-      alert(e.message); 
+      alert(e instanceof Error ? e.message : 'An error occurred'); 
     } finally { 
       setSaving(false); 
     }
@@ -247,8 +264,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
       const resp = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
       if (!resp.ok) throw new Error(`Delete failed (${resp.status})`);
       navigate('/');
-    } catch (e: any) { 
-      alert(e.message); 
+    } catch (e: Error | unknown) { 
+      alert(e instanceof Error ? e.message : 'Failed to delete recipe'); 
     }
   };
 
@@ -302,7 +319,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
           <Description value={working.description} editing={editMode} onChange={v => patch({ description: v })} />
-          <Meta source={working.source as any} author={working.author} editing={editMode} onChange={patch} />
+          <Meta source={working.source} author={working.author} editing={editMode} onChange={patch} />
           <Tags tags={working.tags} editing={editMode} add={addTag} remove={removeTag} />
           <YieldTime yieldValue={working.yield} time={working.time} editing={editMode} onChange={patch} />
           {editMode ? (
@@ -332,7 +349,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             <InstructionsView instructions={working.instructions} />
           )}
           <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
-          {Array.isArray((recipe as any).comments) && <Comments comments={(recipe as any).comments} />}
+          {Array.isArray(recipe.comments) && <Comments comments={recipe.comments} />}
           {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
           
           {/* Only show delete button for existing recipes that aren't in edit mode */}
@@ -388,7 +405,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                     setSaving(true);
                     
                     // Build a complete recipe object
-                    const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+                    const userId = getCurrentUserId();
                     
                     // Prepare ingredients in the right format
                     const ingredients = Array.isArray(recipeData.ingredients) ? recipeData.ingredients.map(ingredient => ({
@@ -478,7 +495,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                               // Wait between attempts with increasing delay
                               await new Promise(resolve => setTimeout(resolve, attempt * 1000));
                               
-                              const refreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${(window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'}`);
+                              const refreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${getCurrentUserId()}`);
                               if (refreshResponse.ok) {
                                 const refreshedData = await refreshResponse.json();
                                 console.log("Refreshed recipe data with image:", refreshedData);
@@ -558,7 +575,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                     
                     // Do one final refresh to get the most up-to-date data including the S3 image URL
                     try {
-                      const finalRefreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${(window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'}`);
+                      const finalRefreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${getCurrentUserId()}`);
                       if (finalRefreshResponse.ok) {
                         const finalData = await finalRefreshResponse.json();
                         console.log("Final recipe data before navigation:", finalData);

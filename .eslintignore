@@ -1,0 +1,23 @@
+# ESLint ignore patterns
+
+# Ignore changelog files
+CHANGELOG.md
+*.changelog.md
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.min.js
+
+# Generated files
+*.generated.*
+
+# Logs
+*.log
+logs/
+
+# Coverage reports
+coverage/

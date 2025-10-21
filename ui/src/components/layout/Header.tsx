@@ -5,11 +5,7 @@ import { isUserAdmin } from '../../auth/types';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
-interface HeaderProps {
-  // No sidebar props needed anymore
-}
-
-export const Header: React.FC<HeaderProps> = () => {
+export const Header: React.FC = () => {
   const location = useLocation();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const { user, logout } = useAuth0();

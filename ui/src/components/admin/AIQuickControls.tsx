@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesStatus, useAIServicesConnectivity } from '../../hooks/useAdminData';
-import { useAdminAuth } from '../../contexts/AdminContext';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 interface AIQuickControlsProps {
   className?: string;

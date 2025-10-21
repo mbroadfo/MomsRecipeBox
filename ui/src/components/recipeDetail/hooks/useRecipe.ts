@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getCurrentUserId } from '../../../types/global';
 
 export interface RawRecipe {
   _id?: string;
@@ -6,20 +7,22 @@ export interface RawRecipe {
   subtitle?: string;
   description?: string;
   author?: string;
-  source?: string | { [k: string]: any };
+  source?: string | Record<string, unknown>;
   visibility?: string; // 'private', 'family', 'public'
   owner_id?: string;  // User ID of recipe owner
   status?: string;
   image_url?: string;
   tags?: string[];
   yield?: string;
-  time?: any; // flexible
-  ingredients?: any; // array | grouped object
+  time?: Record<string, unknown> | string | number; // flexible time format
+  ingredients?: Array<unknown> | Record<string, unknown>; // array | grouped object
   instructions?: string[];
   steps?: string[]; // alternate name
   sections?: { section_type?: string; type?: string; content: string; position?: number }[];
   notes?: string;
-  [k: string]: any;
+  comments?: Array<Record<string, unknown>>; // Array of comments
+  liked?: boolean; // User liked status
+  [k: string]: unknown;
 }
 
 /**
@@ -35,14 +38,14 @@ export function useRecipe(id: string) {
     setLoading(true);
     setError(null);
     try {
-      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+      const userId = getCurrentUserId();
       const data = await fetch(`/api/recipes/${id}?user_id=${encodeURIComponent(userId)}`).then(r => {
         if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
         return r.json();
       });
       setRecipe(data);
-    } catch (e: any) {
-      setError(e);
+    } catch (e: Error | unknown) {
+      setError(e instanceof Error ? e : new Error('Unknown error'));
     } finally { 
       setLoading(false); 
     }
@@ -65,7 +68,7 @@ export function useRecipe(id: string) {
       console.log(`Polling attempt ${currentAttempt}/${attempts} for recipe ${id}`);
       
       try {
-        const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+        const userId = getCurrentUserId();
         const response = await fetch(`/api/recipes/${id}?user_id=${encodeURIComponent(userId)}`);
         
         if (!response.ok) {
@@ -94,7 +97,7 @@ export function useRecipe(id: string) {
     };
     
     await checkForImage();
-  }, [id, fetchRecipe]);
+  }, [id]);
 
   // Fetch recipe data on mount and when ID changes
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);

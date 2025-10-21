@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAdminAuth } from '../../contexts/AdminContext';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 import './AdminLayout.css';
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

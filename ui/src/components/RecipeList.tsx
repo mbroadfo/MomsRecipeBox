@@ -1,5 +1,6 @@
 // File: ui/src/components/RecipeList.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCurrentUserId } from '../types/global';
 import RecipeCard from './RecipeCard';
 
 interface Recipe {
@@ -10,6 +11,7 @@ interface Recipe {
   liked?: boolean;
   image_url?: string;
   comments?: number;
+  [key: string]: unknown; // Allow additional properties
 }
 
 interface RecipeListProps {
@@ -26,13 +28,14 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
 
   useEffect(() => {
     // Explicitly use 'demo-user' as default to ensure consistent user ID
-    const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+    const userId = getCurrentUserId();
     fetch(`/api/recipes?user_id=${encodeURIComponent(userId)}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.recipes)) setRecipes(data.recipes as any);
-        else if (Array.isArray(data)) setRecipes(data as any);
-        else if (Array.isArray((data as any).items)) setRecipes((data as any).items as any);
+      .then((data: unknown) => {
+        const dataObj = data as Record<string, unknown>;
+        if (Array.isArray(dataObj.recipes)) setRecipes(dataObj.recipes as Recipe[]);
+        else if (Array.isArray(data)) setRecipes(data as Recipe[]);
+        else if (Array.isArray(dataObj.items)) setRecipes(dataObj.items as Recipe[]);
         else setRecipes([]);
         setError(null);
       })
@@ -45,7 +48,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
 
   // Simple filter logic placeholder
   let filteredRecipes = recipes.filter((recipe) => {
-    const rid = (recipe as any).id || (recipe as any)._id || '';
+    const rid = recipe.id || recipe._id || '';
     switch (filter) {
       case 'mine':
         return rid.startsWith('mine');
@@ -89,8 +92,8 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
       <div className="grid gap-8" style={{ gridTemplateColumns: gridTemplate }}>
         {filteredRecipes.map((recipe, idx) => (
           <RecipeCard
-            key={(recipe as any)._id || recipe.id || idx}
-            recipe={recipe as any}
+            key={recipe._id || recipe.id || idx}
+            recipe={recipe}
             onClick={onSelectRecipe}
           />
         ))}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCurrentUserId } from '../../../types/global';
 
 interface VisibilityProps {
   visibility?: string;
@@ -10,7 +11,7 @@ interface VisibilityProps {
 
 export const Visibility: React.FC<VisibilityProps> = ({ visibility = 'private', owner_id = '', editing, onChange, compact = false }) => {
   // Get the current user ID for default values
-  const currentUserId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+  const currentUserId = getCurrentUserId();
 
   // Function to cycle through visibility options
   const cycleVisibility = () => {

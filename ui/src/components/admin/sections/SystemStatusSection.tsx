@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSystemStatus } from '../../../hooks/useAdminData';
-import { useAdminAuth } from '../../../contexts/AdminContext';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { SectionWrapper } from '../ErrorBoundary';
 import { SystemStatusSkeleton } from '../skeletons';
 
@@ -148,56 +148,56 @@ const SystemStatusContent: React.FC = () => {
                   {/* MongoDB Metrics */}
                   {service.name === 'MongoDB Database' && service.stats && (
                     <span className="truncate">
-                      {service.stats.environment || 'MongoDB'} • {service.stats.totalRecipes || 0} recipes
+                      {String((service.stats as Record<string, unknown>).environment || 'MongoDB')} • {Number((service.stats as Record<string, unknown>).totalRecipes || 0)} recipes
                     </span>
                   )}
                   
                   {/* S3 Image Bucket Metrics */}
                   {service.name === 'S3 Image Bucket' && service.stats && (
                     <span className="truncate">
-                      {service.stats.imageObjects || 0} images • {service.stats.imageSize || '0 MB'}
+                      {Number((service.stats as Record<string, unknown>).imageObjects || 0)} images • {String((service.stats as Record<string, unknown>).imageSize || '0 MB')}
                     </span>
                   )}
                   
                   {/* API Gateway Metrics */}
                   {service.name === 'API Gateway' && service.stats && (
                     <span className="truncate">
-                      {service.stats.responseTime || 'N/A'} • {service.stats.httpStatus || 'N/A'}
+                      {String((service.stats as Record<string, unknown>).responseTime || 'N/A')} • {String((service.stats as Record<string, unknown>).httpStatus || 'N/A')}
                     </span>
                   )}
                   
                   {/* Lambda Metrics */}
                   {service.name === 'Lambda Functions' && service.stats && (
                     <span className="truncate">
-                      {service.stats.mrbAdminFunctions || 0} mrb-admin • {service.stats.totalFunctions || 0} total
+                      {Number((service.stats as Record<string, unknown>).mrbAdminFunctions || 0)} mrb-admin • {Number((service.stats as Record<string, unknown>).totalFunctions || 0)} total
                     </span>
                   )}
                   
                   {/* Backup Metrics */}
                   {service.name === 'Backup System' && service.stats && (
                     <span className="truncate">
-                      {service.stats.totalBackupFolders || 0} backup folders
+                      {Number((service.stats as Record<string, unknown>).totalBackupFolders || 0)} backup folders
                     </span>
                   )}
                   
                   {/* Infrastructure Metrics */}
                   {service.name === 'Infrastructure' && service.stats && (
                     <span className="truncate">
-                      {service.stats.environment || 'unknown'} • {service.stats.awsConfigured ? 'AWS ✓' : 'AWS ✗'}
+                      {String((service.stats as Record<string, unknown>).environment || 'unknown')} • {(service.stats as Record<string, unknown>).awsConfigured ? 'AWS ✓' : 'AWS ✗'}
                     </span>
                   )}
                   
                   {/* Security Metrics */}
                   {service.name === 'Security & SSL' && service.stats && (
                     <span className="truncate">
-                      Auth0: {service.stats.configurationComplete ? 'Complete' : 'Incomplete'} • CORS: {service.stats.corsEnabled ? '✓' : '✗'}
+                      Auth0: {(service.stats as Record<string, unknown>).configurationComplete ? 'Complete' : 'Incomplete'} • CORS: {(service.stats as Record<string, unknown>).corsEnabled ? '✓' : '✗'}
                     </span>
                   )}
                   
                   {/* Performance Metrics */}
                   {service.name === 'Performance & CDN' && service.stats && (
                     <span className="truncate">
-                      Memory: {service.stats.memoryPercentage || 'N/A'} • {service.stats.uptime || 'N/A'}
+                      Memory: {String((service.stats as Record<string, unknown>).memoryPercentage || 'N/A')} • {String((service.stats as Record<string, unknown>).uptime || 'N/A')}
                     </span>
                   )}
                   

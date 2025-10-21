@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import type { ReactNode } from 'react';
 import type { AuthContextType } from '../auth/types';
-import { isUserAdmin, checkUserIsAdmin, checkAppMetadataRole } from '../auth/types';
+import { isUserAdmin } from '../auth/types';
 
 interface AdminProviderProps {
   children: ReactNode;
@@ -16,14 +16,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Initialize auth state when Auth0 loads
-    if (!isLoading) {
-      initializeAuth();
-    }
-  }, [isLoading, auth0IsAuthenticated, auth0User]);
-
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
     try {
       setAuthError(null); // Clear any previous errors
       
@@ -47,7 +40,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         setupTestAdmin();
       }
     }
-  };
+  }, [auth0IsAuthenticated, auth0User, getAccessTokenSilently]);
+
+  useEffect(() => {
+    // Initialize auth state when Auth0 loads
+    if (!isLoading) {
+      initializeAuth();
+    }
+  }, [isLoading, initializeAuth]);
 
   // Retry authentication (useful for token refresh issues)
   const retryAuth = async () => {
@@ -93,14 +93,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       {children}
     </AdminContext.Provider>
   );
-};
-
-export const useAdminAuth = (): AuthContextType => {
-  const context = useContext(AdminContext);
-  if (context === undefined) {
-    throw new Error('useAdminAuth must be used within an AdminProvider');
-  }
-  return context;
 };
 
 export default AdminContext;

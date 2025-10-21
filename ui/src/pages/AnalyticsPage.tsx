@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAdminAuth } from '../contexts/AdminContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 import { adminApi } from '../utils/adminApi';
 
 interface AnalyticsData {
@@ -102,7 +102,7 @@ const AnalyticsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('30');
 
-  const fetchAnalytics = async (range: string = '30') => {
+  const fetchAnalytics = useCallback(async (range: string = '30') => {
     try {
       setLoading(true);
       setError(null);
@@ -115,13 +115,13 @@ const AnalyticsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchAnalytics(dateRange);
     }
-  }, [isAuthenticated, isAdmin, dateRange]);
+  }, [isAuthenticated, isAdmin, dateRange, fetchAnalytics]);
 
   const handleDateRangeChange = (newRange: string) => {
     setDateRange(newRange);

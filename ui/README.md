@@ -2,9 +2,12 @@
 
 ## A React + TypeScript + Vite frontend for viewing and editing recipes
 
+**Recent Improvements (October 2025)**: Complete TypeScript migration with zero `any` types, comprehensive interface definitions, and enhanced type safety across all components and API interactions.
+
 ## UI Components and Features
 
 ### Streamlined Header- **Chat Interface**: Conversational UI for recipe creation located below the image in its own scrollable pane
+
 - **Multiple Input Methods**: Supports:
   - Natural language recipe creation (\"Create a chocolate chip cookie recipe\")
   - URL extraction (paste any recipe website URL for automatic extraction)

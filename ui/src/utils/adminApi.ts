@@ -1,5 +1,165 @@
 import type { AdminUserListResponse, InviteUserRequest, InviteUserResponse, DeleteUserResponse } from '../auth/types';
 
+// More flexible stats interfaces to match actual API responses
+interface BaseStats {
+  [key: string]: unknown;
+}
+
+interface MongoDBStats extends BaseStats {
+  environment?: string;
+  totalRecipes?: number;
+  connectionTime?: number;
+}
+
+interface S3Stats extends BaseStats {
+  imageObjects?: number;
+  imageSize?: string;
+  totalObjects?: number;
+  totalSize?: string;
+  bucketCount?: number;
+  lastBackup?: string;
+}
+
+interface APIGatewayStats extends BaseStats {
+  responseTime?: string;
+  httpStatus?: string;
+  requestsPerMinute?: number;
+  errorRate?: number;
+}
+
+interface LambdaStats extends BaseStats {
+  mrbAdminFunctions?: number;
+  totalFunctions?: number;
+  executionsToday?: number;
+}
+
+interface BackupStats extends BaseStats {
+  totalBackupFolders?: number;
+  lastFull?: string;
+  lastIncremental?: string;
+  nextScheduled?: string;
+}
+
+interface TerraformStats extends BaseStats {
+  environment?: string;
+  awsConfigured?: boolean;
+  lastApply?: string;
+  resourceCount?: number;
+  driftDetected?: boolean;
+}
+
+interface SecurityStats extends BaseStats {
+  configurationComplete?: boolean;
+  corsEnabled?: boolean;
+  sslExpiry?: string;
+  auth0Status?: string;
+}
+
+interface PerformanceStats extends BaseStats {
+  memoryPercentage?: string;
+  uptime?: string;
+  cdnHitRate?: string;
+  avgResponseTime?: string;
+  cachingEnabled?: boolean;
+}
+
+// Union type for all possible service stats
+type ServiceStats = MongoDBStats | S3Stats | APIGatewayStats | LambdaStats | BackupStats | TerraformStats | SecurityStats | PerformanceStats;
+
+interface UserAnalytics {
+  success: boolean;
+  timestamp: string;
+  dateRange: {
+    days: number;
+    startDate: string;
+    endDate: string;
+  };
+  users: {
+    totalUsers: number;
+    activeContentCreators: number;
+    usersWhoFavorited: number;
+    usersWhoCommented: number;
+    recentActivity: {
+      newFavorites: number;
+      newComments: number;
+    };
+  };
+  recipes: {
+    total: number;
+    recentlyCreated: number;
+    byVisibility: Record<string, number>;
+    mostLiked: Array<{
+      _id: string;
+      title: string;
+      likes_count: number;
+      owner_id: string;
+    }>;
+    averageLikes: number;
+  };
+  engagement: {
+    favorites: {
+      total: number;
+      recent: number;
+      topRecipes: Array<{
+        recipeId: string;
+        title: string;
+        favoriteCount: number;
+      }>;
+    };
+    comments: {
+      total: number;
+      recent: number;
+      topRecipes: Array<{
+        recipeId: string;
+        title: string;
+        commentCount: number;
+      }>;
+    };
+  };
+  content: {
+    creationTrend: Array<{
+      _id: string;
+      count: number;
+    }>;
+    topCreators: Array<{
+      _id: string;
+      recipeCount: number;
+    }>;
+    withImages: number;
+    imagePercentage: number;
+  };
+  shoppingLists: {
+    totalLists: number;
+    recentlyActive: number;
+    averageItemsPerList: number;
+    totalItems: number;
+    checkedItems: number;
+    completionRate: number;
+  };
+  growth: {
+    recipes: {
+      current: number;
+      previous: number;
+      growthRate: number;
+    };
+    favorites: {
+      current: number;
+      previous: number;
+      growthRate: number;
+    };
+    comments: {
+      current: number;
+      previous: number;
+      growthRate: number;
+    };
+    dailyActivity: Array<{
+      _id: string;
+      recipes: number;
+    }>;
+  };
+  [key: string]: unknown;
+}
+
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://your-production-api.com' 
   : 'http://localhost:3000';
@@ -31,7 +191,7 @@ const handleResponse = async (response: Response) => {
 /**
  * Admin API functions
  */
-export const adminApi = {
+const adminApi = {
   /**
    * List all users with statistics
    */
@@ -104,14 +264,14 @@ export const adminApi = {
   async testSystemStatus(token: string | null): Promise<{
     overall_status: 'operational' | 'degraded';
     services: {
-      s3: { status: string; message: string; stats?: any };
-      mongodb?: { status: string; message: string; stats?: { totalRecipes?: number; connectionTime?: number } };
-      api_gateway?: { status: string; message: string; stats?: { requestsPerMinute?: number; errorRate?: number } };
-      lambda?: { status: string; message: string; stats?: { totalFunctions?: number; executionsToday?: number } };
-      backup?: { status: string; message: string; stats?: { lastFull?: string; lastIncremental?: string; nextScheduled?: string } };
-      terraform?: { status: string; message: string; stats?: { lastApply?: string; resourceCount?: number; driftDetected?: boolean } };
-      security?: { status: string; message: string; stats?: { sslExpiry?: string; auth0Status?: string; corsEnabled?: boolean } };
-      performance?: { status: string; message: string; stats?: { cdnHitRate?: string; avgResponseTime?: string; cachingEnabled?: boolean } };
+      s3: { status: string; message: string; stats?: S3Stats };
+      mongodb?: { status: string; message: string; stats?: MongoDBStats };
+      api_gateway?: { status: string; message: string; stats?: APIGatewayStats };
+      lambda?: { status: string; message: string; stats?: LambdaStats };
+      backup?: { status: string; message: string; stats?: BackupStats };
+      terraform?: { status: string; message: string; stats?: TerraformStats };
+      security?: { status: string; message: string; stats?: SecurityStats };
+      performance?: { status: string; message: string; stats?: PerformanceStats };
     };
     note?: string;
   }> {
@@ -154,7 +314,7 @@ export const adminApi = {
     result: {
       status: string;
       message: string;
-      stats?: any;
+      stats?: ServiceStats;
     };
   }> {
     console.log('🔧 AdminAPI: testIndividualService called', serviceName);
@@ -276,7 +436,7 @@ export const adminApi = {
   /**
    * Get comprehensive user analytics and engagement metrics
    */
-  async getUserAnalytics(token: string | null, dateRange: string = '30'): Promise<any> {
+  async getUserAnalytics(token: string | null, dateRange: string = '30'): Promise<UserAnalytics> {
     console.log('🔧 AdminAPI: getUserAnalytics called', { dateRange });
     
     try {
@@ -298,4 +458,5 @@ export const adminApi = {
   }
 };
 
+export { adminApi };
 export default adminApi;

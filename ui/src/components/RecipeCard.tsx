@@ -9,7 +9,7 @@ interface Recipe {
   likes_count?: number;
   liked?: boolean;
   image_url?: string;
-  comments?: number | any[];
+  comments?: number | Array<{ [key: string]: unknown }>;
 }
 
 interface RecipeCardProps {
@@ -42,7 +42,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   return (
     <div
       onClick={() => {
-        const recipeId = (recipe as any)._id || recipe.id;
+        const recipeId = recipe._id || recipe.id;
         if (recipeId) onClick(recipeId);
       }}
       className="bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"

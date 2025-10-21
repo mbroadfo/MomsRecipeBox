@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesConnectivity } from '../../../hooks/useAdminData';
-import { useAdminAuth } from '../../../contexts/AdminContext';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { adminApi } from '../../../utils/adminApi';
 import { SectionWrapper } from '../ErrorBoundary';
 import { AIServicesSkeleton } from '../skeletons';
@@ -15,6 +15,11 @@ interface AIProvider {
   testedAt?: string;
   rateLimitExpiry?: string;
   errorType?: string;
+}
+
+interface TimingData {
+  fastest?: { key: string };
+  slowest?: { key: string };
 }
 
 const UnifiedAISectionContent: React.FC = () => {
@@ -72,7 +77,7 @@ const UnifiedAISectionContent: React.FC = () => {
     return time.includes('ms') ? time : `${time}ms`;
   };
 
-  const getBadgeForProvider = (provider: AIProvider, timing: any) => {
+  const getBadgeForProvider = (provider: AIProvider, timing: TimingData | undefined) => {
     if (!timing || provider.responseTime === 'N/A') return null;
     
     if (timing.fastest?.key === provider.key) {

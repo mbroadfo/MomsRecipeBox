@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RawRecipe } from './useRecipe';
+import { getCurrentUserId } from '../../../types/global';
 
 // Canonical normalized structures
 export interface IngredientItem { name: string; quantity?: string; }
@@ -14,7 +15,7 @@ export interface WorkingRecipe {
   description?: string;
   tags: string[];
   yield?: string;
-  time: { total?: string; prep?: string; cook?: string; [k: string]: any };
+  time: { total?: string; prep?: string; cook?: string; [k: string]: unknown } | Record<string, never>;
   ingredients: IngredientGroup[]; // will always be length 1 now
   instructions: string[]; // standardized on instructions instead of steps
   notes?: string;
@@ -23,19 +24,21 @@ export interface WorkingRecipe {
   visibility?: string; // 'private', 'family', 'public'
   owner_id?: string; // User ID of recipe owner
   original: RawRecipe | null; // keep reference for reverse mapping
+  _instructionsOrigin?: string; // Internal property to track source
 }
 
-const asArray = <T,>(v: any): T[] => Array.isArray(v) ? v : [];
+const asArray = <T,>(v: unknown): T[] => Array.isArray(v) ? v : [];
 
-function normalizeIngredients(raw: any): IngredientGroup[] {
+function normalizeIngredients(raw: unknown): IngredientGroup[] {
   // Always flatten to a single group (remove grouping concept)
   if (!raw) return [{ items: [] }];
   if (Array.isArray(raw)) {
     return [{
-      items: raw.map((i: any) => {
+      items: raw.map((i: unknown) => {
         if (typeof i === 'string') return { name: i };
         if (i && typeof i === 'object') {
-          return { name: typeof i.name === 'string' ? i.name : '', quantity: typeof i.quantity === 'string' ? i.quantity : '' };
+          const item = i as Record<string, unknown>;
+          return { name: typeof item.name === 'string' ? item.name : '', quantity: typeof item.quantity === 'string' ? item.quantity : '' };
         }
         return { name: '' };
       })
@@ -43,9 +46,20 @@ function normalizeIngredients(raw: any): IngredientGroup[] {
   }
   if (typeof raw === 'object') {
     const items: IngredientItem[] = [];
-    Object.values(raw).forEach((arr: any) => {
-      asArray<any>(arr).forEach(i => {
-        if (typeof i === 'string') items.push({ name: i }); else if (i && typeof i === 'object') items.push({ name: typeof i.name === 'string' ? i.name : '', quantity: typeof i.quantity === 'string' ? i.quantity : '' }); else items.push({ name: '' });
+    const rawObj = raw as Record<string, unknown>;
+    Object.values(rawObj).forEach((arr: unknown) => {
+      asArray<unknown>(arr).forEach(i => {
+        if (typeof i === 'string') {
+          items.push({ name: i });
+        } else if (i && typeof i === 'object') {
+          const item = i as Record<string, unknown>;
+          items.push({ 
+            name: typeof item.name === 'string' ? item.name : '', 
+            quantity: typeof item.quantity === 'string' ? item.quantity : '' 
+          });
+        } else {
+          items.push({ name: '' });
+        }
       });
     });
     return [{ items }];
@@ -75,7 +89,7 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     return {
       title: '', subtitle: '', author: '', source: '', description: '', tags: [], yield: '', time: {}, 
       ingredients: [{ items: [] }], instructions: [], notes: '', extraSections: [], image_url: undefined, 
-      visibility: 'private', owner_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
+      visibility: 'private', owner_id: getCurrentUserId(),
       original: null
     };
   }
@@ -84,22 +98,23 @@ export function toWorking(r: RawRecipe | null): WorkingRecipe {
     title: r.title || '',
     subtitle: r.subtitle || '',
     author: r.author || (typeof r.source === 'string' ? '' : r.author) || '',
-    source: typeof r.source === 'string' ? r.source : (r.source && r.source.publication ? r.source.publication : ''),
+    source: typeof r.source === 'string' ? r.source : (r.source && typeof r.source === 'object' && 'publication' in r.source ? String(r.source.publication) : ''),
     description: r.description || '',
     tags: asArray<string>(r.tags),
-    yield: r.yield || r.servings || '',
-    time: r.time || r.timing || {},
+    yield: String(r.yield || r.servings || ''),
+    time: (r.time && typeof r.time === 'object') ? r.time as { [k: string]: unknown } : 
+          (r.timing && typeof r.timing === 'object') ? r.timing as { [k: string]: unknown } : {},
     ingredients: normalizeIngredients(r.ingredients),
     instructions,
     notes: r.notes || '',
     extraSections: extractExtraSections(r),
     image_url: r._id && r.image_url ? `/api/recipes/${r._id}/image` : r.image_url,
     visibility: r.visibility || 'private',
-    owner_id: r.owner_id || (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
+    owner_id: r.owner_id || getCurrentUserId(),
     original: r
   };
   // store origin of instructions in hidden property for reverse mapping
-  (working as any)._instructionsOrigin = from;
+  working._instructionsOrigin = from;
   return working;
 }
 
@@ -151,13 +166,13 @@ export function useWorkingRecipe(raw: RawRecipe | null, locked: boolean) {
 }
 
 // Reverse mapping for save
-export function buildSavePayload(w: WorkingRecipe) {
-  const origin = (w as any)._instructionsOrigin || 'instructions';
+export function buildSavePayload(w: WorkingRecipe): RawRecipe {
+  const origin = w._instructionsOrigin || 'instructions';
   // Always save as a flat array of items
   const ingredients = w.ingredients[0].items
     .filter(i => (i.name && i.name.trim()) || (i.quantity && i.quantity.trim()))
     .map(i => {
-      const obj: any = {};
+      const obj: Record<string, unknown> = {};
       if (i.name && i.name.trim()) obj.name = i.name.trim();
       if (i.quantity && i.quantity.trim()) obj.quantity = i.quantity.trim();
       return obj;
@@ -166,7 +181,7 @@ export function buildSavePayload(w: WorkingRecipe) {
   // Normalize tags to lowercase for storage
   const normalizedTags = w.tags.map(tag => tag.toLowerCase());
 
-  const base: any = {
+  const base: RawRecipe = {
     title: w.title,
     subtitle: w.subtitle,
     author: w.author,
@@ -179,7 +194,7 @@ export function buildSavePayload(w: WorkingRecipe) {
     image_url: w.image_url,
     ingredients,
     visibility: w.visibility || 'private',
-    owner_id: w.owner_id || (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'
+    owner_id: w.owner_id || getCurrentUserId()
   };
 
   if (origin === 'sections') {

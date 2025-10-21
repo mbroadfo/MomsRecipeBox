@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserStatistics } from '../components/admin/UserStatistics';
 import { adminApi } from '../utils/adminApi';
-import { useAdminAuth } from '../contexts/AdminContext';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 import { useAuth0 } from '@auth0/auth0-react';
-import type { AdminUser, InviteUserRequest } from '../auth/types';
+import type { AdminUser, InviteUserRequest, AdminUserStats } from '../auth/types';
 
 export const UserManagementPage: React.FC = () => {
   const { token, isAuthenticated, isAdmin, retryAuth, authError } = useAdminAuth();
   const { isLoading } = useAuth0();
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AdminUserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +36,7 @@ export const UserManagementPage: React.FC = () => {
       
       const response = await adminApi.listUsers(token, currentPage, searchTerm || undefined);
       setUsers(response.users);
-      setStats(response.stats);
+      setStats(response.stats || null);
     } catch (err) {
       console.error('Error loading users:', err);
       setError(err instanceof Error ? err.message : 'Failed to load users');
@@ -155,7 +155,7 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       {/* Statistics */}
-      <UserStatistics stats={stats} users={users} />
+      <UserStatistics stats={stats || undefined} users={users} />
 
       {/* Loading indicator for data fetching */}
       {loading && users.length === 0 && !error && (

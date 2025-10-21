@@ -21,6 +21,13 @@ import AnalyticsPage from './pages/AnalyticsPage';
 const AuthenticatedApp: React.FC = () => {
   const { isLoading, isAuthenticated, loginWithRedirect, error } = useAuth0();
 
+  // Handle automatic login redirect - must be at top level
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated && !error) {
+      loginWithRedirect();
+    }
+  }, [isLoading, isAuthenticated, loginWithRedirect, error]);
+
   // Show loading spinner while Auth0 initializes
   if (isLoading) {
     return (
@@ -59,12 +66,8 @@ const AuthenticatedApp: React.FC = () => {
     );
   }
 
-  // If not authenticated, automatically redirect to Auth0 login
+  // If not authenticated, show loading state while redirect happens
   if (!isAuthenticated) {
-    React.useEffect(() => {
-      loginWithRedirect();
-    }, [loginWithRedirect]);
-
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

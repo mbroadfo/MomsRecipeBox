@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecentUsers } from '../../../hooks/useAdminData';
-import { useAdminAuth } from '../../../contexts/AdminContext';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { SectionWrapper } from '../ErrorBoundary';
 import { RecentUsersSkeleton } from '../skeletons';
 

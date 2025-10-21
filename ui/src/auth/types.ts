@@ -51,9 +51,12 @@ export interface DeleteUserResponse {
   deletedUserId: string;
 }
 
+// Import Auth0 User type
+import type { User } from '@auth0/auth0-react';
+
 // Auth Context Types
 export interface AuthContextType {
-  user: any;
+  user: User | undefined;
   isAuthenticated: boolean;
   isAdmin: boolean;
   token: string | null;
@@ -65,7 +68,7 @@ export interface AuthContextType {
 }
 
 // Admin role checking utilities
-export const checkUserIsAdmin = (user: any): boolean => {
+export const checkUserIsAdmin = (user: User | undefined): boolean => {
   if (!user) return false;
   
   // Check for admin role in custom claims  
@@ -89,13 +92,13 @@ export const checkUserIsAdmin = (user: any): boolean => {
 };
 
 // Check app_metadata.role as well for fallback
-export const checkAppMetadataRole = (user: any): boolean => {
+export const checkAppMetadataRole = (user: User | undefined): boolean => {
   if (!user) return false;
   return user.app_metadata?.role === 'admin';
 };
 
 // Combined admin check
-export const isUserAdmin = (user: any): boolean => {
+export const isUserAdmin = (user: User | undefined): boolean => {
   return checkUserIsAdmin(user) || checkAppMetadataRole(user);
 };
 

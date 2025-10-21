@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAdminAuth } from '../../contexts/AdminContext';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 interface AdminErrorBoundaryProps {
   children: React.ReactNode;

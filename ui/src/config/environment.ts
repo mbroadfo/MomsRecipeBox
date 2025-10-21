@@ -116,7 +116,7 @@ export const getApiUrl = (path: string = ''): string => {
 /**
  * Development logging helper
  */
-export const devLog = (..._args: any[]) => {
+export const devLog = (..._args: unknown[]) => {
   // Logging disabled in production builds
 };
 

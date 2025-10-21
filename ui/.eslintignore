@@ -1,0 +1,16 @@
+# ESLint ignore patterns for UI
+
+# Ignore changelog files (in parent directory)
+../CHANGELOG.md
+../*.changelog.md
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.min.js
+
+# Generated files
+*.generated.*

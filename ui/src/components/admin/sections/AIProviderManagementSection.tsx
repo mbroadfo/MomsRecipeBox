@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesConnectivity } from '../../../hooks/useAdminData';
-import { useAdminAuth } from '../../../contexts/AdminContext';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { adminApi } from '../../../utils/adminApi';
 import { SectionWrapper } from '../ErrorBoundary';
 import { AIServicesSkeleton } from '../skeletons';

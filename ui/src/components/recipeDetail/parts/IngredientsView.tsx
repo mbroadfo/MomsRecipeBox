@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import type { IngredientGroup } from '../hooks/useWorkingRecipe';
+import type { IngredientGroup, IngredientItem } from '../hooks/useWorkingRecipe';
 import { useNavigate } from 'react-router-dom';
 import { addToShoppingList, getShoppingList, deleteShoppingListItem } from '../../../utils/api';
 import { showToast } from '../../../components/Toast';
+
+// Type for shopping list items returned from API
+interface ShoppingListItem {
+  _id?: string;
+  item_id?: string;
+  name?: string;
+  ingredient?: string;
+  recipeId?: string;
+  recipe_id?: string;
+  checked?: boolean;
+}
 
 export const IngredientsView: React.FC<{ 
   groups: IngredientGroup[], 
@@ -48,7 +59,7 @@ export const IngredientsView: React.FC<{
           // Create a map of ingredient names from this recipe that are in the shopping list
           const ingredientMap: Record<string, {id: string, name: string, checked: boolean}> = {};
           
-          data.items.forEach((item: any) => {
+          data.items.forEach((item: ShoppingListItem) => {
             const itemName = item.name || item.ingredient || '';
             const itemRecipeId = item.recipeId || item.recipe_id || '';
             const itemId = item._id || item.item_id || '';
@@ -130,9 +141,9 @@ export const IngredientsView: React.FC<{
     let hasChanges = false;
     
     // Check each ingredient to see if it's already in the shopping list
-    list.items.forEach((item, index) => {
-      const rawName: any = (item as any).name;
-      const rawQty: any = (item as any).quantity;
+    list.items.forEach((item: IngredientItem, index) => {
+      const rawName = item.name;
+      const rawQty = item.quantity;
       const name = typeof rawName === 'string' ? rawName.trim() : '';
       const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
       
@@ -186,9 +197,9 @@ export const IngredientsView: React.FC<{
   
   // Calculate number of checked items and total selectable items
   const checkedCount = Object.values(checkedItems).filter(Boolean).length;
-  const selectableItems = list.items.filter((it) => {
-    const rawName: any = (it as any).name;
-    const rawQty: any = (it as any).quantity;
+  const selectableItems = list.items.filter((it: IngredientItem) => {
+    const rawName = it.name;
+    const rawQty = it.quantity;
     const name = typeof rawName === 'string' ? rawName.trim() : '';
     const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
     return name && !((!name && !!qty) || (!name && !qty)); // Not a group header or empty row
@@ -199,8 +210,8 @@ export const IngredientsView: React.FC<{
     const item = list.items[index];
     if (!item) return '';
     
-    const rawName: any = (item as any).name;
-    const rawQty: any = (item as any).quantity;
+    const rawName = item.name;
+    const rawQty = item.quantity;
     const name = typeof rawName === 'string' ? rawName.trim() : '';
     const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
     
@@ -235,7 +246,7 @@ export const IngredientsView: React.FC<{
       // Get the item ID from the result if available
       let itemId = '';
       if (result && result.items && Array.isArray(result.items)) {
-        const addedItem = result.items.find((i: any) => 
+        const addedItem = result.items.find((i: ShoppingListItem) => 
           (i.name === formattedName || i.ingredient === formattedName) && 
           (i.recipeId === recipeId || i.recipe_id === recipeId)
         );
@@ -248,7 +259,7 @@ export const IngredientsView: React.FC<{
       if (!itemId) {
         const refreshedList = await getShoppingList();
         if (refreshedList && refreshedList.items && Array.isArray(refreshedList.items)) {
-          const addedItem = refreshedList.items.find((i: any) => 
+          const addedItem = refreshedList.items.find((i: ShoppingListItem) => 
             (i.name === formattedName || i.ingredient === formattedName) && 
             (i.recipeId === recipeId || i.recipe_id === recipeId)
           );
@@ -404,9 +415,9 @@ export const IngredientsView: React.FC<{
       const allChecked: Record<number, boolean> = {};
       const itemsToAdd: {index: number, formattedName: string}[] = [];
       
-      list.items.forEach((item, index) => {
-        const rawName: any = (item as any).name;
-        const rawQty: any = (item as any).quantity;
+      list.items.forEach((item: IngredientItem, index) => {
+        const rawName = item.name;
+        const rawQty = item.quantity;
         const name = typeof rawName === 'string' ? rawName.trim() : '';
         const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
         
@@ -446,7 +457,7 @@ export const IngredientsView: React.FC<{
           
           // Update our local shopping list items record
           itemsToAdd.forEach(item => {
-            const addedItem = refreshedList.items.find((i: any) => 
+            const addedItem = refreshedList.items.find((i: ShoppingListItem) => 
               (i.name === item.formattedName || i.ingredient === item.formattedName) && 
               (i.recipeId === recipeId || i.recipe_id === recipeId)
             );
@@ -481,10 +492,10 @@ export const IngredientsView: React.FC<{
       // Get all checked items that need to be removed from the shopping list
       const itemsToRemove: {index: number, formattedName: string}[] = [];
       
-      list.items.forEach((item, index) => {
+      list.items.forEach((item: IngredientItem, index) => {
         if (checkedItems[index]) {
-          const rawName: any = (item as any).name;
-          const rawQty: any = (item as any).quantity;
+          const rawName = item.name;
+          const rawQty = item.quantity;
           const name = typeof rawName === 'string' ? rawName.trim() : '';
           const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
           
@@ -584,9 +595,9 @@ export const IngredientsView: React.FC<{
       </div>
       
       <ul className="ingredients-list">
-        {list.items.map((it, ii) => {
-          const rawName: any = (it as any).name;
-          const rawQty: any = (it as any).quantity;
+        {list.items.map((it: IngredientItem, ii) => {
+          const rawName = it.name;
+          const rawQty = it.quantity;
           const name = typeof rawName === 'string' ? rawName.trim() : '';
           const qty = typeof rawQty === 'string' ? rawQty.trim() : '';
           const isGroup = !name && !!qty; // quantity used as group label when name blank

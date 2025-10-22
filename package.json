@@ -16,6 +16,7 @@
     "start": "npm run profile:start",
     "stop": "npm run profile:stop",
     "restart": "npm run profile:stop && npm run profile:start",
+    "force-rebuild": "node scripts/force-rebuild.js",
     "test": "cd app && npm test",
     "test:admin": "node app/tests/test_admin_auth.js",
     "test:admin:debug": "node app/tests/test_admin_auth.js --debug",

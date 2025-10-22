@@ -37,7 +37,7 @@ if (!domain || !clientId) {
           audience: import.meta.env.VITE_AUTH0_AUDIENCE,
           scope: "openid profile email"
         }}
-        useRefreshTokens={true}
+        useRefreshTokens={false}
         cacheLocation="localstorage"
       >
         <App />

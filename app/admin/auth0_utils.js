@@ -156,33 +156,68 @@ export async function getAuth0UserDetails(userId) {
 export async function inviteAuth0User(email, firstName, lastName, roles = []) {
   const token = await getManagementToken();
   const config = await getAuth0Config();
-  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users`;
   
+  // Step 1: Create user with random password (Auth0 requirement)
+  const userUrl = `https://${config.AUTH0_DOMAIN}/api/v2/users`;
   const userData = {
     email,
     email_verified: false,
     given_name: firstName,
     family_name: lastName,
     name: `${firstName} ${lastName}`,
-    connection: 'Username-Password-Authentication', // Adjust based on your connection
+    connection: 'Username-Password-Authentication',
     password: generateTempPassword(),
-    verify_email: true,
+    verify_email: false, // Don't send verification email - we'll send password reset instead
     app_metadata: {
       roles: roles
     }
   };
   
   try {
-    const response = await axios.post(url, userData, {
+    // Create the user
+    const createResponse = await axios.post(userUrl, userData, {
       headers: { 
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-    return response.data;
+    
+    const newUser = createResponse.data;
+    
+    // Step 2: Send password reset email (becomes "Set Password" for new users)
+    const resetUrl = `https://${config.AUTH0_DOMAIN}/api/v2/dbconnections/change_password`;
+    const resetData = {
+      email: email,
+      connection: 'Username-Password-Authentication'
+    };
+    
+    try {
+      await axios.post(resetUrl, resetData, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Return user data with invite status
+      return {
+        ...newUser,
+        inviteEmailSent: true
+      };
+      
+    } catch (emailError) {
+      // User was created but email failed - return user with error info
+      console.error('Failed to send invite email:', emailError.response?.data || emailError.message);
+      return {
+        ...newUser,
+        inviteEmailSent: false,
+        inviteEmailError: emailError.response?.data || emailError.message
+      };
+    }
+    
   } catch (error) {
     const errorMsg = error.response?.data || error.message;
-    throw new Error(`Failed to invite user: ${error.response?.status || 'Unknown'} ${errorMsg}`);
+    throw new Error(`Failed to create user: ${error.response?.status || 'Unknown'} ${errorMsg}`);
   }
 }
 

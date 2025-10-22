@@ -114,7 +114,37 @@ export async function handler(event, context) {
   try {
     const db = await getDb();
 
-    // Image (GET)
+    // ADMIN ROUTES - Check these FIRST to avoid conflicts with other routes
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
+      console.log(`🔍 Admin route: GET /admin/users`);
+      return addCorsHeaders(await listUsersHandler(event));
+    }
+    if (event.httpMethod === 'POST' && pathOnly === '/admin/users/invite') {
+      console.log(`🔍 Admin route: POST /admin/users/invite`);
+      return addCorsHeaders(await inviteUserHandler(event));
+    }
+    // DELETE USER ROUTE - Match any DELETE to /admin/users/[userId]
+    if (event.httpMethod === 'DELETE' && pathOnly.startsWith('/admin/users/') && pathOnly !== '/admin/users/invite') {
+      console.log(`🔍 Admin route: DELETE ${pathOnly}`);
+      const userId = decodeURIComponent(pathOnly.split('/').pop());
+      event.pathParameters = { id: userId };
+      console.log(`🔍 Delete user request for: ${userId}`);
+      return addCorsHeaders(await deleteUserHandler(event));
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
+      return addCorsHeaders(await systemStatusHandler(event));
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/ai-services-status') {
+      return addCorsHeaders(await aiServicesStatusHandler(event));
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/user-analytics') {
+      return addCorsHeaders(await userAnalyticsHandler(event));
+    }
+    if (event.httpMethod === 'GET' && pathOnly === '/admin/recipe-ids') {
+      return addCorsHeaders(await recipeIdsHandler(event));
+    }
+
+    // IMAGE AND RECIPE ROUTES
     if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
       return addCorsHeaders(await getImage(event));
     }
@@ -205,31 +235,6 @@ export async function handler(event, context) {
       return addCorsHeaders(await getAiProviders(event));
     }
     
-    // Admin routes
-    if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
-      return addCorsHeaders(await listUsersHandler(event));
-    }
-    if (event.httpMethod === 'POST' && pathOnly === '/admin/users/invite') {
-      return addCorsHeaders(await inviteUserHandler(event));
-    }
-    if (event.httpMethod === 'DELETE' && /^\/admin\/users\/[\w|@.-]+$/.test(pathOnly)) {
-      const userId = decodeURIComponent(pathOnly.split('/').pop());
-      event.pathParameters = { id: userId };
-      return addCorsHeaders(await deleteUserHandler(event));
-    }
-    if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
-      return addCorsHeaders(await systemStatusHandler(event));
-    }
-    if (event.httpMethod === 'GET' && pathOnly === '/admin/ai-services-status') {
-      return addCorsHeaders(await aiServicesStatusHandler(event));
-    }
-    if (event.httpMethod === 'GET' && pathOnly === '/admin/user-analytics') {
-      return addCorsHeaders(await userAnalyticsHandler(event));
-    }
-    if (event.httpMethod === 'GET' && pathOnly === '/admin/recipe-ids') {
-      return addCorsHeaders(await recipeIdsHandler(event));
-    }
-
     // Health check endpoint
     if (event.httpMethod === 'GET' && pathOnly === '/health') {
       return addCorsHeaders({

@@ -1,29 +1,29 @@
 {
-  "total_users": 9,
+  "total_users": 10,
   "sample_users": [
     {
+      "picture": "https://s.gravatar.com/avatar/0113cd996b929b9c4ae2b124e30cd632?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fmb.png",
+      "email_verified": true,
+      "name": "mbroadfo@yahoo.com",
+      "last_password_reset": "2025-05-18T01:11:28.705Z",
+      "family_name": "Broadfoot",
       "created_at": "2025-03-24T21:18:33.521Z",
-      "updated_at": "2025-10-17T21:27:35.969Z",
+      "updated_at": "2025-10-20T21:24:28.972Z",
       "identities": [
         {
-          "user_id": "67e1cc293eeee752d79bfd3a",
           "provider": "auth0",
           "isSocial": false,
-          "connection": "Username-Password-Authentication"
+          "connection": "Username-Password-Authentication",
+          "user_id": "67e1cc293eeee752d79bfd3a"
         }
       ],
-      "nickname": "mbroadfo",
-      "email": "mbroadfo@yahoo.com",
-      "name": "mbroadfo@yahoo.com",
-      "family_name": "Broadfoot",
-      "last_password_reset": "2025-05-18T01:11:28.705Z",
       "user_id": "auth0|67e1cc293eeee752d79bfd3a",
-      "picture": "https://s.gravatar.com/avatar/0113cd996b929b9c4ae2b124e30cd632?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fmb.png",
+      "email": "mbroadfo@yahoo.com",
+      "nickname": "mbroadfo",
       "given_name": "Michael",
-      "email_verified": true,
-      "last_login": "2025-10-17T21:27:35.968Z",
+      "last_login": "2025-10-20T21:24:28.972Z",
       "last_ip": "71.33.151.134",
-      "logins_count": 204,
+      "logins_count": 213,
       "app_metadata": {
         "role": "admin",
         "favorites": [
@@ -36,6 +36,39 @@
           "QTCOPA-251026",
           "EDBASF-251007",
           "LGHIGH-250811"
+        ]
+      }
+    },
+    {
+      "name": "tebzxq34f@mozmail.com",
+      "family_name": "Tester",
+      "last_password_reset": "2025-05-27T15:28:57.730Z",
+      "user_id": "auth0|6835da0e0b0cd78b9299c980",
+      "email": "tebzxq34f@mozmail.com",
+      "nickname": "tebzxq34f",
+      "given_name": "Testy",
+      "created_at": "2025-05-27T15:28:14.439Z",
+      "updated_at": "2025-10-20T20:48:51.846Z",
+      "picture": "https://s.gravatar.com/avatar/2c958ea4feb41e310fe865f5fbb923be?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png",
+      "email_verified": true,
+      "identities": [
+        {
+          "provider": "auth0",
+          "isSocial": false,
+          "connection": "Username-Password-Authentication",
+          "user_id": "6835da0e0b0cd78b9299c980"
+        }
+      ],
+      "last_login": "2025-10-20T20:48:51.845Z",
+      "last_ip": "71.33.151.134",
+      "logins_count": 3,
+      "app_metadata": {
+        "favorites": [
+          "LGHIGH-250714",
+          "LGHIGH-250728",
+          "LGHIGH-250825",
+          "SLLEWI-251011",
+          "SBLEWI-251025"
         ]
       }
     },
@@ -68,35 +101,6 @@
           "VEPNW-250927",
           "SGSEGP-251031",
           "SGSEGP-251114"
-        ]
-      }
-    },
-    {
-      "email": "susan.broadfoot@gmail.com",
-      "last_password_reset": "2025-06-15T23:27:34.435Z",
-      "identities": [
-        {
-          "isSocial": false,
-          "connection": "Username-Password-Authentication",
-          "user_id": "684f5699aa8cf057a6b8d426",
-          "provider": "auth0"
-        }
-      ],
-      "name": "susan.broadfoot@gmail.com",
-      "nickname": "susan.broadfoot",
-      "picture": "https://s.gravatar.com/avatar/049b060db07e5591e7dafbd079c7b895?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fsu.png",
-      "given_name": "Susan",
-      "family_name": "Broadfoot",
-      "created_at": "2025-06-15T23:26:17.423Z",
-      "updated_at": "2025-06-15T23:32:09.937Z",
-      "user_id": "auth0|684f5699aa8cf057a6b8d426",
-      "email_verified": true,
-      "last_login": "2025-06-15T23:27:54.852Z",
-      "last_ip": "2601:602:9600:bda0:8992:fe30:2dc2:9f8a",
-      "logins_count": 1,
-      "app_metadata": {
-        "favorites": [
-          "OROUZO-250705"
         ]
       }
     }

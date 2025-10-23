@@ -119,6 +119,7 @@ npm run rebuild:verify   # Generate build verification marker only
 ```
 
 **How it works:**
+
 - Generates unique build markers to verify code deployment
 - Tries efficient container restart first
 - Automatically detects Docker layer caching issues
@@ -126,6 +127,7 @@ npm run rebuild:verify   # Generate build verification marker only
 - Verifies new code is actually running via dedicated Lambda endpoint
 
 **When to use:**
+
 - `rebuild` - General development when code changes aren't reflected
 - `rebuild:force` - When you know Docker caching is the issue
 - Use after making significant code changes to ensure deployment

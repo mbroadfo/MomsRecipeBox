@@ -5,6 +5,51 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-22
+
+### Updated - Streamlined Commit Preparation Workflow
+
+#### 🔄 **WORKFLOW REFINEMENT**: Optimized Development Process
+
+- **Reordered Workflow Steps**: Moved commit message generation to final step for logical flow
+- **Streamlined Process**: Removed redundant completion summaries for efficiency
+- **Enhanced Jobjar Integration**: Simplified jobjar check to final question with root-level JOBJAR.md creation
+- **Process Optimization**: Focused on essential checklist items without verbose status reporting
+
+### Added - Comprehensive Commit Preparation Workflow
+
+#### 🔄 **COMMIT PREPARATION AUTOMATION**: Professional Development Process
+
+- **Automated Commit Workflow**: Complete checklist execution when user says "prepare for commit"
+  - Automatic COPILOT_INSTRUCTIONS.md updates for new architectural insights
+  - Mandatory CHANGELOG.md updates on every commit with structured entries
+  - README.md verification for user-facing changes
+  - Server-specific README maintenance (app, ui, infra standalone responsibilities)
+
+- **API Documentation Automation**: Synchronized documentation maintenance
+  - Immediate Swagger updates when APIs change (`app/docs/swagger.yaml`)
+  - Postman collection synchronization with API modifications
+  - Newman integration for automated API testing where feasible
+  - Environment variable management for profile switching
+
+- **Documentation Organization Standards**: Professional filing system
+  - Technical docs → `docs/technical/`
+  - Developer guides → `docs/developer/`
+  - User guides → `docs/user/`
+  - Architecture docs → `docs/architecture/`
+  - Cross-referencing validation between CHANGELOG and README
+
+- **Quality Assurance Integration**: Comprehensive validation checks
+  - Markdown linting enforcement on all documentation
+  - Internal link integrity verification
+  - Documentation index maintenance
+  - Jobjar project management pattern integration
+
+- **Structured Commit Messages**: Professional commit format generation
+  - Standardized commit types (feat, fix, docs, refactor, test, chore)
+  - Detailed commit descriptions with component breakdown
+  - Automated generation based on session changes
+
 ## [Unreleased] - 2025-10-23
 
 ### Added - Smart Docker Rebuild System & Build Verification

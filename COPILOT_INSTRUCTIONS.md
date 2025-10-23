@@ -34,6 +34,42 @@ This document contains key learnings and common mistakes to avoid when working o
 - **In terminal commands**: Use proper PowerShell syntax for user's environment
 - **Example**: Replace `curl` with Node.js `http.request()` in rebuild scripts
 
+**❌ MISTAKE**: Using bash syntax in Windows PowerShell terminal commands
+**✅ CORRECT**: Use PowerShell-compatible command chaining
+
+```bash
+# ❌ WRONG - bash syntax
+cd ui && npm run dev
+
+# ✅ CORRECT - PowerShell syntax  
+cd ui; npm run dev
+```
+
+**Key Rule**: When user's shell is PowerShell, use `;` for command chaining, not `&&`
+
+### 4. Development Server Management
+
+**❌ MISTAKE**: Starting multiple Vite development servers without checking if one is already running
+**✅ CORRECT**: Always check if development server is already running before starting a new one
+
+```bash
+# ❌ WRONG - blindly starting new server
+cd ui; npm run dev
+
+# ✅ CORRECT - check first, then start if needed
+# Check if localhost:5173 is already serving the UI
+# Vite auto-restarts on file changes, so existing server is usually sufficient
+```
+
+**Key Rules**:
+
+- Vite development server auto-restarts on UI file changes
+- Check `http://localhost:5173` availability before starting new servers
+- Multiple Vite instances cause port conflicts (5173 → 5174 → 5175...)
+- One development server per project is sufficient
+
+## 🔧 Development Patterns
+
 ### 4. Docker Caching Assumptions
 
 **❌ MISTAKE**: Assuming Docker automatically rebuilds when code changes

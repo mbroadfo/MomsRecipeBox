@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-10-22
 
+### Added - Recipe Management UX Safety Improvements (Quick Win #6)
+
+#### 🛡️ **RECIPE DELETE SAFETY**: Enhanced User Experience & Security
+
+- **Edit Mode Delete Restriction**: Delete button now only appears in edit mode, preventing accidental deletions during casual recipe browsing
+- **Owner-Only Delete Access**: Implemented ownership validation - only recipe owners can see/use delete functionality
+- **Enhanced Security Model**: Added `getCurrentUserId() === working.owner_id` permission check for delete operations
+- **Safer User Flow**: Users must intentionally enter edit mode before delete option becomes available
+
+#### 🔧 **TECHNICAL IMPLEMENTATION**: Frontend Permission Controls
+
+- **Modified RecipeDetailContainer.tsx**: Updated delete button conditional logic from `!editMode && !isNew` to `editMode && !isNew && getCurrentUserId() === working.owner_id`
+- **Permission Integration**: Leveraged existing `getCurrentUserId()` helper function from `types/global.ts`
+- **Consistent UX Pattern**: Delete functionality follows edit-mode-only pattern for destructive operations
+- **Cross-Platform Development**: Enhanced COPILOT_INSTRUCTIONS.md with PowerShell vs bash syntax rules and development server management best practices
+
+### Enhanced - Development Workflow Documentation
+
+#### 📚 **COPILOT_INSTRUCTIONS UPDATES**: Cross-Platform Compatibility Rules
+
+- **PowerShell Syntax Patterns**: Added specific guidance for Windows PowerShell command chaining (`;` vs `&&`)
+- **Development Server Management**: Documented best practices for checking existing Vite servers before starting new ones
+- **Port Conflict Prevention**: Added rules to prevent multiple development server instances (5173 → 5174 conflicts)
+- **Terminal Command Accuracy**: Enhanced cross-platform command compatibility documentation
+
 ### Updated - Streamlined Commit Preparation Workflow
 
 #### 🔄 **WORKFLOW REFINEMENT**: Optimized Development Process

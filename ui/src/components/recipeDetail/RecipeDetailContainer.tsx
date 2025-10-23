@@ -352,8 +352,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           {Array.isArray(recipe.comments) && <Comments comments={recipe.comments} />}
           {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
           
-          {/* Only show delete button for existing recipes that aren't in edit mode */}
-          {!editMode && !isNew && (
+          {/* Only show delete button in edit mode for recipe owners */}
+          {editMode && !isNew && getCurrentUserId() === working.owner_id && (
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
               <button 
                 onClick={() => {

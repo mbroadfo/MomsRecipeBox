@@ -5,9 +5,37 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-20
+## [Unreleased] - 2025-10-23
 
-### Added - Project Organization & Environment Configuration Overhaul
+### Added - Smart Docker Rebuild System & Build Verification
+
+#### 🔄 **SMART REBUILD SYSTEM**: Intelligent Docker Cache Management
+
+- **Smart Rebuild (`npm run rebuild`)**: Intelligent rebuild system that tries efficient container restart first
+  - Generates unique build verification markers for deployment validation
+  - Automatically detects Docker layer caching issues preventing code updates
+  - Escalates to nuclear rebuild when cached layers serve stale code
+  - Cross-platform Node.js implementation for PowerShell compatibility
+
+- **Nuclear Rebuild (`npm run rebuild:force`)**: Complete Docker rebuild from scratch
+  - Removes all cached Docker images and build cache
+  - Forces complete container recreation to bypass stubborn caching issues
+  - Includes verification system to confirm new code deployment
+
+- **Build Verification System**: Deployment validation via unique markers
+  - Creates hash-based build markers with timestamps for each rebuild attempt
+  - Dedicated Lambda endpoint `/initializeBuildMarker` for verification triggers
+  - Comprehensive logging and diagnostics for troubleshooting Docker caching
+  - PowerShell-compatible HTTP requests using Node.js instead of shell commands
+
+#### 🐳 **DOCKER CACHING SOLUTION**: Development Reliability Improvements
+
+- **Automatic Cache Detection**: System identifies when Docker serves cached layers instead of new code
+- **Deployment Verification**: Confirms new code is actually running via build marker validation
+- **Documentation**: Updated Swagger API documentation with new system endpoints
+- **Troubleshooting**: Enhanced error messages and diagnostics for Docker-related deployment issues
+
+### Added - Project Organization & Environment Configuration Overhaul (2025-10-20)
 
 #### 📋 **DOCUMENTATION REORGANIZATION**: Professional Structure Implementation
 

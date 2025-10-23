@@ -96,6 +96,22 @@ function handleCorsOptions(event) {
   });
 }
 
+// Initialize build marker system once at module load
+let buildMarkerInitialized = false;
+
+async function initializeBuildMarker() {
+  if (buildMarkerInitialized) return;
+  
+  console.log('🔧 Loading build marker at container startup...');
+  try {
+    await import('./build-marker.js');
+    console.log('✅ Build marker loaded successfully at startup');
+  } catch (e) {
+    console.log('⚠️ Build marker not loaded at startup:', e.message);
+  }
+  buildMarkerInitialized = true;
+}
+
 // AWS Lambda entrypoint
 export async function handler(event, context) {
   console.log('🚀 Lambda handler started');
@@ -246,6 +262,22 @@ export async function handler(event, context) {
           version: '1.0.0',
           environment: process.env.NODE_ENV || 'development',
           mode: 'lambda'
+        })
+      });
+    }
+
+    // Build marker initialization endpoint (for deployment verification)
+    if (event.httpMethod === 'POST' && pathOnly === '/initializeBuildMarker') {
+      console.log('🔧 Build marker initialization requested via POST /initializeBuildMarker');
+      await initializeBuildMarker();
+      return addCorsHeaders({
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'success',
+          message: 'Build marker system initialized',
+          timestamp: new Date().toISOString(),
+          initialized: buildMarkerInitialized
         })
       });
     }

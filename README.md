@@ -108,6 +108,28 @@ Available profiles:
 - **atlas**: MongoDB Atlas cloud database
 - **lambda**: Full AWS cloud deployment
 
+### Smart Rebuild System
+
+The project includes an intelligent Docker rebuild system that solves common development caching issues:
+
+```bash
+npm run rebuild          # Smart rebuild - tries restart first, escalates if needed
+npm run rebuild:force    # Nuclear rebuild - complete Docker rebuild from scratch
+npm run rebuild:verify   # Generate build verification marker only
+```
+
+**How it works:**
+- Generates unique build markers to verify code deployment
+- Tries efficient container restart first
+- Automatically detects Docker layer caching issues
+- Escalates to complete rebuild when cached layers prevent code updates
+- Verifies new code is actually running via dedicated Lambda endpoint
+
+**When to use:**
+- `rebuild` - General development when code changes aren't reflected
+- `rebuild:force` - When you know Docker caching is the issue
+- Use after making significant code changes to ensure deployment
+
 ## 🛡️ Security & Backup
 
 ### Container-Native Security

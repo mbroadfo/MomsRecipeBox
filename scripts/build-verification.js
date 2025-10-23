@@ -61,10 +61,26 @@ function verifyBuild(expectedHash) {
   }
 }
 
-// If called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const marker = generateBuildMarker();
-  console.log('🔄 Restart your container, then run: node scripts/verify-build.js check ' + marker.hash);
+// Command line interface
+if (process.argv[1].endsWith('build-verification.js')) {
+  const command = process.argv[2];
+  
+  if (command === 'generate') {
+    const marker = generateBuildMarker();
+    console.log('🔄 Now restart your container and the build marker will verify deployment');
+  } else if (command === 'check') {
+    const expectedHash = process.argv[3];
+    if (!expectedHash) {
+      console.log('❌ Usage: npm run build:verify check <hash>');
+      process.exit(1);
+    }
+    verifyBuild(expectedHash);
+  } else {
+    // Default: generate marker
+    const marker = generateBuildMarker();
+    console.log('📝 Build marker generated');
+    console.log('🔄 Restart your container to activate verification');
+  }
 }
 
 export { generateBuildMarker, verifyBuild };

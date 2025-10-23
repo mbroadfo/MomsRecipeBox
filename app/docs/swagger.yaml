@@ -22,6 +22,8 @@ tags:
     description: AI-powered recipe creation and extraction operations
   - name: admin
     description: Admin operations for user management and system monitoring
+  - name: system
+    description: System and infrastructure operations for deployment and monitoring
 
 paths:
   /recipes:
@@ -1098,6 +1100,40 @@ paths:
           description: Unauthorized - Admin access required
         '500':
           description: AI services status check failed
+
+  /initializeBuildMarker:
+    post:
+      tags:
+        - system
+      summary: Initialize build marker system (Internal/Development)
+      description: |
+        Initializes the build marker system for deployment verification. 
+        This endpoint is used internally by deployment scripts to verify that 
+        new code has been successfully deployed to the container.
+        
+        **Note**: This is primarily for development and CI/CD use.
+      responses:
+        '200':
+          description: Build marker system initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Build marker system initialized
+                  timestamp:
+                    type: string
+                    format: date-time
+                  initialized:
+                    type: boolean
+                    description: Whether the build marker system is now initialized
+        '500':
+          description: Build marker initialization failed
 
 components:
   securitySchemes:

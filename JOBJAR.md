@@ -2,9 +2,23 @@
 
 Future improvements, features, and tasks identified during development but not immediately implemented.
 
+## New ideas
+
+- Replace shitty web 1.0 popups in the user management flows with nice toast ones
+- Improve the Auth0 Welcome email
+
 ## 🍃 Low Hanging Fruit / Quick Wins (1-3 days each)
 
-### 6. Recipe Management UX Improvements ⭐ **HIGHEST PRIORITY**
+### 15. Fix User Invitation Email Flow ⭐ **NEW HIGHEST PRIORITY**
+
+- Debug why Auth0 change_password API call isn't triggering welcome/setup password emails
+- User creation succeeds but password reset email (configured as welcome for new users) not sent
+- Check Auth0 logs to verify change_password endpoint is being called successfully
+- Investigate Auth0 M2M permissions, email provider config, and delivery settings
+- **Impact**: Critical user onboarding experience - invited users can't log in without email
+- **Effort**: Low - Debug existing API call that should work but isn't triggering emails
+
+### 6. Recipe Management UX Improvements ✅ **COMPLETED**
 
 - Move delete recipe button to edit mode only
 - Restrict delete functionality to recipe owners only
@@ -12,13 +26,15 @@ Future improvements, features, and tasks identified during development but not i
 - **Impact**: High user safety, prevents accidental deletions
 - **Effort**: Low - Simple UI changes and permission checks
 
-### 14. Mock Data Cleanup
+### 14. Admin Mock Data Cleanup
 
-- Identify and remove all mock/test data from production
-- Ensure clean production environment
-- Implement proper data seeding for development only
-- **Impact**: Production hygiene and performance
-- **Effort**: Low - Data cleanup task, no new functionality
+- Remove "Coming Soon" placeholder in Recipe Moderation route (`/admin/recipes`)
+- Clean up development-only mock authentication fallbacks in AdminContext.tsx
+- Remove demo test files from admin/tests/ directory (demo_improvements.js, etc.)
+- Replace hardcoded 'demo-user' fallbacks with proper authentication-only defaults
+- Remove development console logging from admin API functions
+- **Impact**: Professional admin interface, cleaner production environment
+- **Effort**: Low - Remove placeholder UI and development artifacts
 
 ### 4. Cleanup Navigation and Action Bars
 
@@ -127,8 +143,8 @@ Future improvements, features, and tasks identified during development but not i
 
 ### Phase 1: Quick Wins (1-2 weeks total)
 
-1. **#6 - Recipe Management UX** (highest user impact)
-2. **#14 - Mock Data Cleanup** (production hygiene)
+1. **#15 - Fix User Invitation Email Flow** (critical user onboarding)
+2. **#14 - Admin Mock Data Cleanup** (production hygiene)
 3. **#4 - Navigation Cleanup** (user experience)
 4. **#13 - Permissions Review** (security foundation)
 

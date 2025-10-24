@@ -5,6 +5,30 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-23
+
+### Fixed - Auth0 Email Template Branding Issue
+
+#### 🎨 **EMAIL TEMPLATE BRANDING**: Mom's Recipe Box Visual Identity
+
+- **Application Name Detection**: Implemented reliable application detection using `application.name` variable containing 'MomsRecipeBox' or 'Recipe'
+- **Corrected Template Logic**: Fixed conditional branding logic that was incorrectly showing Cruise Viewer blue theme for Mom's Recipe Box users
+- **Dual-App Support**: Enhanced templates to properly detect `MomsRecipeBox-SPA` application name and display appropriate orange branding
+- **Template Files Updated**: Both `welcome_email_template_fixed.html` and `change_password_link_template.html` now use working name-based detection
+
+#### 🔧 **TECHNICAL RESOLUTION**: Debug-Driven Template Development
+
+- **Debug Template Creation**: Built comprehensive debug template to identify actual Auth0 variable values (`application.name`, `application.clientID`, `application.callback_domain`)
+- **Variable Discovery**: Confirmed `application.callback_domain` was empty, making domain-based detection impossible
+- **Name-Based Logic**: Switched from unreliable client ID mapping to simple `application.name contains 'MomsRecipeBox'` detection
+- **Production Testing**: Verified correct orange Mom's Recipe Box branding in live Auth0 password reset emails
+
+#### 📧 **USER EXPERIENCE IMPROVEMENT**: Consistent Brand Identity
+
+- **Visual Consistency**: Mom's Recipe Box users now receive properly branded emails with orange theme, cooking icons, and recipe-focused messaging
+- **Brand Recognition**: Eliminated confusion from incorrect Cruise Viewer branding in Mom's Recipe Box invitation/password reset emails
+- **Template Maintenance**: Simplified template logic for easier future maintenance and debugging
+
 ## [Unreleased] - 2025-10-22
 
 ### Added - Recipe Management UX Safety Improvements (Quick Win #6)

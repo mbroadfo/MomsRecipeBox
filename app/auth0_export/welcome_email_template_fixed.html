@@ -1,0 +1,179 @@
+<!-- 
+Enhanced welcome_email Template with Safe Mom's Recipe Box Branding
+IMPORTANT: Preserves existing Cruise Viewer functionality
+FIXED: Correct client ID detection and URLs
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  
+  {% comment %}
+  Detect application type by name - confirmed working in debug!
+  {% endcomment %}
+  
+  {% assign is_moms_recipe_box = false %}
+  {% if application.name contains 'MomsRecipeBox' or application.name contains 'Recipe' %}
+    {% assign is_moms_recipe_box = true %}
+  {% endif %}
+  
+  {% if is_moms_recipe_box %}
+    <title>Welcome to Mom's Recipe Box</title>
+  {% else %}
+    <title>Welcome to Cruise Viewer</title>
+  {% endif %}
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      
+      {% if is_moms_recipe_box %}
+        background: linear-gradient(135deg, #fef2e6 0%, #fef7f0 100%); /* Warm gradient matching UI component */
+      {% else %}
+        background-color: #f9fafb; /* Existing Cruise Viewer background */
+      {% endif %}
+      
+      color: #333;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    
+    h1 {
+      {% if is_moms_recipe_box %}
+        color: #e67e22; /* Mom's Recipe Box orange */
+      {% else %}
+        color: #2563eb; /* Existing Cruise Viewer blue */
+      {% endif %}
+    }
+    
+    .section {
+      margin-bottom: 16px;
+    }
+    
+    .badge {
+      display: inline-block;
+      
+      {% if is_moms_recipe_box %}
+        background-color: #fde8d7; /* Light orange for MRB */
+        color: #c0392b; /* Darker orange text */
+      {% else %}
+        background-color: #dbeafe; /* Existing Cruise Viewer blue */
+        color: #1e40af;
+      {% endif %}
+      
+      padding: 4px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      
+      {% if is_moms_recipe_box %}
+        background-color: #e67e22; /* Mom's Recipe Box orange */
+      {% else %}
+        background-color: #2563eb; /* Existing Cruise Viewer blue */
+      {% endif %}
+      
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    p {
+      font-size: 15px;
+    }
+    
+    /* Preserve existing Auth0 lock header styling for Cruise Viewer */
+    {% unless is_moms_recipe_box %}
+    .auth0-lock-header-bg {
+      background: url('https://raw.githubusercontent.com/mbroadfo/cruise-viewer/main/public/favicon.jpg') center center / cover no-repeat !important;
+      background-color: transparent !important;
+    }
+    .auth0-lock-header-bg-blur,
+    .auth0-lock-header-bg-solid {
+      display: none !important;
+    }
+    {% endunless %}
+  </style>
+</head>
+
+<body>
+  {% if is_moms_recipe_box %}
+    <!-- Mom's Recipe Box Welcome -->
+    <h1>👩‍🍳 Welcome to Mom's Recipe Box!</h1>
+    <p>A warm, family-inspired space to preserve and share cherished recipes. Every dish tells a story. We're excited to help you organize, share, and discover amazing recipes. Here's what you can do now:</p>
+
+    <div class="section">
+      <div class="badge">📝 Organize Recipes</div>
+      <p>Create, edit, and organize your family recipes with photos, ingredients, and step-by-step instructions.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">👨‍👩‍👧‍👦 Share with Family</div>
+      <p>Share your favorite recipes with family members and build a collection of treasured family dishes.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">🔍 Smart Search</div>
+      <p>Find recipes by ingredients, cuisine type, cooking time, or any keyword. Never lose track of that perfect recipe again.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">❤️ Favorites & Collections</div>
+      <p>Mark your favorite recipes and organize them into collections for special occasions, holidays, or meal planning.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">📱 Mobile Friendly</div>
+      <p>Access your recipes from any device - perfect for cooking in the kitchen with your phone or tablet.</p>
+    </div>
+
+    <p style="margin-top: 24px;">Ready to start building your recipe collection?</p>
+    <a href="https://da389rkfiajdk.cloudfront.net" class="button">🍳 Start Cooking</a>
+
+    <p style="margin-top: 40px;">— The Mom's Recipe Box Team</p>
+    
+  {% else %}
+    <!-- Existing Cruise Viewer Welcome (UNCHANGED) -->
+    <h1>👋 Welcome to Cruise Viewer!</h1>
+    <p>Thank you for joining. We're excited to help you find your next great expedition. Here's what you can do now:</p>
+
+    <div class="section">
+      <div class="badge">🌍 Explore Trips</div>
+      <p>View available trips, ships, and departure options with live availability updated daily.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">📱 Mobile & Dark Mode Ready</div>
+      <p>Our interface adapts to your device and theme for a smooth experience anywhere, anytime.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">🎯 Smart Filters</div>
+      <p>Filter trips by date, destination, ship, duration, and more. Find exactly what you're looking for.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">❤️ Favorites</div>
+      <p>Click the heart icon to favorite trips. Then filter to just your favorites in one tap.</p>
+    </div>
+
+    <div class="section">
+      <div class="badge">🔑 Forgot Your Account?</div>
+      <p>No worries! If you can't remember your password, just click "Forgot Password" on the login page. We'll send a reset link to your registered email so you can get back in quickly.</p>
+    </div>
+
+    <p style="margin-top: 24px;">Ready to dive in?</p>
+    <a href="https://da389rkfiajdk.cloudfront.net" class="button">🚢 Launch Cruise Viewer</a>
+
+    <p style="margin-top: 40px;">— The Cruise Viewer Team</p>
+  {% endif %}
+</body>
+</html>

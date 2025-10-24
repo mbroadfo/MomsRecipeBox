@@ -185,24 +185,27 @@ export async function inviteAuth0User(email, firstName, lastName, roles = []) {
     const newUser = createResponse.data;
     
     // Step 2: Send password reset email (becomes "Set Password" for new users)
-    const resetUrl = `https://${config.AUTH0_DOMAIN}/api/v2/dbconnections/change_password`;
+    // Use the same approach as Cruise Viewer Python code - this actually sends emails!
+    const resetUrl = `https://${config.AUTH0_DOMAIN}/dbconnections/change_password`;
     const resetData = {
+      client_id: process.env.REACT_APP_AUTH0_CLIENT_ID || process.env.AUTH0_MRB_CLIENT_ID,  // Use WEB client, not M2M
       email: email,
       connection: 'Username-Password-Authentication'
     };
     
     try {
-      await axios.post(resetUrl, resetData, {
+      const resetResponse = await axios.post(resetUrl, resetData, {
         headers: { 
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
+          // No Authorization header needed - this is a public endpoint
         }
       });
       
       // Return user data with invite status
       return {
         ...newUser,
-        inviteEmailSent: true
+        inviteEmailSent: true,
+        resetEmailResponse: resetResponse.data
       };
       
     } catch (emailError) {

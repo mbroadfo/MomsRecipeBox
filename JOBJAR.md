@@ -4,19 +4,28 @@ Future improvements, features, and tasks identified during development but not i
 
 ## New ideas
 
-- Replace shitty web 1.0 popups in the user management flows with nice toast ones
-- Improve the Auth0 Welcome email
+<!-- All current ideas have been implemented -->
 
 ## 🍃 Low Hanging Fruit / Quick Wins (1-3 days each)
 
-### 15. Fix User Invitation Email Flow ⭐ **NEW HIGHEST PRIORITY**
+### 16. Modern UI Notifications ✅ **COMPLETED**
 
-- Debug why Auth0 change_password API call isn't triggering welcome/setup password emails
-- User creation succeeds but password reset email (configured as welcome for new users) not sent
-- Check Auth0 logs to verify change_password endpoint is being called successfully
-- Investigate Auth0 M2M permissions, email provider config, and delivery settings
-- **Impact**: Critical user onboarding experience - invited users can't log in without email
-- **Effort**: Low - Debug existing API call that should work but isn't triggering emails
+- ✅ Replaced all alert() and confirm() popups with modern toast notifications and confirmation modals
+- ✅ Updated UserManagementPage.tsx to use showToast() for success/error notifications
+- ✅ Updated RecipeDetailContainer.tsx to use ConfirmModal for delete confirmation and showToast() for feedback
+- ✅ Updated ShoppingListPage.tsx and Header.tsx placeholder alerts with informative toast notifications
+- ✅ Improved user experience with consistent, non-blocking notification system
+- **Impact**: Professional UI/UX with modern notification patterns
+- **Result**: Eliminated jarring browser popups, improved accessibility and user experience
+
+### 15. Fix User Invitation Email Flow ✅ **COMPLETED**
+
+- ✅ Fixed Auth0 change_password API call to use correct public endpoint (not M2M authenticated)
+- ✅ Resolved email template branding issue using application.name detection for Mom's Recipe Box
+- ✅ Updated both welcome and password reset templates with working conditional logic
+- ✅ Verified end-to-end invitation flow with proper email delivery and branding
+- **Impact**: Critical user onboarding experience now fully functional
+- **Result**: Users receive properly branded Mom's Recipe Box invitation emails and can complete setup
 
 ### 6. Recipe Management UX Improvements ✅ **COMPLETED**
 
@@ -143,10 +152,9 @@ Future improvements, features, and tasks identified during development but not i
 
 ### Phase 1: Quick Wins (1-2 weeks total)
 
-1. **#15 - Fix User Invitation Email Flow** (critical user onboarding)
-2. **#14 - Admin Mock Data Cleanup** (production hygiene)
-3. **#4 - Navigation Cleanup** (user experience)
-4. **#13 - Permissions Review** (security foundation)
+1. **#14 - Admin Mock Data Cleanup** ⭐ **NEW HIGHEST PRIORITY** (production hygiene)
+2. **#4 - Navigation Cleanup** (user experience)
+3. **#13 - Permissions Review** (security foundation)
 
 ### Phase 2: High-Value Enhancements (2-3 weeks)
 
@@ -176,4 +184,4 @@ Future improvements, features, and tasks identified during development but not i
 - Consider dependencies between items when planning implementation order
 - Regular review and reprioritization recommended
 
-Last updated: October 22, 2025
+Last updated: October 23, 2025

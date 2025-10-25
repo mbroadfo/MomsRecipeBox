@@ -3,6 +3,8 @@ import { UserStatistics } from '../components/admin/UserStatistics';
 import { adminApi } from '../utils/adminApi';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import { useAuth0 } from '@auth0/auth0-react';
+import { showToast, ToastType } from '../components/Toast';
+import ConfirmModal from '../components/shoppingList/components/ConfirmModal';
 import type { AdminUser, InviteUserRequest, AdminUserStats } from '../auth/types';
 
 export const UserManagementPage: React.FC = () => {
@@ -23,6 +25,7 @@ export const UserManagementPage: React.FC = () => {
     roles: ['user']
   });
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{userId: string, userEmail: string} | null>(null);
 
   const loadUsers = useCallback(async () => {
     if (!token) {
@@ -88,32 +91,34 @@ export const UserManagementPage: React.FC = () => {
       // Reload users list
       await loadUsers();
       
-      alert('User invited successfully!');
+      showToast('User invited successfully!', ToastType.Success);
     } catch (err) {
       console.error('Error inviting user:', err);
-      alert(`Failed to invite user: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      showToast(`Failed to invite user: ${err instanceof Error ? err.message : 'Unknown error'}`, ToastType.Error);
     } finally {
       setInviteLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to delete user ${userEmail}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteUser = (userId: string, userEmail: string) => {
+    setConfirmDelete({userId, userEmail});
+  };
 
-    if (!token) {
-      setError('No authentication token available');
+  const confirmDeleteUser = async () => {
+    if (!confirmDelete || !token) {
+      setConfirmDelete(null);
       return;
     }
 
     try {
-      await adminApi.deleteUser(token, userId);
-      alert('User deleted successfully!');
+      await adminApi.deleteUser(token, confirmDelete.userId);
+      showToast('User deleted successfully!', ToastType.Success);
       await loadUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert(`Failed to delete user: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      showToast(`Failed to delete user: ${err instanceof Error ? err.message : 'Unknown error'}`, ToastType.Error);
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -405,6 +410,18 @@ export const UserManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete User Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        title="Delete User"
+        message={confirmDelete ? `Are you sure you want to delete user ${confirmDelete.userEmail}? This action cannot be undone.` : ''}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => setConfirmDelete(null)}
+        variant="danger"
+      />
     </div>
   );
 };

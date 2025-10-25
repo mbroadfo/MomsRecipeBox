@@ -6,6 +6,8 @@ import { useNewRecipe } from './hooks/useNewRecipe';
 import { useWorkingRecipe, buildSavePayload } from './hooks/useWorkingRecipe';
 import { getCurrentUserId } from '../../types/global';
 import { useImageUpload } from './hooks/useImageUpload';
+import { showToast, ToastType } from '../../components/Toast';
+import ConfirmModal from '../../components/shoppingList/components/ConfirmModal';
 import { Header as RecipeHeader } from './parts/Header';
 import { Tags } from './parts/Tags';
 import { Subtitle } from './parts/Subtitle';
@@ -44,6 +46,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const [editMode, setEditMode] = useState(isNew);
   const [saving, setSaving] = useState(false);
   const [showAIChat, setShowAIChat] = useState(isNew); // Show AI chat by default for new recipes
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Always call hooks, but conditionally use their results
   const existingRecipeHook = useRecipe(recipeId || '');
@@ -170,7 +173,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     try {
       // Validate title
       if (!working.title.trim()) {
-        alert("Recipe title is required");
+        showToast("Recipe title is required", ToastType.Error);
         setSaving(false);
         return;
       }
@@ -228,7 +231,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           }
         } catch (err) {
           console.error("Error in saveNewRecipe:", err);
-          alert(`Failed to save new recipe: ${err instanceof Error ? err.message : String(err)}`);
+          showToast(`Failed to save new recipe: ${err instanceof Error ? err.message : String(err)}`, ToastType.Error);
         }
       } else {
         // Updating an existing recipe
@@ -248,12 +251,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           setEditMode(false);
         } catch (err) {
           console.error("Error updating existing recipe:", err);
-          alert(`Failed to update recipe: ${err instanceof Error ? err.message : String(err)}`);
+          showToast(`Failed to update recipe: ${err instanceof Error ? err.message : String(err)}`, ToastType.Error);
         }
       }
     } catch (e: Error | unknown) { 
       console.error("Error in save function:", e);
-      alert(e instanceof Error ? e.message : 'An error occurred'); 
+      showToast(e instanceof Error ? e.message : 'An error occurred', ToastType.Error); 
     } finally { 
       setSaving(false); 
     }
@@ -263,10 +266,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     try {
       const resp = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
       if (!resp.ok) throw new Error(`Delete failed (${resp.status})`);
+      showToast('Recipe deleted successfully', ToastType.Success);
       navigate('/');
     } catch (e: Error | unknown) { 
-      alert(e instanceof Error ? e.message : 'Failed to delete recipe'); 
+      showToast(e instanceof Error ? e.message : 'Failed to delete recipe', ToastType.Error); 
     }
+    setShowDeleteConfirm(false);
   };
 
   if (loading) return <p style={{ padding: '2rem' }}>Loading...</p>;
@@ -356,11 +361,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           {editMode && !isNew && getCurrentUserId() === working.owner_id && (
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
               <button 
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
-                    deleteRecipe();
-                  }
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 style={{ 
                   background: '#dc2626', 
                   color: '#fff', 
@@ -590,7 +591,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                     
                   } catch (err) {
                     console.error("Error creating recipe:", err);
-                    alert(`Failed to create recipe: ${err instanceof Error ? err.message : String(err)}`);
+                    showToast(`Failed to create recipe: ${err instanceof Error ? err.message : String(err)}`, ToastType.Error);
                   } finally {
                     setSaving(false);
                   }
@@ -600,6 +601,18 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           )}
         </div>
       </div>
+      
+      {/* Delete Recipe Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Recipe"
+        message={`Are you sure you want to delete "${working.title}"? This action cannot be undone.`}
+        confirmText="Delete Recipe"
+        cancelText="Cancel"
+        onConfirm={deleteRecipe}
+        onCancel={() => setShowDeleteConfirm(false)}
+        variant="danger"
+      />
     </div>
   );
 };

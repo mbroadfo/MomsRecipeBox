@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useShoppingList } from './useShoppingList';
 import { useIngredientCategories } from './useIngredientCategories';
 import { useNavigate } from 'react-router-dom';
+import { showToast, ToastType } from '../Toast';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
   Chip, 
@@ -196,7 +197,7 @@ const ShoppingListPage: React.FC = () => {
               
               <button 
                 className="flex items-center gap-1.5 px-5 py-3.5 text-[15.2px] font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-r-lg shadow-md"
-                onClick={() => alert('Add item functionality coming soon')}
+                onClick={() => showToast('Add item functionality coming soon', ToastType.Info)}
                 style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
               >
                 <PlusCircle className="w-5 h-5" />
@@ -219,7 +220,7 @@ const ShoppingListPage: React.FC = () => {
           <div className="control-bar-right">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => alert('Export functionality coming soon')}
+                onClick={() => showToast('Export functionality coming soon', ToastType.Info)}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-lg shadow-md"
               >
                 <Download className="w-4 h-4" />

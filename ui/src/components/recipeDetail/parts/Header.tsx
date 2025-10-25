@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Visibility } from './Visibility';
+import { showToast, ToastType } from '../../Toast';
 
 interface Props {
   title: string;
@@ -226,7 +227,7 @@ export const Header: React.FC<Props> = ({
             {/* Owner badge - clickable and right-justified */}
             {owner_id && (
               <div 
-                onClick={() => alert('Profile/Logout options would go here')}
+                onClick={() => showToast('Profile/Logout options coming soon', ToastType.Info)}
                 style={{ 
                   display: 'flex',
                   alignItems: 'center',

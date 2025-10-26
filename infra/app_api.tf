@@ -110,6 +110,151 @@ resource "aws_api_gateway_rest_api" "app_api" {
 }
 
 ##############################################
+# Lambda function for JWT validation (Custom Authorizer)
+##############################################
+
+# Create ZIP file for JWT authorizer
+data "archive_file" "jwt_authorizer_zip" {
+  count       = var.enable_app_api ? 1 : 0
+  type        = "zip"
+  output_path = "${path.module}/jwt_authorizer.zip"
+  
+  source {
+    content  = file("${path.module}/jwt_authorizer.js")
+    filename = "index.js"
+  }
+  
+  source {
+    content  = file("${path.module}/package.json")
+    filename = "package.json"
+  }
+}
+
+resource "aws_lambda_function" "jwt_authorizer" {
+  count         = var.enable_app_api ? 1 : 0
+  filename      = data.archive_file.jwt_authorizer_zip[count.index].output_path
+  function_name = "mrb-jwt-authorizer"
+  role          = aws_iam_role.jwt_authorizer_role[count.index].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 30
+  source_code_hash = data.archive_file.jwt_authorizer_zip[count.index].output_base64sha256
+
+  environment {
+    variables = {
+      AUTH0_DOMAIN   = var.auth0_domain
+      AUTH0_AUDIENCE = var.auth0_audience
+    }
+  }
+}
+
+##############################################
+# CloudWatch Log Groups with Retention
+##############################################
+resource "aws_cloudwatch_log_group" "app_lambda_logs" {
+  count             = var.enable_app_api ? 1 : 0
+  name              = "/aws/lambda/mrb-app-api"
+  retention_in_days = 3
+}
+
+resource "aws_cloudwatch_log_group" "jwt_authorizer_logs" {
+  count             = var.enable_app_api ? 1 : 0
+  name              = "/aws/lambda/mrb-jwt-authorizer"
+  retention_in_days = 1
+}
+
+##############################################
+# IAM role for JWT authorizer Lambda
+##############################################
+resource "aws_iam_role" "jwt_authorizer_role" {
+  count = var.enable_app_api ? 1 : 0
+  name  = "jwt-authorizer-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+##############################################
+# IAM policy attachment for JWT authorizer
+##############################################
+resource "aws_iam_role_policy_attachment" "jwt_authorizer_basic_execution" {
+  count      = var.enable_app_api ? 1 : 0
+  role       = aws_iam_role.jwt_authorizer_role[count.index].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+##############################################
+# Custom Authorizer for Auth0 JWT Integration
+##############################################
+resource "aws_api_gateway_authorizer" "auth0_jwt" {
+  count                            = var.enable_app_api ? 1 : 0
+  name                             = "auth0-jwt-authorizer"
+  rest_api_id                      = aws_api_gateway_rest_api.app_api[count.index].id
+  authorizer_uri                   = aws_lambda_function.jwt_authorizer[count.index].invoke_arn
+  authorizer_credentials           = aws_iam_role.jwt_authorizer_invocation_role[count.index].arn
+  type                             = "TOKEN"
+  identity_source                  = "method.request.header.Authorization"
+  authorizer_result_ttl_in_seconds = 300
+}
+
+##############################################
+# IAM role for API Gateway to invoke JWT authorizer
+##############################################
+resource "aws_iam_role" "jwt_authorizer_invocation_role" {
+  count = var.enable_app_api ? 1 : 0
+  name  = "jwt-authorizer-invocation-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "apigateway.amazonaws.com"
+      }
+    }]
+  })
+}
+
+##############################################
+# IAM policy for JWT authorizer invocation
+##############################################
+resource "aws_iam_role_policy" "jwt_authorizer_invocation_policy" {
+  count = var.enable_app_api ? 1 : 0
+  name  = "jwt-authorizer-invocation-policy"
+  role  = aws_iam_role.jwt_authorizer_invocation_role[count.index].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = "lambda:InvokeFunction"
+      Resource = aws_lambda_function.jwt_authorizer[count.index].arn
+    }]
+  })
+}
+
+##############################################
+# Lambda permission for API Gateway to invoke JWT authorizer
+##############################################
+resource "aws_lambda_permission" "jwt_authorizer_permission" {
+  count         = var.enable_app_api ? 1 : 0
+  statement_id  = "AllowAPIGatewayInvokeJWTAuthorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.jwt_authorizer[count.index].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.app_api[count.index].execution_arn}/*/*"
+}
+
+##############################################
 # API Gateway resource /recipes
 ##############################################
 resource "aws_api_gateway_resource" "recipes" {
@@ -127,7 +272,8 @@ resource "aws_api_gateway_method" "recipes_get" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipes[count.index].id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 ##############################################
@@ -321,7 +467,8 @@ resource "aws_api_gateway_method" "recipe_get" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "recipe_get_integration" {
@@ -339,7 +486,8 @@ resource "aws_api_gateway_method" "recipe_put" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "PUT"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "recipe_put_integration" {
@@ -357,7 +505,8 @@ resource "aws_api_gateway_method" "recipe_delete" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_id[count.index].id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "recipe_delete_integration" {
@@ -378,7 +527,8 @@ resource "aws_api_gateway_method" "comment_post" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.comment[count.index].id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "comment_post_integration" {
@@ -399,7 +549,8 @@ resource "aws_api_gateway_method" "comment_put" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.comment_id[count.index].id
   http_method   = "PUT"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "comment_put_integration" {
@@ -417,7 +568,8 @@ resource "aws_api_gateway_method" "comment_delete" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.comment_id[count.index].id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "comment_delete_integration" {
@@ -438,7 +590,8 @@ resource "aws_api_gateway_method" "like_post" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.like[count.index].id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 resource "aws_api_gateway_integration" "like_post_integration" {
@@ -471,7 +624,8 @@ resource "aws_api_gateway_method" "recipe_image_put" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
   http_method   = "PUT"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 ##############################################
@@ -495,7 +649,8 @@ resource "aws_api_gateway_method" "recipe_image_delete" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 ##############################################
@@ -561,7 +716,8 @@ resource "aws_api_gateway_method" "recipe_image_get" {
   rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
   resource_id   = aws_api_gateway_resource.recipe_image[count.index].id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
 }
 
 ##############################################

@@ -1,0 +1,10 @@
+{
+  "name": "jwt-authorizer",
+  "version": "1.0.0",
+  "description": "Auth0 JWT Authorizer for API Gateway",
+  "main": "jwt_authorizer.js",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0"
+  }
+}

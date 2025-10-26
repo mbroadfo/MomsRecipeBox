@@ -55,6 +55,7 @@
     "deploy:lambda": "node scripts/deploy-lambda.js",
     "deploy:lambda:prod": "node scripts/deploy-lambda.js --image-tag production",
     "build:container": "node scripts/build-container.js",
+    "build:jwt-authorizer": "node scripts/build-jwt-authorizer.js",
     "backup": "node scripts/backup-mongodb.js",
     "restore": "node scripts/restore-mongodb.js",
     "logs": "docker-compose logs -f"

@@ -11,6 +11,7 @@ Transform MomsRecipeBox Lambda mode to use proper JWT authorization for all API 
 ## 📊 **Current State Analysis**
 
 ### ✅ **What's Working**
+
 - [x] Lambda function deployment and containerization
 - [x] MongoDB Atlas connectivity with correct database name (`moms_recipe_box_dev`)
 - [x] Docker container optimization (187MB → 636KB, 99.7% reduction)
@@ -19,13 +20,16 @@ Transform MomsRecipeBox Lambda mode to use proper JWT authorization for all API 
 - [x] Build verification and deployment automation
 
 ### ❌ **What's Broken**
+
 - [ ] API Gateway requires authentication despite Terraform config showing `authorization = "NONE"`
 - [ ] Test files use dummy JWT tokens with `dummy_signature` causing 403 errors
 - [ ] Inconsistent authentication behavior (POST works, GET/PUT/DELETE fail)
 - [ ] No proper Auth0 JWT validation infrastructure at API Gateway level
 
 ### 🔍 **Root Cause Analysis**
+
 **Issue**: API Gateway is enforcing authentication even though Terraform configuration specifies `authorization = "NONE"` for all routes. This suggests either:
+
 1. Terraform changes haven't been applied to API Gateway
 2. There's a default API Gateway authorizer overriding our settings
 3. Different routes have inconsistent authentication configurations
@@ -35,6 +39,7 @@ Transform MomsRecipeBox Lambda mode to use proper JWT authorization for all API 
 ## 🏗️ **Implementation Strategy: API Gateway JWT Authorizer**
 
 We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
+
 - Better performance (validation happens before Lambda invocation)
 - Enhanced security (AWS-managed validation)
 - Reduced Lambda execution time and cost
@@ -45,6 +50,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
 ### **Phase 1: Infrastructure & Terraform Configuration** 🏗️
 
 #### **Task 1.1: API Gateway JWT Authorizer Setup**
+
 - **Status**: ⏳ Pending
 - **Goal**: Configure proper Auth0 JWT validation at API Gateway level
 - **Actions**:
@@ -56,6 +62,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] Apply Terraform changes with `terraform-mrb` profile
 
 #### **Task 1.2: IAM Permission Updates**
+
 - **Status**: ⏳ Pending
 - **Required Permissions for `mrb-api` user**:
   - [ ] `apigateway:GET` - Read API Gateway configurations
@@ -67,6 +74,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] `iam:AttachRolePolicy` - Attach necessary policies
 
 #### **Task 1.3: Terraform Configuration Files**
+
 - **Status**: ⏳ Pending
 - **Files to Modify**:
   - [ ] `infra/app_api.tf` - Add JWT authorizer resource
@@ -77,6 +85,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
 ### **Phase 2: Auth0 Integration** 🔐
 
 #### **Task 2.1: Auth0 JWT Configuration**
+
 - **Status**: ⏳ Pending
 - **Goal**: Configure Auth0 settings for API Gateway integration
 - **Actions**:
@@ -86,6 +95,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] Validate Auth0 token format and claims
 
 #### **Task 2.2: Environment Variable Updates**
+
 - **Status**: ⏳ Pending
 - **Files to Update**:
   - [ ] `config/deployment-profiles.json` - Add JWT configuration
@@ -93,6 +103,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] Lambda environment variables - Add Auth0 JWT settings
 
 #### **Task 2.3: JWT Token Structure Validation**
+
 - **Status**: ⏳ Pending
 - **Required JWT Claims**:
   - [ ] `iss` (issuer): `https://{AUTH0_DOMAIN}/`
@@ -104,6 +115,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
 ### **Phase 3: Test Infrastructure Update** 🧪
 
 #### **Task 3.1: Replace Dummy JWT Tokens**
+
 - **Status**: ⏳ Pending
 - **Files to Update**:
   - [ ] `app/tests/test_recipes.js` - Replace dummy token
@@ -111,6 +123,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] `app/tests/test_analytics.js` - Update auth strategy
 
 #### **Task 3.2: Real Auth0 Token Generation**
+
 - **Status**: ⏳ Pending
 - **Strategy**: Use Auth0 Machine-to-Machine client for test authentication
 - **Actions**:
@@ -120,6 +133,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] Add token validation to test suite
 
 #### **Task 3.3: Test Suite Enhancement**
+
 - **Status**: ⏳ Pending
 - **Actions**:
   - [ ] Add JWT token validation tests
@@ -130,6 +144,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
 ### **Phase 4: Documentation & Cleanup** 📚
 
 #### **Task 4.1: Update Documentation**
+
 - **Status**: ⏳ Pending
 - **Files to Update**:
   - [ ] `README.md` - Add JWT authentication section
@@ -137,6 +152,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
   - [ ] `docs/` - Create Auth0 integration guide
 
 #### **Task 4.2: Remove Legacy Authentication Code**
+
 - **Status**: ⏳ Pending
 - **Actions**:
   - [ ] Clean up dummy JWT implementations
@@ -146,6 +162,7 @@ We've chosen **API Gateway JWT Authorizer** over Lambda-based validation for:
 ## 🔧 **Technical Implementation Details**
 
 ### **JWT Authorizer Configuration** (Terraform)
+
 ```hcl
 resource "aws_api_gateway_authorizer" "auth0_jwt" {
   name                   = "auth0-jwt-authorizer"
@@ -158,6 +175,7 @@ resource "aws_api_gateway_authorizer" "auth0_jwt" {
 ```
 
 ### **Auth0 Configuration Requirements**
+
 - **Domain**: `momsrecipebox.us.auth0.com`
 - **API Identifier**: `https://momsrecipebox.com/api`
 - **JWKS URI**: `https://momsrecipebox.us.auth0.com/.well-known/jwks.json`
@@ -165,6 +183,7 @@ resource "aws_api_gateway_authorizer" "auth0_jwt" {
 - **Validation**: RS256 signature algorithm
 
 ### **Expected JWT Token Format**
+
 ```json
 {
   "iss": "https://momsrecipebox.us.auth0.com/",
@@ -181,33 +200,39 @@ resource "aws_api_gateway_authorizer" "auth0_jwt" {
 ## 🚨 **Cleanup of Recent Changes**
 
 ### **Changes to Keep** ✅
+
 - **Authentication header additions in test files** - Correct approach, just need real tokens
 - **Comment test variable fix** (`firstComment` → `testComment`) - Legitimate bug fix
 - **Docker configuration optimizations** - Valuable performance improvements
 - **Database name fixes** - Necessary corrections for Atlas connectivity
 
 ### **Changes to Modify** 🔄
+
 - **Replace dummy JWT tokens** - Need real Auth0 tokens for testing
 - **Update API Gateway authorization settings** - Change from "NONE" to JWT authorizer
 
 ## 📈 **Success Criteria**
 
 ### **Phase 1 Complete When:**
+
 - [ ] All API Gateway routes use JWT authorizer
 - [ ] Terraform successfully applies without errors
 - [ ] API Gateway returns proper JWT validation errors (not "Missing Authentication Token")
 
 ### **Phase 2 Complete When:**
+
 - [ ] Valid Auth0 JWT tokens authenticate successfully
 - [ ] Invalid/expired tokens receive proper 401/403 responses
 - [ ] All HTTP methods (GET, POST, PUT, DELETE) work with authentication
 
 ### **Phase 3 Complete When:**
+
 - [ ] Test suite runs successfully with real JWT tokens
 - [ ] All CRUD operations pass authentication
 - [ ] Recipe creation, reading, updating, and deletion work in Lambda mode
 
 ### **Overall Success When:**
+
 - [ ] UI can connect to Lambda API Gateway with JWT authentication
 - [ ] All existing functionality works with proper authentication
 - [ ] No dummy tokens or authentication bypasses remain

@@ -25,7 +25,36 @@ This document contains key learnings and common mistakes to avoid when working o
 **❌ MISTAKE**: Looking for build markers without triggering the initialization endpoint
 **✅ CORRECT**: Call `POST /initializeBuildMarker` before checking Docker logs for marker verification
 
-### 3. PowerShell vs Cross-Platform Compatibility
+### 3. AWS Profile Management
+
+**❌ MISTAKE**: Using wrong AWS profiles for different operations
+**✅ CORRECT**: Always use the appropriate AWS profile for each operation type:
+
+- **Terraform operations**: Use `terraform-mrb` profile (or `mrb-terraform`)
+- **Application deployment/testing**: Use `mrb-api` profile
+- **Never mix profiles**: Each operation type has its own IAM permissions
+
+**Critical Commands**:
+
+```bash
+# ❌ WRONG - using wrong profile for terraform
+cd infra; terraform plan
+
+# ✅ CORRECT - ensure terraform profile first
+npm run aws:terraform  # Switch to terraform-mrb profile
+cd infra; terraform plan
+
+# ❌ WRONG - using wrong profile for Lambda deployment
+npm run deploy:lambda
+
+# ✅ CORRECT - ensure API profile first  
+npm run aws:mrb-api    # Switch to mrb-api profile
+npm run deploy:lambda
+```
+
+**Before any AWS operation, always verify/set the correct profile!**
+
+### 4. PowerShell vs Cross-Platform Compatibility
 
 **❌ MISTAKE**: Using PowerShell commands in npm scripts that should be cross-platform
 **✅ CORRECT**:
@@ -47,7 +76,115 @@ cd ui; npm run dev
 
 **Key Rule**: When user's shell is PowerShell, use `;` for command chaining, not `&&`
 
-### 4. Development Server Management
+### 4. Terminal Management & AWS Profile Context
+
+**❌ MISTAKE**: Not understanding terminal context when running commands
+**✅ CORRECT**: Always be aware of current working directory and AWS profile
+
+**Critical Terminal Rules**:
+
+- **New terminals**: Always start in project root directory
+- **Existing terminals**: Stay in whatever directory you were in previously
+- **New terminals**: AWS profile defaults to `cruise-finder` user
+- **AWS operations**: MUST switch to correct profile before any AWS commands
+
+**Terminal Context Pattern**:
+
+```bash
+# ❌ WRONG - assuming terminal context
+npm run deploy:lambda  # Fails if wrong profile or wrong directory
+
+# ✅ CORRECT - verify context first
+pwd                    # Check current directory
+npm run aws:status     # Check current AWS profile
+npm run aws:mrb-api    # Switch to correct profile for deployment
+npm run deploy:lambda  # Now safe to deploy
+```
+
+**AWS Profile Management Rules**:
+
+- **New terminal = cruise-finder profile**: Always switch before AWS operations
+- **Infrastructure operations** (terraform): Switch to `terraform-mrb` profile first
+- **Application operations** (ECR push, Lambda deploy): Switch to `mrb-api` profile first
+- **PowerShell Environment Variable**: Node.js scripts can't set PowerShell env vars - must set manually
+- **Always verify**: Use `npm run aws:status` to confirm correct profile
+
+**Critical PowerShell AWS Profile Pattern**:
+
+```bash
+# ❌ WRONG - Node.js script sets only its own process env
+npm run aws:mrb-api
+aws sts get-caller-identity  # Still uses cruise-finder!
+
+# ✅ CORRECT - Must manually set PowerShell environment variable
+npm run aws:mrb-api          # Shows which profile to use
+$env:AWS_PROFILE="mrb-api"   # Actually set it in PowerShell
+aws sts get-caller-identity  # Now uses mrb-api correctly
+```
+
+**Why this happens**: Node.js processes can only modify their own environment variables, not the parent PowerShell session. The `npm run aws:mrb-api` script tells you what to set, but you must manually run `$env:AWS_PROFILE="profile-name"` for AWS CLI commands to work correctly.
+
+## 🚨 IAM Policy Management Rules
+
+**❌ CRITICAL MISTAKE**: Attempting to modify AWS IAM policies or permissions without explicit user approval
+**✅ STRICT RULE**:
+
+- **NEVER attempt to modify IAM policies directly via AWS CLI or API calls**
+- **NEVER run commands like**: `aws iam put-user-policy`, `aws iam attach-user-policy`, `terraform apply` for IAM changes
+- **ALWAYS ask for explicit permission first** with clear justification
+
+### When IAM Changes Are Actually Needed
+
+**Required Justification Pattern**:
+
+1. **Clear error message**: Show the exact AWS error indicating missing permissions
+2. **Specific permission needed**: Identify the exact IAM action required (e.g., `lambda:UpdateFunctionConfiguration`)
+3. **Target user/role**: Specify exactly which IAM user/role needs the permission (e.g., `mrb-api` user)
+4. **Business justification**: Explain why this permission is needed for the current task
+5. **Security impact**: Acknowledge what access this grants
+
+**Example Proper Request**:
+
+> "❌ ERROR: `User: arn:aws:iam::123:user/mrb-api is not authorized to perform: lambda:UpdateFunctionConfiguration`
+>
+> 🎯 NEED: Add `lambda:UpdateFunctionConfiguration` permission to `mrb-api` user
+>
+> 📝 REASON: Required to disable startup health checks for Lambda initialization timeout fix
+>
+> 🔒 IMPACT: Grants ability to modify Lambda function configuration (timeout, memory, environment variables)
+>
+> 📍 FILE: Updated policy draft in `docs/iam-policy-mrb-api-additional.json`
+>
+> ❓ **May I apply this IAM policy change?**"
+
+### What TO Do Instead
+
+1. **Document the needed change** in the appropriate policy file (usually in `docs/`)
+2. **Provide clear justification** for why the permission is needed
+3. **Ask explicitly** for permission to apply the change
+4. **Wait for approval** before making any IAM modifications
+5. **Use the correct AWS profile** (`terraform-mrb` for IAM changes, not `mrb-api`)
+
+### IAM Policy Files to Update
+
+- `docs/iam-policy-mrb-api-additional.json` - For mrb-api user permissions
+- `infra/*.tf` - For Terraform-managed IAM resources  
+- Document changes clearly with comments explaining why each permission is needed
+
+**Operation Type Guide**:
+
+```bash
+# Infrastructure changes (terraform apply/destroy/plan)
+npm run aws:terraform
+cd infra; terraform plan
+
+# Application deployment (ECR, Lambda, testing)
+npm run aws:mrb-api
+npm run deploy:lambda
+npm run test:lambda
+```
+
+### 5. Development Server Management
 
 **❌ MISTAKE**: Starting multiple Vite development servers without checking if one is already running
 **✅ CORRECT**: Always check if development server is already running before starting a new one

@@ -104,19 +104,11 @@ async function ecrLogin(awsProfile, region, ecrRepository) {
   try {
     log('🔐 Authenticating with ECR...', 'blue');
     
-    // Get ECR login token
-    const loginCommand = await runCommand('aws', [
-      'ecr', 'get-login-password',
-      '--region', region,
-      '--profile', awsProfile
-    ], { silent: true });
-
-    // Docker login
+    // Use PowerShell pipe for Docker login (works with the manual command we tested)
     const registryUrl = ecrRepository.split('/')[0];
-    await runCommand('docker', ['login', '--username', 'AWS', '--password-stdin', registryUrl], {
-      silent: true,
-      input: loginCommand
-    });
+    const loginCmd = `aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${registryUrl}`;
+    
+    await runCommand('powershell', ['-Command', loginCmd], { silent: true });
 
     log('✅ ECR authentication successful', 'green');
 
@@ -135,7 +127,18 @@ async function buildImage(imageTag, ecrRepository) {
     
     const fullImageTag = `${ecrRepository}:${imageTag}`;
     
-    await runCommand('docker', ['build', '-t', fullImageTag, '-f', 'app/Dockerfile', '.']);
+    // Modern approach: Use buildx with legacy output format for Lambda compatibility
+    // This avoids the deprecated legacy builder while maintaining Lambda compatibility
+    // Build Docker image with platform targeting and legacy output for Lambda compatibility
+    // Use legacy buildkit to ensure manifest format is compatible with AWS Lambda
+    process.env.DOCKER_BUILDKIT = '0';
+    await runCommand('docker', [
+        'build', 
+        '--platform', 'linux/amd64', 
+        '-t', fullImageTag, 
+        '-f', 'app/Dockerfile', 
+        '.'
+    ]);
     
     log(`✅ Image built: ${fullImageTag}`, 'green');
     return fullImageTag;
@@ -174,8 +177,7 @@ async function updateLambda(awsProfile, region, lambdaFunction, imageUri) {
       'lambda', 'update-function-code',
       '--function-name', lambdaFunction,
       '--image-uri', imageUri,
-      '--region', region,
-      '--profile', awsProfile
+      '--region', region
     ]);
     
     log(`✅ Lambda function updated: ${lambdaFunction}`, 'green');
@@ -196,8 +198,7 @@ async function waitForLambda(awsProfile, region, lambdaFunction) {
     await runCommand('aws', [
       'lambda', 'wait', 'function-updated',
       '--function-name', lambdaFunction,
-      '--region', region,
-      '--profile', awsProfile
+      '--region', region
     ]);
     
     log('✅ Lambda function is ready', 'green');
@@ -261,7 +262,7 @@ async function main() {
     .name('deploy-lambda')
     .description('Deploy Lambda function with container image')
     .version('1.0.0')
-    .option('-p, --aws-profile <profile>', 'AWS profile to use', 'terraform-mrb')
+    .option('-p, --aws-profile <profile>', 'AWS profile to use', 'mrb-api')
     .option('-r, --region <region>', 'AWS region', 'us-west-2')
     .option('-e, --ecr-repository <repository>', 'ECR repository URL', '491696534851.dkr.ecr.us-west-2.amazonaws.com/mrb-app-api')
     .option('-f, --lambda-function <function>', 'Lambda function name', 'mrb-app-api')

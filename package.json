@@ -23,6 +23,7 @@
     "test:admin": "node app/tests/test_admin_auth.js",
     "test:admin:debug": "node app/tests/test_admin_auth.js --debug",
     "test:lambda": "node scripts/test-lambda.js mrb-app-api",
+    "test:lambda:comprehensive": "node scripts/tests/test-lambda-comprehensive.js",
     "test:data": "node scripts/add-test-data.js",
     "test:data:recipe": "node scripts/add-test-data.js --type=recipe",
     "test:data:shopping": "node scripts/add-test-data.js --type=shopping",

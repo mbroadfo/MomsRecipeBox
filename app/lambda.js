@@ -96,6 +96,44 @@ function handleCorsOptions(event) {
   });
 }
 
+// Initialize database connection at module load (cold start) for better performance
+let dbInitialized = false;
+let cachedDbConnection = null;
+
+async function initializeDatabase() {
+  if (dbInitialized && cachedDbConnection) {
+    return cachedDbConnection;
+  }
+  
+  console.log('🔧 Initializing database connection...');
+  try {
+    // Temporarily disable heavy health checks for Lambda startup performance
+    const originalHealthCheckTimeout = process.env.HEALTH_CHECK_TIMEOUT_MS;
+    const originalStartupHealthChecks = process.env.ENABLE_STARTUP_HEALTH_CHECKS;
+    const originalDataQualityChecks = process.env.ENABLE_DATA_QUALITY_CHECKS;
+    
+    // Set fast startup for Lambda
+    process.env.HEALTH_CHECK_TIMEOUT_MS = '3000';       // Shorter timeout
+    process.env.ENABLE_STARTUP_HEALTH_CHECKS = 'false';  // Skip heavy startup checks
+    process.env.ENABLE_DATA_QUALITY_CHECKS = 'false';    // Skip data quality checks
+    
+    cachedDbConnection = await getDb();
+    dbInitialized = true;
+    
+    // Restore original settings
+    if (originalHealthCheckTimeout) process.env.HEALTH_CHECK_TIMEOUT_MS = originalHealthCheckTimeout;
+    if (originalStartupHealthChecks) process.env.ENABLE_STARTUP_HEALTH_CHECKS = originalStartupHealthChecks;
+    if (originalDataQualityChecks) process.env.ENABLE_DATA_QUALITY_CHECKS = originalDataQualityChecks;
+    
+    console.log('✅ Database connection initialized for Lambda');
+    return cachedDbConnection;
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error.message);
+    // Don't throw - let individual routes handle database unavailability
+    return null;
+  }
+}
+
 // Initialize build marker system once at module load
 let buildMarkerInitialized = false;
 
@@ -104,8 +142,8 @@ async function initializeBuildMarker() {
   
   console.log('🔧 Loading build marker at container startup...');
   try {
-    await import('./build-marker.js');
-    console.log('✅ Build marker loaded successfully at startup');
+    const buildMarker = await import('./build-marker.js');
+    console.log('✅ Build marker loaded successfully:', buildMarker.BUILD_INFO);
   } catch (e) {
     console.log('⚠️ Build marker not loaded at startup:', e.message);
   }
@@ -128,7 +166,37 @@ export async function handler(event, context) {
   console.log(`🛣️  Processing path: ${pathOnly}, method: ${event.httpMethod}`);
 
   try {
-    const db = await getDb();
+    // Health check endpoint - don't require database connection
+    if (event.httpMethod === 'GET' && pathOnly === '/health') {
+      return addCorsHeaders({
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          environment: process.env.NODE_ENV || 'development',
+          mode: 'lambda'
+        })
+      });
+    }
+
+    // Get database connection (initialized once during cold start) for routes that need it
+    const db = await initializeDatabase();
+    
+    // If database is not available, return error for DB-dependent routes
+    if (!db && (pathOnly.startsWith('/recipes') || pathOnly.startsWith('/shopping-list'))) {
+      console.error('❌ Database unavailable for route:', pathOnly);
+      return addCorsHeaders({
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'Service Temporarily Unavailable',
+          message: 'Database connection not available',
+          retryAfter: 30
+        })
+      });
+    }
 
     // ADMIN ROUTES - Check these FIRST to avoid conflicts with other routes
     if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
@@ -249,21 +317,6 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'GET' && pathOnly === '/ai/providers') {
       return addCorsHeaders(await getAiProviders(event));
-    }
-    
-    // Health check endpoint
-    if (event.httpMethod === 'GET' && pathOnly === '/health') {
-      return addCorsHeaders({
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'healthy',
-          timestamp: new Date().toISOString(),
-          version: '1.0.0',
-          environment: process.env.NODE_ENV || 'development',
-          mode: 'lambda'
-        })
-      });
     }
 
     // Build marker initialization endpoint (for deployment verification)

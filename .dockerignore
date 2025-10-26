@@ -1,0 +1,53 @@
+# Exclude large directories not needed in Lambda
+ui/
+docs/
+infra/
+scripts/
+backups/
+output/
+db/
+
+# Exclude development and test files
+**/*test*
+**/*spec*
+*.test.js
+*.spec.js
+app/tests/
+
+# Git and editor files
+.git/
+.vscode/
+.idea/
+.DS_Store
+
+# Environment and config files
+.env
+.env.*
+*.log
+coverage/
+.nyc_output
+
+# Node modules (use container's npm install)
+node_modules/
+**/node_modules/
+app/node_modules/
+npm-debug.log
+
+# Documentation and README files
+*.md
+CHANGELOG.md
+README.md
+JOBJAR.md
+
+# Docker and infrastructure files
+docker-compose*.yml
+Dockerfile
+.dockerignore
+terraform.*
+*.tf
+*.tfvars
+
+# Package management
+package-lock.json
+yarn.lock
+**/package-lock.json

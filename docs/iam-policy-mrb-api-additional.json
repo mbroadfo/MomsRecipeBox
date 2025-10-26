@@ -16,6 +16,7 @@
         "lambda:InvokeFunction",
         "lambda:GetFunction",
         "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
         "lambda:ListFunctions",
         "lambda:ListVersionsByFunction"
       ],

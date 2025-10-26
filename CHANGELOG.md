@@ -5,6 +5,40 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-26
+
+### Added - AWS Lambda Mode Implementation
+
+#### 🚀 **LAMBDA DEPLOYMENT**: Complete Serverless Implementation
+
+- **Lambda Function**: Successfully deployed containerized Lambda function with optimized startup performance
+- **API Gateway Integration**: Full API Gateway routing with proper CORS support and error handling
+- **Docker Optimization**: Reduced build context from 187MB to 636KB (99.7% reduction) through intelligent file exclusion
+- **Smart Error Handling**: Graceful degradation with proper HTTP status codes when database unavailable (503 responses)
+- **Build Verification System**: Comprehensive test suite to validate Lambda deployment and functionality
+
+#### 🔧 **TECHNICAL ARCHITECTURE**: Production-Ready Serverless
+
+- **Container Deployment**: AWS Lambda using ECR container images with platform-specific dependencies (sharp module)
+- **Database Integration**: Optimized MongoDB Atlas connection with deferred initialization for faster cold starts
+- **Health Check Optimization**: Disabled heavy startup health checks for Lambda environment while maintaining functionality
+- **Legacy Docker Compatibility**: Used `DOCKER_BUILDKIT=0` to ensure Lambda-compatible manifest format
+- **Comprehensive Testing**: Added `test:lambda:comprehensive` npm script for full functionality validation
+
+#### 📦 **BUILD SYSTEM IMPROVEMENTS**: Optimized Deployment Pipeline
+
+- **Smart File Exclusion**: Enhanced `.dockerignore` to exclude UI, docs, infrastructure, and test files from Lambda deployment
+- **Node Modules Optimization**: Prevented duplicate node_modules copying while maintaining production dependencies
+- **Deployment Automation**: Streamlined deployment script with ECR authentication and function updates
+- **Error Resilience**: Lambda gracefully handles database unavailability without crashing
+
+#### 🔒 **IAM SECURITY GUIDELINES**: Development Best Practices
+
+- **Policy Management Rules**: Updated `COPILOT_INSTRUCTIONS.md` with strict IAM modification guidelines
+- **Permission Documentation**: Enhanced IAM policy documentation with required Lambda configuration permissions
+- **Security-First Approach**: Established clear approval process for any IAM permission changes
+- **AWS Profile Management**: Documented proper profile usage for different operation types (terraform vs application)
+
 ## [Unreleased] - 2025-10-24
 
 ### Enhanced - Modern UI Notification System

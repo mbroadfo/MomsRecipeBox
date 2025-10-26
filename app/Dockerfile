@@ -8,11 +8,14 @@ WORKDIR /var/task
 RUN yum update -y && yum install -y aws-cli jq
 
 # Copy package.json and install dependencies
-COPY package*.json ./
+COPY app/package*.json ./
 RUN npm install --omit=dev
+# Reinstall sharp specifically for Linux platform
+RUN npm install --platform=linux --arch=x64 sharp
 
-# Copy the application code
-COPY . . 
+# Copy only the app directory (not entire project)
+COPY app/ ./app/
+COPY config/ ./config/
 
 # Default command will be overridden in docker-compose based on APP_MODE
-CMD [ "lambda.handler" ]
+CMD [ "app/lambda.handler" ]

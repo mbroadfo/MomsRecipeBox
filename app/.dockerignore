@@ -11,3 +11,21 @@ npm-debug.log
 .vscode
 .idea
 .DS_Store
+
+# Exclude large directories not needed in Lambda
+../ui
+../docs
+../infra
+../scripts
+../backups
+../output
+
+# Exclude test files
+tests/
+**/*test*
+**/*spec*
+
+# Build artifacts and logs
+*.log
+coverage/
+.nyc_output

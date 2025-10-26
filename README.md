@@ -151,9 +151,26 @@ npm run rebuild:verify   # Generate build verification marker only
 ### Authentication
 
 - Auth0 integration with secure user management
+- JWT-based API authentication for all Lambda mode operations
 - Role-based access control (user, admin)
 - Family group sharing with privacy controls
-- Secure API endpoints with JWT validation
+- **Status**: JWT authorization implementation in progress (see `docs/JWT_AUTHORIZATION_PLAN.md`)
+
+### Current Lambda Mode Status
+
+**✅ Infrastructure Working:**
+- Lambda function deployment and containerization
+- MongoDB Atlas connectivity with proper database configuration
+- API Gateway routing and CORS handling
+- Recipe creation and database operations confirmed working
+
+**🚧 Authentication In Progress:**
+- API Gateway JWT authorizer implementation planned
+- Auth0 JWT validation infrastructure being configured
+- Test suite enhancement for proper JWT token handling
+- Full CRUD operations with authentication pending completion
+
+For detailed implementation progress, see [`docs/JWT_AUTHORIZATION_PLAN.md`](docs/JWT_AUTHORIZATION_PLAN.md).
 
 ## 🧪 Testing & Development
 

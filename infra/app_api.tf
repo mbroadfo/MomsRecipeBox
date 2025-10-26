@@ -80,7 +80,7 @@ resource "aws_lambda_function" "app_lambda" {
       # MongoDB Atlas Configuration
       # ==============================================
       MONGODB_MODE = "atlas"
-      MONGODB_DB_NAME = "moms_recipe_box"
+      MONGODB_DB_NAME = "moms_recipe_box_dev"
       
       # ==============================================
       # AWS Configuration

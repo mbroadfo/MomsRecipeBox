@@ -57,7 +57,7 @@ async function getDatabaseHealth() {
           dataQualityPercentage: dataQualityPercentage,
           cleanRecipes: cleanRecipes,
           lastChecked: health.timestamp,
-          dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+          dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev'
         }
       };
     }
@@ -81,7 +81,7 @@ async function getDatabaseHealth() {
       message: `${environment} - Database health error: ${error.message}`,
       stats: {
         environment: environment,
-        dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box'
+        dbName: process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev'
       }
     };
   }

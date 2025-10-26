@@ -5,7 +5,7 @@ const { MongoClient } = require('mongodb');
 
 async function getRecipeIds() {
   const mongoUri = process.env.MONGODB_ATLAS_URI || process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box';
+  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
   
   const client = new MongoClient(mongoUri);
   

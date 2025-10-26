@@ -4,7 +4,29 @@ import { config } from 'dotenv';
 
 config({ path: '../.env' });
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
+// Environment-aware base URL configuration
+function getBaseUrl() {
+  // Check for explicit environment variables first
+  if (process.env.API_BASE_URL) {
+    return process.env.API_BASE_URL;
+  }
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+  
+  // Auto-detect based on execution context
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
+    // Lambda mode - use API Gateway URL
+    return 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
+  }
+  
+  // Express mode (local development)
+  return 'http://localhost:3000';
+}
+
+const API_BASE_URL = getBaseUrl();
+console.log(`🔧 Test environment detected: ${API_BASE_URL.includes('localhost') ? 'EXPRESS' : 'LAMBDA'} mode`);
+console.log(`🌐 Base URL: ${API_BASE_URL}`);
 
 // Test data
 const testAuth = {

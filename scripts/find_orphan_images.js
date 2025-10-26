@@ -44,7 +44,7 @@ async function findOrphanImages() {
     
     mongoClient = new MongoClient(mongoUri);
     await mongoClient.connect();
-    const db = mongoClient.db(process.env.MONGODB_DB_NAME || 'moms_recipe_box');
+    const db = mongoClient.db(process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev');
     const recipesCollection = db.collection('recipes');
     
     // Get all recipe IDs from the database

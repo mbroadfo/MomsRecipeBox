@@ -4,8 +4,34 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { promisify } from 'util';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+import 'dotenv/config';
 
-const BASE_URL = 'http://localhost:3000';
+// Environment-aware base URL configuration
+const getBaseUrl = () => {
+  const envUrl = process.env.APP_BASE_URL;
+  const mode = process.env.APP_MODE || 'express';
+  
+  if (envUrl) {
+    console.log(`🔧 Using configured URL: ${envUrl}`);
+    return envUrl;
+  }
+  
+  // Default URLs based on mode
+  switch (mode) {
+    case 'lambda':
+      const lambdaUrl = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
+      console.log(`🚀 Lambda mode detected, using: ${lambdaUrl}`);
+      return lambdaUrl;
+    case 'express':
+    default:
+      const expressUrl = 'http://localhost:3000';
+      console.log(`🏠 Express mode, using: ${expressUrl}`);
+      return expressUrl;
+  }
+};
+
+const BASE_URL = getBaseUrl();
 // Use absolute paths to ensure files are found correctly regardless of working directory
 // Get the current file URL and convert to a directory path (ESM equivalent of __dirname)
 import { fileURLToPath } from 'url';
@@ -54,6 +80,19 @@ let testResults = {
   cleanupRecipe: { success: false, details: null },
 };
 
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
+  }
+}
+
 async function logStep(message) {
   const divider = '-'.repeat(80);
   console.log(`\n${divider}`);
@@ -64,7 +103,8 @@ async function logStep(message) {
 async function createTestRecipe() {
   logStep('STEP 1: Creating test recipe');
   try {
-    const response = await axios.post(`${BASE_URL}/recipes`, testRecipe);
+    const authHeaders = await getAuthHeaders();
+    const response = await axios.post(`${BASE_URL}/recipes`, testRecipe, { headers: authHeaders });
     recipeId = response.data._id;
     console.log(`✅ Recipe created with ID: ${recipeId}`);
     testResults.createRecipe.success = true;
@@ -83,6 +123,7 @@ async function createTestRecipe() {
 async function uploadPngImage() {
   logStep('STEP 2: Uploading PNG image to recipe');
   try {
+    const authHeaders = await getAuthHeaders();
     const imageBuffer = await readFile(TEST_PNG_PATH);
     const base64Image = imageBuffer.toString('base64');
     
@@ -91,7 +132,7 @@ async function uploadPngImage() {
     const response = await axios.put(`${BASE_URL}/recipes/${recipeId}/image`, {
       imageBase64: base64Image,
       contentType: 'image/png'
-    });
+    }, { headers: authHeaders });
     
     console.log(`✅ PNG image uploaded successfully`);
     console.log(`Response:`, response.data);
@@ -111,9 +152,11 @@ async function uploadPngImage() {
 async function getImage(filename = 'test_get_image.png') {
   logStep('STEP 3: Retrieving PNG image from recipe');
   try {
+    const authHeaders = await getAuthHeaders();
     const response = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
       responseType: 'arraybuffer',
       headers: {
+        ...authHeaders,
         'Accept': 'image/png'
       }
     });
@@ -153,13 +196,14 @@ async function getImage(filename = 'test_get_image.png') {
 async function updateToJpgImage() {
   logStep('STEP 4: Updating image from PNG to JPG');
   try {
+    const authHeaders = await getAuthHeaders();
     const imageBuffer = await readFile(TEST_JPG_PATH);
     const base64Image = imageBuffer.toString('base64');
     
     const response = await axios.put(`${BASE_URL}/recipes/${recipeId}/image`, {
       imageBase64: base64Image,
       contentType: 'image/jpeg'
-    });
+    }, { headers: authHeaders });
     
     console.log(`✅ JPG image updated successfully`);
     console.log(`Response:`, response.data);
@@ -170,6 +214,7 @@ async function updateToJpgImage() {
     const getJpgResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
       responseType: 'arraybuffer',
       headers: {
+        ...authHeaders,
         'Accept': 'image/jpeg'
       }
     });
@@ -210,7 +255,8 @@ async function updateToJpgImage() {
 async function deleteImage() {
   logStep('STEP 6: Deleting image from recipe');
   try {
-    const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}/image`);
+    const authHeaders = await getAuthHeaders();
+    const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}/image`, { headers: authHeaders });
     
     console.log(`✅ Image deleted successfully`);
     console.log(`Response:`, response.data);
@@ -219,6 +265,7 @@ async function deleteImage() {
     const retrievedImageResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
       responseType: 'arraybuffer',
       headers: {
+        ...authHeaders,
         'Accept': 'image/png'
       }
     });
@@ -251,7 +298,8 @@ async function deleteImage() {
 async function cleanupRecipe() {
   logStep('STEP 7: Cleaning up test recipe');
   try {
-    const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}`);
+    const authHeaders = await getAuthHeaders();
+    const response = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, { headers: authHeaders });
     console.log(`✅ Recipe deleted successfully`);
     console.log(`Response:`, response.data);
     testResults.cleanupRecipe = { success: true, details: response.data };
@@ -308,6 +356,27 @@ async function generateTestReport() {
 
 async function runAllTests() {
   logStep('STARTING IMAGE API TEST SUITE');
+  
+  console.log(`🎯 Target API: ${BASE_URL}`);
+  console.log(`🔧 Mode: ${process.env.APP_MODE || 'express'}`);
+  
+  console.log('\n===== Validating Auth0 Configuration =====');
+  try {
+    await validateConfig();
+    console.log('✅ Auth0 configuration validated');
+  } catch (error) {
+    console.error('❌ Auth0 configuration validation failed:', error.message);
+    process.exit(1);
+  }
+
+  console.log('\n===== Generating JWT Token =====');
+  try {
+    await getBearerToken();
+    console.log('✅ JWT token generated successfully');
+  } catch (error) {
+    console.error('❌ JWT token generation failed:', error.message);
+    process.exit(1);
+  }
   
   // Create a recipe to work with
   if (await createTestRecipe()) {

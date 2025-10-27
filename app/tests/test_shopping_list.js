@@ -6,10 +6,25 @@
 import axios from 'axios';
 import assert from 'assert';
 import { config } from 'dotenv';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
 config();
 
 const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 const TEST_USER_ID = 'auth0|testuser';
+
+// Function to get auth headers
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
+  }
+}
 
 // For storing generated IDs during the test
 let testRecipeId;
@@ -22,6 +37,11 @@ async function runTests() {
   console.log('Starting shopping list API tests...');
   
   try {
+    // Validate Auth0 configuration
+    console.log('\n===== Validating Auth0 Configuration =====');
+    await validateConfig();
+    console.log('✅ Auth0 configuration validated');
+    
     // Step 1: Create a test recipe to use with the shopping list
     console.log('\n===== Creating test recipe for shopping list items =====');
     const testRecipe = {
@@ -44,7 +64,7 @@ async function runTests() {
       ]
     };
     
-    const createRecipeResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe);
+    const createRecipeResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe, { headers: await getAuthHeaders() });
     testRecipeId = createRecipeResponse.data._id;
     console.log(`Test recipe created with ID: ${testRecipeId}`);
     assert.ok(testRecipeId, 'Recipe should have been created with an ID');
@@ -67,7 +87,7 @@ async function runTests() {
     const addItemsResponse = await axios.post(`${BASE_URL}/shopping-list/add`, {
       items,
       user_id: TEST_USER_ID
-    });
+    }, { headers: await getAuthHeaders() });
     
     console.log('Items added to shopping list:');
     console.log(JSON.stringify(addItemsResponse.data, null, 2));
@@ -78,7 +98,7 @@ async function runTests() {
     
     // Step 3: Get shopping list to verify items were added
     console.log('\n===== Getting shopping list =====');
-    const getShoppingListResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`);
+    const getShoppingListResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list retrieved:');
     console.log(JSON.stringify(getShoppingListResponse.data, null, 2));
@@ -101,7 +121,8 @@ async function runTests() {
       {
         checked: true,
         user_id: TEST_USER_ID
-      }
+      },
+      { headers: await getAuthHeaders() }
     );
     
     console.log('Item updated:');
@@ -112,7 +133,7 @@ async function runTests() {
     
     // Step 5: Verify the update
     console.log('\n===== Verifying item update =====');
-    const verifyUpdateResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`);
+    const verifyUpdateResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     const updatedItem = verifyUpdateResponse.data.items.find(item => item.item_id === testItemIds[0]);
     console.log('Updated item verified:');
@@ -122,7 +143,7 @@ async function runTests() {
     
     // Step 6: Delete a shopping list item
     console.log('\n===== Deleting shopping list item =====');
-    const deleteItemResponse = await axios.delete(`${BASE_URL}/shopping-list/item/${testItemIds[0]}?user_id=${TEST_USER_ID}`);
+    const deleteItemResponse = await axios.delete(`${BASE_URL}/shopping-list/item/${testItemIds[0]}?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     console.log('Item deleted:');
     console.log(JSON.stringify(deleteItemResponse.data, null, 2));
@@ -132,7 +153,7 @@ async function runTests() {
     
     // Step 7: Verify the deletion
     console.log('\n===== Verifying item deletion =====');
-    const verifyDeletionResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`);
+    const verifyDeletionResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after deletion:');
     console.log(JSON.stringify(verifyDeletionResponse.data, null, 2));
@@ -158,7 +179,7 @@ async function runTests() {
     await axios.post(`${BASE_URL}/shopping-list/add`, {
       items: moreItems,
       user_id: TEST_USER_ID
-    });
+    }, { headers: await getAuthHeaders() });
     
     // Step 9: Test check all functionality
     console.log('\n===== Testing check all functionality =====');
@@ -167,7 +188,8 @@ async function runTests() {
       {
         action: 'check_all',
         user_id: TEST_USER_ID
-      }
+      },
+      { headers: await getAuthHeaders() }
     );
     
     console.log('Check all response:');
@@ -178,7 +200,7 @@ async function runTests() {
     
     // Step 10: Verify all items are checked
     console.log('\n===== Verifying all items checked =====');
-    const verifyCheckedResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`);
+    const verifyCheckedResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after check all:');
     console.log(JSON.stringify(verifyCheckedResponse.data, null, 2));
@@ -193,7 +215,8 @@ async function runTests() {
       {
         action: 'delete_all',
         user_id: TEST_USER_ID
-      }
+      },
+      { headers: await getAuthHeaders() }
     );
     
     console.log('Clear all response:');
@@ -204,7 +227,7 @@ async function runTests() {
     
     // Step 12: Verify all items are gone
     console.log('\n===== Verifying all items cleared =====');
-    const verifyClearResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`);
+    const verifyClearResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after clear all:');
     console.log(JSON.stringify(verifyClearResponse.data, null, 2));
@@ -217,7 +240,7 @@ async function runTests() {
       await axios.post(`${BASE_URL}/shopping-list/add`, {
         items: [],
         user_id: TEST_USER_ID
-      });
+      }, { headers: await getAuthHeaders() });
       assert.fail('Should throw error for empty items list');
     } catch (error) {
       assert.strictEqual(error.response.status, 400, 'Expected 400 status code for empty items list');
@@ -232,7 +255,8 @@ async function runTests() {
         {
           checked: true,
           user_id: TEST_USER_ID
-        }
+        },
+        { headers: await getAuthHeaders() }
       );
       assert.fail('Should throw error for non-existent item update');
     } catch (error) {
@@ -242,7 +266,7 @@ async function runTests() {
     
     // Step 15: Clean up - Delete the test recipe
     console.log('\n===== Cleaning up - Deleting test recipe =====');
-    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${testRecipeId}`);
+    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${testRecipeId}`, { headers: await getAuthHeaders() });
     console.log('Test recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     
@@ -269,7 +293,7 @@ async function runTests() {
     console.log('\nAttempting cleanup after error...');
     try {
       if (testRecipeId) {
-        await axios.delete(`${BASE_URL}/recipes/${testRecipeId}`).catch(() => {});
+        await axios.delete(`${BASE_URL}/recipes/${testRecipeId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
     } catch (cleanupError) {
       console.error('Error during cleanup:', cleanupError.message);

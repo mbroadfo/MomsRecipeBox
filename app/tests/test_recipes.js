@@ -29,6 +29,7 @@
 
 import axios from 'axios';
 import assert from 'assert';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
 import 'dotenv/config';
 
 // Environment-aware base URL configuration
@@ -57,13 +58,19 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
-// Test authentication headers (needed for Lambda mode)
-const testAuth = {
-  headers: {
-    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21vbXNyZWNpcGVib3gudXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfHRlc3R1c2VyIiwiYXVkIjoiaHR0cHM6Ly9tb21zcmVjaXBlYm94LmNvbS9hcGkiLCJpYXQiOjE3MjYyNTYzMjksImV4cCI6OTk5OTk5OTk5OSwiYXpwIjoidGVzdF9jbGllbnRfaWQiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZ3R5IjoicGFzc3dvcmQiLCJwZXJtaXNzaW9ucyI6WyJhZG1pbjpmdWxsX2FjY2VzcyJdLCJodHRwczovL21vbXNyZWNpcGVib3guY29tL3JvbGVzIjpbIkFETUlOIl19.dummy_signature',
-    'Content-Type': 'application/json'
+// Auth0 JWT token generation for API authentication
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
   }
-};
+}
 
 // Test data for recipe creation
 const testRecipe = {
@@ -100,9 +107,19 @@ async function runTests() {
   console.log(`🔧 Mode: ${process.env.APP_MODE || 'express'}`);
   
   try {
+    // Validate Auth0 configuration
+    console.log('\n===== Validating Auth0 Configuration =====');
+    validateConfig();
+    console.log('✅ Auth0 configuration validated');
+
+    // Generate authentication headers
+    console.log('\n===== Generating JWT Token =====');
+    const authHeaders = await getAuthHeaders();
+    console.log('✅ JWT token generated successfully');
+    
     // Step 1: Create a new recipe
     console.log('\n===== Creating new recipe =====');
-    const createResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe, testAuth);
+    const createResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe, { headers: authHeaders });
     console.log(`Recipe created with ID: ${createResponse.data._id}`);
     console.log(JSON.stringify(createResponse.data, null, 2));
     
@@ -114,15 +131,15 @@ async function runTests() {
     
     // Step 2: List all recipes
     console.log('\n===== Listing recipes =====');
-    const listResponse = await axios.get(`${BASE_URL}/recipes`, testAuth);
+    const listResponse = await axios.get(`${BASE_URL}/recipes`, { headers: authHeaders });
     console.log('Recipe list retrieved:');
     console.log(`Found ${listResponse.data.recipes.length} recipes`);
     assert.strictEqual(listResponse.status, 200, 'Expected 200 status code for list recipes');
     assert.ok(Array.isArray(listResponse.data.recipes), 'Expected recipes array in response');
     
     // Step 3: Fetch the created recipe
-    console.log('\n===== Fetching recipe =====');
-    const getResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, testAuth);
+    console.log('===== Fetching recipe =====');
+    const getResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, { headers: authHeaders });
     console.log('Recipe retrieved successfully:');
     console.log(JSON.stringify(getResponse.data, null, 2));
     assert.strictEqual(getResponse.data._id, recipeId, 'Recipe ID mismatch');
@@ -138,14 +155,14 @@ async function runTests() {
     const updateRecipeResponse = await axios.put(
       `${BASE_URL}/recipes/${recipeId}`,
       updatedRecipe,
-      testAuth
+      { headers: authHeaders }
     );
     console.log('Recipe updated:');
     console.log(JSON.stringify(updateRecipeResponse.data, null, 2));
     
     // Step 5: Verify the recipe was updated
     console.log('\n===== Verifying recipe update =====');
-    const updatedGetResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, testAuth);
+    const updatedGetResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, { headers: authHeaders });
     console.log('Updated recipe retrieved:');
     console.log(JSON.stringify(updatedGetResponse.data, null, 2));
     assert.strictEqual(updatedGetResponse.data.title, "Updated Recipe Title", 'Recipe title not updated correctly');
@@ -157,7 +174,7 @@ async function runTests() {
     const likeResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/like`,
       likeToggle,
-      testAuth
+      { headers: authHeaders }
     );
     console.log('Like toggled:');
     console.log(JSON.stringify(likeResponse.data, null, 2));
@@ -167,14 +184,14 @@ async function runTests() {
     const unlikeResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/like`,
       likeToggle,
-      testAuth
+      { headers: authHeaders }
     );
     console.log('Like toggled again:');
     console.log(JSON.stringify(unlikeResponse.data, null, 2));
     
     // Step 8: Delete the recipe
     console.log('\n===== Deleting recipe =====');
-    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, testAuth);
+    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, { headers: authHeaders });
     console.log('Recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     

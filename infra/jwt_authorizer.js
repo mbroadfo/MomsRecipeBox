@@ -27,17 +27,29 @@ function generatePolicy(principalId, effect, resource) {
   };
 
   if (effect && resource) {
-    const policyDocument = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Action: 'execute-api:Invoke',
-          Effect: effect,
-          Resource: resource
-        }
-      ]
-    };
-    authResponse.policyDocument = policyDocument;
+    // Extract the API Gateway ARN prefix to allow access to all resources
+    // Resource format: arn:aws:execute-api:region:account:api-id/stage/method/resource-path
+    // We want: arn:aws:execute-api:region:account:api-id/stage/*/*
+    const arnParts = resource.split(':');
+    if (arnParts.length >= 6) {
+      const apiGatewayPath = arnParts[5]; // api-id/stage/method/resource-path
+      const pathParts = apiGatewayPath.split('/');
+      if (pathParts.length >= 2) {
+        const wildcardResource = `${arnParts.slice(0, 5).join(':')}:${pathParts[0]}/${pathParts[1]}/*/*`;
+        
+        const policyDocument = {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Action: 'execute-api:Invoke',
+              Effect: effect,
+              Resource: wildcardResource
+            }
+          ]
+        };
+        authResponse.policyDocument = policyDocument;
+      }
+    }
   }
 
   return authResponse;

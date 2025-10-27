@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import assert from 'assert';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
 
 // Environment-aware base URL configuration
 function getBaseUrl() {
@@ -27,13 +28,19 @@ const BASE_URL = getBaseUrl();
 console.log(`🔧 Test environment detected: ${BASE_URL.includes('localhost') ? 'EXPRESS' : 'LAMBDA'} mode`);
 console.log(`🌐 Base URL: ${BASE_URL}`);
 
-// Test authentication headers (needed for Lambda mode)
-const testAuth = {
-  headers: {
-    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21vbXNyZWNpcGVib3gudXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfHRlc3R1c2VyIiwiYXVkIjoiaHR0cHM6Ly9tb21zcmVjaXBlYm94LmNvbS9hcGkiLCJpYXQiOjE3MjYyNTYzMjksImV4cCI6OTk5OTk5OTk5OSwiYXpwIjoidGVzdF9jbGllbnRfaWQiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZ3R5IjoicGFzc3dvcmQiLCJwZXJtaXNzaW9ucyI6WyJhZG1pbjpmdWxsX2FjY2VzcyJdLCJodHRwczovL21vbXNyZWNpcGVib3guY29tL3JvbGVzIjpbIkFETUlOIl19.dummy_signature',
-    'Content-Type': 'application/json'
+// Function to get auth headers
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
   }
-};
+}
 
 // Test data for recipe creation (needed to attach comments)
 const testRecipe = {
@@ -78,9 +85,14 @@ async function runTests() {
   let recipeId, firstCommentId, secondCommentId;
   
   try {
+    // Validate Auth0 configuration
+    console.log('\n===== Validating Auth0 Configuration =====');
+    await validateConfig();
+    console.log('✅ Auth0 configuration validated');
+    
     // Step 1: Create a test recipe to attach comments to
     console.log('\n===== Creating test recipe for comments =====');
-    const createRecipeResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe, testAuth);
+    const createRecipeResponse = await axios.post(`${BASE_URL}/recipes`, testRecipe, { headers: await getAuthHeaders() });
     recipeId = createRecipeResponse.data._id;
     console.log(`Test recipe created with ID: ${recipeId}`);
     
@@ -89,7 +101,7 @@ async function runTests() {
     const createCommentResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/comments`,
       testComment,
-      testAuth
+      { headers: await getAuthHeaders() }
     );
     console.log('Comment created:');
     console.log(JSON.stringify(createCommentResponse.data, null, 2));
@@ -105,7 +117,8 @@ async function runTests() {
     console.log('\n===== Creating second comment =====');
     const createSecondCommentResponse = await axios.post(
       `${BASE_URL}/recipes/${recipeId}/comments`,
-      secondComment
+      secondComment,
+      { headers: await getAuthHeaders() }
     );
     console.log('Second comment created:');
     console.log(JSON.stringify(createSecondCommentResponse.data, null, 2));
@@ -116,7 +129,7 @@ async function runTests() {
     
     // Step 4: Get the recipe with comments
     console.log('\n===== Fetching recipe with comments =====');
-    const getRecipeResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, testAuth);
+    const getRecipeResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
     console.log('Recipe with comments:');
     console.log(JSON.stringify(getRecipeResponse.data, null, 2));
     
@@ -125,7 +138,7 @@ async function runTests() {
     
     // Step 5: Get a specific comment
     console.log('\n===== Fetching specific comment =====');
-    const getCommentResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, testAuth);
+    const getCommentResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Comment retrieved:');
     console.log(JSON.stringify(getCommentResponse.data, null, 2));
     
@@ -138,7 +151,7 @@ async function runTests() {
     const updateCommentResponse = await axios.put(
       `${BASE_URL}/comments/${firstCommentId}`,
       updatedComment,
-      testAuth
+      { headers: await getAuthHeaders() }
     );
     console.log('Comment updated:');
     console.log(JSON.stringify(updateCommentResponse.data, null, 2));
@@ -148,7 +161,7 @@ async function runTests() {
     
     // Step 7: Verify the comment update
     console.log('\n===== Verifying comment update =====');
-    const verifyUpdateResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, testAuth);
+    const verifyUpdateResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Updated comment verified:');
     console.log(JSON.stringify(verifyUpdateResponse.data, null, 2));
     
@@ -156,7 +169,7 @@ async function runTests() {
     
     // Step 8: Delete the first comment
     console.log('\n===== Deleting first comment =====');
-    const deleteCommentResponse = await axios.delete(`${BASE_URL}/comments/${firstCommentId}`, testAuth);
+    const deleteCommentResponse = await axios.delete(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Comment deleted:');
     console.log(JSON.stringify(deleteCommentResponse.data, null, 2));
     
@@ -166,7 +179,7 @@ async function runTests() {
     // Step 9: Verify comment deletion
     console.log('\n===== Verifying comment deletion =====');
     try {
-      await axios.get(`${BASE_URL}/comments/${firstCommentId}`, testAuth);
+      await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
       assert.fail('Expected comment to be deleted');
     } catch (error) {
       assert.strictEqual(error.response.status, 404, 'Expected 404 status code for deleted comment');
@@ -175,13 +188,13 @@ async function runTests() {
     
     // Step 10: Delete the second comment
     console.log('\n===== Deleting second comment =====');
-    const deleteSecondCommentResponse = await axios.delete(`${BASE_URL}/comments/${secondCommentId}`, testAuth);
+    const deleteSecondCommentResponse = await axios.delete(`${BASE_URL}/comments/${secondCommentId}`, { headers: await getAuthHeaders() });
     console.log('Second comment deleted:');
     console.log(JSON.stringify(deleteSecondCommentResponse.data, null, 2));
     
     // Step 11: Clean up - Delete the test recipe
     console.log('\n===== Cleaning up - Deleting test recipe =====');
-    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, testAuth);
+    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
     console.log('Test recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     
@@ -203,13 +216,13 @@ async function runTests() {
     console.log('\nAttempting cleanup after error...');
     try {
       if (firstCommentId) {
-        await axios.delete(`${BASE_URL}/comments/${firstCommentId}`, testAuth).catch(() => {});
+        await axios.delete(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
       if (secondCommentId) {
-        await axios.delete(`${BASE_URL}/comments/${secondCommentId}`, testAuth).catch(() => {});
+        await axios.delete(`${BASE_URL}/comments/${secondCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
       if (recipeId) {
-        await axios.delete(`${BASE_URL}/recipes/${recipeId}`, testAuth).catch(() => {});
+        await axios.delete(`${BASE_URL}/recipes/${recipeId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
     } catch (cleanupError) {
       console.error('Error during cleanup:', cleanupError.message);

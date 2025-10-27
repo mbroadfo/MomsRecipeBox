@@ -125,9 +125,9 @@ async function buildJWTAuthorizer() {
     log('🗜️ Creating deployment package...', 'yellow');
     const archiveSize = await createZipArchive(tempDir, outputZip);
 
-    // Cleanup temp directory
-    log('🧹 Cleaning up...', 'yellow');
-    await fs.rm(tempDir, { recursive: true, force: true });
+    // Cleanup temp directory (commenting out for debugging)
+    // log('🧹 Cleaning up...', 'yellow');
+    // await fs.rm(tempDir, { recursive: true, force: true });
 
     const duration = Date.now() - startTime;
     log(`✅ JWT Authorizer package built successfully!`, 'green');

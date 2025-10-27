@@ -3,6 +3,10 @@
 # Enable Lambda App API deployment
 enable_app_api = true
 
+# Auth0 Configuration
+auth0_domain = "dev-jdsnf3lqod8nxlnv.us.auth0.com"
+auth0_audience = "https://momsrecipebox/api"
+
 # MongoDB Atlas credentials from AWS Secrets Manager
 # DO NOT COMMIT THIS FILE TO VERSION CONTROL
 mongodb_atlas_public_key  = "kiuiofnq"

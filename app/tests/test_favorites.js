@@ -1,32 +1,63 @@
 import assert from 'assert';
 import { config } from 'dotenv';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
 config();
 
 const BASE = process.env.APP_BASE_URL || 'http://localhost:3000';
 const testUserA = 'test-user-a';
 const testUserB = 'test-user-b';
 
+// Function to get auth headers
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
+  }
+}
+
 async function createRecipe() {
-  const resp = await fetch(`${BASE}/recipes`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: 'Fav Test', description: 'Fav test desc' }) });
+  const headers = await getAuthHeaders();
+  const resp = await fetch(`${BASE}/recipes`, { 
+    method: 'POST', 
+    headers, 
+    body: JSON.stringify({ title: 'Fav Test', description: 'Fav test desc' }) 
+  });
   assert.strictEqual(resp.status, 201, 'Create recipe failed');
   const data = await resp.json();
   return data._id;
 }
 
 async function toggle(recipeId, userId) {
-  const resp = await fetch(`${BASE}/recipes/${recipeId}/like`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: userId }) });
+  const headers = await getAuthHeaders();
+  const resp = await fetch(`${BASE}/recipes/${recipeId}/like`, { 
+    method: 'POST', 
+    headers, 
+    body: JSON.stringify({ user_id: userId }) 
+  });
   const data = await resp.json();
   return { status: resp.status, data };
 }
 
 async function getRecipe(recipeId) {
-  const resp = await fetch(`${BASE}/recipes/${recipeId}`);
+  const headers = await getAuthHeaders();
+  const resp = await fetch(`${BASE}/recipes/${recipeId}`, { headers });
   const data = await resp.json();
   return { status: resp.status, data };
 }
 
 (async () => {
   try {
+    // Validate Auth0 configuration
+    console.log('===== Validating Auth0 Configuration =====');
+    await validateConfig();
+    console.log('✅ Auth0 configuration validated');
+    
     const recipeId = await createRecipe();
     console.log('Created recipe', recipeId);
 

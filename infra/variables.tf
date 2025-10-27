@@ -22,7 +22,7 @@ variable "enable_app_api" {
 variable "auth0_domain" {
   description = "Auth0 domain for authentication"
   type        = string
-  default     = "momsrecipebox.us.auth0.com"
+  default     = "your-domain.auth0.com"
   sensitive   = true
 }
 
@@ -43,7 +43,7 @@ variable "auth0_client_secret" {
 variable "auth0_audience" {
   description = "Auth0 API audience"
   type        = string
-  default     = "https://momsrecipebox.com/api"
+  default     = "your-api-audience"
   sensitive   = true
 }
 

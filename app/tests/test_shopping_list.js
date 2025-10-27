@@ -98,7 +98,7 @@ async function runTests() {
     
     // Step 3: Get shopping list to verify items were added
     console.log('\n===== Getting shopping list =====');
-    const getShoppingListResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const getShoppingListResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list retrieved:');
     console.log(JSON.stringify(getShoppingListResponse.data, null, 2));
@@ -133,7 +133,7 @@ async function runTests() {
     
     // Step 5: Verify the update
     console.log('\n===== Verifying item update =====');
-    const verifyUpdateResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const verifyUpdateResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     const updatedItem = verifyUpdateResponse.data.items.find(item => item.item_id === testItemIds[0]);
     console.log('Updated item verified:');
@@ -143,7 +143,7 @@ async function runTests() {
     
     // Step 6: Delete a shopping list item
     console.log('\n===== Deleting shopping list item =====');
-    const deleteItemResponse = await axios.delete(`${BASE_URL}/shopping-list/item/${testItemIds[0]}?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const deleteItemResponse = await axios.delete(`${BASE_URL}/shopping-list/item/${testItemIds[0]}?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     console.log('Item deleted:');
     console.log(JSON.stringify(deleteItemResponse.data, null, 2));
@@ -153,7 +153,7 @@ async function runTests() {
     
     // Step 7: Verify the deletion
     console.log('\n===== Verifying item deletion =====');
-    const verifyDeletionResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const verifyDeletionResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after deletion:');
     console.log(JSON.stringify(verifyDeletionResponse.data, null, 2));
@@ -200,7 +200,7 @@ async function runTests() {
     
     // Step 10: Verify all items are checked
     console.log('\n===== Verifying all items checked =====');
-    const verifyCheckedResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const verifyCheckedResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after check all:');
     console.log(JSON.stringify(verifyCheckedResponse.data, null, 2));
@@ -227,7 +227,7 @@ async function runTests() {
     
     // Step 12: Verify all items are gone
     console.log('\n===== Verifying all items cleared =====');
-    const verifyClearResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${TEST_USER_ID}`, { headers: await getAuthHeaders() });
+    const verifyClearResponse = await axios.get(`${BASE_URL}/shopping-list?user_id=${encodeURIComponent(TEST_USER_ID)}`, { headers: await getAuthHeaders() });
     
     console.log('Shopping list after clear all:');
     console.log(JSON.stringify(verifyClearResponse.data, null, 2));

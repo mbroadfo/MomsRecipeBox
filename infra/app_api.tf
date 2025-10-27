@@ -369,6 +369,160 @@ resource "aws_api_gateway_integration" "recipes_post_integration" {
 }
 
 ##############################################
+# API Gateway resource /shopping-list
+##############################################
+resource "aws_api_gateway_resource" "shopping_list" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_rest_api.app_api[count.index].root_resource_id
+  path_part   = "shopping-list"
+}
+
+##############################################
+# API Gateway resource /shopping-list/add
+##############################################
+resource "aws_api_gateway_resource" "shopping_list_add" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.shopping_list[count.index].id
+  path_part   = "add"
+}
+
+##############################################
+# API Gateway resource /shopping-list/clear
+##############################################
+resource "aws_api_gateway_resource" "shopping_list_clear" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.shopping_list[count.index].id
+  path_part   = "clear"
+}
+
+##############################################
+# API Gateway resource /shopping-list/item
+##############################################
+resource "aws_api_gateway_resource" "shopping_list_item" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.shopping_list[count.index].id
+  path_part   = "item"
+}
+
+##############################################
+# API Gateway resource /shopping-list/item/{itemId}
+##############################################
+resource "aws_api_gateway_resource" "shopping_list_item_id" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.app_api[count.index].id
+  parent_id   = aws_api_gateway_resource.shopping_list_item[count.index].id
+  path_part   = "{itemId}"
+}
+
+##############################################
+# Methods and Integrations for /shopping-list
+##############################################
+
+# GET /shopping-list
+resource "aws_api_gateway_method" "shopping_list_get" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.shopping_list[count.index].id
+  http_method   = "GET"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
+}
+
+resource "aws_api_gateway_integration" "shopping_list_get_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.shopping_list[count.index].id
+  http_method             = aws_api_gateway_method.shopping_list_get[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+# POST /shopping-list/add
+resource "aws_api_gateway_method" "shopping_list_add_post" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.shopping_list_add[count.index].id
+  http_method   = "POST"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
+}
+
+resource "aws_api_gateway_integration" "shopping_list_add_post_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.shopping_list_add[count.index].id
+  http_method             = aws_api_gateway_method.shopping_list_add_post[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+# POST /shopping-list/clear
+resource "aws_api_gateway_method" "shopping_list_clear_post" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.shopping_list_clear[count.index].id
+  http_method   = "POST"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
+}
+
+resource "aws_api_gateway_integration" "shopping_list_clear_post_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.shopping_list_clear[count.index].id
+  http_method             = aws_api_gateway_method.shopping_list_clear_post[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+# PUT /shopping-list/item/{itemId}
+resource "aws_api_gateway_method" "shopping_list_item_put" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.shopping_list_item_id[count.index].id
+  http_method   = "PUT"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
+}
+
+resource "aws_api_gateway_integration" "shopping_list_item_put_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.shopping_list_item_id[count.index].id
+  http_method             = aws_api_gateway_method.shopping_list_item_put[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+# DELETE /shopping-list/item/{itemId}
+resource "aws_api_gateway_method" "shopping_list_item_delete" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id   = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id   = aws_api_gateway_resource.shopping_list_item_id[count.index].id
+  http_method   = "DELETE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt[count.index].id
+}
+
+resource "aws_api_gateway_integration" "shopping_list_item_delete_integration" {
+  count = var.enable_app_api ? 1 : 0
+  rest_api_id             = aws_api_gateway_rest_api.app_api[count.index].id
+  resource_id             = aws_api_gateway_resource.shopping_list_item_id[count.index].id
+  http_method             = aws_api_gateway_method.shopping_list_item_delete[count.index].http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.app_lambda[count.index].invoke_arn
+}
+
+##############################################
 # Lambda permission for API Gateway
 ##############################################
 resource "aws_lambda_permission" "api_gateway_invoke" {
@@ -403,7 +557,12 @@ resource "aws_api_gateway_deployment" "app_api_deployment" {
     aws_api_gateway_integration.like_post_integration,
     aws_api_gateway_integration.recipe_image_get_integration,
     aws_api_gateway_integration.recipe_image_put_integration,
-    aws_api_gateway_integration.recipe_image_delete_integration
+    aws_api_gateway_integration.recipe_image_delete_integration,
+    aws_api_gateway_integration.shopping_list_get_integration,
+    aws_api_gateway_integration.shopping_list_add_post_integration,
+    aws_api_gateway_integration.shopping_list_clear_post_integration,
+    aws_api_gateway_integration.shopping_list_item_put_integration,
+    aws_api_gateway_integration.shopping_list_item_delete_integration
   ]
 
   triggers = {

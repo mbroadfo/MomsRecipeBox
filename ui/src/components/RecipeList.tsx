@@ -1,6 +1,7 @@
 // File: ui/src/components/RecipeList.tsx
 import React, { useState, useEffect } from 'react';
 import { getCurrentUserId } from '../types/global';
+import { apiClient } from '../lib/api-client';
 import RecipeCard from './RecipeCard';
 
 interface Recipe {
@@ -27,23 +28,32 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Explicitly use 'demo-user' as default to ensure consistent user ID
+    // Use environment-aware API client instead of direct fetch
     const userId = getCurrentUserId();
-    fetch(`/api/recipes?user_id=${encodeURIComponent(userId)}`)
-      .then((res) => res.json())
-      .then((data: unknown) => {
-        const dataObj = data as Record<string, unknown>;
-        if (Array.isArray(dataObj.recipes)) setRecipes(dataObj.recipes as Recipe[]);
-        else if (Array.isArray(data)) setRecipes(data as Recipe[]);
-        else if (Array.isArray(dataObj.items)) setRecipes(dataObj.items as Recipe[]);
-        else setRecipes([]);
-        setError(null);
-      })
-      .catch((err) => {
+    
+    const fetchRecipes = async () => {
+      try {
+        const response = await apiClient.get(`/recipes?user_id=${encodeURIComponent(userId)}`);
+        
+        if (response.success && response.data) {
+          const dataObj = response.data as Record<string, unknown>;
+          if (Array.isArray(dataObj.recipes)) setRecipes(dataObj.recipes as Recipe[]);
+          else if (Array.isArray(response.data)) setRecipes(response.data as Recipe[]);
+          else if (Array.isArray(dataObj.items)) setRecipes(dataObj.items as Recipe[]);
+          else setRecipes([]);
+          setError(null);
+        } else {
+          setError(response.error || 'Failed to load recipes');
+        }
+      } catch (err) {
         console.error('Error fetching recipes:', err);
         setError('Failed to load recipes');
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
   }, []);
 
   // Simple filter logic placeholder

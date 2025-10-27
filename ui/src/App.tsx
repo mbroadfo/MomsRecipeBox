@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { apiClient } from './lib/api-client';
 import { HomePage } from './pages/HomePage';
 import { RecipeDetail } from './components/RecipeDetail';
 import ShoppingListPage from './components/shoppingList/ShoppingListPage';
@@ -19,7 +20,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 
 // Authentication wrapper component
 const AuthenticatedApp: React.FC = () => {
-  const { isLoading, isAuthenticated, loginWithRedirect, error } = useAuth0();
+  const { isLoading, isAuthenticated, loginWithRedirect, error, user, getAccessTokenSilently } = useAuth0();
 
   // Handle automatic login redirect - must be at top level
   React.useEffect(() => {
@@ -27,6 +28,27 @@ const AuthenticatedApp: React.FC = () => {
       loginWithRedirect();
     }
   }, [isLoading, isAuthenticated, loginWithRedirect, error]);
+
+  // Set current user ID on window for global access and configure API client with Auth0 token
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      window.currentUser = { id: user.sub || 'unknown' };
+      window.currentUserId = user.sub || 'unknown';
+      console.log('🔍 Current user set:', { userId: user.sub, email: user.email });
+      
+      // Configure API client with Auth0 token
+      getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api',
+        },
+      }).then((token) => {
+        apiClient.setAuthToken(token);
+        console.log('🔐 API client configured with Auth0 token');
+      }).catch((error) => {
+        console.error('❌ Failed to get Auth0 token:', error);
+      });
+    }
+  }, [isAuthenticated, user, getAccessTokenSilently]);
 
   // Show loading spinner while Auth0 initializes
   if (isLoading) {

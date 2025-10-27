@@ -4,7 +4,10 @@ import tailwind from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   // Load environment-specific configurations
-  const isLocal = mode === 'development' || !process.env.VITE_ENVIRONMENT;
+  const environment = process.env.VITE_ENVIRONMENT || 'local';
+  const isLocal = environment === 'local' || environment === 'atlas';
+  
+  console.log(`🚀 Vite config - Mode: ${mode}, Environment: ${environment}, Proxy enabled: ${isLocal}`);
   
   return {
     plugins: [react(), tailwind()],

@@ -50,6 +50,7 @@ AUTH0_M2M_CLIENT_SECRET=your_client_secret_here
 ```
 
 **For PowerShell (Windows):**
+
 ```powershell
 $env:AUTH0_DOMAIN="momsrecipebox.us.auth0.com"
 $env:AUTH0_AUDIENCE="https://momsrecipebox.com/api"
@@ -58,6 +59,7 @@ $env:AUTH0_M2M_CLIENT_SECRET="your_client_secret_here"
 ```
 
 **For Bash (Linux/Mac):**
+
 ```bash
 export AUTH0_DOMAIN="momsrecipebox.us.auth0.com"
 export AUTH0_AUDIENCE="https://momsrecipebox.com/api"
@@ -73,7 +75,8 @@ node test-auth0-tokens.js
 ```
 
 Expected output:
-```
+
+```text
 🔐 Testing Auth0 JWT Token Generation
 
 1. Validating Auth0 configuration...
@@ -92,25 +95,30 @@ Expected output:
 ## 🔧 Troubleshooting
 
 ### Error: "Auth0 M2M credentials not configured"
+
 - Ensure all environment variables are set correctly
 - Verify CLIENT_ID and CLIENT_SECRET are from the M2M application
 
 ### Error: "access_denied"
+
 - Check that the M2M application has been authorized for your API
 - Verify the API identifier matches: `https://momsrecipebox.com/api`
 - Ensure required scopes are granted
 
 ### Error: "Unauthorized" from API Gateway
+
 - Verify the JWT authorizer is configured correctly
 - Check that the Auth0 domain and audience match in both the authorizer and token generation
 
 ### Error: "invalid_client"
+
 - Double-check the CLIENT_ID and CLIENT_SECRET values
 - Ensure you're using credentials from a Machine-to-Machine application, not a SPA or Regular Web App
 
 ## 📚 Token Details
 
 The generated tokens will contain:
+
 - **Issuer (iss)**: `https://momsrecipebox.us.auth0.com/`
 - **Audience (aud)**: `https://momsrecipebox.com/api`
 - **Expiration (exp)**: Typically 24 hours
@@ -119,6 +127,7 @@ The generated tokens will contain:
 ## 🔄 Next Steps
 
 Once token generation is working:
+
 1. Update test files to use real JWT tokens
 2. Remove dummy token implementations
 3. Test all CRUD operations with authentication

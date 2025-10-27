@@ -264,6 +264,30 @@ execSync('powershell -Command "Invoke-WebRequest..."');
 execSync('curl http://localhost:3000/endpoint');
 ```
 
+### Test Infrastructure PowerShell Elimination
+
+**❌ MISTAKE**: Using PowerShell commands in Node.js test scripts
+**✅ CORRECT**: Use Node.js fetch API for all HTTP requests in test scripts
+
+**Critical Pattern for Lambda Testing**:
+
+```javascript
+// ❌ BAD: PowerShell in test script
+execSync('powershell -Command "Invoke-RestMethod -Uri $url -Headers @{Authorization=\\"Bearer $token\\"}"');
+
+// ✅ GOOD: Node.js fetch API
+const response = await fetch(url, {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+```
+
+**Key Rules for Test Scripts**:
+
+- **Never use PowerShell commands**: Even in Node.js files, avoid PowerShell dependencies
+- **Use Node.js fetch**: For all HTTP requests in test infrastructure
+- **Proper JWT authentication**: Generate real Auth0 tokens for authenticated API testing
+- **Environment agnostic**: Test scripts should work on any platform without PowerShell
+
 ## 🏗️ Architecture Understanding
 
 ### Request Flow by Mode

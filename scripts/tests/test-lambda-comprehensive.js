@@ -24,6 +24,8 @@
 
 import { spawn } from 'child_process';
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 const API_BASE = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
 const LAMBDA_FUNCTION = 'mrb-app-api';
@@ -31,8 +33,10 @@ const REGION = 'us-west-2';
 
 class LambdaTest {
   constructor() {
+    this.tests = [];
     this.results = [];
     this.tempFiles = [];
+    this.tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lambda-test-'));
   }
 
   async runCommand(cmd, args) {
@@ -54,11 +58,11 @@ class LambdaTest {
     try {
       console.log(`\n🧪 Testing: ${testName}`);
       
-      const eventFile = `temp-event-${Date.now()}.json`;
+      const eventFile = path.join(this.tempDir, `temp-event-${Date.now()}.json`);
       this.tempFiles.push(eventFile);
       fs.writeFileSync(eventFile, JSON.stringify(event, null, 2));
       
-      const responseFile = `temp-response-${Date.now()}.json`;
+      const responseFile = path.join(this.tempDir, `temp-response-${Date.now()}.json`);
       this.tempFiles.push(responseFile);
       
       await this.runCommand('aws', [
@@ -94,38 +98,42 @@ class LambdaTest {
     }
   }
 
-  async testAPIGateway(testName, method, path) {
+  async testAPIGateway(testName, method, path, authToken = null) {
     try {
       console.log(`\n🌐 Testing API Gateway: ${method} ${path}`);
       
       const url = `${API_BASE}${path}`;
-      const result = await this.runCommand('powershell', [
-        '-Command',
-        `try { $response = Invoke-WebRequest -Uri "${url}" -Method ${method} -UseBasicParsing; Write-Output "STATUS:$($response.StatusCode)"; Write-Output "BODY:$($response.Content)" } catch { Write-Output "STATUS:$($_.Exception.Response.StatusCode.value__)"; Write-Output "BODY:$($_.ErrorDetails.Message)" }`
-      ]);
+      const headers = {
+        'Content-Type': 'application/json'
+      };
       
-      const output = result.stdout;
-      if (output.includes('STATUS:')) {
-        const status = output.match(/STATUS:(\d+)/)?.[1];
-        const body = output.match(/BODY:(.*)/s)?.[1];
-        console.log(`   Status: ${status}`);
-        console.log(`   Response: ${body?.substring(0, 100)}...`);
-        
-        this.results.push({
-          test: testName,
-          status: parseInt(status),
-          success: this.isExpectedStatus(testName, parseInt(status)),
-          response: body
-        });
-      } else {
-        console.log(`   ⚠️  API Gateway response: ${output}`);
-        this.results.push({
-          test: testName,
-          status: 'UNKNOWN',
-          success: false,
-          error: output
-        });
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
       }
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: headers
+      });
+      
+      const status = response.status;
+      let body = '';
+      
+      try {
+        body = await response.text();
+      } catch (e) {
+        body = `Error reading response: ${e.message}`;
+      }
+      
+      console.log(`   Status: ${status}`);
+      console.log(`   Response: ${body.substring(0, 100)}...`);
+      
+      this.results.push({
+        test: testName,
+        status: status,
+        success: this.isExpectedStatus(testName, status),
+        response: body
+      });
     } catch (error) {
       console.log(`   ❌ FAILED: ${error.message}`);
       this.results.push({
@@ -137,9 +145,56 @@ class LambdaTest {
     }
   }
 
+  async generateAuthToken() {
+    try {
+      console.log('🔐 Generating Auth0 JWT token...');
+      
+      // Get Auth0 credentials from AWS Secrets Manager
+      const secretResult = await this.runCommand('aws', [
+        'secretsmanager', 'get-secret-value',
+        '--secret-id', 'moms-recipe-secrets-dev',
+        '--region', 'us-west-2',
+        '--query', 'SecretString',
+        '--output', 'text'
+      ]);
+      
+      const secrets = JSON.parse(secretResult.stdout);
+      
+      // Generate M2M token using Node.js fetch (no PowerShell!)
+      const tokenResponse = await fetch('https://dev-jdsnf3lqod8nxlnv.us.auth0.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: secrets.AUTH0_M2M_CLIENT_ID,
+          client_secret: secrets.AUTH0_M2M_CLIENT_SECRET,
+          audience: 'https://momsrecipebox/api',
+          grant_type: 'client_credentials'
+        })
+      });
+      
+      if (!tokenResponse.ok) {
+        throw new Error(`Auth0 token request failed: ${tokenResponse.status}`);
+      }
+      
+      const tokenData = await tokenResponse.json();
+      const token = tokenData.access_token;
+      
+      console.log('✅ JWT token generated successfully');
+      return token;
+    } catch (error) {
+      console.log(`⚠️ Failed to generate JWT token: ${error.message}`);
+      return null;
+    }
+  }
+
   async runComprehensiveTest() {
-    console.log('🚀 MOM\'S RECIPE BOX - LAMBDA MODE COMPREHENSIVE TEST');
-    console.log('=' .repeat(60));
+    console.log('🚀 MOMS RECIPE BOX - LAMBDA MODE COMPREHENSIVE TEST');
+    console.log('='.repeat(60));
+
+    // Generate JWT token for authenticated tests
+    const authToken = await this.generateAuthToken();
 
     // Test 1: Basic Health Check (Direct Lambda)
     await this.testLambdaDirect('Health Check (Direct)', {
@@ -162,24 +217,31 @@ class LambdaTest {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Test 4: Recipe List via API Gateway (expect 503 - database not connected)
-    await this.testAPIGateway('Recipes via API Gateway', 'GET', '/recipes');
+    // Test 4: Authenticated Recipe List via API Gateway (should work with JWT)
+    if (authToken) {
+      await this.testAPIGateway('Authenticated Recipes', 'GET', '/recipes', authToken);
+    } else {
+      console.log('⚠️ Skipping authenticated API Gateway test - no JWT token available');
+    }
 
-    // Test 5: Recipe List (Database Required)
+    // Test 5: Unauthenticated Recipe List via API Gateway (should return 401)
+    await this.testAPIGateway('Unauthenticated Recipes', 'GET', '/recipes');
+
+    // Test 6: Recipe List (Database Required)
     await this.testLambdaDirect('Recipe List (DB Test)', {
       httpMethod: 'GET',
       path: '/recipes',
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Test 6: AI Providers (No DB Required)
+    // Test 7: AI Providers (No DB Required)
     await this.testLambdaDirect('AI Providers', {
       httpMethod: 'GET',
       path: '/ai/providers',
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Test 7: 404 Handler (expect 404)
+    // Test 8: 404 Handler (expect 404)
     await this.testLambdaDirect('404 Handler', {
       httpMethod: 'GET',
       path: '/nonexistent',
@@ -192,7 +254,9 @@ class LambdaTest {
 
   isExpectedStatus(testName, status) {
     if (testName === '404 Handler') return status === 404;
-    if (testName.includes('DB Test') || testName.includes('Recipe')) return status === 503; // Database unavailable
+    if (testName === 'Unauthenticated Recipes') return status === 401; // Expected: requires authentication
+    if (testName === 'Authenticated Recipes') return status === 200; // Expected: should work with JWT
+    if (testName.includes('DB Test') || testName.includes('Recipe List')) return status === 200; // Database is connected and working
     return status >= 200 && status < 400; // Success range
   }
 
@@ -236,7 +300,14 @@ class LambdaTest {
         // Ignore cleanup errors
       }
     });
-    console.log('✅ Cleanup complete');
+    
+    // Clean up temporary directory
+    try {
+      fs.rmSync(this.tempDir, { recursive: true, force: true });
+      console.log(`✅ Cleanup complete (removed temp dir: ${this.tempDir})`);
+    } catch (e) {
+      console.log('✅ Cleanup complete');
+    }
   }
 }
 

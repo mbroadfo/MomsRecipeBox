@@ -20,11 +20,18 @@ export interface EnvironmentConfig {
 function getEnvironment(): EnvironmentConfig['environment'] {
   const env = import.meta.env.VITE_ENVIRONMENT?.toLowerCase();
   
+  console.log('🔍 Environment detection:', { 
+    VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
+    processed: env,
+    allEnvVars: import.meta.env 
+  });
+  
   if (env === 'local' || env === 'atlas' || env === 'lambda' || env === 'production') {
     return env;
   }
   
   // Default to local development
+  console.log('⚠️ Falling back to local environment');
   return 'local';
 }
 
@@ -32,18 +39,25 @@ function getEnvironment(): EnvironmentConfig['environment'] {
  * Get API base URL for environment with fallbacks
  */
 function getApiBaseUrl(environment: string): string {
-  switch (environment) {
-    case 'local':
-      return import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3000';
-    case 'atlas':
-      return import.meta.env.VITE_API_URL_ATLAS || 'http://localhost:3000';
-    case 'lambda':
-      return import.meta.env.VITE_API_URL_LAMBDA || 'https://your-lambda-api.execute-api.us-west-2.amazonaws.com';
-    case 'production':
-      return import.meta.env.VITE_API_URL_PRODUCTION || 'https://your-production-api.execute-api.us-west-2.amazonaws.com';
-    default:
-      return 'http://localhost:3000';
-  }
+  const urls = {
+    local: import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3000',
+    atlas: import.meta.env.VITE_API_URL_ATLAS || 'http://localhost:3000',
+    lambda: import.meta.env.VITE_API_URL_LAMBDA || 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev',
+    production: import.meta.env.VITE_API_URL_PRODUCTION || 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev'
+  };
+  
+  const selectedUrl = urls[environment as keyof typeof urls] || urls.local;
+  
+  console.log('🌐 API URL configuration:', { 
+    environment, 
+    selectedUrl,
+    envVars: {
+      VITE_API_URL_LOCAL: import.meta.env.VITE_API_URL_LOCAL,
+      VITE_API_URL_LAMBDA: import.meta.env.VITE_API_URL_LAMBDA
+    }
+  });
+  
+  return selectedUrl;
 }
 
 /**
@@ -88,6 +102,8 @@ export const config: EnvironmentConfig = {
   S3_RECIPE_IMAGES_BASE_URL: getS3RecipeImagesBaseUrl(),
   AWS_REGION: getAwsRegion(),
 };
+
+console.log('🚀 Final environment config:', config);
 
 /**
  * Helper to check if running in development mode

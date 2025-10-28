@@ -61,7 +61,7 @@ export function getMongoConnectionString() {
     
     // If we don't have a valid Atlas configuration, warn but fall back to local
     console.warn('⚠️  MongoDB Atlas configuration incomplete, falling back to local MongoDB');
-    return process.env.MONGODB_URI || `mongodb://admin:supersecret@localhost:27017/${dbName}?authSource=admin`;
+    return process.env.MONGODB_URI || `mongodb://admin:supersecret@mongo:27017/${dbName}?authSource=admin`;
   }
   
   // For local MongoDB (default)
@@ -75,7 +75,7 @@ export function getMongoConnectionString() {
   // Otherwise construct from components for Docker setup
   const user = process.env.MONGODB_ROOT_USER || 'admin';
   const password = process.env.MONGODB_ROOT_PASSWORD || 'supersecret';
-  const host = process.env.MONGODB_HOST || 'localhost:27017';
+  const host = process.env.MONGODB_HOST || 'mongo:27017';
   
   return `mongodb://${user}:${encodeURIComponent(password)}@${host}/${dbName}?authSource=admin`;
 }

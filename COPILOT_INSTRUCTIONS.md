@@ -15,6 +15,25 @@ This document contains key learnings and common mistakes to avoid when working o
 - **Atlas mode**: Local container + Atlas database (`APP_MODE=express`)
 - **Lambda mode**: AWS Lambda deployment (`APP_MODE=lambda`)
 
+**❌ MISTAKE**: Assuming Docker container restarts automatically apply code changes
+**✅ CORRECT**: Docker containers use cached images - need complete rebuild to apply code changes
+
+**Pattern for Docker Code Changes**:
+
+```bash
+# ❌ WRONG - restart doesn't rebuild image
+docker-compose restart app-local
+
+# ✅ CORRECT - force rebuild with no cache
+docker-compose down
+docker image rm -f momsrecipebox-app-local  
+docker-compose build --no-cache app-local
+docker-compose up -d
+```
+
+**❌ MISTAKE**: Not recognizing hardcoded localhost references in Docker environments
+**✅ CORRECT**: In Docker containers, use service names (mongo:27017) not localhost:27017 for inter-container communication
+
 ### 2. Build Verification Logic Errors
 
 **❌ MISTAKE**: Creating build verification systems that don't actually trigger the code they're trying to verify

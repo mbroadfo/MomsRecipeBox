@@ -65,7 +65,8 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    command: ["node", "--inspect=0.0.0.0:9229", "local_server.js"]
+    command: ["node", "--inspect=0.0.0.0:9229", "app/local_server.js"]
+    entrypoint: []  # Override Lambda entrypoint
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s

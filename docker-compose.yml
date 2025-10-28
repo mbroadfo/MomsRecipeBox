@@ -70,6 +70,7 @@ services:
       - .env
     environment:
       MONGODB_URI: ${MONGODB_LOCAL_URI:-mongodb://${MONGODB_LOCAL_ROOT_USER:-admin}:${MONGODB_LOCAL_ROOT_PASSWORD:-supersecret}@mongo:27017/${MONGODB_DB_NAME:-moms_recipe_box_dev}?authSource=admin}
+      MONGODB_HOST: mongo:27017
       APP_MODE: ${APP_MODE:-express}
       MONGODB_MODE: local
     ports:
@@ -78,7 +79,7 @@ services:
       sh -c "if [ \"$APP_MODE\" = 'lambda' ]; then
                /lambda-entrypoint.sh lambda.handler;
              else
-               node local_server.js;
+               node app/local_server.js;
              fi"
     depends_on:
       mongo:

@@ -104,7 +104,7 @@ function getHealthCheckConnectionString() {
   // Otherwise construct from components for Docker setup
   const user = process.env.MONGODB_ROOT_USER || 'admin';
   const password = process.env.MONGODB_ROOT_PASSWORD || 'supersecret';
-  const host = process.env.MONGODB_HOST || 'localhost:27017';
+  const host = process.env.MONGODB_HOST || 'mongo:27017';
   
   return `mongodb://${user}:${encodeURIComponent(password)}@${host}/${dbName}?authSource=admin`;
 }

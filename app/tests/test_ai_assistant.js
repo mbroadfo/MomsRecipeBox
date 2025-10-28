@@ -9,7 +9,6 @@ async function testAIRecipeAssistant() {
   console.log('\n🧪 Testing AI Recipe Assistant API...');
   
   // Configuration
-  const axios = require('axios');
 
 // Environment-aware base URL configuration
 function getBaseUrl() {
@@ -35,7 +34,7 @@ console.log(`🌐 Base URL: ${BASE_URL}`);
   try {
     // Test the chat endpoint
     console.log('\n📝 Testing chat endpoint...');
-    const chatResponse = await fetch(`${API_URL}/ai/chat`, {
+    const chatResponse = await fetch(`${BASE_URL}/ai/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,7 +99,7 @@ console.log(`🌐 Base URL: ${BASE_URL}`);
     2. Off heat, add remaining butter to pot and mash with potato masher until smooth. Using rubber spatula, fold in remaining buttermilk until absorbed and potatoes are creamy. Season with salt and pepper. Serve.
     `;
     
-    const pastedResponse = await fetch(`${API_URL}/ai/chat`, {
+    const pastedResponse = await fetch(`${BASE_URL}/ai/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -122,7 +121,7 @@ console.log(`🌐 Base URL: ${BASE_URL}`);
     
     // Test URL extraction endpoint
     console.log('\n🔗 Testing URL extraction endpoint...');
-    const extractResponse = await fetch(`${API_URL}/ai/extract`, {
+    const extractResponse = await fetch(`${BASE_URL}/ai/extract`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -5,7 +5,7 @@
       "description": "Full local stack with Docker containers",
       "database": {
         "type": "local",
-        "connectionString": "mongodb://admin:supersecret@localhost:27017/moms_recipe_box_dev?authSource=admin",
+        "connectionString": "mongodb://admin:supersecret@mongo:27017/moms_recipe_box_dev?authSource=admin",
         "dockerService": "mongo"
       },
       "backend": {

@@ -3,6 +3,7 @@ node_modules/
 
 # dotenv
 .env
+.env.copy
 .env.local
 .env.development
 .env.staging

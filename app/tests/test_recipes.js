@@ -30,31 +30,8 @@
 import axios from 'axios';
 import assert from 'assert';
 import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 import 'dotenv/config';
-
-// Environment-aware base URL configuration
-const getBaseUrl = () => {
-  const envUrl = process.env.APP_BASE_URL;
-  const mode = process.env.APP_MODE || 'express';
-  
-  if (envUrl) {
-    console.log(`🔧 Using configured URL: ${envUrl}`);
-    return envUrl;
-  }
-  
-  // Default URLs based on mode
-  switch (mode) {
-    case 'lambda':
-      const lambdaUrl = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
-      console.log(`🚀 Lambda mode detected, using: ${lambdaUrl}`);
-      return lambdaUrl;
-    case 'express':
-    default:
-      const expressUrl = 'http://localhost:3000';
-      console.log(`🏠 Express mode, using: ${expressUrl}`);
-      return expressUrl;
-  }
-};
 
 const BASE_URL = getBaseUrl();
 
@@ -103,8 +80,7 @@ const likeToggle = {
  */
 async function runTests() {
   console.log('Starting recipe API tests...');
-  console.log(`🎯 Target API: ${BASE_URL}`);
-  console.log(`🔧 Mode: ${process.env.APP_MODE || 'express'}`);
+  logEnvironmentInfo();
   
   try {
     // Validate Auth0 configuration

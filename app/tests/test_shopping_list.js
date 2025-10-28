@@ -7,9 +7,10 @@ import axios from 'axios';
 import assert from 'assert';
 import { config } from 'dotenv';
 import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 config();
 
-const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
+const BASE_URL = getBaseUrl();
 const TEST_USER_ID = 'auth0|testuser';
 
 // Function to get auth headers
@@ -35,6 +36,7 @@ let testItemIds = [];
  */
 async function runTests() {
   console.log('Starting shopping list API tests...');
+  logEnvironmentInfo();
   
   try {
     // Validate Auth0 configuration

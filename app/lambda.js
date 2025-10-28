@@ -150,6 +150,20 @@ async function initializeBuildMarker() {
   buildMarkerInitialized = true;
 }
 
+async function loadCurrentBuildMarker() {
+  console.log('🔧 Loading current build marker on demand...');
+  try {
+    // Use timestamp to force fresh import (bypass module cache)
+    const buildMarker = await import(`./build-marker.js?t=${Date.now()}`);
+    console.log('🏗️ Build marker loaded:', buildMarker.BUILD_INFO);
+    console.log('✅ Build marker loaded successfully:', buildMarker.BUILD_INFO);
+    return buildMarker.BUILD_INFO;
+  } catch (e) {
+    console.log('⚠️ Build marker not loaded:', e.message);
+    return null;
+  }
+}
+
 // AWS Lambda entrypoint
 export async function handler(event, context) {
   console.log('🚀 Lambda handler started');
@@ -322,15 +336,15 @@ export async function handler(event, context) {
     // Build marker initialization endpoint (for deployment verification)
     if (event.httpMethod === 'POST' && pathOnly === '/initializeBuildMarker') {
       console.log('🔧 Build marker initialization requested via POST /initializeBuildMarker');
-      await initializeBuildMarker();
+      const currentMarker = await loadCurrentBuildMarker();
       return addCorsHeaders({
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'success',
-          message: 'Build marker system initialized',
+          message: 'Build marker loaded',
           timestamp: new Date().toISOString(),
-          initialized: buildMarkerInitialized
+          marker: currentMarker
         })
       });
     }

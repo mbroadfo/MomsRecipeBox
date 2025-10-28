@@ -44,6 +44,15 @@ docker-compose up -d
 **❌ MISTAKE**: Looking for build markers without triggering the initialization endpoint
 **✅ CORRECT**: Call `POST /initializeBuildMarker` before checking Docker logs for marker verification
 
+**❌ MISTAKE**: Using old complex rebuild commands instead of unified restart system
+**✅ CORRECT**: Always use `npm run restart` - it intelligently handles everything
+
+**Build Marker System - Key Insights**:
+- **On-Demand Loading**: Build markers load fresh on every `POST /initializeBuildMarker` request
+- **Cache Bypass**: Uses timestamp query parameters to force fresh module imports
+- **Hash-Specific Verification**: Verifies the exact expected build hash is loaded, not just general functionality
+- **Multiline JSON Handling**: Uses proper regex patterns to handle multiline build marker output in logs
+
 ### 3. AWS Profile Management
 
 **❌ MISTAKE**: Using wrong AWS profiles for different operations
@@ -233,24 +242,119 @@ cd ui; npm run dev
 
 - Container restart ≠ Image rebuild
 - Need `docker-compose build` or image deletion for actual rebuilds
+- **NEW**: Unified restart system automatically handles this decision
 
 **❌ MISTAKE**: Not verifying that new code is actually running after container operations
 **✅ CORRECT**: Always implement verification systems to prove new code deployed
 
+- **NEW**: Unified restart system includes automatic verification with build badge checking
+- **Pattern**: Generate unique hash → Deploy → Verify specific hash is active
+
+### AWS Credentials in Local Development
+
+**❌ MISTAKE**: S3 uploads failing in local mode due to missing AWS credentials
+**✅ CORRECT**: Docker containers now properly mount AWS credentials from host
+
+```yaml
+# ✅ NEW: AWS credentials properly mounted
+volumes:
+  - ${USERPROFILE}/.aws:/root/.aws:ro  # Windows host
+environment:
+  - AWS_PROFILE=${AWS_PROFILE}
+  - HOME=/root
+```
+
+**Key Benefits**:
+- **S3 image uploads work in local mode**: No more credential errors
+- **Profile-aware**: Uses your active AWS profile in containers
+- **Secure**: Read-only mount of credentials directory
+
 ## 🔧 Development Patterns
+
+### Unified Restart System Patterns
+
+**✅ BEST PRACTICE**: Always use the unified restart system
+
+```javascript
+// The unified restart system replaces all these patterns:
+
+// ❌ OLD: Manual decision making
+if (codeChanged) {
+  execSync('npm run rebuild:force');
+} else {
+  execSync('npm run restart');
+}
+
+// ✅ NEW: Intelligent automated decision
+execSync('npm run restart'); // Handles everything automatically
+```
+
+**Unified Restart Logic**:
+1. **Check app status** and get current build badge
+2. **Generate new badge** with unique hash
+3. **Compare badges** to detect code changes
+4. **Choose strategy**:
+   - Same badges → Simple restart (Docker cached code is fine)
+   - Different badges → Full rebuild + verification (code changes detected)
+5. **Verify deployment** by confirming new badge is active
+
+**Key Benefits**:
+- **Zero guesswork**: System decides optimal restart strategy
+- **Robust verification**: Proves new code is actually running
+- **Graceful escalation**: Falls back to full rebuild when simple restart fails
+- **Cross-platform**: Works identically on Windows/Mac/Linux
+
+### Shared Test Utilities Pattern
+
+**❌ MISTAKE**: Duplicating environment detection logic across test files
+**✅ CORRECT**: Use shared utilities for consistent behavior
+
+```javascript
+// ❌ OLD: Duplicated in every test file
+function getBaseUrl() {
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return 'https://api-gateway-url.com/dev';
+  }
+  return 'http://localhost:3000';
+}
+
+// ✅ NEW: Shared utility
+import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
+
+async function runTests() {
+  logEnvironmentInfo(); // Consistent environment logging
+  const baseUrl = getBaseUrl(); // Consistent URL detection
+  // ... test logic
+}
+```
+
+**Shared Environment Detector Benefits**:
+- **Consistent URL detection** across all test files
+- **Automatic mode detection** (Express vs Lambda)
+- **Standardized logging** for debugging
+- **Backward compatibility** with legacy environment variables
+- **Single source of truth** for environment logic
 
 ### Build Verification Best Practices
 
 1. **Generate Unique Markers**: Use timestamps + hashes for each build attempt
-2. **Trigger Initialization**: Always call the endpoint that loads/initializes what you're testing
+2. **Trigger On-Demand Loading**: Always call the endpoint that loads/initializes what you're testing
 3. **Wait for Processing**: Add appropriate delays for async operations
 4. **Verify Results**: Check logs/responses for actual evidence of new code
-5. **Escalate When Needed**: Have fallback options (nuclear rebuild) when normal methods fail
+5. **Use Hash-Specific Verification**: Confirm the exact expected hash is loaded, not just general functionality
+6. **Handle Multiline JSON**: Use proper regex patterns for multiline build marker output
+7. **Escalate When Needed**: Have fallback options (nuclear rebuild) when normal methods fail
 
 ### Docker Container Patterns
 
 ```javascript
-// ✅ GOOD: Comprehensive rebuild verification
+// ✅ GOOD: Unified restart system
+async function deployChanges() {
+  // Just use the unified restart - it handles everything
+  execSync('npm run restart');
+}
+
+// ❌ OLD: Complex manual verification
 async function verifyBuild(expectedHash) {
   // 1. Trigger the endpoint that loads the marker
   await triggerBuildMarkerInitialization();
@@ -263,10 +367,38 @@ async function verifyBuild(expectedHash) {
   return logs.includes(expectedHash);
 }
 
+// ✅ NEW: Built into unified restart system
+// Verification happens automatically with hash-specific checking
+
 // ❌ BAD: Checking without triggering
 async function verifyBuild(expectedHash) {
   const logs = getLogs(); // Never triggered loading!
   return logs.includes(expectedHash);
+}
+```
+
+**On-Demand Build Marker Loading**:
+
+```javascript
+// ✅ GOOD: Proper on-demand loading with cache bypass
+async function loadCurrentBuildMarker() {
+  console.log('🔧 Loading current build marker on demand...');
+  try {
+    // Use timestamp to force fresh import (bypass module cache)
+    const buildMarker = await import(`./build-marker.js?t=${Date.now()}`);
+    console.log('🏗️ Build marker loaded:', buildMarker.BUILD_INFO);
+    return buildMarker.BUILD_INFO;
+  } catch (e) {
+    console.log('⚠️ Build marker not loaded:', e.message);
+    return null;
+  }
+}
+
+// ❌ BAD: One-time loading only
+async function initializeBuildMarker() {
+  if (buildMarkerInitialized) return; // Only loads once!
+  // ... loading logic
+  buildMarkerInitialized = true;
 }
 ```
 
@@ -390,9 +522,12 @@ The local server (`local_server.js`) acts as an HTTP-to-Lambda adapter:
 Always use these standardized commands to maintain consistency:
 
 ```bash
-# Development workflow
-npm run rebuild           # Smart rebuild when changes not reflected
+# Application management - NEW UNIFIED SYSTEM
+npm run restart           # 🚀 Unified smart restart - handles everything intelligently
+npm run restart:simple    # Basic container stop/start (bypass intelligence)
 npm run rebuild:force     # Nuclear option for stubborn Docker caching
+
+# Development workflow
 npm run profile:show      # Check current development profile
 npm run health:detailed   # Comprehensive system status
 npm test                  # Run all tests
@@ -402,6 +537,65 @@ npm run profile:start     # Start infrastructure for current profile
 npm run profile:stop      # Stop all infrastructure
 npm run logs             # View container logs
 ```
+
+### Unified Restart System - ALWAYS Use This
+
+**❌ MISTAKE**: Using old complex restart/rebuild commands
+**✅ CORRECT**: Always use the new unified restart system
+
+```bash
+# ❌ OLD - Complex, multiple commands
+npm run restart           # Basic restart
+npm run rebuild           # Smart rebuild
+npm run rebuild:force     # Nuclear rebuild  
+npm run rebuild:verify    # Verification only
+
+# ✅ NEW - Single intelligent command
+npm run restart           # 🎯 ONE command does everything!
+```
+
+**How Unified Restart Works**:
+
+1. **🔍 Detects** if app is running and gets current build badge
+2. **📝 Generates** new build badge for verification  
+3. **🧠 Decides** strategy:
+   - **Badges same**: Simple container restart (fast)
+   - **Badges different**: Full rebuild + verification (thorough)
+4. **✅ Verifies** new code is actually running
+
+**Key Benefits**:
+- **No guessing** which command to use
+- **Automatic Docker cache detection** 
+- **Full verification** that new code is deployed
+- **Intelligent escalation** from fast restart to full rebuild when needed
+
+### Unified Testing Architecture
+
+**❌ MISTAKE**: Running different tests for different modes
+**✅ CORRECT**: Use unified test architecture that works across all deployment modes
+
+```bash
+# Core business logic tests (same across all modes)
+cd app/tests && npm run test:functional
+
+# Mode-specific comprehensive testing
+cd app/tests && npm run test:express     # Local development
+cd app/tests && npm run test:atlas      # Atlas database
+cd app/tests && npm run test:lambda     # AWS Lambda
+
+# Individual test suites
+cd app/tests && npm run test:recipes     # Recipe CRUD operations
+cd app/tests && npm run test:favorites   # Favorites system
+cd app/tests && npm run test:comments    # Comments system
+cd app/tests && npm run test:images      # Image management
+cd app/tests && npm run test:shopping    # Shopping lists
+```
+
+**Test Architecture Design**:
+- **Shared Environment Detection**: All tests use `app/tests/utils/environment-detector.js`
+- **Consistent URL Detection**: Automatic Express vs Lambda mode detection
+- **Unified Business Logic**: Same core tests run across all deployment modes
+- **Mode-Specific Integration**: Infrastructure tests adapt to deployment environment
 
 ### Post-Restart Verification Pattern
 

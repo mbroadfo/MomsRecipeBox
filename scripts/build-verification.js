@@ -10,8 +10,32 @@
 import { execSync } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CONFIG_DIR = path.join(__dirname, '..', 'config');
+const PROFILES_FILE = path.join(CONFIG_DIR, 'deployment-profiles.json');
 const BUILD_MARKER_FILE = 'app/build-marker.js';
+
+function getCurrentContainerName() {
+  try {
+    const content = fs.readFileSync(PROFILES_FILE, 'utf8');
+    const profiles = JSON.parse(content);
+    const currentProfileName = profiles.currentProfile;
+    const currentProfile = profiles.profiles[currentProfileName];
+    
+    if (currentProfile && currentProfile.backend && currentProfile.backend.dockerService) {
+      return `momsrecipebox-${currentProfile.backend.dockerService}`;
+    }
+    
+    // Fallback to atlas if profile not found
+    return 'momsrecipebox-app-atlas';
+  } catch (error) {
+    console.log('⚠️ Could not determine container name, using atlas as fallback');
+    return 'momsrecipebox-app-atlas';
+  }
+}
 
 function generateBuildMarker() {
   const timestamp = new Date().toISOString();
@@ -35,11 +59,12 @@ console.log('🏗️ Build marker loaded:', BUILD_INFO);
 function verifyBuild(expectedHash) {
   try {
     console.log('🔍 Checking if build marker is active in container...');
+    const containerName = getCurrentContainerName();
     
     // Wait a moment for container to start
     setTimeout(() => {
       try {
-        const logs = execSync('docker logs momsrecipebox-app-atlas --tail 10', { encoding: 'utf8' });
+        const logs = execSync(`docker logs ${containerName} --tail 10`, { encoding: 'utf8' });
         
         if (logs.includes(expectedHash)) {
           console.log('✅ Build verification PASSED - New code is active');
@@ -51,6 +76,7 @@ function verifyBuild(expectedHash) {
         }
       } catch (error) {
         console.log('⚠️ Could not verify build - container may not be ready yet');
+        console.log(`📝 Error details: ${error.message}`);
         return null;
       }
     }, 2000);

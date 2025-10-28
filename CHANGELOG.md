@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-10-28
 
+### Added - Unified Restart System & Test Architecture
+
+#### 🚀 **UNIFIED RESTART SYSTEM**: Single Intelligent Command for All Restart Operations
+
+- **Smart Restart Command**: New `npm run restart` replaces complex rebuild/restart/verify command matrix
+- **Automatic Code Change Detection**: Generates unique build badges and compares against running app to detect code changes
+- **Intelligent Strategy Selection**: Simple restart for no changes, full rebuild for code changes detected
+- **Build Badge Verification**: Hash-specific verification proves new code is actually deployed in container
+- **On-Demand Build Marker Loading**: Enhanced `/initializeBuildMarker` endpoint loads fresh build markers on every request
+- **Docker Cache Intelligence**: Automatically escalates from efficient restart to nuclear rebuild when Docker cached layers detected
+
+#### 🧪 **UNIFIED TEST ARCHITECTURE**: Consistent Testing Across All Deployment Modes
+
+- **Shared Environment Detection**: New `app/tests/utils/environment-detector.js` provides consistent URL/mode detection
+- **Standardized Test Commands**: `test:functional` runs identical business logic tests across local/atlas/lambda modes
+- **Automatic Mode Detection**: Tests automatically detect Express vs Lambda execution context
+- **Cross-Platform Compatibility**: Unified test utilities work identically on Windows/Mac/Linux
+- **Backward Compatibility**: Legacy environment variables still supported for smooth transition
+
+#### 🔧 **INFRASTRUCTURE ENHANCEMENTS**: Local Development & Container Improvements
+
+- **AWS Credentials in Local Mode**: Docker containers now properly mount host AWS credentials for S3 image uploads
+- **S3-Only Image Storage**: Simplified image upload handler to use S3 exclusively, removing local storage complexity
+- **Enhanced Build Verification**: Multiline JSON parsing for robust build marker detection in container logs
+- **Profile-Aware Container Detection**: Smart rebuild system dynamically detects correct container names based on active profile
+
+#### 💻 **DEVELOPER EXPERIENCE IMPROVEMENTS**: Simplified Command Interface
+
+**BEFORE (Complex)**:
+```bash
+npm run restart           # Simple restart
+npm run rebuild           # Smart rebuild with verification  
+npm run rebuild:force     # Nuclear rebuild
+npm run rebuild:verify    # Generate verification marker
+```
+
+**AFTER (Unified)**:
+```bash
+npm run restart           # 🎯 ONE command does everything intelligently
+npm run restart:simple    # Available if you need basic restart
+```
+
+**Test Architecture Benefits**:
+- Same core business logic tests run across all deployment modes
+- Automatic environment detection eliminates mode-specific test variations
+- Shared utilities reduce code duplication and ensure consistency
+- Comprehensive mode coverage: Express (local/atlas) and Lambda (cloud)
+
 ### Fixed - Local Development Environment: Docker Database Connection
 
 #### 🔧 **LOCAL MODE DATABASE CONNECTION RESOLVED**: Complete Docker Networking Fix

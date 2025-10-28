@@ -176,24 +176,40 @@ For detailed implementation progress, see [`docs/JWT_AUTHORIZATION_PLAN.md`](doc
 
 ## 🧪 Testing & Development
 
-### Running Tests
+### Unified Testing Architecture
+
+MomsRecipeBox uses a unified testing architecture that ensures consistent test coverage across all deployment modes (local, atlas, lambda):
 
 ```bash
-npm test                     # Run all tests
-npm run test:watch           # Watch mode for development
-npm run test:lambda          # Test Lambda function directly
-npm run test:lambda:comprehensive  # Full Lambda validation suite
-cd app/tests && npm test     # Backend tests only
-cd ui && npm test            # Frontend tests only
+# Core functional tests (run same tests across all modes)
+cd app/tests && npm run test:functional
+
+# Mode-specific test commands
+cd app/tests && npm run test:express     # Express mode (local development)
+cd app/tests && npm run test:atlas      # Atlas mode (cloud database)
+cd app/tests && npm run test:lambda     # Lambda mode (AWS deployment)
+
+# Integration tests (infrastructure-specific)
+cd app/tests && npm run test:integration:local
+cd app/tests && npm run test:integration:atlas
+cd app/tests && npm run test:integration:lambda
+
+# Individual test suites
+cd app/tests && npm run test:recipes     # Recipe CRUD operations
+cd app/tests && npm run test:favorites   # Favorites functionality
+cd app/tests && npm run test:comments    # Comments system
+cd app/tests && npm run test:images      # Image upload/management
+cd app/tests && npm run test:shopping    # Shopping list features
 ```
 
-### Lambda Mode Testing
+### Test Architecture Design
 
-The comprehensive Lambda test validates all deployment aspects:
+- **Functional Tests**: Core business logic tests that run identically across all modes
+- **Integration Tests**: Infrastructure-specific tests for each deployment mode
+- **Environment Detection**: Automatic base URL detection based on execution context
+- **Shared Utilities**: Common environment detection and authentication across all test files
 
-```bash
-npm run test:lambda:comprehensive
-```
+The `test:functional` command ensures the same core business logic is validated regardless of whether you're running locally, against Atlas, or in Lambda mode.
 
 **Expected Results:**
 

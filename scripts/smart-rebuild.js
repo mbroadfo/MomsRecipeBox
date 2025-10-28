@@ -12,6 +12,32 @@
 
 import { execSync } from 'child_process';
 import { generateBuildMarker, verifyBuild } from './build-verification.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CONFIG_DIR = path.join(__dirname, '..', 'config');
+const PROFILES_FILE = path.join(CONFIG_DIR, 'deployment-profiles.json');
+
+function getCurrentContainerName() {
+  try {
+    const content = fs.readFileSync(PROFILES_FILE, 'utf8');
+    const profiles = JSON.parse(content);
+    const currentProfileName = profiles.currentProfile;
+    const currentProfile = profiles.profiles[currentProfileName];
+    
+    if (currentProfile && currentProfile.backend && currentProfile.backend.dockerService) {
+      return `momsrecipebox-${currentProfile.backend.dockerService}`;
+    }
+    
+    // Fallback to atlas if profile not found
+    return 'momsrecipebox-app-atlas';
+  } catch (error) {
+    console.log('⚠️ Could not determine container name, using atlas as fallback');
+    return 'momsrecipebox-app-atlas';
+  }
+}
 
 async function smartRebuild() {
   console.log('🧠 Smart Rebuild - Trying efficient rebuild first...');
@@ -26,7 +52,7 @@ async function smartRebuild() {
     execSync('npm run restart', { stdio: 'inherit' });
   } catch (error) {
     console.log('❌ Regular restart failed, proceeding to nuclear option...');
-    return nuclearRebuild();
+    return nuclearRebuild(marker.hash);
   }
   
   // Step 3: Wait for container to start
@@ -44,12 +70,13 @@ async function smartRebuild() {
     console.log('⚠️ Build verification failed - Docker cached layers detected');
     console.log('💡 Regular restart insufficient, escalating to nuclear rebuild...');
     console.log('🎯 This will remove all cached Docker layers and rebuild from scratch');
-    return nuclearRebuild();
+    return nuclearRebuild(marker.hash);
   }
 }
 
-async function nuclearRebuild() {
+async function nuclearRebuild(expectedHash) {
   console.log('💣 Nuclear Rebuild - Complete container recreation');
+  console.log('🎯 Expected hash:', expectedHash);
   
   try {
     execSync('npm run rebuild:force', { stdio: 'inherit' });
@@ -59,7 +86,7 @@ async function nuclearRebuild() {
     console.log('🔍 Verifying nuclear rebuild worked...');
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    const verificationResult = await verifyNuclearBuildAsync();
+    const verificationResult = await verifyNuclearBuildAsync(expectedHash);
     if (verificationResult) {
       console.log('✅ Nuclear rebuild verification PASSED - Build system is working');
       return true;
@@ -77,10 +104,11 @@ async function nuclearRebuild() {
   }
 }
 
-async function verifyNuclearBuildAsync() {
+async function verifyNuclearBuildAsync(expectedHash) {
   return new Promise((resolve) => {
     setTimeout(() => {
-      console.log('🔍 Checking if build marker system is working after nuclear rebuild...');
+      console.log('🔍 Checking if build marker system loaded expected hash after nuclear rebuild...');
+      console.log('🎯 Looking for hash:', expectedHash);
       
         // Trigger Lambda handler to initialize build marker system
         try {
@@ -91,28 +119,34 @@ async function verifyNuclearBuildAsync() {
         }      // Wait a moment for the request to process, then check logs
       setTimeout(() => {
         try {
-          const logs = execSync('docker logs momsrecipebox-app-atlas --tail 30', { encoding: 'utf8' });
+          const containerName = getCurrentContainerName();
+          const logs = execSync(`docker logs ${containerName} --tail 30`, { encoding: 'utf8' });
           
           // Look for build marker loading attempts at startup
           const hasMarkerAttempt = logs.includes('🔧 Loading build marker at container startup');
-          const hasMarkerSuccess = logs.includes('✅ Build marker loaded successfully at startup');
+          const hasMarkerSuccess = logs.includes('✅ Build marker loaded successfully');
           const hasMarkerFailure = logs.includes('⚠️ Build marker not loaded at startup');
           const hasMarkerOutput = logs.includes('🏗️ Build marker loaded');
+          const hasExpectedHash = logs.includes(expectedHash);
           
           console.log(`📋 Build marker diagnostics:`);
           console.log(`   🔧 Load attempt logged: ${hasMarkerAttempt ? '✅' : '❌'}`);
           console.log(`   ✅ Load success logged: ${hasMarkerSuccess ? '✅' : '❌'}`);
           console.log(`   ⚠️ Load failure logged: ${hasMarkerFailure ? '✅' : '❌'}`);
           console.log(`   🏗️ Marker output found: ${hasMarkerOutput ? '✅' : '❌'}`);
+          console.log(`   🎯 Expected hash found: ${hasExpectedHash ? '✅' : '❌'}`);
           
-          if (hasMarkerAttempt && hasMarkerSuccess && hasMarkerOutput) {
-            console.log('✅ Build marker system is working correctly');
+          if (hasMarkerAttempt && hasMarkerSuccess && hasMarkerOutput && hasExpectedHash) {
+            console.log('✅ Build marker system loaded the expected hash correctly');
             resolve(true);
           } else if (hasMarkerAttempt && hasMarkerFailure) {
             console.log('❌ Build marker system attempted but failed to load');
             resolve(false);
           } else if (!hasMarkerAttempt) {
             console.log('❌ Build marker system not even attempting to load');
+            resolve(false);
+          } else if (!hasExpectedHash) {
+            console.log('❌ Build marker system loaded but wrong hash');
             resolve(false);
           } else {
             console.log('❌ Build marker system in unknown state');
@@ -146,13 +180,15 @@ async function verifyBuildAsync(expectedHash) {
         // Wait a moment for initialization, then check logs
         setTimeout(() => {
           try {
-            const logs = execSync('docker logs momsrecipebox-app-atlas --tail 30', { encoding: 'utf8' });
+            const containerName = getCurrentContainerName();
+            const logs = execSync(`docker logs ${containerName} --tail 30`, { encoding: 'utf8' });
         
         // Look for build marker loading at startup and any markers in the logs
         const hasStartupAttempt = logs.includes('🔧 Loading build marker at container startup');
         const hasStartupSuccess = logs.includes('✅ Build marker loaded successfully at startup');
         
-        const buildMarkerPattern = /🏗️ Build marker loaded: \{[^}]+hash: '([^']+)'/g;
+        // Updated pattern to handle multiline build marker output
+        const buildMarkerPattern = /🏗️ Build marker loaded:[^}]*hash: '([^']+)'/gs;
         const foundMarkers = [];
         let match;
         
@@ -160,9 +196,15 @@ async function verifyBuildAsync(expectedHash) {
           foundMarkers.push(match[1]);
         }
         
-        if (logs.includes(expectedHash)) {
+        // Also check for the hash directly in logs (more reliable for multiline format)
+        const hashFound = logs.includes(expectedHash);
+        
+        if (hashFound || foundMarkers.includes(expectedHash)) {
           console.log('✅ Build verification PASSED - New code is active');
           console.log(`🎯 Found expected build marker: ${expectedHash}`);
+          if (foundMarkers.length > 0) {
+            console.log(`📋 All detected markers: ${foundMarkers.join(', ')}`);
+          }
           resolve(true);
         } else {
           console.log('❌ Build verification FAILED - Old code still running');
@@ -175,7 +217,7 @@ async function verifyBuildAsync(expectedHash) {
             console.log('🔍 Build marker system loaded at startup but expected marker not found');
             console.log('📝 Container restarted but Docker is using cached application layers');
           } else if (hasStartupAttempt && !hasStartupSuccess) {
-            console.log('� Build marker system attempted to load at startup but failed');
+            console.log('⚠️ Build marker system attempted to load at startup but failed');
             console.log('📝 Build marker file may be missing or corrupted');
           } else {
             console.log('🔍 No build marker loading attempt found in startup logs');

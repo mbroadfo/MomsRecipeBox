@@ -10,15 +10,8 @@ import url from 'url';
 
 const s3 = new AWS.S3();
 
-// For local development
+// For compatibility with ES modules
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const LOCAL_IMAGES_DIR = path.join(__dirname, '..', 'local_images');
-
-// Create the local images directory if it doesn't exist
-if (!fs.existsSync(LOCAL_IMAGES_DIR)) {
-  fs.mkdirSync(LOCAL_IMAGES_DIR, { recursive: true });
-  console.log(`Created local images directory: ${LOCAL_IMAGES_DIR}`);
-}
 
 function eventToStream(event) {
   return new Readable({

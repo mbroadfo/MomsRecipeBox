@@ -167,7 +167,7 @@
       }
     }
   },
-  "currentProfile": "lambda",
+  "currentProfile": "local",
   "metadata": {
     "version": "1.0.0",
     "managedBy": "profile-manager.js"

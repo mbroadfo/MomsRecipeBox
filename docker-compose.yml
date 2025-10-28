@@ -73,6 +73,11 @@ services:
       MONGODB_HOST: mongo:27017
       APP_MODE: ${APP_MODE:-express}
       MONGODB_MODE: local
+      AWS_PROFILE: ${AWS_PROFILE}
+      HOME: /root
+    volumes:
+      # Mount AWS credentials from host for S3 image uploads
+      - ${USERPROFILE}/.aws:/root/.aws:ro
     ports:
       - "3000:3000"
     entrypoint: >

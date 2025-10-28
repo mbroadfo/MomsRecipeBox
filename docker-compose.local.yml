@@ -55,6 +55,8 @@ services:
       NODE_ENV: development
       DEBUG: "true"
       WATCH_FILES: "true"
+      AWS_PROFILE: ${AWS_PROFILE}
+      HOME: /root
     ports:
       - "3000:3000"
       - "9229:9229"  # Debug port
@@ -62,6 +64,8 @@ services:
       # Enable hot reload in development
       - ./app:/app
       - /app/node_modules
+      # Mount AWS credentials from host for S3 image uploads
+      - ${USERPROFILE}/.aws:/root/.aws:ro
     depends_on:
       mongo:
         condition: service_healthy

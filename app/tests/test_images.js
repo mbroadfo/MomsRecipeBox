@@ -5,31 +5,8 @@ import path from 'path';
 import axios from 'axios';
 import { promisify } from 'util';
 import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 import 'dotenv/config';
-
-// Environment-aware base URL configuration
-const getBaseUrl = () => {
-  const envUrl = process.env.APP_BASE_URL;
-  const mode = process.env.APP_MODE || 'express';
-  
-  if (envUrl) {
-    console.log(`🔧 Using configured URL: ${envUrl}`);
-    return envUrl;
-  }
-  
-  // Default URLs based on mode
-  switch (mode) {
-    case 'lambda':
-      const lambdaUrl = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
-      console.log(`🚀 Lambda mode detected, using: ${lambdaUrl}`);
-      return lambdaUrl;
-    case 'express':
-    default:
-      const expressUrl = 'http://localhost:3000';
-      console.log(`🏠 Express mode, using: ${expressUrl}`);
-      return expressUrl;
-  }
-};
 
 const BASE_URL = getBaseUrl();
 // Use absolute paths to ensure files are found correctly regardless of working directory
@@ -356,9 +333,7 @@ async function generateTestReport() {
 
 async function runAllTests() {
   logStep('STARTING IMAGE API TEST SUITE');
-  
-  console.log(`🎯 Target API: ${BASE_URL}`);
-  console.log(`🔧 Mode: ${process.env.APP_MODE || 'express'}`);
+  logEnvironmentInfo();
   
   console.log('\n===== Validating Auth0 Configuration =====');
   try {

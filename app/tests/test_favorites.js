@@ -1,9 +1,10 @@
 import assert from 'assert';
 import { config } from 'dotenv';
 import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 config();
 
-const BASE = process.env.APP_BASE_URL || 'http://localhost:3000';
+const BASE = getBaseUrl();
 const testUserA = 'test-user-a';
 const testUserB = 'test-user-b';
 
@@ -57,6 +58,8 @@ async function getRecipe(recipeId) {
     console.log('===== Validating Auth0 Configuration =====');
     await validateConfig();
     console.log('✅ Auth0 configuration validated');
+    
+    logEnvironmentInfo();
     
     const recipeId = await createRecipe();
     console.log('Created recipe', recipeId);

@@ -24,6 +24,21 @@ const PROFILES_FILE = path.join(CONFIG_DIR, 'deployment-profiles.json');
 const BUILD_MARKER_FILE = 'app/build-marker.js';
 
 /**
+ * Get current deployment profile information
+ */
+function getCurrentProfile() {
+  try {
+    const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
+    const profileName = config.currentProfile || 'local';
+    const profileData = config.profiles[profileName];
+    return { name: profileName, data: profileData };
+  } catch (error) {
+    console.log('⚠️ Could not read profile config, defaulting to local');
+    return { name: 'local', data: null };
+  }
+}
+
+/**
  * Get current deployment profile container name
  */
 function getCurrentContainerName() {
@@ -168,6 +183,23 @@ async function verifyBadge(expectedBadge) {
 async function unifiedRestart() {
   console.log('🚀 Unified App Restart - Intelligent deployment system');
   console.log('');
+
+  // Check current deployment profile
+  const profile = getCurrentProfile();
+  
+  // Handle lambda mode - no local containers to restart
+  if (profile.name === 'lambda' || profile.name === 'cloud') {
+    console.log(`🌩️ ${profile.name.toUpperCase()} Mode Detected`);
+    console.log('📡 Testing against deployed Lambda API - no local containers to restart');
+    console.log('💡 To test changes:');
+    console.log('   1. Deploy changes: npm run deploy:lambda');
+    console.log('   2. Run tests: npm run test:lambda');
+    console.log('✅ No restart needed for external services');
+    return true;
+  }
+
+  // Continue with container-based restart logic for local/atlas modes
+  console.log(`📋 Profile: ${profile.name} mode`);
 
   // Step 1: Check if app is running and get current badge
   const currentBadge = await getCurrentAppBadge();

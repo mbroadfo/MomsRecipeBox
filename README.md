@@ -108,29 +108,29 @@ Available profiles:
 - **atlas**: MongoDB Atlas cloud database
 - **lambda**: Full AWS cloud deployment
 
-### Smart Rebuild System
+### Unified Restart System
 
-The project includes an intelligent Docker rebuild system that solves common development caching issues:
+The project includes an intelligent restart system that automatically detects changes and rebuilds only when necessary:
 
 ```bash
-npm run rebuild          # Smart rebuild - tries restart first, escalates if needed
-npm run rebuild:force    # Nuclear rebuild - complete Docker rebuild from scratch
-npm run rebuild:verify   # Generate build verification marker only
+npm run restart          # Single unified restart command for all deployment modes
 ```
 
 **How it works:**
 
-- Generates unique build markers to verify code deployment
-- Tries efficient container restart first
-- Automatically detects Docker layer caching issues
+- Generates unique build badges to verify code deployment
+- Compares current application state against running containers
+- Automatically escalates from restart → rebuild → force rebuild as needed
+- Works seamlessly across Local, Atlas, and AWS deployment modes
+- Provides clear feedback on actions taken and reasoning
 - Escalates to complete rebuild when cached layers prevent code updates
-- Verifies new code is actually running via dedicated Lambda endpoint
+- Verifies new code is actually running via dedicated health check endpoint
 
 **When to use:**
 
-- `rebuild` - General development when code changes aren't reflected
-- `rebuild:force` - When you know Docker caching is the issue
-- Use after making significant code changes to ensure deployment
+- Use `npm run restart` after making any code changes to ensure deployment
+- The system automatically determines the most efficient restart strategy
+- Perfect for daily development workflow with intelligent change detection
 
 ## 🛡️ Security & Backup
 

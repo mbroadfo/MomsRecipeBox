@@ -11,7 +11,7 @@ services:
     env_file:
       - config/current-profile.env
     entrypoint: [""]
-    command: ["node", "local_server.js"]
+    command: ["node", "app/local_server.js"]
     environment:
       # Atlas connection - use the URI from the profile env file
       # MONGODB_URI is already set in current-profile.env

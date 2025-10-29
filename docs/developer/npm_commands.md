@@ -66,10 +66,7 @@ npm run aws:mrb-api                  # Switch to deployment AWS profile
 | `npm run start:atlas` | Start Atlas containers | Docker Compose with atlas profile |
 | `npm run stop` | Stop all containers | Graceful shutdown |
 | `npm run stop:all` | Stop and remove volumes | Complete cleanup |
-| `npm run restart` | Restart containers | Stop + start local stack |
-| `npm run rebuild` | Smart rebuild system | Tries restart, escalates to nuclear if needed |
-| `npm run rebuild:force` | Nuclear rebuild option | Complete Docker rebuild from scratch |
-| `npm run rebuild:verify` | Generate build marker | Create verification marker only |
+| `npm run restart` | Unified restart system | Intelligent restart for all deployment modes |
 
 ---
 
@@ -364,16 +361,15 @@ npm run start:local
 **Code changes not reflected in containers?**
 
 ```bash
-npm run rebuild          # Smart rebuild - tries restart first
-npm run rebuild:force    # Nuclear option if restart fails
+npm run restart          # Unified restart system - automatically detects and fixes
 ```
 
 **Docker caching issues?**
 
 ```bash
-# The smart rebuild system automatically detects and fixes Docker caching
-npm run rebuild          # Generates build markers to verify deployment
-                        # Escalates to nuclear rebuild if caching detected
+# The unified restart system automatically detects and fixes Docker caching
+npm run restart          # Generates build badges to verify deployment
+                        # Escalates through restart → rebuild → force rebuild as needed
 ```
 
 **AWS credentials issues?**

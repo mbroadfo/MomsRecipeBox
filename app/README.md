@@ -13,8 +13,12 @@ npm install
 # Set up environment variables
 cp .env.example .env
 
-# Run locally
+# Run locally (for development only)
 npm run start
+
+# OR restart the application in containers (recommended)
+cd ..
+npm run restart
 ```
 
 For a complete setup guide, see the [Getting Started Guide](../docs/guides/getting_started.md).

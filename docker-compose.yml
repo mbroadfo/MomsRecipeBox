@@ -96,8 +96,8 @@ services:
   app-atlas:
     container_name: momsrecipebox-app-atlas
     build:
-      context: app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/Dockerfile
     env_file:
       - .env  # Only base configuration, no secrets
     environment:
@@ -144,7 +144,7 @@ services:
         if [ \"$$APP_MODE\" = 'lambda' ]; then
           /lambda-entrypoint.sh lambda.handler;
         else
-          node local_server.js;
+          node app/local_server.js;
         fi
       "
     profiles:

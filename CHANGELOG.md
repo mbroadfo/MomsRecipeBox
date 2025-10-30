@@ -5,7 +5,26 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-28
+## [Unreleased] - 2025-10-30
+
+### Fixed - Critical Unified Restart System Bug Fix & Complete Validation
+
+#### 🐛 **CRITICAL BUG FIX**: Container Name Detection in Unified Restart System
+
+- **Fixed Container Name Detection**: Corrected `config.active` → `config.currentProfile` bug in `scripts/app-restart.js`
+- **Root Cause**: getCurrentContainerName() was reading wrong profile field, causing restart system to target wrong containers
+- **Impact**: Unified restart system now correctly identifies and operates on the proper container for each deployment mode
+- **Performance Optimization**: Removed unnecessary retry logic, optimized badge verification timing (3s vs 10+ seconds)
+
+#### ✅ **COMPLETE VALIDATION**: Full Testing Cycle Across All Deployment Modes
+
+- **Atlas Mode Testing**: Verified `npm restart` + complete test suite (recipes, images, comments, favorites, shopping)
+- **Local Mode Testing**: Verified `npm restart` + complete test suite with full Docker stack
+- **Atlas Mode Retest**: Final validation proving system works reliably across profile switches
+- **Environment Variable Isolation**: Fixed MONGODB_URI conflicts between Local and Atlas modes in profile manager
+- **Cross-Mode Compatibility**: Proven seamless switching between Local ↔ Atlas deployment modes
+
+#### 🚀 **PRODUCTION-READY UNIFIED RESTART SYSTEM**: Previously Added (2025-10-28)
 
 ### Added - Unified Restart System & Test Architecture
 
@@ -36,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 💻 **DEVELOPER EXPERIENCE IMPROVEMENTS**: Simplified Command Interface
 
 **BEFORE (Complex)**:
+
 ```bash
 npm run restart           # Simple restart
 npm run rebuild           # Smart rebuild with verification  
@@ -44,12 +64,14 @@ npm run rebuild:verify    # Generate verification marker
 ```
 
 **AFTER (Unified)**:
+
 ```bash
 npm run restart           # 🎯 ONE command does everything intelligently
 npm run restart:simple    # Available if you need basic restart
 ```
 
 **Test Architecture Benefits**:
+
 - Same core business logic tests run across all deployment modes
 - Automatic environment detection eliminates mode-specific test variations
 - Shared utilities reduce code duplication and ensure consistency

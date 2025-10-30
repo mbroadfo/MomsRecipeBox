@@ -125,7 +125,11 @@ function generateCurrentProfileEnv(profileName, profile, staticEnv) {
   // Add computed values
   if (profile.database.connectionString) {
     const mongoUri = replaceEnvVars(profile.database.connectionString, staticEnv);
-    lines.push(`MONGODB_URI=${mongoUri}`);
+    // Only set MONGODB_URI in env file for local mode
+    // Atlas/Lambda/Cloud modes get their URI from AWS Secrets Manager via Docker startup script
+    if (profile.database.type === 'local') {
+      lines.push(`MONGODB_URI=${mongoUri}`);
+    }
   }
   
   if (profile.frontend.apiUrl) {

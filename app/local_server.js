@@ -336,6 +336,31 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         
+        // Handle build marker initialization endpoint
+        if (req.method === 'POST' && cleanPath === '/initializeBuildMarker') {
+          console.log('🔧 Build marker initialization requested via POST /initializeBuildMarker');
+          try {
+            const buildMarker = await import(`./build-marker.js?t=${Date.now()}`);
+            console.log('✅ Build marker loaded successfully:', buildMarker.BUILD_INFO);
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              status: 'success',
+              message: 'Build marker initialized',
+              buildInfo: buildMarker.BUILD_INFO
+            }));
+          } catch (error) {
+            console.error('❌ Failed to load build marker:', error.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              status: 'error',
+              message: 'Failed to initialize build marker',
+              error: error.message
+            }));
+          }
+          return;
+        }
+        
         // Parse query parameters
         let queryStringParameters = {};
         if (urlParts.length > 1) {

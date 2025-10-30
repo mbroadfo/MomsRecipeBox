@@ -44,7 +44,7 @@ function getCurrentProfile() {
 function getCurrentContainerName() {
   try {
     const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
-    const activeProfile = config.active || 'local';
+    const activeProfile = config.currentProfile || 'local';
     return `momsrecipebox-app-${activeProfile}`;
   } catch (error) {
     console.log('⚠️ Could not read profile config, defaulting to local');
@@ -97,6 +97,8 @@ async function getCurrentAppBadge() {
   }
 
   try {
+    console.log('📡 Getting current app badge...');
+    
     // Trigger badge initialization to get current badge
     execSync('node -e "const http = require(\'http\'); const postData = JSON.stringify({}); const req = http.request({hostname: \'localhost\', port: 3000, path: \'/initializeBuildMarker\', method: \'POST\', headers: {\'Content-Type\': \'application/json\', \'Content-Length\': Buffer.byteLength(postData)}}, () => {}); req.write(postData); req.end();"', { stdio: 'pipe' });
     
@@ -107,7 +109,6 @@ async function getCurrentAppBadge() {
     const logs = execSync(`docker logs ${containerName} --tail 20`, { encoding: 'utf8' });
     
     // Extract current badge hash from logs
-    // Handle multiline JSON format: hash: 'value' across lines
     const hashPattern = /hash: '([^']+)'/s;
     let match = hashPattern.exec(logs);
     
@@ -116,11 +117,11 @@ async function getCurrentAppBadge() {
       console.log(`📱 Current app badge: ${currentBadge}`);
       return currentBadge;
     } else {
-      console.log('📱 No current badge found in app');
+      console.log('📱 No badge found in logs');
       return null;
     }
   } catch (error) {
-    console.log('⚠️ Could not get current app badge:', error.message);
+    console.log(`⚠️ Error getting badge: ${error.message}`);
     return null;
   }
 }
@@ -161,7 +162,7 @@ async function fullRebuild() {
 async function verifyBadge(expectedBadge) {
   console.log(`🔍 Verifying badge: ${expectedBadge}`);
   
-  // Wait for container to be ready
+  // Give container a moment to start serving requests
   await new Promise(resolve => setTimeout(resolve, 3000));
   
   const actualBadge = await getCurrentAppBadge();
@@ -173,6 +174,7 @@ async function verifyBadge(expectedBadge) {
     console.log('❌ Badge verification FAILED');
     console.log(`   Expected: ${expectedBadge}`);
     console.log(`   Actual: ${actualBadge || 'none'}`);
+    console.log('❌ Verification failed - app may not be running new code');
     return false;
   }
 }

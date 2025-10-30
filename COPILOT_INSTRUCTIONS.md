@@ -34,6 +34,31 @@ docker-compose up -d
 **❌ MISTAKE**: Not recognizing hardcoded localhost references in Docker environments
 **✅ CORRECT**: In Docker containers, use service names (mongo:27017) not localhost:27017 for inter-container communication
 
+**❌ MISTAKE**: Using wrong profile field for container name detection
+**✅ CORRECT**: Container detection must use `config.currentProfile`, not `config.active`
+
+**Critical Container Name Pattern**:
+
+```javascript
+// ❌ WRONG - Using non-existent field
+function getCurrentContainerName() {
+  const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
+  const activeProfile = config.active || 'local';  // ← config.active doesn't exist!
+  return `momsrecipebox-app-${activeProfile}`;
+}
+
+// ✅ CORRECT - Using actual profile field  
+function getCurrentContainerName() {
+  const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
+  const activeProfile = config.currentProfile || 'local';  // ← config.currentProfile is correct
+  return `momsrecipebox-app-${activeProfile}`;
+}
+```
+
+**Root Cause**: Profile config structure uses `currentProfile` field, not `active`. Using wrong field causes restart system to target wrong containers, leading to failed operations and mysterious "container not found" errors.
+
+**Debugging Pattern**: When Docker operations fail with "container not found", always verify the container name detection logic is reading the correct profile field from `config/deployment-profiles.json`.
+
 ### 2. Build Verification Logic Errors
 
 **❌ MISTAKE**: Creating build verification systems that don't actually trigger the code they're trying to verify

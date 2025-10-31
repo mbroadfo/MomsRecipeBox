@@ -167,7 +167,7 @@
       }
     }
   },
-  "currentProfile": "atlas",
+  "currentProfile": "lambda",
   "metadata": {
     "version": "1.0.0",
     "managedBy": "profile-manager.js"

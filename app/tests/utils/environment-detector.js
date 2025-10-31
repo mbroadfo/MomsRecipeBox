@@ -5,6 +5,9 @@
  * Supports automatic detection of Express vs Lambda modes, plus explicit overrides.
  */
 
+// Ensure dotenv is loaded for consistent environment variable access
+import 'dotenv/config';
+
 /**
  * Get the appropriate base URL for API testing based on environment
  * @returns {string} The base URL for the current environment

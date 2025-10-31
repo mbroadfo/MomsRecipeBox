@@ -73,6 +73,7 @@ function getCurrentContainerName() {
 **✅ CORRECT**: Always use `npm run restart` - it intelligently handles everything
 
 **Build Marker System - Key Insights**:
+
 - **On-Demand Loading**: Build markers load fresh on every `POST /initializeBuildMarker` request
 - **Cache Bypass**: Uses timestamp query parameters to force fresh module imports
 - **Hash-Specific Verification**: Verifies the exact expected build hash is loaded, not just general functionality
@@ -290,6 +291,7 @@ environment:
 ```
 
 **Key Benefits**:
+
 - **S3 image uploads work in local mode**: No more credential errors
 - **Profile-aware**: Uses your active AWS profile in containers
 - **Secure**: Read-only mount of credentials directory
@@ -315,17 +317,21 @@ execSync('npm run restart'); // Handles everything automatically
 ```
 
 **Unified Restart Logic**:
+
 1. **Check app status** and get current build badge
 2. **Generate new badge** with unique hash
-3. **Compare badges** to detect code changes
-4. **Choose strategy**:
+3. **Update test environment** to match current deployment profile
+4. **Compare badges** to detect code changes
+5. **Choose strategy**:
    - Same badges → Simple restart (Docker cached code is fine)
    - Different badges → Full rebuild + verification (code changes detected)
-5. **Verify deployment** by confirming new badge is active
+6. **Verify deployment** by confirming new badge is active
 
 **Key Benefits**:
+
 - **Zero guesswork**: System decides optimal restart strategy
 - **Robust verification**: Proves new code is actually running
+- **Test environment sync**: Automatically updates test .env files to match deployment mode
 - **Graceful escalation**: Falls back to full rebuild when simple restart fails
 - **Cross-platform**: Works identically on Windows/Mac/Linux
 
@@ -353,12 +359,36 @@ async function runTests() {
 }
 ```
 
+**CRITICAL**: Module-level constant caching can break environment variable timing
+
+```javascript
+// ❌ DANGEROUS: Caches BASE_URL before dotenv loads
+const BASE_URL = getBaseUrl(); // Cached at module load time!
+
+export default function runTests() {
+  // Uses stale cached value, ignores environment changes
+  const response = await fetch(`${BASE_URL}/api`);
+}
+
+// ✅ CORRECT: Dynamic function calls ensure fresh environment access
+function getBaseUrlDynamic() {
+  return getBaseUrl(); // Fresh call every time
+}
+
+export default function runTests() {
+  // Gets current environment value each time
+  const response = await fetch(`${getBaseUrlDynamic()}/api`);
+}
+```
+
 **Shared Environment Detector Benefits**:
+
 - **Consistent URL detection** across all test files
 - **Automatic mode detection** (Express vs Lambda)
 - **Standardized logging** for debugging
 - **Backward compatibility** with legacy environment variables
 - **Single source of truth** for environment logic
+- **Dynamic environment access** prevents caching issues
 
 ### Build Verification Best Practices
 
@@ -589,8 +619,9 @@ npm run restart           # 🎯 ONE command does everything!
 4. **✅ Verifies** new code is actually running
 
 **Key Benefits**:
+
 - **No guessing** which command to use
-- **Automatic Docker cache detection** 
+- **Automatic Docker cache detection**
 - **Full verification** that new code is deployed
 - **Intelligent escalation** from fast restart to full rebuild when needed
 
@@ -617,6 +648,7 @@ cd app/tests && npm run test:shopping    # Shopping lists
 ```
 
 **Test Architecture Design**:
+
 - **Shared Environment Detection**: All tests use `app/tests/utils/environment-detector.js`
 - **Consistent URL Detection**: Automatic Express vs Lambda mode detection
 - **Unified Business Logic**: Same core tests run across all deployment modes

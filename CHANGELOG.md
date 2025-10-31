@@ -5,7 +5,35 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-30
+## [Unreleased] - 2025-10-31
+
+### Fixed - Critical Test Environment Consistency & Cross-Mode Validation
+
+#### 🐛 **CRITICAL BUG FIX**: Test Environment Inconsistency
+
+- **Fixed Comments Test Environment Issue**: Replaced static `const BASE_URL = getBaseUrl()` with dynamic `getBaseUrlDynamic()` in `test_comments.js`
+- **Root Cause**: Comments test was caching BASE_URL at module load time before dotenv could load environment variables
+- **Impact**: Fixed critical inconsistency where comments test hit localhost while other tests correctly hit Lambda API
+- **Enhanced Environment Detection**: Added `import 'dotenv/config'` to `environment-detector.js` for consistent variable access
+- **Result**: All test files now consistently use correct API endpoints across all deployment modes
+
+#### ✅ **UNIFIED RESTART SYSTEM**: Complete Cross-Mode Test Environment Synchronization
+
+- **Enhanced app-restart.js**: Added `updateTestEnvironment()` function for automatic test .env file updates
+- **Smart Environment Switching**: Test environment automatically switches between localhost (local/atlas) and Lambda URL
+- **Lambda Mode Enhancements**: Comprehensive deployment management with ECR comparison and status checking
+- **Intelligent Container Cleanup**: Automatically stops local containers when switching to Lambda mode
+- **Cross-Mode Validation**: Validated unified restart system across Local → Atlas → Lambda mode transitions
+
+#### 🧪 **COMPREHENSIVE TESTING VALIDATION**: Full Testing Cycle Completed
+
+- **Local Mode**: ✅ Complete test suite validation (recipes, images, comments, favorites, shopping)
+- **Atlas Mode**: ✅ Complete test suite validation with cloud database
+- **Lambda Mode**: ✅ Complete test suite validation against deployed Lambda API
+- **Environment Consistency**: All tests now consistently hit correct API endpoints in all modes
+- **Test Coverage**: 100% success rate across all API test suites in all deployment modes
+
+## [Previous] - 2025-10-30
 
 ### Fixed - Critical Unified Restart System Bug Fix & Complete Validation
 

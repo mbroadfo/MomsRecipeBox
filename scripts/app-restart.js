@@ -18,6 +18,33 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+/**
+ * Update test environment to match current profile
+ */
+function updateTestEnvironment(profile) {
+  console.log('🧪 Updating test environment for profile:', profile.name);
+  
+  const testEnvPath = path.join(process.cwd(), 'app', 'tests', '.env');
+  
+  // Determine the correct API URL based on profile
+  let apiUrl = 'http://localhost:3000'; // Default for local/atlas
+  
+  if (profile.name === 'lambda') {
+    apiUrl = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
+  }
+  
+  // Update the test .env file
+  const testEnvContent = `APP_BASE_URL=${apiUrl}
+MONGODB_ROOT_USER=admin
+MONGODB_ROOT_PASSWORD=supersecret
+MONGODB_URI=mongodb://admin:supersecret@mongo:27017/moms_recipe_box_dev?authSource=admin
+MONGODB_DB_NAME=moms_recipe_box_dev
+`;
+  
+  fs.writeFileSync(testEnvPath, testEnvContent);
+  console.log(`✅ Test environment updated to use: ${apiUrl}`);
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_DIR = path.join(__dirname, '..', 'config');
 const PROFILES_FILE = path.join(CONFIG_DIR, 'deployment-profiles.json');
@@ -188,15 +215,86 @@ async function unifiedRestart() {
 
   // Check current deployment profile
   const profile = getCurrentProfile();
+  console.log(`📋 Profile: ${profile.name} mode`);
   
-  // Handle lambda mode - no local containers to restart
+  // Update test environment to match profile
+  updateTestEnvironment(profile);
+  
+  // Handle lambda mode - comprehensive deployment management
   if (profile.name === 'lambda' || profile.name === 'cloud') {
     console.log(`🌩️ ${profile.name.toUpperCase()} Mode Detected`);
-    console.log('📡 Testing against deployed Lambda API - no local containers to restart');
-    console.log('💡 To test changes:');
-    console.log('   1. Deploy changes: npm run deploy:lambda');
-    console.log('   2. Run tests: npm run test:lambda');
-    console.log('✅ No restart needed for external services');
+    console.log('📡 Managing deployed Lambda API');
+    
+    // Step 1: Clean up any running containers from previous modes
+    console.log('🧹 Cleaning up local containers...');
+    try {
+      execSync('npm run profile:stop', { stdio: 'inherit' });
+      console.log('✅ Local containers stopped');
+    } catch (error) {
+      console.log('⚠️ No containers to stop (already clean)');
+    }
+    
+    // Step 2: Generate build badge for deployment verification
+    const newBadge = generateBuildBadge();
+    
+    // Step 3: Check Lambda deployment status
+    console.log('🔍 Checking Lambda deployment status...');
+    
+    try {
+      // Get current Lambda function info
+      const lambdaInfo = JSON.parse(execSync('aws lambda get-function --function-name mrb-app-api --query "{LastModified:Configuration.LastModified,ImageDigest:Configuration.CodeSha256,ImageUri:Code.ImageUri}"', { encoding: 'utf8' }));
+      console.log(`� Current Lambda last modified: ${lambdaInfo.LastModified}`);
+      console.log(`🏷️ Current Lambda image: ${lambdaInfo.ImageUri}`);
+      
+      // Get latest ECR image info
+      const ecrImages = JSON.parse(execSync('aws ecr describe-images --repository-name mrb-app-api --query "imageDetails[?imageTags && contains(imageTags, \`dev\`)].{ImageDigest:imageDigest,ImagePushedAt:imagePushedAt,ImageTags:imageTags}" --output json', { encoding: 'utf8' }));
+      
+      if (ecrImages.length > 0) {
+        const latestEcrImage = ecrImages[0];
+        console.log(`📦 Latest ECR image pushed: ${latestEcrImage.ImagePushedAt}`);
+        
+        // Compare timestamps to see if deployment is needed
+        const lambdaTime = new Date(lambdaInfo.LastModified);
+        const ecrTime = new Date(latestEcrImage.ImagePushedAt);
+        
+        if (ecrTime > lambdaTime) {
+          console.log('🎯 ECR image is newer than Lambda deployment - deployment needed!');
+          console.log('🚀 Triggering Lambda deployment...');
+          
+          try {
+            execSync('npm run deploy:lambda', { stdio: 'inherit' });
+            console.log('✅ Lambda deployment completed');
+            
+            // Verify deployment
+            console.log('🔍 Verifying deployment...');
+            const updatedLambda = JSON.parse(execSync('aws lambda get-function --function-name mrb-app-api --query "Configuration.LastModified"', { encoding: 'utf8' }));
+            console.log(`✅ Lambda updated: ${updatedLambda}`);
+            
+          } catch (deployError) {
+            console.log('❌ Lambda deployment failed:', deployError.message);
+            console.log('💡 Manual deployment required: npm run deploy:lambda');
+            return false;
+          }
+        } else {
+          console.log('✅ Lambda deployment is current - no deployment needed');
+        }
+      } else {
+        console.log('⚠️ No tagged ECR image found - may need to build and deploy');
+      }
+      
+    } catch (error) {
+      console.log('⚠️ Could not check Lambda status:', error.message);
+      console.log('💡 Manual verification recommended');
+    }
+    
+    // Step 4: Provide next steps
+    console.log('');
+    console.log('🧪 Next steps for testing:');
+    console.log('   1. Run tests: npm run test');
+    console.log(`   2. Expected build badge: ${newBadge.hash}`);
+    console.log('   3. Check Lambda logs: aws logs tail /aws/lambda/mrb-app-api --follow');
+    
+    console.log('✅ Lambda mode restart sequence completed');
     return true;
   }
 

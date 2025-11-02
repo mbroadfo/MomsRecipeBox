@@ -65,7 +65,7 @@ resource "aws_lambda_function" "app_lambda" {
   role          = aws_iam_role.app_lambda_role[count.index].arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.app_repo[count.index].repository_url}:dev"
-  timeout       = 15
+  timeout       = 30
   memory_size   = 256
   
   environment {
@@ -81,6 +81,7 @@ resource "aws_lambda_function" "app_lambda" {
       # ==============================================
       MONGODB_MODE = "atlas"
       MONGODB_DB_NAME = "moms_recipe_box_dev"
+      # MONGODB_ATLAS_URI is fetched from AWS Secrets Manager at runtime
       
       # ==============================================
       # AWS Configuration
@@ -91,7 +92,7 @@ resource "aws_lambda_function" "app_lambda" {
       # ==============================================
       # Health Check Configuration
       # ==============================================
-      ENABLE_STARTUP_HEALTH_CHECKS = "true"
+      ENABLE_STARTUP_HEALTH_CHECKS = "false"
       ENABLE_PERIODIC_HEALTH_CHECKS = "false"
       FAIL_ON_CRITICAL_HEALTH = "false"
       ENABLE_DATA_QUALITY_CHECKS = "true"

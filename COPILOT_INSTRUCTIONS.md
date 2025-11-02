@@ -79,7 +79,63 @@ function getCurrentContainerName() {
 - **Hash-Specific Verification**: Verifies the exact expected build hash is loaded, not just general functionality
 - **Multiline JSON Handling**: Uses proper regex patterns to handle multiline build marker output in logs
 
-### 3. AWS Profile Management
+### 3. Lambda and MongoDB Atlas Integration
+
+**❌ MISTAKE**: Calling async functions without `await`
+**✅ CORRECT**: Always await async functions that return Promises
+
+**Critical Pattern**:
+```javascript
+// ❌ WRONG - Missing await on async function
+const uri = getMongoConnectionString();  // Returns Promise, not string!
+
+// ✅ CORRECT - Properly awaiting async function
+const uri = await getMongoConnectionString();
+```
+
+**Root Cause**: When `getMongoConnectionString()` was changed from synchronous to async (to fetch from Secrets Manager), the calling code wasn't updated with `await`. This caused the function to return a Promise object instead of the connection string, leading to MongoDB connection failures.
+
+**❌ MISTAKE**: Storing MongoDB Atlas credentials in Lambda environment variables
+**✅ CORRECT**: Fetch MongoDB Atlas URI from AWS Secrets Manager at runtime
+
+**Why This Matters**:
+- Terraform only has access to local MongoDB passwords, not Atlas passwords
+- Atlas passwords stored securely in AWS Secrets Manager
+- Lambda must fetch credentials at runtime using AWS SDK
+- Environment variables would contain wrong/stale passwords
+
+**Lambda MongoDB Connection Pattern**:
+```javascript
+// Fetch from Secrets Manager (Lambda only)
+if (process.env.APP_MODE === 'lambda') {
+  const client = new SecretsManagerClient({ region: 'us-west-2' });
+  const command = new GetSecretValueCommand({ SecretId: secretName });
+  const response = await client.send(command);
+  const secrets = JSON.parse(response.SecretString);
+  return secrets.MONGODB_ATLAS_URI;
+}
+```
+
+**❌ MISTAKE**: Using default MongoDB timeout settings in Lambda
+**✅ CORRECT**: Configure connection timeouts appropriate for Lambda cold starts
+
+**Required Connection Options**:
+```javascript
+const connectionOptions = {
+  serverSelectionTimeoutMS: 10000,  // 10 seconds for server selection
+  connectTimeoutMS: 10000,           // 10 seconds for initial connection
+  socketTimeoutMS: 45000,            // 45 seconds for operations
+};
+const client = new MongoClient(uri, connectionOptions);
+```
+
+**Lambda Timeout Considerations**:
+- Secrets Manager fetch: ~1-2 seconds
+- MongoDB Atlas connection: ~2-5 seconds
+- Lambda timeout should be 30+ seconds for cold starts
+- Warm starts connect much faster (cached connection)
+
+### 4. AWS Profile Management
 
 **❌ MISTAKE**: Using wrong AWS profiles for different operations
 **✅ CORRECT**: Always use the appropriate AWS profile for each operation type:

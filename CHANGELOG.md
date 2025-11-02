@@ -5,7 +5,46 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-31
+## [Unreleased] - 2025-11-02
+
+### Fixed - Lambda Authentication & MongoDB Atlas Integration
+
+#### 🐛 **CRITICAL BUG FIX**: Missing `await` on Async Function Call
+
+- **Fixed Missing Await**: Added `await` keyword to `getMongoConnectionString()` call in `app/app.js:128`
+- **Root Cause**: Function was changed from sync to async but calling code wasn't updated
+- **Impact**: Lambda was receiving Promise object instead of connection string, causing 503 errors
+- **Result**: MongoDB connection now works correctly in Lambda environment
+
+#### ✅ **LAMBDA MONGODB ATLAS INTEGRATION**: Secrets Manager Implementation
+
+- **Secrets Manager Integration**: Implemented runtime fetch of MongoDB Atlas URI from AWS Secrets Manager
+- **Enhanced Connection Logic**: Modified `getMongoConnectionString()` to fetch credentials at runtime in Lambda mode
+- **Security Improvement**: Removed hardcoded Atlas password from Terraform (was using wrong local password)
+- **Connection Optimization**: Added Lambda-appropriate timeout settings (10s connection, 45s socket)
+- **Dependencies Added**: Installed `@aws-sdk/client-secrets-manager` v3.712.0
+
+#### 🔧 **INFRASTRUCTURE IMPROVEMENTS**
+
+- **Lambda Timeout Increased**: Changed from 15s to 30s to accommodate cold start + Secrets Manager fetch
+- **Auth Utils Created**: Added `app/utils/auth_utils.js` for JWT user ID extraction
+- **Terraform Cleanup**: Removed incorrect MONGODB_ATLAS_URI environment variable
+- **Docker Optimization**: Multiple image rebuilds with connection timeout fixes
+
+#### 📊 **TESTING & VALIDATION**
+
+- **Authentication Verified**: ✅ JWT authorizer working correctly
+- **Lambda Integration**: ✅ Successfully connects to MongoDB Atlas (103 recipes retrieved)
+- **CORS Headers**: ✅ Present on all responses
+- **User Context**: ✅ User ID properly extracted from JWT claims
+
+#### 📝 **DOCUMENTATION**
+
+- **COPILOT_INSTRUCTIONS.md**: Added comprehensive Lambda/MongoDB Atlas integration patterns
+- **Error Patterns**: Documented missing `await` pattern and Secrets Manager integration approach
+- **Connection Timeouts**: Documented Lambda-specific MongoDB timeout requirements
+
+## [Previous] - 2025-10-31
 
 ### Fixed - Critical Test Environment Consistency & Cross-Mode Validation
 

@@ -29,11 +29,16 @@ class Auth0TokenGenerator {
         try {
             const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
             const region = process.env.AWS_REGION || 'us-west-2';
-            
+            const awsProfile = process.env.AWS_PROFILE || 'mrb-api';
+
             console.log('🔐 Retrieving Auth0 credentials from AWS Secrets Manager...');
-            
+            console.log(`📋 Using AWS Profile: ${awsProfile}`);
+
             const command = `aws secretsmanager get-secret-value --secret-id "${secretName}" --region "${region}" --query SecretString --output text`;
-            const secretJson = execSync(command, { encoding: 'utf-8' }).trim();
+            const secretJson = execSync(command, {
+                encoding: 'utf-8',
+                env: { ...process.env, AWS_PROFILE: awsProfile }
+            }).trim();
             
             const secrets = JSON.parse(secretJson);
             console.log('✅ Auth0 credentials retrieved successfully from AWS');

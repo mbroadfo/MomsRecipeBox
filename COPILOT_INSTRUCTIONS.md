@@ -796,6 +796,51 @@ The jobjar is a running list of:
 
 Execute this comprehensive checklist **EVERY TIME**:
 
+#### 0. Workspace Cleanup & Regression Check
+
+**BEFORE starting documentation updates, check for uncommitted changes:**
+
+```bash
+git status
+```
+
+**Identify what needs attention:**
+
+1. **Modified tracked files** - Review and either:
+   - Include in commit if related to the work
+   - Revert if they were unintended changes
+   - Stash if they're work-in-progress for later
+
+2. **Untracked files** - Categorize and handle appropriately:
+   - **Temporary test/debug files** - Delete if no longer needed
+   - **Useful debugging scripts** - Commit to `scripts/` with documentation
+   - **Generated files** (logs, build artifacts) - Add to `.gitignore`
+   - **IDE/workspace files** - Add to `.gitignore`
+
+**Common temporary files to clean up:**
+- `test-*.js` in root (debug scripts, not formal tests)
+- `*-response.json`, `*-output.txt` (debugging output)
+- `.claude/` or other IDE workspace directories
+- Lambda test event files created for debugging
+
+**Pattern for cleanup:**
+
+```bash
+# Review untracked files
+git status
+
+# Delete temporary files
+rm test-temp-debug.js lambda-response.json
+
+# Add useful scripts to proper location
+git add scripts/useful-debug-tool.js
+
+# Update .gitignore for generated files
+echo "*.local.json" >> .gitignore
+```
+
+**Before proceeding**: Ensure `git status` shows only intentional changes that should be committed.
+
 #### 1. Documentation Updates
 
 **COPILOT_INSTRUCTIONS.md** - Update unless instructions are perfectly clear already:

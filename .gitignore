@@ -26,6 +26,9 @@ tfplan
 # VSCode
 .vscode/
 
+# Claude Code workspace
+.claude/
+
 # output
 output/
 

@@ -3,7 +3,8 @@
 ##################################################################
 
 provider "aws" {
-  region = "us-west-2"
+  region  = "us-west-2"
+  profile = "terraform-mrb"
 }
 
 # Removed RDS and VPC-related resources

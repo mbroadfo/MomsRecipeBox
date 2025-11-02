@@ -2,9 +2,201 @@
 
 Future improvements, features, and tasks identified during development but not immediately implemented.
 
+## 🎯 PHASE 4: Cloud Mode Completion & Phase 5: Production Consolidation Plan
+
+**Context**: The project evolved through four deployment modes:
+- **Phase 1**: Local (Docker + local MongoDB) ✅ Development foundation
+- **Phase 2**: Atlas (Docker + MongoDB Atlas) ✅ Cloud database integration
+- **Phase 3**: Lambda (Vite localhost → Lambda API + Atlas DB) ✅ Backend serverless complete
+- **Phase 4**: **Cloud Mode** (CloudFront UI → Lambda API + Atlas DB) 🔨 **INFRASTRUCTURE DEPLOYED, UI NOT YET DEPLOYED**
+
+**Cloud Mode Status:**
+- ✅ S3 bucket created: `mrb-ui-hosting-dev`
+- ✅ CloudFront distribution deployed: `d17a7bunmsfmub.cloudfront.net` (E15JMXLPX2IABK)
+- ✅ Deployment script exists: `deploy-ui.js`
+- ✅ Configuration ready: `.env.production`
+- ❌ UI never built for production
+- ❌ UI never uploaded to S3
+- ❌ CloudFront URL never tested
+- ❌ Full-stack cloud deployment never validated
+
+**Current Status**: Lambda backend complete with full AI integration. Cloud Mode infrastructure deployed but UI not yet deployed to CloudFront. Need to complete Phase 4 (Cloud Mode), then consolidate and cleanup for production.
+
+### ☁️ Phase 4: Cloud Mode Completion (NEXT PRIORITY)
+
+**Goal**: Deploy UI to CloudFront and validate full-stack cloud deployment
+
+**Tasks**:
+- [ ] **Build and deploy UI to S3/CloudFront**
+  - Build production UI: `npm run ui:build:production`
+  - Deploy to S3: `npm run deploy:ui` (uses existing deploy-ui.js script)
+  - Verify CloudFront invalidation completes
+  - Test CloudFront URL: `https://d17a7bunmsfmub.cloudfront.net`
+
+- [ ] **End-to-end cloud validation**
+  - Verify Auth0 authentication works through CloudFront
+  - Test all major features (recipes, AI assistant, shopping list, admin panel)
+  - Validate API calls from CloudFront → API Gateway → Lambda
+  - Check performance and latency
+  - Test CORS configuration
+
+- [ ] **Configure custom domain (optional)**
+  - Set up Route 53 hosted zone
+  - Configure SSL certificate in ACM
+  - Update CloudFront with custom domain
+  - Update Auth0 allowed origins
+
+**Impact**: Complete full-stack serverless deployment, eliminate localhost dependency for testing
+**Effort**: 1-2 days for deployment and validation
+
+---
+
+### 🧹 Phase 5: Production Consolidation & Cleanup Tasks
+
+#### 1. Mode Consolidation & Simplification (High Priority)
+**Goal**: Transition to Lambda-only production deployment, archive development modes
+
+**Tasks**:
+- [ ] **Document Lambda-only deployment strategy**
+  - Create production deployment runbook
+  - Document rollback procedures
+  - Create disaster recovery plan
+
+- [ ] **Identify and archive legacy mode artifacts**
+  - Mark local/atlas npm commands as "development only"
+  - Move development mode scripts to `scripts/dev/` directory
+  - Update README to focus on Lambda production deployment
+  - Create `docs/archive/development-modes.md` for historical reference
+
+- [ ] **Simplify npm command structure**
+  - Reduce ~50+ npm commands to essential production commands
+  - Keep only: deploy, test, monitor, rollback commands for production
+  - Move development-specific commands to separate package.json section
+  - Document which commands are production vs development
+
+- [ ] **Consolidate script languages**
+  - Audit all PowerShell (.ps1) scripts
+  - Convert essential scripts to Node.js for cross-platform compatibility
+  - Remove or archive one-off debugging scripts
+  - Standardize on JavaScript for all automation
+
+- [ ] **Documentation consolidation**
+  - Merge redundant documentation
+  - Update all docs to reflect Lambda-first approach
+  - Archive historical development mode documentation
+  - Create single source of truth for production deployment
+
+**Impact**: Simplified codebase, faster onboarding, reduced maintenance burden
+**Effort**: 3-5 days of systematic cleanup and documentation
+
+#### 2. Test Data Cleanup & Management (Medium Priority)
+**Goal**: Implement automatic cleanup of test artifacts in Atlas database
+
+**Current Issues**:
+- Test runs leave orphaned recipes in production Atlas database
+- Failed tests don't clean up their test data
+- Mock user ID (`auth0|testuser`) scattered throughout test data
+- Test data accumulates over time, cluttering production database
+
+**Tasks**:
+- [ ] **Implement automatic test cleanup**
+  - Add cleanup hooks to test suite (afterEach/afterAll)
+  - Ensure cleanup runs even on test failures (try/finally blocks)
+  - Tag all test data with `_test: true` flag for easy identification
+  - Create scheduled cleanup job for orphaned test data
+
+- [ ] **Fix mock user ID references**
+  - Replace hardcoded `auth0|testuser` with actual user_id field
+  - Update test utilities to use real user IDs from Auth0
+  - Ensure test data uses proper user associations
+  - Audit all test files for mock ID references
+
+- [ ] **Test data isolation strategy**
+  - Consider using separate test database or collection
+  - Implement test data prefixing (e.g., `TEST_recipe_name`)
+  - Add database cleanup verification to CI/CD pipeline
+  - Create manual cleanup script for emergency use
+
+**Impact**: Clean production database, accurate test data, better test reliability
+**Effort**: 2-3 days including test suite updates
+
+#### 3. S3 Orphan Cleanup Integration (Medium Priority)
+**Goal**: Keep S3 orphan image cleanup working with Atlas database
+
+**Current Status**: Orphan cleanup process exists but needs Atlas integration verification
+
+**Tasks**:
+- [ ] **Verify orphan cleanup with Atlas**
+  - Test orphan detection against Atlas database
+  - Ensure S3 cleanup doesn't affect active recipes
+  - Validate cleanup reports are accurate
+  - Test with production-scale data
+
+- [ ] **Automate orphan cleanup**
+  - Create scheduled Lambda function for cleanup (weekly?)
+  - Add monitoring and alerting for cleanup runs
+  - Generate cleanup reports for review
+  - Implement dry-run mode for safety
+
+- [ ] **S3 lifecycle policies**
+  - Configure S3 lifecycle rules for automatic cleanup
+  - Set up versioning for image recovery
+  - Implement soft-delete with retention period
+  - Document image storage policies
+
+**Impact**: Reduced S3 costs, clean storage, no orphaned images
+**Effort**: 2 days for integration and automation
+
+### 📊 Success Metrics
+
+**Code Simplification**:
+- Reduce npm commands from 50+ to ~15 essential commands
+- Eliminate all .ps1 scripts (convert to .js or remove)
+- Consolidate documentation to <10 key files
+
+**Data Quality**:
+- Zero test artifacts in production Atlas database
+- 100% test cleanup on success AND failure
+- S3 orphan rate < 1% of total images
+
+**Production Readiness**:
+- Complete deployment runbook
+- Automated monitoring and alerting
+- <5 minute deployment time
+- <30 second rollback capability
+
+### 🎯 Recommended Execution Order
+
+**Phase 4: Cloud Mode Completion** (1-2 days - NEXT PRIORITY)
+1. Deploy UI to CloudFront
+2. End-to-end cloud validation
+3. Performance and CORS testing
+
+**Phase 5 - Week 1: Test Cleanup** (Highest ROI after Cloud Mode)
+1. Implement test data cleanup hooks
+2. Fix mock user ID references
+3. Create manual cleanup script
+
+**Phase 5 - Week 2: S3 Integration**
+1. Verify orphan cleanup with Atlas
+2. Automate with scheduled Lambda
+3. Configure S3 lifecycle policies
+
+**Phase 5 - Week 3: Mode Consolidation**
+1. Archive legacy mode documentation
+2. Simplify npm commands
+3. Convert PowerShell scripts
+
+**Phase 5 - Week 4: Production Prep**
+1. Create deployment runbook
+2. Set up monitoring/alerting
+3. Final production validation
+
+---
+
 ## New ideas
 
-<!-- All current ideas have been implemented -->
+<!-- Space for new ideas as they emerge -->
 
 ## 🍃 Low Hanging Fruit / Quick Wins (1-3 days each)
 
@@ -36,13 +228,14 @@ Future improvements, features, and tasks identified during development but not i
 
 ## 🏗️ Major Projects (1-3 weeks each)
 
-### 2. Implement Lambda Mode
+### 2. Lambda Mode ✅ **COMPLETED - Cloud Mode Infrastructure Deployed**
 
-- Complete Lambda mode implementation for serverless deployment
-- Ensure feature parity between Express and Lambda modes
-- Test and validate Lambda-specific functionality
-- **Impact**: Infrastructure completion, cost optimization
-- **Effort**: High - Infrastructure work, deployment architecture
+- ✅ **COMPLETED**: Core Lambda deployment with full feature parity
+- ✅ **COMPLETED**: All 5 AI providers working in Lambda
+- ✅ **COMPLETED**: API Gateway proxy pattern implementation
+- ✅ **COMPLETED**: CloudFront + S3 infrastructure deployed
+- 🔄 **NEXT**: Phase 4 - Deploy UI to CloudFront (see Phase 4 plan at top)
+- Production optimization tasks covered in Phase 5: Production Consolidation & Cleanup Plan
 
 ### 7. Enhanced User Management
 
@@ -121,36 +314,59 @@ Future improvements, features, and tasks identified during development but not i
 - **Impact**: Performance improvement
 - **Effort**: Investigation first, then implementation based on findings
 
-## 📊 Recommended Implementation Strategy
+## 📊 Updated Implementation Strategy (Post-Lambda Completion)
 
-### Phase 1: Quick Wins (1-2 weeks total)
+### 🎯 **CURRENT FOCUS: Phase 4 Cloud Mode Completion** (See detailed plan at top)
 
-1. **#14 - Admin Mock Data Cleanup** ⭐ **NEW HIGHEST PRIORITY** (production hygiene)
+**Phase 4: Cloud Mode** (1-2 days - IMMEDIATE PRIORITY)
+- Deploy UI to CloudFront
+- Validate full-stack cloud deployment
+- Test all features end-to-end
+
+**Phase 5: Production Consolidation & Cleanup** (4 weeks - After Cloud Mode)
+- Week 1: Test data cleanup and mock ID fixes
+- Week 2: S3 orphan cleanup integration
+- Week 3: Mode consolidation and script cleanup
+- Week 4: Production readiness and monitoring
+
+### Phase 6: User Experience Enhancements (2-3 weeks)
+
+1. **#14 - Admin Mock Data Cleanup** (production hygiene)
 2. **#4 - Navigation Cleanup** (user experience)
-3. **#13 - Permissions Review** (security foundation)
+3. **#5 - AI Assistant on Recipe Pages** (user engagement)
+4. **#10 - AI Assistant Quality** (user experience)
+5. **#9 - Edit Profile** (core functionality)
 
-### Phase 2: High-Value Enhancements (2-3 weeks)
+### Phase 5: Major Features (4-6 weeks)
+
+1. **#7 - Enhanced User Management** (2FA, passkeys)
+2. **#8 - Guest Access System** (growth features)
+3. **#11 - Recipe Moderation** (community management)
+
+### Phase 6: Ongoing Optimization
 
 1. **#12 - Shopping Cart Performance** (investigate + fix)
-2. **#5 - AI Assistant on Recipe Pages** (user engagement)
-3. **#10 - AI Assistant Quality** (user experience)
-4. **#9 - Edit Profile** (core functionality)
-
-### Phase 3: Major Features (4-6 weeks)
-
-1. **#2 - Lambda Mode** (infrastructure completion)
-2. **#7 - Enhanced User Management** (2FA, passkeys)
-3. **#8 - Guest Access System** (growth features)
-
-### Phase 4: Advanced Features (ongoing)
-
-1. **#11 - Recipe Moderation** (community management)
 2. **#1 - Data Quality Updates** (continuous improvement)
 3. **#3 - Admin Infrastructure** (ongoing optimization)
+4. **#13 - Permissions Review** (security foundation)
 
 ---
 
 ## ✅ COMPLETED ITEMS
+
+### 19. Lambda AI Integration & API Gateway Proxy Pattern ✅ **COMPLETED 2025-11-02**
+
+- ✅ Implemented AWS Secrets Manager integration to load all secrets at Lambda cold start
+- ✅ Created `app/utils/secrets_manager.js` utility for centralized secret management
+- ✅ Updated Lambda initialization to load AI API keys (OpenAI, Anthropic, Groq, Google Gemini, DeepSeek) into process.env
+- ✅ Refactored API Gateway from individual endpoint configuration (100+ resources) to proxy pattern (20 resources)
+- ✅ Reduced Terraform code by 65% (1322 lines → 460 lines) with proxy-based architecture
+- ✅ Eliminated need for Terraform changes when adding new API routes
+- ✅ Validated all 5 AI providers working in Lambda mode with real token generation
+- ✅ Confirmed AI Recipe Assistant fully functional in Lambda deployment
+- ✅ Created comprehensive test scripts: `test-ai-lambda.js`, `test-ai-providers-status.js`, `test-proxy-verification.js`
+- **Impact**: Complete AI functionality in Lambda mode, simplified infrastructure management, faster deployments
+- **Result**: Lambda Mode now has full feature parity with Express mode including all AI providers
 
 ### 18. Lambda UI Integration Testing & Configuration ✅ **COMPLETED 2025-10-27**
 
@@ -207,5 +423,13 @@ Future improvements, features, and tasks identified during development but not i
 - Each item should be broken down into specific tasks when implemented
 - Consider dependencies between items when planning implementation order
 - Regular review and reprioritization recommended
+- **Phase 4 Cloud Mode** is now the highest priority - deploying UI to CloudFront to complete full-stack cloud deployment
 
-Last updated: October 27, 2025
+**Major Milestones Achieved:**
+- ✅ Phase 3 Complete: Lambda backend with full AI integration (5 providers)
+- ✅ API Gateway proxy pattern (65% code reduction)
+- ✅ Cloud Mode infrastructure deployed (CloudFront + S3)
+- 🔄 Phase 4 Next: Deploy UI to CloudFront and validate full-stack cloud
+- 📋 Phase 5 After: Production consolidation and cleanup
+
+Last updated: November 2, 2025

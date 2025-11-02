@@ -79,7 +79,178 @@ function getCurrentContainerName() {
 - **Hash-Specific Verification**: Verifies the exact expected build hash is loaded, not just general functionality
 - **Multiline JSON Handling**: Uses proper regex patterns to handle multiline build marker output in logs
 
-### 3. Lambda and MongoDB Atlas Integration
+### 3. Lambda Secrets Management and AI Integration
+
+**❌ MISTAKE**: Not loading AI API keys from AWS Secrets Manager at Lambda cold start
+**✅ CORRECT**: Initialize all secrets into process.env at Lambda cold start, before any handlers run
+
+**Critical Pattern for Lambda Secrets**:
+
+```javascript
+// ❌ WRONG - Only fetching MongoDB URI
+async function initializeDatabase() {
+  const mongoUri = await fetchMongoUriFromSecretsManager();
+  // AI providers won't find their API keys!
+}
+
+// ✅ CORRECT - Load ALL secrets at cold start
+async function initializeSecrets() {
+  const secrets = await fetchSecretsFromAWS();
+  // Load into process.env so all providers can find them
+  process.env.OPENAI_API_KEY = secrets.OPENAI_API_KEY;
+  process.env.ANTHROPIC_API_KEY = secrets.ANTHROPIC_API_KEY;
+  process.env.GROQ_API_KEY = secrets.GROQ_API_KEY;
+  process.env.GOOGLE_API_KEY = secrets.GOOGLE_API_KEY;
+  process.env.DEEPSEEK_API_KEY = secrets.DEEPSEEK_API_KEY;
+}
+
+// Call BEFORE initializing database or handling requests
+await initializeSecrets();
+```
+
+**Why This Matters**:
+
+- **AI providers check process.env**: All provider classes check for API keys in environment variables
+- **Cold start only**: Secrets loaded once per container lifetime, cached in process.env
+- **No per-request overhead**: Environment variables available for entire Lambda execution context
+- **Works with existing code**: No changes needed to provider classes or handlers
+
+**AI Provider Architecture**:
+
+```javascript
+// How AI providers detect availability
+class OpenAIProvider {
+  isAvailable() {
+    // Checks process.env - MUST be set at cold start!
+    return process.env.OPENAI_API_KEY &&
+      process.env.OPENAI_API_KEY.startsWith('sk-');
+  }
+}
+
+// AIProviderFactory auto-detects available providers
+const providers = AIProviderFactory.getAvailableProviders();
+// Returns: ['google', 'openai', 'groq', 'anthropic', 'deepseek']
+```
+
+**Secrets Manager Integration Pattern**:
+
+```javascript
+// Create utility: app/utils/secrets_manager.js
+export async function initializeSecretsToEnv() {
+  if (secretsInitialized) return; // Only once per container
+
+  const secrets = await fetchSecrets();
+
+  // Load all secrets into process.env
+  for (const key of SECRET_KEYS) {
+    if (secrets[key] && !process.env[key]) {
+      process.env[key] = secrets[key];
+    }
+  }
+
+  secretsInitialized = true;
+}
+
+// In lambda.js - call at cold start
+async function initializeSecrets() {
+  await initializeSecretsToEnv();
+}
+
+async function initializeDatabase() {
+  await initializeSecrets(); // BEFORE database connection
+  // Now MongoDB URI and AI keys are all in process.env
+}
+```
+
+**Testing AI Integration**:
+
+```bash
+# Verify all providers are available
+curl -H "Authorization: Bearer $TOKEN" \
+  https://api-gateway-url/dev/ai/providers
+
+# Should return all 5 providers as "available"
+```
+
+### 4. API Gateway Architecture Patterns
+
+**❌ MISTAKE**: Creating individual API Gateway resources for every endpoint
+**✅ CORRECT**: Use proxy resource pattern for Lambda integration
+
+**Bloated Approach (Don't Do This)**:
+
+```terraform
+# ❌ Creates 100+ Terraform resources for ~15 endpoints
+resource "aws_api_gateway_resource" "recipes" { path_part = "recipes" }
+resource "aws_api_gateway_resource" "recipes_id" { path_part = "{id}" }
+resource "aws_api_gateway_method" "recipes_get" { http_method = "GET" }
+resource "aws_api_gateway_method" "recipes_post" { http_method = "POST" }
+resource "aws_api_gateway_integration" "recipes_get" { ... }
+resource "aws_api_gateway_integration" "recipes_post" { ... }
+# ... repeat for every endpoint, every method, OPTIONS for CORS ...
+# Result: 1322 lines, 100+ resources, slow deployments
+```
+
+**Proxy Pattern (Correct Approach)**:
+
+```terraform
+# ✅ Single proxy resource handles all routes
+resource "aws_api_gateway_resource" "proxy" {
+  path_part = "{proxy+}"  # Catch-all pattern
+}
+
+resource "aws_api_gateway_method" "proxy_any" {
+  http_method   = "ANY"  # All HTTP methods
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.auth0_jwt.id
+}
+
+resource "aws_api_gateway_integration" "proxy_lambda" {
+  type = "AWS_PROXY"  # Lambda handles all routing
+  uri  = aws_lambda_function.app_lambda.invoke_arn
+}
+
+# Result: ~460 lines, ~20 resources, fast deployments
+```
+
+**Benefits of Proxy Pattern**:
+
+- **65% less Terraform code**: 1322 lines → 460 lines
+- **Faster deployments**: Less Terraform state to manage
+- **No Terraform changes for new routes**: Lambda routing handles everything
+- **Simpler dependencies**: 2 integrations vs 20+ in deployment
+- **Standard AWS pattern**: Recommended approach for Lambda APIs
+
+**When Adding New Endpoints**:
+
+```javascript
+// ❌ OLD: Required Terraform changes for each new route
+// 1. Add aws_api_gateway_resource
+// 2. Add aws_api_gateway_method
+// 3. Add aws_api_gateway_integration
+// 4. Add OPTIONS method for CORS
+// 5. terraform apply
+
+// ✅ NEW: Just add Lambda handler code
+export async function handler(event) {
+  const path = event.path;
+
+  // New route - no Terraform changes needed!
+  if (path === '/new-endpoint') {
+    return handleNewEndpoint(event);
+  }
+}
+```
+
+**Proxy Resource Configuration**:
+
+- **Path**: `/{proxy+}` catches all routes under API Gateway stage
+- **Methods**: Use `ANY` method to handle GET, POST, PUT, DELETE, OPTIONS
+- **Authorization**: Apply JWT authorizer at proxy level (inherited by all routes)
+- **CORS**: Configure OPTIONS method with MOCK integration for preflight
+- **Error Handling**: Use Gateway Responses for 4XX/5XX errors with CORS headers
+
+### 5. Lambda and MongoDB Atlas Integration
 
 **❌ MISTAKE**: Calling async functions without `await`
 **✅ CORRECT**: Always await async functions that return Promises
@@ -135,7 +306,7 @@ const client = new MongoClient(uri, connectionOptions);
 - Lambda timeout should be 30+ seconds for cold starts
 - Warm starts connect much faster (cached connection)
 
-### 4. AWS Profile Management
+### 6. AWS Profile Management
 
 **❌ MISTAKE**: Using wrong AWS profiles for different operations
 **✅ CORRECT**: Always use the appropriate AWS profile for each operation type:
@@ -171,7 +342,7 @@ npm run deploy:lambda
 
 **Before any AWS operation, always verify/set the correct profile!**
 
-### 4. PowerShell vs Cross-Platform Compatibility
+### 7. PowerShell vs Cross-Platform Compatibility
 
 **❌ MISTAKE**: Using PowerShell commands in npm scripts that should be cross-platform
 **✅ CORRECT**:
@@ -193,7 +364,7 @@ cd ui; npm run dev
 
 **Key Rule**: When user's shell is PowerShell, use `;` for command chaining, not `&&`
 
-### 4. Terminal Management & AWS Profile Context
+### 8. Terminal Management & AWS Profile Context
 
 **❌ MISTAKE**: Not understanding terminal context when running commands
 **✅ CORRECT**: Always be aware of current working directory and AWS profile
@@ -301,7 +472,7 @@ npm run deploy:lambda
 npm run test:lambda
 ```
 
-### 5. Development Server Management
+### 9. Development Server Management
 
 **❌ MISTAKE**: Starting multiple Vite development servers without checking if one is already running
 **✅ CORRECT**: Always check if development server is already running before starting a new one

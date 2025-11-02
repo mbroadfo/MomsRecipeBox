@@ -1,5 +1,6 @@
 // File: app/lambda.js
 import { getDb } from './app.js'; // DB connection helper
+import { initializeSecretsToEnv } from './utils/secrets_manager.js'; // AWS Secrets Manager integration
 import listRecipes from './handlers/list_recipes.js';
 import getRecipe from './handlers/get_recipe.js';
 import createRecipe from './handlers/create_recipe.js';
@@ -99,32 +100,55 @@ function handleCorsOptions(event) {
 // Initialize database connection at module load (cold start) for better performance
 let dbInitialized = false;
 let cachedDbConnection = null;
+let secretsInitialized = false;
+
+async function initializeSecrets() {
+  if (secretsInitialized) {
+    return;
+  }
+
+  console.log('🔐 Initializing AWS Secrets Manager...');
+  try {
+    // Load all secrets from AWS Secrets Manager into process.env
+    // This includes AI API keys, Auth0 credentials, MongoDB URI, etc.
+    await initializeSecretsToEnv();
+    secretsInitialized = true;
+    console.log('✅ Secrets initialized for Lambda');
+  } catch (error) {
+    console.error('❌ Secrets initialization failed:', error.message);
+    // Don't throw - Lambda should continue even if secrets fail
+    // Individual handlers can handle missing secrets gracefully
+  }
+}
 
 async function initializeDatabase() {
   if (dbInitialized && cachedDbConnection) {
     return cachedDbConnection;
   }
-  
+
   console.log('🔧 Initializing database connection...');
   try {
+    // Ensure secrets are loaded first (MongoDB URI is in secrets)
+    await initializeSecrets();
+
     // Temporarily disable heavy health checks for Lambda startup performance
     const originalHealthCheckTimeout = process.env.HEALTH_CHECK_TIMEOUT_MS;
     const originalStartupHealthChecks = process.env.ENABLE_STARTUP_HEALTH_CHECKS;
     const originalDataQualityChecks = process.env.ENABLE_DATA_QUALITY_CHECKS;
-    
+
     // Set fast startup for Lambda
     process.env.HEALTH_CHECK_TIMEOUT_MS = '3000';       // Shorter timeout
     process.env.ENABLE_STARTUP_HEALTH_CHECKS = 'false';  // Skip heavy startup checks
     process.env.ENABLE_DATA_QUALITY_CHECKS = 'false';    // Skip data quality checks
-    
+
     cachedDbConnection = await getDb();
     dbInitialized = true;
-    
+
     // Restore original settings
     if (originalHealthCheckTimeout) process.env.HEALTH_CHECK_TIMEOUT_MS = originalHealthCheckTimeout;
     if (originalStartupHealthChecks) process.env.ENABLE_STARTUP_HEALTH_CHECKS = originalStartupHealthChecks;
     if (originalDataQualityChecks) process.env.ENABLE_DATA_QUALITY_CHECKS = originalDataQualityChecks;
-    
+
     console.log('✅ Database connection initialized for Lambda');
     return cachedDbConnection;
   } catch (error) {

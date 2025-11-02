@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode development",
+    "dev": "node scripts/dev-with-profile.js",
+    "dev:basic": "vite --mode development",
     "dev:local": "cross-env VITE_ENVIRONMENT=local vite --mode development",
     "dev:atlas": "cross-env VITE_ENVIRONMENT=atlas vite --mode development",
     "dev:lambda": "cross-env VITE_ENVIRONMENT=lambda vite --mode development",

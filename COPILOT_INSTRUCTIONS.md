@@ -88,6 +88,13 @@ function getCurrentContainerName() {
 - **Application deployment/testing**: Use `mrb-api` profile
 - **Never mix profiles**: Each operation type has its own IAM permissions
 
+**✅ AUTOMATED**: Test commands now automatically handle AWS profile switching:
+
+- **All test commands**: Automatically use `mrb-api` profile via `scripts/test-with-aws-profile.js`
+- **No manual switching needed**: `npm test`, `npm run test:functional`, etc. handle AWS setup automatically
+- **PowerShell environment**: Sets `$env:AWS_PROFILE="mrb-api"` automatically for tests
+- **Verification built-in**: Verifies correct AWS identity before running tests
+
 **Critical Commands**:
 
 ```bash

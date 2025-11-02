@@ -1,11 +1,13 @@
 import { getDb } from '../app.js';
 import { ObjectId } from 'mongodb';
+import { getUserId } from '../utils/auth_utils.js';
 
 const handler = async (event) => {
   try {
     const db = await getDb();
 
-    const { owner_id, visibility, tags, limit = 50, offset = 0, user_id } = event.queryStringParameters || {};
+    const { owner_id, visibility, tags, limit = 50, offset = 0 } = event.queryStringParameters || {};
+    const user_id = getUserId(event); // Get user ID from JWT authorizer or query params
     const query = {};
 
     if (owner_id) query.owner_id = owner_id;

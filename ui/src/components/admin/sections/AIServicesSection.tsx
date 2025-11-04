@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAIServicesStatus, useAIServicesConnectivity } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { SectionWrapper } from '../ErrorBoundary';
 import { AIServicesSkeleton } from '../skeletons';
 
@@ -23,23 +24,24 @@ interface TimingStats {
   totalTime: string;
 }
 
-const AIServicesContent: React.FC = () => {
+const AIServicesSection: React.FC = () => {
   const [testMode, setTestMode] = useState<'basic' | 'connectivity'>('basic');
   const [includeUnavailable, setIncludeUnavailable] = useState(false);
+  const { token } = useAdminAuth();
   
   const { 
     data: basicStatus, 
     isLoading: basicLoading, 
     error: basicError, 
     refetch: refetchBasic 
-  } = useAIServicesStatus();
+  } = useAIServicesStatus(token);
   
   const { 
     data: connectivityStatus, 
     isLoading: connectivityLoading, 
     error: connectivityError, 
     refetch: refetchConnectivity 
-  } = useAIServicesConnectivity({ 
+  } = useAIServicesConnectivity(token, { 
     enabled: testMode === 'connectivity',
     includeUnavailable 
   });
@@ -311,4 +313,4 @@ const AIServicesContent: React.FC = () => {
   );
 };
 
-export default AIServicesContent;
+export default AIServicesSection;

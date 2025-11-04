@@ -1,6 +1,23 @@
 import { useState } from 'react';
 import type { RawRecipe } from './useRecipe';
 
+// Type definitions for window global properties
+interface WindowWithUser extends Window {
+  currentUser?: { id: string };
+  currentUserId?: string;
+}
+
+// Type for ingredient items in the nested structure
+interface IngredientItem {
+  name?: string;
+  quantity?: string;
+}
+
+// Type for ingredient groups
+interface IngredientGroup {
+  items: IngredientItem[];
+}
+
 export function useNewRecipe() {
   // Initialize the empty recipe, checking if we have a temporary image URL in localStorage
   const tempImageUrl = localStorage.getItem('newRecipe_tempImageUrl') || '';
@@ -19,7 +36,7 @@ export function useNewRecipe() {
     steps: [],
     notes: '',
     visibility: 'private', // Default to private for new recipes
-    owner_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user'
+    owner_id: (window as WindowWithUser).currentUser?.id || (window as WindowWithUser).currentUserId || 'demo-user'
   };
   
   // Using const declaration to avoid unused variable warning
@@ -31,7 +48,7 @@ export function useNewRecipe() {
     setLoading(true);
     setError(null);
     try {
-      const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+      const userId = (window as WindowWithUser).currentUser?.id || (window as WindowWithUser).currentUserId || 'demo-user';
       
       // Make sure we have all required fields
       if (!recipeData.title) {
@@ -45,15 +62,16 @@ export function useNewRecipe() {
         : [];
       
       // Extract ingredients from the structure
-      let ingredientsArray = [];
+      let ingredientsArray: IngredientItem[] = [];
       if (Array.isArray(recipeData.ingredients) && recipeData.ingredients.length > 0) {
         // Handle the nested structure from useWorkingRecipe
-        if (Array.isArray(recipeData.ingredients[0].items)) {
-          ingredientsArray = recipeData.ingredients[0].items.filter((i: any) => 
+        const firstIngredient = recipeData.ingredients[0] as IngredientGroup;
+        if (Array.isArray(firstIngredient?.items)) {
+          ingredientsArray = firstIngredient.items.filter((i: IngredientItem) => 
             (i.name && i.name.trim()) || (i.quantity && i.quantity.trim())
           );
         } else {
-          ingredientsArray = recipeData.ingredients;
+          ingredientsArray = recipeData.ingredients as IngredientItem[];
         }
       }
       
@@ -107,10 +125,11 @@ export function useNewRecipe() {
       const data = await response.json();
       console.log("Successfully created recipe:", data);
       return data._id;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Error saving recipe:", e);
-      setError(e);
-      throw e;
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(error);
+      throw error;
     } finally {
       setLoading(false);
     }

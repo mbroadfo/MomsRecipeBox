@@ -1,10 +1,12 @@
 import React from 'react';
 import { useConnectionTest } from '../../../hooks/useAdminData';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { SectionWrapper } from '../ErrorBoundary';
 import { QuickActionsSkeleton } from '../skeletons';
 
 const QuickActionsContent: React.FC = () => {
-  const { data: connectionStatus, isLoading, error, refetch } = useConnectionTest();
+  const { token } = useAdminAuth();
+  const { data: connectionStatus, isLoading, error, refetch } = useConnectionTest(token);
 
   const handleAction = (action: string) => {
     console.log(`Executing action: ${action}`);

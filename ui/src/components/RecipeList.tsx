@@ -1,6 +1,5 @@
 // File: ui/src/components/RecipeList.tsx
 import React, { useState, useEffect } from 'react';
-import { getCurrentUserId } from '../types/global';
 import { apiClient } from '../lib/api-client';
 import RecipeCard from './RecipeCard';
 
@@ -28,12 +27,10 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Use environment-aware API client instead of direct fetch
-    const userId = getCurrentUserId();
-    
+    // Use JWT authentication instead of query parameters
     const fetchRecipes = async () => {
       try {
-        const response = await apiClient.get(`/recipes?user_id=${encodeURIComponent(userId)}`);
+        const response = await apiClient.get('/recipes');
         
         if (response.success && response.data) {
           const dataObj = response.data as Record<string, unknown>;

@@ -19,12 +19,12 @@ const CONFIG = {
     dev: {
       bucket: 'mrb-ui-hosting-dev',
       distributionId: null, // Will be populated from Terraform outputs
-      buildCommand: 'ui:build:lambda'
+      buildCommand: 'cd ui && npm run build:production'
     },
     prod: {
       bucket: 'mrb-ui-hosting-prod',
       distributionId: null,
-      buildCommand: 'ui:build:production'
+      buildCommand: 'cd ui && npm run build:production'
     }
   },
   region: 'us-west-2',

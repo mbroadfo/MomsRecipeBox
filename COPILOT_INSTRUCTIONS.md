@@ -4,7 +4,35 @@ This document contains key learnings and common mistakes to avoid when working o
 
 ## 🚨 Critical Mistakes to Avoid
 
-### 1. Docker Architecture Misunderstandings
+### 1. Production Authentication Patterns
+
+**❌ MISTAKE**: Using demo query parameters in production authentication
+**✅ CORRECT**: Always use proper JWT tokens for production API calls
+
+**Breaking Pattern**:
+
+```javascript
+// ❌ Demo pattern that bypasses authentication
+const url = `/recipes?user_id=demo-user`;
+fetch(url); // Will get 401 in production
+```
+
+**Correct Pattern**:
+
+```javascript
+// ✅ Production pattern with JWT authentication
+const url = `/recipes`; // No query parameters
+fetch(url, {
+  headers: {
+    'Authorization': `Bearer ${token}`, // JWT from Auth0
+    'Content-Type': 'application/json'
+  }
+}); // API Gateway validates JWT
+```
+
+**Critical Context**: CloudFront deployment requires proper authentication. Demo patterns work in localhost but fail in production with CORS and authentication errors.
+
+### 2. Docker Architecture Misunderstandings
 
 **❌ MISTAKE**: Assuming health endpoints go through Lambda handler in Express mode
 **✅ CORRECT**: In Express mode (`APP_MODE=express`), health endpoints (`/health*`) are handled directly by local server for performance, while other routes go through Lambda handler
@@ -256,6 +284,7 @@ export async function handler(event) {
 **✅ CORRECT**: Always await async functions that return Promises
 
 **Critical Pattern**:
+
 ```javascript
 // ❌ WRONG - Missing await on async function
 const uri = getMongoConnectionString();  // Returns Promise, not string!
@@ -270,12 +299,14 @@ const uri = await getMongoConnectionString();
 **✅ CORRECT**: Fetch MongoDB Atlas URI from AWS Secrets Manager at runtime
 
 **Why This Matters**:
+
 - Terraform only has access to local MongoDB passwords, not Atlas passwords
 - Atlas passwords stored securely in AWS Secrets Manager
 - Lambda must fetch credentials at runtime using AWS SDK
 - Environment variables would contain wrong/stale passwords
 
 **Lambda MongoDB Connection Pattern**:
+
 ```javascript
 // Fetch from Secrets Manager (Lambda only)
 if (process.env.APP_MODE === 'lambda') {
@@ -291,6 +322,7 @@ if (process.env.APP_MODE === 'lambda') {
 **✅ CORRECT**: Configure connection timeouts appropriate for Lambda cold starts
 
 **Required Connection Options**:
+
 ```javascript
 const connectionOptions = {
   serverSelectionTimeoutMS: 10000,  // 10 seconds for server selection
@@ -301,6 +333,7 @@ const client = new MongoClient(uri, connectionOptions);
 ```
 
 **Lambda Timeout Considerations**:
+
 - Secrets Manager fetch: ~1-2 seconds
 - MongoDB Atlas connection: ~2-5 seconds
 - Lambda timeout should be 30+ seconds for cold starts
@@ -989,6 +1022,7 @@ git status
    - **IDE/workspace files** - Add to `.gitignore`
 
 **Common temporary files to clean up:**
+
 - `test-*.js` in root (debug scripts, not formal tests)
 - `*-response.json`, `*-output.txt` (debugging output)
 - `.claude/` or other IDE workspace directories

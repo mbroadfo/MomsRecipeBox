@@ -7,10 +7,11 @@ const handler = async (event) => {
     if (!id || !ObjectId.isValid(id)) {
       return { statusCode: 400, body: JSON.stringify({ message: 'Invalid recipe id' }) };
     }
-    let body;
-    try { body = JSON.parse(event.body || '{}'); } catch { return { statusCode: 400, body: JSON.stringify({ message: 'Invalid JSON body' }) }; }
-    if (!body.user_id) {
-      return { statusCode: 400, body: JSON.stringify({ message: 'Missing user_id' }) };
+    
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
+    if (!user_id) {
+      return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: No user context found' }) };
     }
 
     const db = await getDb();
@@ -21,8 +22,8 @@ const handler = async (event) => {
     }
 
     const likesArray = Array.isArray(recipe.likes) ? recipe.likes : [];
-    const already = likesArray.includes(body.user_id);
-    const update = already ? { $pull: { likes: body.user_id } } : { $addToSet: { likes: body.user_id } };
+    const already = likesArray.includes(user_id);
+    const update = already ? { $pull: { likes: user_id } } : { $addToSet: { likes: user_id } };
     await db.collection('recipes').updateOne({ _id: new ObjectId(id) }, update);
 
     const updated = await db.collection('recipes').findOne({ _id: new ObjectId(id) }, { projection: { likes: 1 } });

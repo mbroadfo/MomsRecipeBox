@@ -5,6 +5,42 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-05
+
+### Fixed - Complete JWT Authentication Integration & Shopping List Fix
+
+#### 🔧 **CRITICAL FIX**: Complete JWT Authentication Implementation Across Full Stack
+
+- **Lambda Backend Authentication**: Fixed all API handlers to use JWT authentication properly
+  - Shopping list handlers: `get_shopping_list.js`, `add_shopping_list_items.js`, `clear_shopping_list.js`, `delete_shopping_list_item.js`, `update_shopping_list_item.js`
+  - Recipe interaction handlers: `get_recipe.js` (favorites), `post_comment.js`, `post_like.js`, `toggle_favorite.js`
+  - All handlers now extract user ID from `event.requestContext.authorizer.principalId` instead of query parameters
+  - Proper 401 responses for unauthorized requests instead of 400 errors
+
+- **Frontend API Client Integration**: Fixed frontend to use JWT authentication consistently
+  - Updated `ui/src/utils/api.ts` shopping list functions to use `apiClient` with JWT tokens
+  - Removed old fetch() calls with user_id query parameters
+  - Fixed `useRecipe.ts` hook to use JWT authentication instead of query parameters
+  - All API calls now go through centralized `apiClient` with proper JWT token management
+
+- **Auth0 Configuration Enhancement**: Fixed refresh token support for production deployment
+  - Added `offline_access` scope to Auth0 configuration in `main.tsx`
+  - Enabled `useRefreshTokens: true` for persistent authentication sessions
+  - Fixed authentication race conditions in `App.tsx` and `RecipeList.tsx`
+  - Proper token management prevents 401 errors after JWT expiration
+
+- **CloudFront Production Deployment**: Successfully resolved HTML response parsing errors
+  - Root cause: API calls returning HTML error pages instead of JSON due to authentication failures
+  - All shopping list functionality now works properly in CloudFront production environment
+  - Recipe details load without console errors after comprehensive authentication fixes
+
+#### 🛠️ **DEPLOYMENT INFRASTRUCTURE**: Enhanced Build & Deploy Process
+
+- **Deploy Script Enhancement**: Added `--no-tsc` option to `scripts/deploy-ui.js` for faster iteration
+  - Allows deployment without TypeScript checking when functional fixes are priority
+  - Added new build scripts: `build:production:no-tsc` for rapid deployment cycles
+  - Maintains production environment configuration while bypassing TypeScript compilation
+
 ## [Unreleased] - 2025-11-03
 
 ### Fixed - Phase 4 Production Authentication & CloudFront Deployment

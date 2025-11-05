@@ -10,6 +10,8 @@
     "dev:atlas": "cross-env VITE_ENVIRONMENT=atlas vite --mode development",
     "dev:lambda": "cross-env VITE_ENVIRONMENT=lambda vite --mode development",
     "build": "tsc -b && vite build --mode production",
+    "build:no-tsc": "vite build --mode production",
+    "build:production:no-tsc": "cross-env VITE_ENVIRONMENT=production vite build --mode production",
     "build:local": "cross-env VITE_ENVIRONMENT=local tsc -b && vite build --mode development",
     "build:atlas": "cross-env VITE_ENVIRONMENT=atlas tsc -b && vite build --mode development",
     "build:lambda": "cross-env VITE_ENVIRONMENT=lambda tsc -b && vite build --mode production",

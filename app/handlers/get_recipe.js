@@ -29,7 +29,8 @@ const handler = async (event) => {
       await db.collection('recipes').updateOne({ _id: recipe._id }, { $set: { likes_count: recipe.likes_count } });
     }
 
-    const userId = event.queryStringParameters?.user_id;
+    // Extract user_id from JWT authorizer context for favorites check
+    const userId = event.requestContext?.authorizer?.principalId;
     if (userId) {
       const fav = await favoritesColl.findOne({ recipeId: recipe._id, userId });
       recipe.liked = !!fav;

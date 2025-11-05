@@ -1,5 +1,6 @@
 // File: ui/src/components/RecipeList.tsx
 import React, { useState, useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { apiClient } from '../lib/api-client';
 import RecipeCard from './RecipeCard';
 
@@ -22,14 +23,31 @@ interface RecipeListProps {
 }
 
 export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter = 'all', sort = 'newest', maxColumns = 5 }) => {
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Only fetch recipes if authenticated
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     // Use JWT authentication instead of query parameters
     const fetchRecipes = async () => {
       try {
+        // Ensure we have a fresh token before making API calls
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://momsrecipebox/api',
+          },
+        });
+        
+        // Set the token in API client (in case it's not set yet)
+        apiClient.setAuthToken(token);
+        
         const response = await apiClient.get('/recipes');
         
         if (response.success && response.data) {
@@ -51,7 +69,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
     };
 
     fetchRecipes();
-  }, []);
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   // Simple filter logic placeholder
   let filteredRecipes = recipes.filter((recipe) => {

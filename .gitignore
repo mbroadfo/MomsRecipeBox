@@ -40,3 +40,6 @@ tools/reports/
 
 # Database backups
 backups/
+
+# Test outputs
+app/tests/test_output/

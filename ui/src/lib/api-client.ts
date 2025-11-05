@@ -69,6 +69,7 @@ export class ApiClient {
    */
   setAuthToken(token: string) {
     this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+    devLog('🔐 Token set in API client:', token ? `${token.substring(0, 50)}...` : 'null');
   }
   
   /**

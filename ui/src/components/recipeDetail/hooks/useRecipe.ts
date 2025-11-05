@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getCurrentUserId } from '../../../types/global';
+import { useAuth0 } from '@auth0/auth0-react';
+import { apiClient } from '../../../lib/api-client';
 
 export interface RawRecipe {
   _id?: string;
@@ -29,27 +30,45 @@ export interface RawRecipe {
  * Hook to fetch and refresh recipe data
  */
 export function useRecipe(id: string) {
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   // Function to fetch recipe data
   const fetchRecipe = useCallback(async () => {
+    if (!isAuthenticated || !id) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const userId = getCurrentUserId();
-      const data = await fetch(`/api/recipes/${id}?user_id=${encodeURIComponent(userId)}`).then(r => {
-        if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
-        return r.json();
+      // Ensure we have a fresh token before making API calls
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api',
+        },
       });
-      setRecipe(data);
+      
+      // Set the token in API client (in case it's not set yet)
+      apiClient.setAuthToken(token);
+      
+      // Use API client with JWT authentication instead of direct fetch
+      const response = await apiClient.get(`/recipes/${id}`);
+      
+      if (response.success && response.data) {
+        setRecipe(response.data as RawRecipe);
+      } else {
+        throw new Error(response.error || 'Failed to load recipe');
+      }
     } catch (e: Error | unknown) {
       setError(e instanceof Error ? e : new Error('Unknown error'));
     } finally { 
       setLoading(false); 
     }
-  }, [id]);
+  }, [id, isAuthenticated, getAccessTokenSilently]);
 
   // Function to poll for recipe image updates
   const pollForImage = useCallback(async (attempts = 5, delay = 1000) => {
@@ -68,16 +87,23 @@ export function useRecipe(id: string) {
       console.log(`Polling attempt ${currentAttempt}/${attempts} for recipe ${id}`);
       
       try {
-        const userId = getCurrentUserId();
-        const response = await fetch(`/api/recipes/${id}?user_id=${encodeURIComponent(userId)}`);
+        // Use the same JWT authentication pattern for polling
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://momsrecipebox/api',
+          },
+        });
         
-        if (!response.ok) {
-          console.error(`Failed to fetch recipe during polling: ${response.status}`);
+        apiClient.setAuthToken(token);
+        const response = await apiClient.get(`/recipes/${id}`);
+        
+        if (!response.success || !response.data) {
+          console.error(`Failed to fetch recipe during polling:`, response.error);
           setTimeout(checkForImage, delay);
           return;
         }
         
-        const data = await response.json();
+        const data = response.data as RawRecipe;
         console.log(`Polling got recipe data with image_url:`, data.image_url);
         
         // Update the recipe with fresh data
@@ -97,7 +123,7 @@ export function useRecipe(id: string) {
     };
     
     await checkForImage();
-  }, [id]);
+  }, [id, getAccessTokenSilently]);
 
   // Fetch recipe data on mount and when ID changes
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);

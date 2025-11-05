@@ -3,6 +3,8 @@
  * Contains standardized functions for interacting with the backend API
  */
 
+import { apiClient } from '../lib/api-client';
+
 /**
  * Get the current user ID from the window object
  * @returns The user ID string
@@ -73,17 +75,12 @@ export const getRecipes = async () => {
  * @returns Shopping list with items
  */
 export const getShoppingList = async () => {
-  const userId = getCurrentUserId();
   try {
-    const url = `/api/shopping-list?user_id=${encodeURIComponent(userId)}`;
-    
-    const response = await fetch(url);
-    
-    const data = await handleResponse(response);
+    const data = await apiClient.get('/shopping-list');
     
     // If we don't have an items array but have success=true, initialize an empty one
-    if (data && data.success === true && !data.items) {
-      data.items = [];
+    if (data && (data as any).success === true && !(data as any).items) {
+      (data as any).items = [];
     }
     
     return data;
@@ -106,10 +103,8 @@ export const addToShoppingList = async (items: Array<{
   amount?: string;
   unit?: string;
 }>) => {
-  const userId = getCurrentUserId();
   try {
     const payload = {
-      user_id: userId,
       items: items.map(item => ({
         ingredient: item.name,
         recipe_id: item.recipeId,
@@ -119,34 +114,23 @@ export const addToShoppingList = async (items: Array<{
       }))
     };
     
-    const response = await fetch('/api/shopping-list/add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await handleResponse(response);
+    const data = await apiClient.post('/shopping-list/add', payload);
     
     // For successful responses, check for different response formats
     if (data) {
       // If we have a shopping_list object in the response, return that
-      if (data.shopping_list) {
-        return data.shopping_list;
+      if ((data as any).shopping_list) {
+        return (data as any).shopping_list;
       } 
       // If we have a success message but need to fetch the full list
-      else if (data.success === true) {
+      else if ((data as any).success === true) {
         // Return the success message with a flag indicating we need to refresh
         return {
-          ...data,
+          ...(data as any),
           needsRefresh: true
         };
       } 
-      // If we have the full list already
-      else if (data.items && Array.isArray(data.items)) {
-        return data;
-      }
+      // If we have the full list already - TypeScript handling for dynamic response
     }
     
     return data;
@@ -163,15 +147,7 @@ export const addToShoppingList = async (items: Array<{
  * @returns Updated item
  */
 export const updateShoppingListItem = async (itemId: string, checked: boolean) => {
-  const userId = getCurrentUserId();
-  const response = await fetch(`/api/shopping-list/item/${itemId}?user_id=${encodeURIComponent(userId)}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ user_id: userId, checked })
-  });
-  return handleResponse(response);
+  return await apiClient.put(`/shopping-list/item/${itemId}`, { checked });
 };
 
 /**
@@ -180,11 +156,7 @@ export const updateShoppingListItem = async (itemId: string, checked: boolean) =
  * @returns Success message
  */
 export const deleteShoppingListItem = async (itemId: string) => {
-  const userId = getCurrentUserId();
-  const response = await fetch(`/api/shopping-list/item/${itemId}?user_id=${encodeURIComponent(userId)}`, {
-    method: 'DELETE'
-  });
-  return handleResponse(response);
+  return await apiClient.delete(`/shopping-list/item/${itemId}`);
 };
 
 /**

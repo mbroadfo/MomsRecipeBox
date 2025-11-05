@@ -42,13 +42,20 @@ const AuthenticatedApp: React.FC = () => {
           audience: 'https://momsrecipebox/api',
         },
       }).then((token) => {
+        console.log('🔐 Token received from Auth0:', token ? `${token.substring(0, 50)}...` : 'null');
         apiClient.setAuthToken(token);
         console.log('🔐 API client configured with Auth0 token');
       }).catch((error) => {
         console.error('❌ Failed to get Auth0 token:', error);
+        // Clear any existing token on error
+        apiClient.clearAuthToken();
       });
+    } else if (!isAuthenticated && !isLoading) {
+      // Only clear token when definitely not authenticated (not during loading)
+      console.log('🚫 User not authenticated, clearing API token');
+      apiClient.clearAuthToken();
     }
-  }, [isAuthenticated, user, getAccessTokenSilently]);
+  }, [isAuthenticated, user, getAccessTokenSilently, isLoading]);
 
   // Show loading spinner while Auth0 initializes
   if (isLoading) {

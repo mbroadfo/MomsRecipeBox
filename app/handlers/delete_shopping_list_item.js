@@ -7,21 +7,17 @@ import { getCollection } from '../utils/db.js';
 
 async function handler(event, context) {
   try {
-    const { itemId } = event.pathParameters;
-    
-    // Get user_id from either query parameters or body
-    let user_id = event.queryStringParameters?.user_id;
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
     
     if (!user_id) {
-      const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-      if (!body || !body.user_id) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ message: 'Required field missing: user_id' })
-        };
-      }
-      user_id = body.user_id;
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
+      };
     }
+    
+    const { itemId } = event.pathParameters;
     
     // Connect to the shopping_lists collection
     const shoppingListsColl = await getCollection('shopping_lists');

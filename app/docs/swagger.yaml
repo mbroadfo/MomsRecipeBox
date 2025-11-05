@@ -374,14 +374,9 @@ paths:
       tags:
         - shopping-list
       summary: Get a user's shopping list
-      description: Retrieves the shopping list for a specific user
-      parameters:
-      - in: query
-        name: user_id
-        required: true
-        schema:
-          type: string
-        description: User ID
+      description: Retrieves the shopping list for the authenticated user (user ID extracted from JWT token)
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Shopping list retrieved successfully
@@ -389,8 +384,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShoppingList'
-        '400':
-          description: Missing required parameters
+        '401':
+          description: Unauthorized - No valid JWT token provided
         '500':
           description: Internal server error
 # The DELETE method on /shopping-list is not used
@@ -401,7 +396,9 @@ paths:
       tags:
         - shopping-list
       summary: Add items to a shopping list
-      description: Add one or more ingredients to a user's shopping list
+      description: Add one or more ingredients to the authenticated user's shopping list (user ID extracted from JWT token)
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -409,12 +406,8 @@ paths:
             schema:
               type: object
               required:
-                - user_id
                 - items
               properties:
-                user_id:
-                  type: string
-                  description: User ID
                 items:
                   type: array
                   description: List of ingredients to add

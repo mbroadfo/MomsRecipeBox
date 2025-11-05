@@ -29,10 +29,19 @@ const handler = async (event) => {
     // Parse and validate request body
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
     
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
+    if (!user_id) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
+      };
+    }
+    
     // Create comment object
     const comment = {
       recipeId: new ObjectId(recipeId),
-      user_id: body.user_id,
+      user_id: user_id,
       content: body.content,
       created_at: new Date(),
       updated_at: new Date()

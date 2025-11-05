@@ -32,6 +32,39 @@ fetch(url, {
 
 **Critical Context**: CloudFront deployment requires proper authentication. Demo patterns work in localhost but fail in production with CORS and authentication errors.
 
+**❌ MISTAKE**: Using mixed authentication patterns across frontend and backend
+**✅ CORRECT**: Use consistent JWT authentication on both frontend API calls and backend handlers
+
+**Breaking Mixed Pattern**:
+
+```javascript
+// ❌ Frontend using JWT but backend expecting query parameters
+// Frontend (api.ts)
+const data = await apiClient.get('/shopping-list'); // Uses JWT
+
+// Backend (handler)
+const user_id = event.queryStringParameters?.user_id; // Expects query param!
+// Result: Backend gets null user_id, returns 400/401 error
+```
+
+**Correct Unified Pattern**:
+
+```javascript
+// ✅ Frontend using JWT
+const data = await apiClient.get('/shopping-list'); // JWT in Authorization header
+
+// ✅ Backend using JWT context
+const user_id = event.requestContext?.authorizer?.principalId; // From JWT
+// Result: User ID extracted from validated JWT token
+```
+
+**Critical Implementation Rules**:
+
+- **Frontend**: ALWAYS use `apiClient.get/post/put/delete()` for authenticated API calls
+- **Backend**: ALWAYS extract user ID from `event.requestContext.authorizer.principalId` in Lambda handlers
+- **Never mix patterns**: If frontend sends JWT, backend must read JWT context (not query params)
+- **Auth0 Configuration**: Must include `offline_access` scope and `useRefreshTokens: true` for production
+
 ### 2. Docker Architecture Misunderstandings
 
 **❌ MISTAKE**: Assuming health endpoints go through Lambda handler in Express mode

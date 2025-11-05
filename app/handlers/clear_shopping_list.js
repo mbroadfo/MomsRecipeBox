@@ -7,16 +7,19 @@ import { getCollection } from '../utils/db.js';
 
 async function handler(event, context) {
   try {
-    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
     
-    if (!body || !body.user_id) {
+    if (!user_id) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Required field missing: user_id' })
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
       };
     }
-
-    const { user_id, action = 'delete_all' } = body;
+    
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    
+    const { action = 'delete_all' } = body || {};
     const cleared_only = action === 'check_all';
     const delete_purchased_only = action === 'delete_purchased';
     

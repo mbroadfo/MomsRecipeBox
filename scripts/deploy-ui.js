@@ -75,14 +75,24 @@ class UIDeployer {
   /**
    * Build the UI for the target environment
    */
-  async buildUI() {
+  async buildUI(noTsc = false) {
     console.log(`🔨 Building UI for ${this.environment} environment...`);
     
     try {
-      const buildCommand = `npm run ${this.config.buildCommand}`;
-      console.log(`   Running: ${buildCommand}`);
+      console.log(`   Changing to ui directory and building...`);
       
-      execSync(buildCommand, { stdio: 'inherit' });
+      // Change to ui directory and run build command
+      const originalDir = process.cwd();
+      process.chdir('ui');
+      
+      try {
+        const buildCommand = noTsc ? 'npm run build:production:no-tsc' : 'npm run build:production';
+        execSync(buildCommand, { stdio: 'inherit' });
+      } finally {
+        // Always change back to original directory
+        process.chdir(originalDir);
+      }
+      
       console.log('✅ UI build completed successfully');
       
       // Verify build directory exists
@@ -253,7 +263,8 @@ class UIDeployer {
     const {
       skipBuild = false,
       skipInvalidation = false,
-      dryRun = false
+      dryRun = false,
+      noTsc = false
     } = options;
     
     console.log(`🚀 Starting UI deployment to ${this.environment}...`);
@@ -263,7 +274,7 @@ class UIDeployer {
       // Step 1: Build UI (unless skipped)
       let buildDir;
       if (!skipBuild) {
-        buildDir = await this.buildUI();
+        buildDir = await this.buildUI(noTsc);
       } else {
         buildDir = join(process.cwd(), CONFIG.buildDir);
         console.log(`⏩ Skipping build, using existing: ${buildDir}`);
@@ -322,6 +333,7 @@ async function main() {
   const skipBuild = args.includes('--skip-build');
   const skipInvalidation = args.includes('--skip-invalidation');
   const dryRun = args.includes('--dry-run');
+  const noTsc = args.includes('--no-tsc');
   
   if (args.includes('--help')) {
     console.log(`
@@ -347,7 +359,7 @@ Examples:
   
   try {
     const deployer = new UIDeployer(environment);
-    await deployer.deploy({ skipBuild, skipInvalidation, dryRun });
+    await deployer.deploy({ skipBuild, skipInvalidation, dryRun, noTsc });
   } catch (error) {
     console.error('❌ Deployment script failed:', error.message);
     process.exit(1);

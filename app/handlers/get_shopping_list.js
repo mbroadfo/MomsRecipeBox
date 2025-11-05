@@ -7,13 +7,13 @@ import { getCollection } from '../utils/db.js';
 
 async function handler(event, context) {
   try {
-    // Extract user_id from query parameters
-    const user_id = event.queryStringParameters?.user_id;
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
     
     if (!user_id) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Missing required parameter: user_id' })
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
       };
     }
 

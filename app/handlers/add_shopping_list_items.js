@@ -8,16 +8,26 @@ import { getCollection } from '../utils/db.js';
 
 async function handler(event, context) {
   try {
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
+    
+    if (!user_id) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
+      };
+    }
+    
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     
-    if (!body || !body.user_id || !Array.isArray(body.items) || body.items.length === 0) {
+    if (!body || !Array.isArray(body.items) || body.items.length === 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Required fields missing: user_id and non-empty items array' })
+        body: JSON.stringify({ message: 'Required field missing: non-empty items array' })
       };
     }
 
-    const { user_id, items } = body;
+    const { items } = body;
     
     // Log the request items for debugging
     console.log('Received shopping list items:', JSON.stringify(items, null, 2));

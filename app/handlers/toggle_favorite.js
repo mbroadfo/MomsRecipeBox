@@ -8,10 +8,12 @@ export const handler = async (event) => {
     if (!recipeId || !ObjectId.isValid(recipeId)) {
       return { statusCode: 400, body: JSON.stringify({ message: 'Invalid recipe id' }) };
     }
-    let body;
-    try { body = JSON.parse(event.body || '{}'); } catch { return { statusCode: 400, body: JSON.stringify({ message: 'Invalid JSON body' }) }; }
-    const userId = body.user_id; // TODO: derive from auth token
-    if (!userId) return { statusCode: 400, body: JSON.stringify({ message: 'Missing user_id' }) };
+    
+    // Extract user_id from JWT authorizer context
+    const userId = event.requestContext?.authorizer?.principalId;
+    if (!userId) {
+      return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: No user context found' }) };
+    }
 
     const db = await getDb();
     const recipesColl = db.collection('recipes');

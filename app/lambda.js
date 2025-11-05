@@ -268,10 +268,14 @@ export async function handler(event, context) {
 
     // IMAGE AND RECIPE ROUTES
     if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await getImage(event));
     }
     // Recipe detail
     if (event.httpMethod === 'GET' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await getRecipe(event));
     }
     // Recipe list (supports query string)
@@ -284,40 +288,60 @@ export async function handler(event, context) {
     }
     // Update
     if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await updateRecipe(event));
     }
     // Delete
     if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await deleteRecipe(event));
     }
     // Comments
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/comments$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await postComment(event));
     }
     if (event.httpMethod === 'PUT' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
+      const commentId = pathOnly.split('/')[2];
+      event.pathParameters = { id: commentId };
       return addCorsHeaders(await updateComment(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
+      const commentId = pathOnly.split('/')[2];
+      event.pathParameters = { id: commentId };
       return addCorsHeaders(await deleteComment(event));
     }
     if (event.httpMethod === 'GET' && /^\/comments\/[\w-]+$/.test(pathOnly)) {
+      const commentId = pathOnly.split('/')[2];
+      event.pathParameters = { id: commentId };
       return addCorsHeaders(await getComment(event));
     }
     // Likes
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/like$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await toggleFavorite(event));
     }
     // Image update/delete
     if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       const contentType = event.headers['content-type'] || '';
       if (contentType.startsWith('multipart/form-data')) return addCorsHeaders(await uploadImage(event));
       return addCorsHeaders(await updateImage(event));
     }
     if (event.httpMethod === 'DELETE' && /^\/recipes\/[\w-]+\/image$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await deleteImage(event));
     }
     // Copy image (for new recipes)
     if (event.httpMethod === 'POST' && /^\/recipes\/[\w-]+\/copy-image$/.test(pathOnly)) {
+      const recipeId = pathOnly.split('/')[2];
+      event.pathParameters = { id: recipeId };
       return addCorsHeaders(await copyImage(event));
     }
     

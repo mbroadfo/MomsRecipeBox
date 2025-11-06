@@ -14,12 +14,13 @@ const handler = async (event) => {
     if (visibility) query.visibility = visibility;
     if (tags) query.tags = { $in: tags.split(',') };
     
-    // Handle visibility - show public recipes, private recipes owned by the current user,
+    // Handle visibility - show public recipes, private/family recipes owned by the current user,
     // and recipes with undefined visibility (backward compatibility)
     if (!query.visibility) {
       query.$or = [
         { visibility: 'public' },
         { visibility: 'private', owner_id: user_id },
+        { visibility: 'family', owner_id: user_id }, // Add family visibility support
         { visibility: { $exists: false } },
         { visibility: null }
       ];

@@ -34,6 +34,8 @@ import { handler as systemStatusHandler } from './admin/admin_handlers/system_st
 import { handler as aiServicesStatusHandler } from './admin/admin_handlers/ai_services_status.js';
 import { handler as userAnalyticsHandler } from './admin/admin_handlers/user_analytics.js';
 import { handler as recipeIdsHandler } from './admin/admin_handlers/recipe_ids.js';
+// User Profile handler
+import { handler as userProfileHandler } from './handlers/user_profile.js';
 
 /**
  * Add CORS headers to the response
@@ -223,7 +225,7 @@ export async function handler(event, context) {
     const db = await initializeDatabase();
     
     // If database is not available, return error for DB-dependent routes
-    if (!db && (pathOnly.startsWith('/recipes') || pathOnly.startsWith('/shopping-list'))) {
+    if (!db && (pathOnly.startsWith('/recipes') || pathOnly.startsWith('/shopping-list') || pathOnly.startsWith('/user/profile'))) {
       console.error('❌ Database unavailable for route:', pathOnly);
       return addCorsHeaders({
         statusCode: 503,
@@ -264,6 +266,12 @@ export async function handler(event, context) {
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/recipe-ids') {
       return addCorsHeaders(await recipeIdsHandler(event));
+    }
+
+    // USER PROFILE ROUTES
+    if (pathOnly === '/user/profile') {
+      console.log(`🔍 User profile route: ${event.httpMethod} ${pathOnly}`);
+      return addCorsHeaders(await userProfileHandler(event));
     }
 
     // IMAGE AND RECIPE ROUTES

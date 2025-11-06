@@ -153,6 +153,33 @@ export async function getAuth0UserDetails(userId) {
   }
 }
 
+export async function getAuth0UserByEmail(email) {
+  const token = await getManagementToken();
+  const config = await getAuth0Config();
+  const encodedEmail = encodeURIComponent(email);
+  const url = `https://${config.AUTH0_DOMAIN}/api/v2/users-by-email?email=${encodedEmail}`;
+  
+  try {
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    const users = response.data;
+    if (!users || users.length === 0) {
+      return null; // User not found
+    }
+    
+    // Return the first user (should be only one for unique email)
+    return users[0];
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return null; // User not found
+    }
+    const errorMsg = error.response?.data || error.message;
+    throw new Error(`Failed to fetch user by email: ${error.response?.status || 'Unknown'} ${errorMsg}`);
+  }
+}
+
 export async function inviteAuth0User(email, firstName, lastName, roles = []) {
   const token = await getManagementToken();
   const config = await getAuth0Config();

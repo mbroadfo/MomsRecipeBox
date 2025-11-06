@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-06
 
+### Major - User Profile Management System & Recipe Visibility Fix
+
+#### 🎯 Complete User Lifecycle Implementation
+
+This release implements a comprehensive user profile management system with proper Auth0 integration and fixes a critical recipe visibility issue that was hiding 11 "family" recipes.
+
+#### **New Features**
+
+- **Complete User Profile Management System**
+  - Backend API handler (`app/handlers/user_profile.js`) for profile CRUD operations
+  - JWT authentication integration with Auth0 user ID extraction
+  - Profile completeness tracking and onboarding workflow support
+  - Optional fields: first_name, last_name, phone, profile_image
+  - User preferences: visibility_default, email_notifications, recipe_sharing, two_factor_enabled
+  - Lambda routing integration in `app/lambda.js` with database dependency checking
+
+- **Frontend User Profile Component**
+  - React TypeScript component (`ui/src/components/profile/UserProfile.tsx`)
+  - New user onboarding flow with profile setup page
+  - Form validation for email and phone number formats
+  - Real-time profile image preview functionality
+  - Comprehensive preferences configuration UI
+  - Skip option for new users to avoid setup bottlenecks
+
+- **Enhanced Auth0 Management API Integration**
+  - New `getAuth0UserByEmail()` function in `app/admin/auth0_utils.js`
+  - Automatic Auth0 user ID lookup by email address
+  - Eliminates manual user ID configuration requirements
+  - Integrated with existing Auth0 Management API utilities
+
+#### **Critical Bug Fixes**
+
+- **Recipe Visibility System Enhancement**
+  - Added `family` visibility support to `app/handlers/list_recipes.js`
+  - Fixed issue where 11 recipes with `visibility: "family"` were hidden from UI
+  - Now properly displays all 36 recipes instead of only 25
+  - Maintains backward compatibility with existing public/private visibility
+
+#### **Database Operations**
+
+- **Recipe Ownership Standardization**
+  - All 36 recipes now belong to proper Auth0 user account (`auth0|67e1cc293eeee752d79bfd3a`)
+  - Cleaned up fragmented ownership (admin_user, demo-user, auth0|test-user, null)
+  - Created proper user profile with Auth0 integration
+  - Removed 1 empty user document during cleanup
+
+#### **Infrastructure Improvements**
+
+- **Dockerfile Restoration**
+  - Restored `app/Dockerfile` from git history for Lambda container deployment
+  - Fixed deployment pipeline that was broken during previous cleanup
+  - Successful Lambda deployment with family visibility fix
+
+#### **Development Tools**
+
+- Temporary analysis scripts created and removed after successful migration
+- Enhanced NPM script management (removed one-time migration commands)
+
 ### Major - Script Cleanup & Backup/Restore System Overhaul
 
 #### 🧹 **MAJOR CLEANUP**: 63% Script Reduction & Cloud-Only Architecture Migration

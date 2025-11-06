@@ -31,6 +31,7 @@ For a complete setup guide, see the [Getting Started Guide](../docs/guides/getti
 - **Image Handling**: Upload, update, retrieve, and delete images for recipes
 - **Favorites System**: Like/unlike recipes with proper count management
 - **Comments**: Add, update, delete, and retrieve comments on recipes
+- **User Profile Management**: Complete user lifecycle with Auth0 integration, profile setup, and preferences management
 - **Admin System**: User management, system monitoring, and administrative controls ([Admin API Documentation](../docs/admin_api.md))
 
 ## Environment Setup

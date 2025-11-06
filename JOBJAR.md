@@ -284,6 +284,7 @@ Future improvements, features, and tasks identified during development but not i
 ## New ideas
 
 ### 20. Frontend User Profile Integration Testing
+
 - Test user profile functionality in React UI components
 - Validate form validation and error handling in UserProfile.tsx
 - Ensure proper Auth0 integration with JWT token handling
@@ -292,6 +293,7 @@ Future improvements, features, and tasks identified during development but not i
 - **Effort**: Medium - Testing and integration validation
 
 ### 21. User Onboarding Flow Implementation
+
 - Create guided user onboarding experience for new users
 - Implement progressive profile completion prompts
 - Add welcome tour for first-time users
@@ -300,6 +302,7 @@ Future improvements, features, and tasks identified during development but not i
 - **Effort**: Medium - UI/UX design and implementation
 
 ### 22. Profile Image Upload to S3 Integration
+
 - Implement direct S3 upload for user profile images
 - Add image resizing and optimization pipeline
 - Create profile image management interface
@@ -308,6 +311,7 @@ Future improvements, features, and tasks identified during development but not i
 - **Effort**: Medium - S3 integration and image processing
 
 ### 23. Two-Factor Authentication Implementation
+
 - Implement TOTP-based 2FA using Auth0 MFA
 - Add backup codes and recovery options
 - Create 2FA setup and management interface
@@ -316,6 +320,7 @@ Future improvements, features, and tasks identified during development but not i
 - **Effort**: High - Security implementation and Auth0 integration
 
 ### 24. Family Member Invitation System
+
 - Create family invitation workflow and UI
 - Implement family relationship management
 - Add family member approval/removal system
@@ -324,6 +329,7 @@ Future improvements, features, and tasks identified during development but not i
 - **Effort**: High - Complex user relationship management
 
 ### 25. User Profile Validation and Error Handling Improvements
+
 - Enhance server-side validation for all profile fields
 - Improve client-side form validation with real-time feedback
 - Add comprehensive error handling for edge cases

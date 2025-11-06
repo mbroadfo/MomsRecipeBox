@@ -54,8 +54,72 @@ Future improvements, features, and tasks identified during development but not i
   - API calls from CloudFront → API Gateway → Lambda working ✅
   - Production environment configuration with proper API endpoints ✅
 
+- ✅ **S3 Image Permissions Resolution**
+  - Added S3 PutObject/DeleteObject permissions to Lambda role via Terraform
+  - Fixed image upload/update/delete authorization errors
+  - Lambda can now manage recipe images in S3 bucket properly
+
 **Impact**: ✅ **PHASE 4 COMPLETE!** Full-stack serverless deployment achieved, eliminated localhost dependency
 **Result**: Complete cloud-native deployment with CloudFront UI + Lambda API + MongoDB Atlas + Auth0
+
+---
+
+### 🔐 IAM Policy Audit & Consolidation Project - **ACTIVE 2025-11-05**
+
+**Context**: Current IAM setup shows overlapping policies and permission gaps between `mrb-api` and `terraform-mrb` users
+
+**Current State Analysis**:
+
+**mrb-api user (5 policies)**:
+
+- `mrb-admin-access` (Customer managed)
+- `mrb-api-s3-access` (Customer managed)  
+- `mrb-devops-access` (Customer managed)
+- `mrb-secrets-access` (Customer managed)
+- `terraform-mrb-ui` (Customer managed)
+
+**terraform-mrb user (7 policies)**:
+
+- `mrb-api-s3-access` (Customer managed) ← **DUPLICATE**
+- `mrb-secrets-access` (Customer managed) ← **DUPLICATE**
+- `terraform-mrb-infra` (Customer managed)
+- `terraform-mrb-passrole` (Customer managed)
+- `terraform-mrb-secrets` (Customer managed) ← **LIKELY DUPLICATE**
+- `terraform-mrb-services` (Customer managed)
+- `terraform-mrb-ui` (Customer managed) ← **DUPLICATE**
+
+**Issues Identified**:
+
+1. **Permission Gaps**: terraform-mrb cannot delete IAM policy versions (failed during Terraform apply)
+2. **Policy Duplication**: Multiple policies attached to both users
+3. **Naming Inconsistency**: `mrb-secrets-access` vs `terraform-mrb-secrets`
+4. **Role Confusion**: UI policies attached to both users
+5. **Limited Visibility**: Neither user can inspect their own IAM policies
+
+**Audit Process**:
+
+1. **Policy Content Review** (IN PROGRESS): Copy/paste each policy for detailed analysis
+2. **Permission Matrix Creation**: Map actual permissions vs required permissions for each user
+3. **Consolidation Plan**: Remove duplicates, fix gaps, establish clear separation of concerns
+4. **Implementation Strategy**: Safe migration plan with rollback procedures
+
+**Goals**:
+
+- Clear separation: terraform-mrb for infrastructure, mrb-api for application operations
+- Remove all duplicate policies
+- Fill permission gaps (IAM management for terraform-mrb)
+- Standardize naming conventions
+- Document proper usage patterns
+
+**Next Steps**:
+
+1. Complete policy content review (user providing policy details via copy/paste)
+2. Create comprehensive permissions matrix
+3. Design consolidated policy structure
+4. Test changes in safe environment
+5. Implement consolidation plan
+
+**Expected Outcome**: Clean, minimal, properly segregated IAM policies with no gaps or overlaps
 
 ---
 

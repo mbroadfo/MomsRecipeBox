@@ -53,6 +53,37 @@ resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
 }
 
 ##############################################
+# Custom policy for S3 access to recipe images bucket
+##############################################
+resource "aws_iam_role_policy" "lambda_s3_access" {
+  count = var.enable_app_api ? 1 : 0
+  name  = "lambda-s3-recipe-images-access"
+  role  = aws_iam_role.app_lambda_role[count.index].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::${var.recipe_images_bucket}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = "arn:aws:s3:::${var.recipe_images_bucket}"
+      }
+    ]
+  })
+}
+
+##############################################
 # Lambda function from ECR image
 ##############################################
 resource "aws_lambda_function" "app_lambda" {

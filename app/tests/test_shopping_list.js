@@ -10,7 +10,6 @@ import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js
 import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 config();
 
-const BASE_URL = getBaseUrl();
 const TEST_USER_ID = 'auth0|testuser';
 
 // Function to get auth headers
@@ -36,6 +35,7 @@ let testItemIds = [];
  */
 async function runTests() {
   console.log('Starting shopping list API tests...');
+  const BASE_URL = await getBaseUrl();
   logEnvironmentInfo();
   
   try {

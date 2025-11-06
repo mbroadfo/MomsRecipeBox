@@ -8,7 +8,9 @@ import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js
 import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 import 'dotenv/config';
 
-const BASE_URL = getBaseUrl();
+// Global variable for base URL (will be initialized in runAllTests)
+let BASE_URL;
+
 // Use absolute paths to ensure files are found correctly regardless of working directory
 // Get the current file URL and convert to a directory path (ESM equivalent of __dirname)
 import { fileURLToPath } from 'url';
@@ -333,6 +335,7 @@ async function generateTestReport() {
 
 async function runAllTests() {
   logStep('STARTING IMAGE API TEST SUITE');
+  BASE_URL = await getBaseUrl();
   logEnvironmentInfo();
   
   console.log('\n===== Validating Auth0 Configuration =====');

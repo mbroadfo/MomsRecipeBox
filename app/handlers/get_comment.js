@@ -9,8 +9,8 @@ const handler = async (event) => {
   try {
     console.log('GET comment handler called with event:', JSON.stringify(event, null, 2));
     
-    // Extract comment_id from path parameters
-    const { comment_id } = event.pathParameters;
+    // Extract comment_id from path parameters (set as 'id' in lambda.js)
+    const comment_id = event.pathParameters?.id;
     console.log(`Looking for comment with ID: ${comment_id}`);
     
     if (!comment_id || !ObjectId.isValid(comment_id)) {

@@ -11,8 +11,8 @@ import { validateComment } from '../models/comment_schema.js';
 
 const handler = async (event) => {
   try {
-    // Extract comment ID from path parameters
-    const { comment_id } = event.pathParameters;
+    // Extract comment ID from path parameters (set as 'id' in lambda.js)
+    const comment_id = event.pathParameters?.id;
     if (!comment_id) {
       return {
         statusCode: 400,

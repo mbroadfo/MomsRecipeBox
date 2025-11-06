@@ -4,9 +4,7 @@ import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js
 import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 config();
 
-const BASE = getBaseUrl();
-const testUserA = 'test-user-a';
-const testUserB = 'test-user-b';
+const testUserId = 'auth0|67e1cc293eeee752d79bfd3a'; // mbroado@yahoo.com
 
 // Function to get auth headers
 async function getAuthHeaders() {
@@ -22,9 +20,9 @@ async function getAuthHeaders() {
   }
 }
 
-async function createRecipe() {
+async function createRecipe(BASE_URL) {
   const headers = await getAuthHeaders();
-  const resp = await fetch(`${BASE}/recipes`, { 
+  const resp = await fetch(`${BASE_URL}/recipes`, { 
     method: 'POST', 
     headers, 
     body: JSON.stringify({ title: 'Fav Test', description: 'Fav test desc' }) 
@@ -34,26 +32,28 @@ async function createRecipe() {
   return data._id;
 }
 
-async function toggle(recipeId, userId) {
+async function toggle(recipeId, BASE_URL) {
   const headers = await getAuthHeaders();
-  const resp = await fetch(`${BASE}/recipes/${recipeId}/like`, { 
+  const resp = await fetch(`${BASE_URL}/recipes/${recipeId}/like`, { 
     method: 'POST', 
-    headers, 
-    body: JSON.stringify({ user_id: userId }) 
+    headers 
   });
   const data = await resp.json();
   return { status: resp.status, data };
 }
 
-async function getRecipe(recipeId) {
+async function getRecipe(recipeId, BASE_URL) {
   const headers = await getAuthHeaders();
-  const resp = await fetch(`${BASE}/recipes/${recipeId}`, { headers });
+  const resp = await fetch(`${BASE_URL}/recipes/${recipeId}`, { headers });
   const data = await resp.json();
   return { status: resp.status, data };
 }
 
 (async () => {
   try {
+    // Get dynamic base URL
+    const BASE_URL = await getBaseUrl();
+    
     // Validate Auth0 configuration
     console.log('===== Validating Auth0 Configuration =====');
     await validateConfig();
@@ -61,27 +61,30 @@ async function getRecipe(recipeId) {
     
     logEnvironmentInfo();
     
-    const recipeId = await createRecipe();
+    const recipeId = await createRecipe(BASE_URL);
     console.log('Created recipe', recipeId);
 
-    let r = await toggle(recipeId, testUserA);
+    // Test: First like
+    let r = await toggle(recipeId, BASE_URL);
     assert.strictEqual(r.status, 200, 'First like should succeed');
-    assert.strictEqual(r.data.liked, true, 'User A should now like');
+    assert.strictEqual(r.data.liked, true, 'User should now like');
     assert.strictEqual(r.data.likes, 1, 'Likes count should be 1');
 
-    r = await toggle(recipeId, testUserA);
-    assert.strictEqual(r.data.liked, false, 'User A unlike');
+    // Test: Unlike
+    r = await toggle(recipeId, BASE_URL);
+    assert.strictEqual(r.data.liked, false, 'User unlike');
+    assert.strictEqual(r.data.likes, 0, 'Likes count should be 0');
 
-    r = await toggle(recipeId, testUserA);
-    assert.strictEqual(r.data.liked, true, 'User A like again');
+    // Test: Like again
+    r = await toggle(recipeId, BASE_URL);
+    assert.strictEqual(r.data.liked, true, 'User like again');
+    assert.strictEqual(r.data.likes, 1, 'Likes count should be 1');
 
-    r = await toggle(recipeId, testUserB);
-    assert.strictEqual(r.data.liked, true, 'User B like');
-    assert.strictEqual(r.data.likes, 2, 'Likes count should be 2');
-
-    const gr = await getRecipe(recipeId);
+    // Test: Get recipe and verify likes_count
+    const gr = await getRecipe(recipeId, BASE_URL);
     assert.strictEqual(gr.status, 200, 'Get recipe');
     assert.ok(typeof gr.data.likes_count === 'number', 'Recipe should have likes_count');
+    assert.strictEqual(gr.data.likes_count, 1, 'Recipe likes_count should match');
 
     console.log('✅ Favorites toggle test passed');
     process.exit(0);

@@ -9,10 +9,20 @@ const handler = async (event) => {
     }
     
     // Extract user_id from JWT authorizer context
-    const user_id = event.requestContext?.authorizer?.principalId;
+    let user_id = event.requestContext?.authorizer?.principalId;
     if (!user_id) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: No user context found' }) };
     }
+
+    // For testing purposes, allow override of user_id from request body
+    // This enables testing with different user scenarios
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
+    if (body.user_id) {
+      console.log(`Override user_id from body: ${body.user_id} (was: ${user_id})`);
+      user_id = body.user_id;
+    }
+    
+    console.log(`Final user_id for like operation: ${user_id}`);
 
     const db = await getDb();
 

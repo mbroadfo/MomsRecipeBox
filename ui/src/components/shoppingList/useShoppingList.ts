@@ -7,14 +7,27 @@ import {
   clearShoppingList
 } from '../../utils/api';
 
+// API Response types
+interface ApiResponse<T = unknown> {
+  data?: T;
+  success?: boolean;
+  needsRefresh?: boolean;
+}
+
+interface ShoppingListApiResponse {
+  _id: string;
+  userId: string;
+  items: ShoppingListItem[];
+}
+
 export interface ShoppingListItem {
   _id: string;
   name: string;
   ingredient?: string;  // Support both formats
-  recipeId?: string;
-  recipe_id?: string;   // Support both formats
-  recipeTitle?: string;
-  recipe_title?: string; // Support both formats
+  recipeId?: string | null;
+  recipe_id?: string | null;   // Support both formats
+  recipeTitle?: string | null;
+  recipe_title?: string | null; // Support both formats
   checked: boolean;
   item_id?: string;     // Support both formats
 }
@@ -37,9 +50,14 @@ export const useShoppingList = () => {
     setError(null);
     
     try {
-      const data = await getShoppingList();
-      console.log('Shopping list data received:', JSON.stringify(data, null, 2));
-      console.log('Shopping list data type:', typeof data);
+      const response = await getShoppingList();
+      console.log('Shopping list response received:', JSON.stringify(response, null, 2));
+      console.log('Shopping list response type:', typeof response);
+      
+      // Handle ApiResponse structure - actual data is in response.data
+      const apiResponse = response as ApiResponse<ShoppingListApiResponse>;
+      const data = apiResponse.data || (response as unknown as ShoppingListApiResponse);
+      console.log('Shopping list data:', JSON.stringify(data, null, 2));
       console.log('Has items property:', data && 'items' in data);
       console.log('Items is array:', data && data.items && Array.isArray(data.items));
       
@@ -49,7 +67,7 @@ export const useShoppingList = () => {
           console.log('Valid shopping list with items array, setting state');
           
           // Map the items to ensure they have the expected properties
-          const mappedItems = data.items.map((item: any) => ({
+          const mappedItems = data.items.map((item: ShoppingListItem) => ({
             _id: item._id || item.item_id || '', // Use either _id or item_id
             name: item.name || item.ingredient || '', // Use either name or ingredient
             recipeId: item.recipeId || item.recipe_id || null,
@@ -70,8 +88,9 @@ export const useShoppingList = () => {
         // Initialize with empty items if we get an invalid response
         setShoppingList({ _id: 'default', userId: 'default', items: [] });
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      setError(error);
       console.error('Error loading shopping list:', err);
     } finally {
       setLoading(false);
@@ -119,10 +138,11 @@ export const useShoppingList = () => {
       }
       
       return response;
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      setError(error);
       console.error('Error adding items to shopping list:', err);
-      throw err;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -146,12 +166,13 @@ export const useShoppingList = () => {
     
     try {
       await updateShoppingListItem(itemId, checked);
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      setError(error);
       console.error('Error updating shopping list item:', err);
       // Revert optimistic update on failure
       loadShoppingList();
-      throw err;
+      throw error;
     }
   }, [shoppingList, loadShoppingList]);
 
@@ -178,12 +199,13 @@ export const useShoppingList = () => {
       }
       
       return response;
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      setError(error);
       console.error('Error deleting shopping list item:', err);
       // Revert optimistic update on failure
       loadShoppingList();
-      throw err;
+      throw error;
     }
   }, [shoppingList, loadShoppingList]);
 
@@ -224,12 +246,13 @@ export const useShoppingList = () => {
       if (!(response && response.success)) {
         console.warn('Unexpected response from clearShoppingList');
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      setError(error);
       console.error('Error clearing shopping list:', err);
       // Revert optimistic update on failure
       loadShoppingList();
-      throw err;
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -9,8 +9,8 @@ import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js
 import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 
 // Get base URL dynamically to ensure dotenv is loaded
-function getBaseUrlDynamic() {
-  return getBaseUrl();
+async function getBaseUrlDynamic() {
+  return await getBaseUrl();
 }
 
 // Function to get auth headers
@@ -45,9 +45,8 @@ const testRecipe = {
   ]
 };
 
-// Comment test data
+// Comment test data - user_id will be extracted from JWT by the API
 const testComment = {
-  user_id: 'auth0|testuser',
   content: 'This is a test comment on the recipe'
 };
 
@@ -56,10 +55,9 @@ const updatedComment = {
   content: 'This comment has been updated for testing'
 };
 
-// Second comment for testing multiple comments
+// Second comment for testing multiple comments - user_id will be extracted from JWT by the API
 const secondComment = {
-  user_id: 'auth0|anotheruser',
-  content: 'This is another test comment from a different user'
+  content: 'This is another test comment from the same user'
 };
 
 /**
@@ -67,7 +65,11 @@ const secondComment = {
  */
 async function runTests() {
   console.log('Starting comment API tests...');
-  logEnvironmentInfo();
+  await logEnvironmentInfo();
+  
+  // Get base URL once for all requests
+  const BASE_URL = await getBaseUrlDynamic();
+  
   let recipeId, firstCommentId, secondCommentId;
   
   try {
@@ -78,14 +80,18 @@ async function runTests() {
     
     // Step 1: Create a test recipe to attach comments to
     console.log('\n===== Creating test recipe for comments =====');
-    const createRecipeResponse = await axios.post(`${getBaseUrlDynamic()}/recipes`, testRecipe, { headers: await getAuthHeaders() });
+    const recipeUrl = `${BASE_URL}/recipes`;
+    console.log(`🔗 Recipe URL: ${recipeUrl}`);
+    const createRecipeResponse = await axios.post(recipeUrl, testRecipe, { headers: await getAuthHeaders() });
     recipeId = createRecipeResponse.data._id;
     console.log(`Test recipe created with ID: ${recipeId}`);
     
     // Step 2: Post a comment on the recipe
     console.log('\n===== Creating first comment =====');
+    const commentUrl = `${BASE_URL}/recipes/${recipeId}/comments`;
+    console.log(`🔗 Comment URL: ${commentUrl}`);
     const createCommentResponse = await axios.post(
-      `${getBaseUrlDynamic()}/recipes/${recipeId}/comments`,
+      commentUrl,
       testComment,
       { headers: await getAuthHeaders() }
     );
@@ -97,12 +103,13 @@ async function runTests() {
     assert.strictEqual(createCommentResponse.status, 201, 'Expected 201 status code for comment creation');
     assert.ok(firstCommentId, 'Comment should have an ID');
     assert.strictEqual(createCommentResponse.data.content, testComment.content, 'Comment content should match');
-    assert.strictEqual(createCommentResponse.data.user_id, testComment.user_id, 'User ID should match');
+    assert.ok(createCommentResponse.data.user_id, 'User ID should be present');
+    assert.ok(createCommentResponse.data.user_id.length > 0, 'User ID should not be empty');
     
     // Step 3: Create a second comment
     console.log('\n===== Creating second comment =====');
     const createSecondCommentResponse = await axios.post(
-      `${getBaseUrlDynamic()}/recipes/${recipeId}/comments`,
+      `${BASE_URL}/recipes/${recipeId}/comments`,
       secondComment,
       { headers: await getAuthHeaders() }
     );
@@ -115,16 +122,16 @@ async function runTests() {
     
     // Step 4: Get the recipe with comments
     console.log('\n===== Fetching recipe with comments =====');
-    const getRecipeResponse = await axios.get(`${getBaseUrlDynamic()}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
+    const getRecipeResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
     console.log('Recipe with comments:');
     console.log(JSON.stringify(getRecipeResponse.data, null, 2));
     
     // Check if comments are included or referenced in the recipe
     assert.strictEqual(getRecipeResponse.status, 200, 'Expected 200 status code for get recipe');
     
-    // Step 5: Get a specific comment
+    // Step 5: Get specific comment
     console.log('\n===== Fetching specific comment =====');
-    const getCommentResponse = await axios.get(`${getBaseUrlDynamic()}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
+    const getCommentResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Comment retrieved:');
     console.log(JSON.stringify(getCommentResponse.data, null, 2));
     
@@ -132,10 +139,10 @@ async function runTests() {
     assert.strictEqual(getCommentResponse.data._id, firstCommentId, 'Comment ID should match');
     assert.strictEqual(getCommentResponse.data.content, testComment.content, 'Comment content should match');
     
-    // Step 6: Update the first comment
+    // Step 6: Update comment
     console.log('\n===== Updating comment =====');
     const updateCommentResponse = await axios.put(
-      `${getBaseUrlDynamic()}/comments/${firstCommentId}`,
+      `${BASE_URL}/comments/${firstCommentId}`,
       updatedComment,
       { headers: await getAuthHeaders() }
     );
@@ -147,7 +154,7 @@ async function runTests() {
     
     // Step 7: Verify the comment update
     console.log('\n===== Verifying comment update =====');
-    const verifyUpdateResponse = await axios.get(`${getBaseUrlDynamic()}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
+    const verifyUpdateResponse = await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Updated comment verified:');
     console.log(JSON.stringify(verifyUpdateResponse.data, null, 2));
     
@@ -155,7 +162,7 @@ async function runTests() {
     
     // Step 8: Delete the first comment
     console.log('\n===== Deleting first comment =====');
-    const deleteCommentResponse = await axios.delete(`${getBaseUrlDynamic()}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
+    const deleteCommentResponse = await axios.delete(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
     console.log('Comment deleted:');
     console.log(JSON.stringify(deleteCommentResponse.data, null, 2));
     
@@ -165,7 +172,7 @@ async function runTests() {
     // Step 9: Verify comment deletion
     console.log('\n===== Verifying comment deletion =====');
     try {
-      await axios.get(`${getBaseUrlDynamic()}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
+      await axios.get(`${BASE_URL}/comments/${firstCommentId}`, { headers: await getAuthHeaders() });
       assert.fail('Expected comment to be deleted');
     } catch (error) {
       assert.strictEqual(error.response.status, 404, 'Expected 404 status code for deleted comment');
@@ -174,13 +181,13 @@ async function runTests() {
     
     // Step 10: Delete the second comment
     console.log('\n===== Deleting second comment =====');
-    const deleteSecondCommentResponse = await axios.delete(`${getBaseUrlDynamic()}/comments/${secondCommentId}`, { headers: await getAuthHeaders() });
+    const deleteSecondCommentResponse = await axios.delete(`${BASE_URL}/comments/${secondCommentId}`, { headers: await getAuthHeaders() });
     console.log('Second comment deleted:');
     console.log(JSON.stringify(deleteSecondCommentResponse.data, null, 2));
     
     // Step 11: Clean up - Delete the test recipe
     console.log('\n===== Cleaning up - Deleting test recipe =====');
-    const deleteRecipeResponse = await axios.delete(`${getBaseUrlDynamic()}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
+    const deleteRecipeResponse = await axios.delete(`${BASE_URL}/recipes/${recipeId}`, { headers: await getAuthHeaders() });
     console.log('Test recipe deleted:');
     console.log(JSON.stringify(deleteRecipeResponse.data, null, 2));
     
@@ -201,14 +208,15 @@ async function runTests() {
     // Cleanup in case of error - try to delete created resources
     console.log('\nAttempting cleanup after error...');
     try {
+      const cleanupBaseUrl = await getBaseUrlDynamic(); // Get fresh URL for cleanup
       if (firstCommentId) {
-        await axios.delete(`${getBaseUrlDynamic()}/comments/${firstCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
+        await axios.delete(`${cleanupBaseUrl}/comments/${firstCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
       if (secondCommentId) {
-        await axios.delete(`${getBaseUrlDynamic()}/comments/${secondCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
+        await axios.delete(`${cleanupBaseUrl}/comments/${secondCommentId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
       if (recipeId) {
-        await axios.delete(`${getBaseUrlDynamic()}/recipes/${recipeId}`, { headers: await getAuthHeaders() }).catch(() => {});
+        await axios.delete(`${cleanupBaseUrl}/recipes/${recipeId}`, { headers: await getAuthHeaders() }).catch(() => {});
       }
     } catch (cleanupError) {
       console.error('Error during cleanup:', cleanupError.message);

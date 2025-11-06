@@ -10,9 +10,21 @@ interface ShoppingListItem {
   item_id?: string;
   name?: string;
   ingredient?: string;
-  recipeId?: string;
-  recipe_id?: string;
+  recipeId?: string | null;
+  recipe_id?: string | null;
   checked?: boolean;
+}
+
+// API Response types
+interface ApiResponse<T = unknown> {
+  data?: T;
+  success?: boolean;
+}
+
+interface ShoppingListApiResponse {
+  _id: string;
+  userId: string;
+  items: ShoppingListItem[];
 }
 
 export const IngredientsView: React.FC<{ 
@@ -53,7 +65,11 @@ export const IngredientsView: React.FC<{
     
     const loadShoppingList = async () => {
       try {
-        const data = await getShoppingList();
+        const response = await getShoppingList();
+        
+        // Handle ApiResponse structure - actual data is in response.data
+        const apiResponse = response as ApiResponse<ShoppingListApiResponse>;
+        const data = apiResponse.data || (response as unknown as ShoppingListApiResponse);
         
         if (data && data.items && Array.isArray(data.items)) {
           // Create a map of ingredient names from this recipe that are in the shopping list
@@ -257,7 +273,9 @@ export const IngredientsView: React.FC<{
       
       // If we couldn't find the ID, reload the shopping list to get updated state
       if (!itemId) {
-        const refreshedList = await getShoppingList();
+        const refreshedListResponse = await getShoppingList();
+        const apiResponse = refreshedListResponse as ApiResponse<ShoppingListApiResponse>;
+        const refreshedList = apiResponse.data || (refreshedListResponse as unknown as ShoppingListApiResponse);
         if (refreshedList && refreshedList.items && Array.isArray(refreshedList.items)) {
           const addedItem = refreshedList.items.find((i: ShoppingListItem) => 
             (i.name === formattedName || i.ingredient === formattedName) && 
@@ -451,7 +469,9 @@ export const IngredientsView: React.FC<{
         await addToShoppingList(ingredients);
         
         // Refresh shopping list to get updated state with new IDs
-        const refreshedList = await getShoppingList();
+        const refreshedListResponse = await getShoppingList();
+        const apiResponse = refreshedListResponse as ApiResponse<ShoppingListApiResponse>;
+        const refreshedList = apiResponse.data || (refreshedListResponse as unknown as ShoppingListApiResponse);
         if (refreshedList && refreshedList.items && Array.isArray(refreshedList.items)) {
           const updatedItems = {...shoppingListItems};
           

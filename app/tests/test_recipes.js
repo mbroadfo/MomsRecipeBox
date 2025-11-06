@@ -33,8 +33,6 @@ import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js
 import { getBaseUrl, logEnvironmentInfo } from './utils/environment-detector.js';
 import 'dotenv/config';
 
-const BASE_URL = getBaseUrl();
-
 // Auth0 JWT token generation for API authentication
 async function getAuthHeaders() {
   try {
@@ -80,6 +78,7 @@ const likeToggle = {
  */
 async function runTests() {
   console.log('Starting recipe API tests...');
+  const BASE_URL = await getBaseUrl();
   logEnvironmentInfo();
   
   try {

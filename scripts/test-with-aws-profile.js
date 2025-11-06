@@ -57,7 +57,8 @@ try {
     stdio: 'inherit',
     env: {
       ...process.env,
-      AWS_PROFILE: 'mrb-api'
+      AWS_PROFILE: 'mrb-api',
+      APP_MODE: 'lambda'
     }
   });
 

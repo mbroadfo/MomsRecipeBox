@@ -478,6 +478,143 @@ aws sts get-caller-identity  # Now uses mrb-api correctly
 
 **Why this happens**: Node.js processes can only modify their own environment variables, not the parent PowerShell session. The `npm run aws:mrb-api` script tells you what to set, but you must manually run `$env:AWS_PROFILE="profile-name"` for AWS CLI commands to work correctly.
 
+## 🧪 Environment Detection & Test Infrastructure Patterns
+
+### 1. Dynamic Environment Detection
+
+**❌ MISTAKE**: Hardcoding endpoints in test files and environment detectors
+**✅ CORRECT**: Use AWS Secrets Manager integration for dynamic endpoint resolution based on environment context
+
+**Breaking Hardcoded Pattern**:
+
+```javascript
+// ❌ Hardcoded endpoints that fail when environments change
+function getBaseUrl() {
+  if (process.env.APP_MODE === 'lambda') {
+    return 'https://api-specific-url.com'; // Breaks when API Gateway changes
+  }
+  return 'http://localhost:3000';
+}
+```
+
+**Correct Dynamic Pattern**:
+
+```javascript
+// ✅ AWS Secrets Manager integration for dynamic endpoint resolution
+async function getAwsConfig() {
+  const client = new SecretsManagerClient({ region: 'us-east-1' });
+  const response = await client.send(new GetSecretValueCommand({
+    SecretId: 'mrb-api-gateway-config'
+  }));
+  return JSON.parse(response.SecretString);
+}
+
+async function getBaseUrl() {
+  if (process.env.APP_MODE === 'lambda' || process.env.AWS_PROFILE === 'mrb-api') {
+    const config = await getAwsConfig();
+    return config.API_GATEWAY_BASE_URL;
+  }
+  return process.env.APP_BASE_URL || 'http://localhost:3000';
+}
+```
+
+**Critical Implementation Rules**:
+
+- **Environment Auto-Detection**: Automatically detect Lambda mode when `AWS_PROFILE=mrb-api`
+- **AWS Secrets Manager Integration**: Store dynamic endpoints in secrets, not configuration files
+- **Async URL Construction**: Always use `await getBaseUrl()` in test files
+- **No Hardcoded Endpoints**: Remove all hardcoded URLs from environment detection logic
+
+### 2. Async URL Construction in Test Files
+
+**❌ MISTAKE**: Not awaiting async base URL functions in test files
+**✅ CORRECT**: Always await dynamic URL construction to prevent undefined base URLs
+
+**Breaking Async Pattern**:
+
+```javascript
+// ❌ Non-awaited async function causing undefined BASE_URL
+const BASE_URL = getBaseUrl(); // getBaseUrl() returns Promise<string>
+const response = await fetch(`${BASE_URL}/recipes`); // Becomes "undefined/recipes"
+```
+
+**Correct Async Pattern**:
+
+```javascript
+// ✅ Proper async URL construction
+const BASE_URL = await getBaseUrl(); // Properly awaited
+const response = await fetch(`${BASE_URL}/recipes`); // Correct URL construction
+```
+
+**Critical Test File Patterns**:
+
+- **Global URL Assignment**: Always use `const BASE_URL = await getBaseUrl();` at test start
+- **Variable Reference**: Ensure BASE_URL variable is properly referenced (not BASE_Url typos)
+- **Function Parameter Passing**: Fix parameter extraction mismatches in handlers
+- **Environment Variables**: Set `APP_MODE=lambda` in test wrapper scripts for cloud testing
+
+### 3. Comment Handler Parameter Extraction
+
+**❌ MISTAKE**: Mismatched parameter extraction between path parameters and query parameters
+**✅ CORRECT**: Use consistent parameter extraction patterns for comment CRUD operations
+
+**Breaking Parameter Mismatch**:
+
+```javascript
+// ❌ Handler expects query parameter but receives path parameter
+// API Gateway config: /comments/{comment_id}
+// Handler code:
+const comment_id = event.queryStringParameters?.comment_id; // Wrong source!
+```
+
+**Correct Parameter Extraction**:
+
+```javascript
+// ✅ Match parameter source to API Gateway configuration
+// API Gateway config: /comments/{comment_id}
+// Handler code:
+const comment_id = event.pathParameters?.comment_id; // Correct source
+```
+
+**Parameter Source Rules**:
+
+- **Path Parameters**: Use `event.pathParameters?.param_name` for route variables like `{comment_id}`
+- **Query Parameters**: Use `event.queryStringParameters?.param_name` for URL query strings like `?user_id=123`
+- **Request Body**: Use `JSON.parse(event.body)` for POST/PUT payload data
+- **Consistent Patterns**: All CRUD handlers for same resource should use same parameter extraction pattern
+
+### 4. Test Infrastructure Configuration Management
+
+**❌ MISTAKE**: Conflicting environment variables causing test environment confusion
+**✅ CORRECT**: Establish clear environment variable precedence and hierarchy
+
+**Breaking Configuration Conflict**:
+
+```javascript
+// ❌ Conflicting environment variables
+// .env file: APP_MODE=express
+// app/tests/.env file: APP_BASE_URL=http://localhost:3000
+// test-wrapper script: Sets APP_MODE=lambda
+// Result: Environment detection confusion and hardcoded localhost usage
+```
+
+**Correct Configuration Hierarchy**:
+
+```javascript
+// ✅ Clean environment variable precedence
+// .env file: APP_MODE=lambda (default cloud testing)
+// app/tests/.env file: Only test-specific variables, no conflicting base URLs
+// test-wrapper script: Passes APP_MODE=lambda explicitly
+// environment-detector.js: Uses AWS Secrets Manager for dynamic resolution
+```
+
+**Configuration Management Rules**:
+
+- **Test Mode Default**: Use `APP_MODE=lambda` as default for testing to ensure cloud infrastructure validation
+- **Remove Hardcoded URLs**: Remove `APP_BASE_URL=http://localhost:3000` from test configuration files
+- **Environment Variable Precedence**: Test wrapper > .env files > defaults
+- **AWS Profile Integration**: Auto-detect Lambda mode when `AWS_PROFILE=mrb-api` is set
+
 ## 🚨 IAM Policy Management Rules
 
 **❌ CRITICAL MISTAKE**: Attempting to modify AWS IAM policies or permissions without explicit user approval

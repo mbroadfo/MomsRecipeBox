@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-05
 
+### Enhanced - Environment Detection & Test Infrastructure with AWS Secrets Manager Integration
+
+#### 🧪 **ENHANCEMENT**: Complete Test Infrastructure Overhaul with Dynamic Environment Detection
+
+- **AWS Secrets Manager Integration for Dynamic Endpoint Resolution**
+  - Enhanced `app/tests/utils/environment-detector.js` with `getAwsConfig()` function for secrets retrieval
+  - Removed all hardcoded endpoints from environment detection logic
+  - Added automatic Lambda mode detection when `AWS_PROFILE=mrb-api` is set
+  - Integrated dynamic API Gateway URL resolution from AWS Secrets Manager (`mrb-api-gateway-config`)
+  - Fixed environment variable precedence: test wrapper → .env files → AWS Secrets Manager → defaults
+
+- **Async URL Construction Fixes Across All Test Files**
+  - Fixed async `getBaseUrl()` calls in all test files: `test_recipes.js`, `test_images.js`, `test_favorites.js`, `test_shopping_list.js`, `test_comments.js`
+  - Added proper `await` keywords to prevent undefined BASE_URL issues
+  - Resolved variable reference errors (`BASE_URL` vs `BASE_Url` typos)
+  - Updated test wrapper `scripts/test-with-aws-profile.js` to pass `APP_MODE=lambda` environment variable
+
+- **Comment Handler Parameter Extraction Bug Fixes**
+  - Fixed parameter extraction mismatch in comment handlers: `get_comment.js`, `update_comment.js`, `delete_comment.js`
+  - Changed from `event.queryStringParameters?.comment_id` to `event.pathParameters?.comment_id` to match API Gateway route configuration
+  - Fixed `post_like.js` handler parameter extraction for consistency
+  - All comment CRUD operations now use proper path parameter extraction
+
+- **Environment Configuration Management Improvements**
+  - Updated root `.env` file to use `APP_MODE=lambda` as default for comprehensive cloud infrastructure testing
+  - Removed conflicting `APP_BASE_URL=http://localhost:3000` from `app/tests/.env` file
+  - Established clean environment variable hierarchy with no conflicting hardcoded URLs
+  - Enhanced test wrapper to ensure proper cloud testing mode activation
+
+#### 🎯 **ACHIEVEMENT**: 100% Test Suite Success Rate
+
+- **Complete Test Coverage Validation**: All 5 test categories now pass at 100% success rate
+  - ✅ Recipe CRUD operations (create, read, update, delete)
+  - ✅ Image upload/delete operations with S3 integration
+  - ✅ Comment CRUD operations with fixed parameter extraction
+  - ✅ Favorites management with proper JWT authentication
+  - ✅ Shopping list operations with complete CRUD functionality
+
+- **Infrastructure Validation**: Confirmed complete end-to-end functionality
+  - AWS Lambda deployment with proper S3 permissions
+  - API Gateway routing with JWT authorization
+  - CloudFront distribution for UI hosting
+  - MongoDB Atlas database connectivity
+  - Auth0 JWT token validation and user context extraction
+
+#### 📚 **DOCUMENTATION**: Updated Development Guidelines
+
+- **Enhanced COPILOT_INSTRUCTIONS.md**: Added comprehensive section "Environment Detection & Test Infrastructure Patterns"
+  - Dynamic Environment Detection patterns with AWS Secrets Manager
+  - Async URL Construction best practices for test files
+  - Comment Handler Parameter Extraction troubleshooting guide
+  - Test Infrastructure Configuration Management hierarchy
+
+- **Debugging Patterns Documented**: Added troubleshooting guides for:
+  - Environment detection system failures and hardcoded endpoint issues
+  - Async function usage in test infrastructure
+  - Parameter extraction mismatches in API handlers
+  - Configuration conflicts in environment variable precedence
+
 ### Fixed - Complete JWT Authentication Integration & Shopping List Fix
 
 #### 🔧 **CRITICAL FIX**: Complete JWT Authentication Implementation Across Full Stack

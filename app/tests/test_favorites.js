@@ -86,6 +86,16 @@ async function getRecipe(recipeId, BASE_URL) {
     assert.ok(typeof gr.data.likes_count === 'number', 'Recipe should have likes_count');
     assert.strictEqual(gr.data.likes_count, 1, 'Recipe likes_count should match');
 
+    // CLEANUP: Delete the test recipe to avoid database pollution
+    console.log('Cleaning up test recipe...');
+    const headers = await getAuthHeaders();
+    const deleteResponse = await fetch(`${BASE_URL}/recipes/${recipeId}`, { 
+      method: 'DELETE', 
+      headers 
+    });
+    assert.strictEqual(deleteResponse.status, 200, 'Recipe cleanup should succeed');
+    console.log('✅ Test recipe cleaned up successfully');
+
     console.log('✅ Favorites toggle test passed');
     process.exit(0);
   } catch (e) {

@@ -1,8 +1,8 @@
 /**
- * Environment Detection Utility
+ * Cloud-Only Environment Detection Utility
  * 
- * Provides consistent environment-aware base URL detection across all test files.
- * Supports automatic detection of Express vs Lambda modes, plus explicit overrides.
+ * Provides consistent cloud API endpoint detection across all test files.
+ * Simplified for cloud-only architecture - no local/express mode support.
  */
 
 // Ensure dotenv is loaded for consistent environment variable access
@@ -38,84 +38,46 @@ async function getAwsConfig() {
     return secrets;
   } catch (error) {
     console.log('⚠️  Could not retrieve AWS secrets:', error.message);
-    return null;
+    throw new Error(`Failed to retrieve AWS secrets: ${error.message}. Ensure AWS profile '${process.env.AWS_PROFILE || 'mrb-api'}' is configured.`);
   }
 }
 
 /**
- * Get the appropriate base URL for API testing based on environment
- * @returns {string} The base URL for the current environment
+ * Get the cloud API base URL for testing
+ * @returns {string} The base URL for the cloud API
  */
 export async function getBaseUrl() {
   // Check for explicit environment variable override first
-  if (process.env.BASE_URL) {
-    console.log(`🔧 Using explicit BASE_URL: ${process.env.BASE_URL}`);
-    return process.env.BASE_URL;
-  }
-
-  // Check for API_BASE_URL (used in cloud profile)
   if (process.env.API_BASE_URL) {
-    console.log(`🔧 Using API_BASE_URL: ${process.env.API_BASE_URL}`);
+    console.log(`🔧 Using explicit API_BASE_URL: ${process.env.API_BASE_URL}`);
     return process.env.API_BASE_URL;
   }
 
-  // Check for legacy APP_BASE_URL variable for backward compatibility
-  if (process.env.APP_BASE_URL) {
-    console.log(`🔧 Using APP_BASE_URL: ${process.env.APP_BASE_URL}`);
-    return process.env.APP_BASE_URL;
+  // Cloud-only: Get URL from AWS Secrets Manager
+  const awsConfig = await getAwsConfig();
+  
+  // Try LAMBDA_APP_URL first (preferred)
+  if (awsConfig.LAMBDA_APP_URL) {
+    console.log(`🔐 Using LAMBDA_APP_URL from AWS Secrets: ${awsConfig.LAMBDA_APP_URL}`);
+    return awsConfig.LAMBDA_APP_URL;
   }
   
-  // Check APP_MODE to determine target (lambda vs localhost)
-  if (process.env.APP_MODE === 'lambda') {
-    // Lambda mode - try to get URL from AWS Secrets Manager
-    const awsConfig = await getAwsConfig();
-    if (awsConfig && awsConfig.LAMBDA_APP_URL) {
-      console.log(`🔐 Using LAMBDA_APP_URL from AWS Secrets: ${awsConfig.LAMBDA_APP_URL}`);
-      return awsConfig.LAMBDA_APP_URL;
-    }
-    
-    // Fallback to LAMBDA_API_URL for backward compatibility
-    if (awsConfig && awsConfig.LAMBDA_API_URL) {
-      console.log(`🔐 Using LAMBDA_API_URL from AWS Secrets: ${awsConfig.LAMBDA_API_URL}`);
-      return awsConfig.LAMBDA_API_URL;
-    }
-    
-    // Lambda mode - but no LAMBDA_APP_URL in secrets, need explicit configuration
-    console.log(`🚀 APP_MODE=lambda detected, but no LAMBDA_APP_URL in AWS Secrets`);
-    console.log(`💡 Set API_BASE_URL environment variable for Lambda testing`);
-    throw new Error('Lambda mode detected but LAMBDA_APP_URL not found in AWS Secrets. Please set API_BASE_URL environment variable or add LAMBDA_APP_URL to AWS Secrets Manager.');
+  // Fallback to LAMBDA_API_URL for backward compatibility
+  if (awsConfig.LAMBDA_API_URL) {
+    console.log(`🔐 Using LAMBDA_API_URL from AWS Secrets: ${awsConfig.LAMBDA_API_URL}`);
+    return awsConfig.LAMBDA_API_URL;
   }
   
-  // Auto-detect lambda mode based on AWS profile (if not explicitly set to express)
-  if (process.env.AWS_PROFILE === 'mrb-api' && process.env.APP_MODE !== 'express') {
-    // AWS profile suggests cloud testing - try to get Lambda URL from secrets
-    const awsConfig = await getAwsConfig();
-    if (awsConfig && awsConfig.LAMBDA_APP_URL) {
-      console.log(`🔐 Using LAMBDA_APP_URL from AWS Secrets: ${awsConfig.LAMBDA_APP_URL}`);
-      return awsConfig.LAMBDA_APP_URL;
-    }
-  }
-  
-  // Auto-detect based on execution context (fallback)
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
-    // Running inside Lambda - this should not happen for tests
-    console.log(`🚀 Lambda runtime detected - tests should not run inside Lambda`);
-    throw new Error('Tests appear to be running inside Lambda runtime. This is not supported.');
-  }
-  
-  // Express mode (local/atlas development)
-  const expressUrl = 'http://localhost:3000';
-  console.log(`🏠 Express mode detected, using: ${expressUrl}`);
-  return expressUrl;
+  // If no URL found in secrets, this is a configuration error
+  throw new Error('No Lambda API URL found in AWS Secrets Manager. Please add LAMBDA_APP_URL to the secrets or set API_BASE_URL environment variable.');
 }
 
 /**
- * Get environment mode for logging and conditional logic
- * @returns {string} 'lambda' or 'express'
+ * Get environment information (always 'cloud' in simplified architecture)
+ * @returns {string} Always returns 'cloud'
  */
 export async function getEnvironmentMode() {
-  const baseUrl = await getBaseUrl();
-  return baseUrl.includes('localhost') ? 'express' : 'lambda';
+  return 'cloud';
 }
 
 /**
@@ -123,16 +85,9 @@ export async function getEnvironmentMode() {
  */
 export async function logEnvironmentInfo() {
   const baseUrl = await getBaseUrl();
-  const mode = await getEnvironmentMode();
   
   console.log(`🎯 Target API: ${baseUrl}`);
-  console.log(`🔧 Mode: ${mode}`);
-  
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    console.log(`🔍 Lambda Function: ${process.env.AWS_LAMBDA_FUNCTION_NAME}`);
-  }
-  
-  if (process.env.MONGODB_MODE) {
-    console.log(`🗄️  Database Mode: ${process.env.MONGODB_MODE}`);
-  }
+  console.log(`🔧 Architecture: cloud-only (simplified)`);
+  console.log(`🔐 AWS Profile: ${process.env.AWS_PROFILE || 'mrb-api'}`);
+  console.log(`🗄️  Database: Atlas (via AWS Secrets Manager)`);
 }

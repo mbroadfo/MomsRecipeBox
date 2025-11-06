@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Find Orphaned Images - Node.js Version
+ * Find Orphaned Images - Cloud-Only Version
  * 
- * This script compares S3 bucket contents with MongoDB recipe IDs
+ * This script compares S3 bucket contents with MongoDB Atlas recipe IDs
  * to identify orphaned images that can be safely removed.
  * 
  * Usage:
@@ -17,6 +17,8 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { MongoClient } from 'mongodb';
+import { getSecret } from '../app/utils/secrets_manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,7 +26,13 @@ const rootDir = join(__dirname, '..');
 
 // Configuration
 const DEFAULT_BUCKET = 'mrb-recipe-images-dev';
-const ADMIN_API_URL = 'http://localhost:3000/admin/system-status';
+
+// System files that should be ignored (not considered orphaned)
+const SYSTEM_FILES = [
+    'default.png',           // Default placeholder image
+    'placeholder.jpg',       // Placeholder image
+    'no-image.png'          // No image placeholder
+];
 
 // Recipe ID patterns (24-character MongoDB ObjectIds)
 const RECIPE_ID_PATTERNS = [
@@ -94,32 +102,39 @@ Examples:
 }
 
 /**
- * Get recipe count from admin API
+ * Get recipe count and IDs from MongoDB Atlas
  */
-async function getRecipeCount() {
+async function getRecipeData() {
     try {
-        console.log('Step 1: Getting recipe count from MongoDB...');
+        console.log('Step 1: Getting recipes from MongoDB Atlas...');
         
-        const response = await fetch(ADMIN_API_URL);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Get MongoDB connection string from AWS Secrets Manager
+        const mongoUri = await getSecret('MONGODB_ATLAS_URI');
+        if (!mongoUri) {
+            throw new Error('Failed to retrieve MongoDB Atlas URI from AWS Secrets Manager');
         }
         
-        const systemStatus = await response.json();
-        const recipeCount = systemStatus.services?.mongodb?.stats?.totalRecipes;
+        const client = new MongoClient(mongoUri);
+        await client.connect();
         
-        if (typeof recipeCount !== 'number') {
-            throw new Error('Recipe count not found in admin API response');
-        }
+        const db = client.db('moms_recipe_box_dev');
+        const recipes = await db.collection('recipes').find({}, {
+            projection: { _id: 1 }
+        }).toArray();
         
-        console.log(`✅ Found ${recipeCount} recipes in database`);
-        return recipeCount;
+        await client.close();
+        
+        const recipeIds = recipes.map(recipe => recipe._id.toString());
+        console.log(`✅ Found ${recipeIds.length} recipes in MongoDB Atlas`);
+        
+        return {
+            count: recipeIds.length,
+            ids: recipeIds
+        };
         
     } catch (error) {
-        console.error('❌ Could not connect to admin API. Make sure the app is running.');
-        console.error(`   Error: ${error.message}`);
-        console.error('   Try: npm run restart');
-        process.exit(1);
+        console.error('❌ Could not connect to MongoDB Atlas:', error.message);
+        throw error;
     }
 }
 
@@ -170,6 +185,7 @@ function analyzeImages(s3Objects) {
     console.log('\nStep 3: Analyzing image filenames...');
     
     const recognizedImages = [];
+    const systemImages = [];
     const unrecognizedImages = [];
     
     s3Objects.forEach(obj => {
@@ -185,6 +201,13 @@ function analyzeImages(s3Objects) {
                 lastModified: obj.LastModified,
                 reason: 'Recipe ID extracted - needs verification'
             });
+        } else if (SYSTEM_FILES.includes(filename)) {
+            systemImages.push({
+                filename,
+                sizeKB,
+                lastModified: obj.LastModified,
+                reason: 'System file - should be kept'
+            });
         } else {
             unrecognizedImages.push({
                 filename,
@@ -195,21 +218,22 @@ function analyzeImages(s3Objects) {
         }
     });
     
-    return { recognizedImages, unrecognizedImages };
+    return { recognizedImages, systemImages, unrecognizedImages };
 }
 
 /**
  * Display analysis results
  */
-function displayResults(s3Objects, recognizedImages, unrecognizedImages, recipeCount, showCommands, bucketName) {
+function displayResults(s3Objects, recognizedImages, systemImages, unrecognizedImages, recipeCount, showCommands, bucketName) {
     console.log('\n' + '='.repeat(50));
     console.log('ANALYSIS RESULTS');
     console.log('='.repeat(50));
     console.log(`Total images in S3: ${s3Objects.length}`);
     console.log(`Images with recipe ID pattern: ${recognizedImages.length}`);
+    console.log(`System/placeholder images: ${systemImages.length}`);
     console.log(`Images with unrecognized names: ${unrecognizedImages.length}`);
     console.log(`Database has: ${recipeCount} recipes`);
-    console.log(`Potential orphaned images: ${s3Objects.length - recipeCount}`);
+    console.log(`Potential orphaned images: ${unrecognizedImages.length} (excluding system files)`);
     
     if (recognizedImages.length > 0) {
         console.log('\nIMAGES WITH RECIPE ID PATTERNS:');
@@ -232,8 +256,25 @@ function displayResults(s3Objects, recognizedImages, unrecognizedImages, recipeC
         console.log(`\nTotal size: ${totalSizeMB} MB`);
     }
     
+    if (systemImages.length > 0) {
+        console.log('\nSYSTEM/PLACEHOLDER IMAGES (Keep these):');
+        console.log('Filename'.padEnd(40) + 'Size (KB)'.padEnd(12) + 'Date');
+        console.log('-'.repeat(60));
+        
+        systemImages
+            .sort((a, b) => a.filename.localeCompare(b.filename))
+            .forEach(img => {
+                const date = new Date(img.lastModified).toISOString().split('T')[0];
+                console.log(
+                    img.filename.padEnd(40) +
+                    img.sizeKB.toString().padEnd(12) +
+                    date
+                );
+            });
+    }
+    
     if (unrecognizedImages.length > 0) {
-        console.log('\nUNRECOGNIZED IMAGE NAMES:');
+        console.log('\nUNRECOGNIZED IMAGE NAMES (Potential orphans):');
         console.log('Filename'.padEnd(40) + 'Size (KB)'.padEnd(12) + 'Date');
         console.log('-'.repeat(60));
         
@@ -287,17 +328,17 @@ async function main() {
     }
     
     try {
-        // Get recipe count from database
-        const recipeCount = await getRecipeCount();
+        // Get recipe data from Atlas
+        const recipeData = await getRecipeData();
         
         // List S3 objects
         const s3Objects = listS3Objects(args.bucket);
         
         // Analyze images
-        const { recognizedImages, unrecognizedImages } = analyzeImages(s3Objects);
+        const { recognizedImages, systemImages, unrecognizedImages } = analyzeImages(s3Objects);
         
         // Display results
-        displayResults(s3Objects, recognizedImages, unrecognizedImages, recipeCount, args.showCommands, args.bucket);
+        displayResults(s3Objects, recognizedImages, systemImages, unrecognizedImages, recipeData.count, args.showCommands, args.bucket);
         
     } catch (error) {
         console.error(`❌ Error: ${error.message}`);

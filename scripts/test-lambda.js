@@ -8,6 +8,7 @@
  * 
  * Usage:
  *   node scripts/test-lambda.js [function-name]
+ *   node scripts/test-lambda.js --no-invoke (skip function invocation)
  *   npm run test:lambda
  */
 
@@ -82,17 +83,20 @@ async function testLambda(functionName = 'mrb-app-api') {
     log(`   State: ${info.Configuration.State}`, 'blue');
     log(`   Last Modified: ${info.Configuration.LastModified}`, 'blue');
 
-    // For safety, only actually invoke if explicitly requested
-    const shouldInvoke = process.argv.includes('--invoke');
+    // Always invoke by default, unless --no-invoke is specified
+    const skipInvoke = process.argv.includes('--no-invoke');
     
-    if (shouldInvoke) {
+    if (!skipInvoke) {
       log('⚠️ Invoking function with empty payload...', 'yellow');
+      
+      // Use Windows-compatible null device
+      const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
       
       const invokeArgs = [
         'lambda', 'invoke',
         '--function-name', functionName,
         '--payload', '{}',
-        '/dev/null',  // Don't write to file, just discard output
+        nullDevice,  // Don't write to file, just discard output
         '--cli-binary-format', 'raw-in-base64-out'
       ];
 
@@ -101,7 +105,7 @@ async function testLambda(functionName = 'mrb-app-api') {
       
       return { status: 'success', message: 'Function invoked successfully' };
     } else {
-      log('ℹ️ Function test completed (use --invoke flag to actually call the function)', 'blue');
+      log('ℹ️ Function test completed (use --no-invoke flag to skip function invocation)', 'blue');
       return { status: 'success', message: 'Function exists and is accessible' };
     }
 
@@ -116,7 +120,10 @@ async function testLambda(functionName = 'mrb-app-api') {
  */
 async function main() {
   try {
-    const functionName = process.argv[2] || 'mrb-app-api';
+    // Parse arguments, filtering out flags
+    const args = process.argv.slice(2).filter(arg => !arg.startsWith('--'));
+    const functionName = args[0] || 'mrb-app-api';
+    
     const results = await testLambda(functionName);
     
     // Exit with appropriate code based on results

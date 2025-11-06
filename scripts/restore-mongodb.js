@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * MongoDB Restore Manager
+ * MongoDB Atlas Restore Manager
  * 
- * Cross-platform replacement for PowerShell restore scripts
- * Supports local and Atlas MongoDB restoration from backups and S3
+ * Cloud-only MongoDB Atlas restoration from backups and S3
+ * Supports flexible storage options (S3 and local filesystem)
  * 
  * Usage:
  *   node scripts/restore-mongodb.js [options]
- *   npm run restore:from-local
  *   npm run restore:from-s3
  *   npm run restore:latest
  */
@@ -29,8 +28,8 @@ const projectRoot = path.dirname(__dirname);
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════════╗
 ║                    MOM'S RECIPE BOX                          ║
-║              MongoDB Restore & Recovery Tool                 ║
-║                   Cross-Platform Edition                     ║
+║            MongoDB Atlas Restore & Recovery Tool             ║
+║                   Cloud-Only Edition                         ║
 ╚═══════════════════════════════════════════════════════════════╝
 `;
 
@@ -60,7 +59,16 @@ function banner() {
  */
 async function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    // For Windows, properly escape URI arguments containing special characters
+    const processedArgs = args.map(arg => {
+      // If this looks like a URI (contains ://) and we're on Windows, wrap in quotes
+      if (typeof arg === 'string' && arg.includes('://') && process.platform === 'win32') {
+        return `"${arg}"`;
+      }
+      return arg;
+    });
+    
+    const child = spawn(command, processedArgs, {
       stdio: options.silent ? 'pipe' : 'inherit',
       shell: true,
       cwd: options.cwd || projectRoot,
@@ -127,11 +135,6 @@ async function getRestoreConfig(options) {
   return {
     database: {
       name: options.database || envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
-      mode: envConfig.MONGODB_MODE || 'local',
-  containerName: 'momsrecipebox-mongo',
-      user: envConfig.MONGODB_LOCAL_ROOT_USER || 'admin',
-      password: envConfig.MONGODB_LOCAL_ROOT_PASSWORD || 'supersecret',
-      // Atlas configuration
       secretName: envConfig.AWS_SECRET_NAME || 'moms-recipe-secrets-dev'
     },
     restore: {
@@ -148,27 +151,6 @@ async function getRestoreConfig(options) {
       region: envConfig.AWS_REGION || 'us-west-2'
     }
   };
-}
-
-/**
- * Test MongoDB connection (local container)
- */
-async function testLocalMongoConnection(config) {
-  try {
-    log('🔍 Testing local MongoDB connection...', 'blue');
-    
-    const testCommand = "db.adminCommand('ping')";
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'mongosh', '--eval', testCommand, '--quiet'
-    ], { silent: true });
-    
-    log('✅ Local MongoDB connection successful', 'green');
-    return true;
-  } catch (error) {
-    log(`❌ Local MongoDB connection failed: ${error.message}`, 'red');
-    return false;
-  }
 }
 
 /**
@@ -190,10 +172,10 @@ async function getAtlasUri(config) {
     ], { silent: true });
     
     const secrets = JSON.parse(result);
-    const atlasUri = secrets.MONGODB_URI;
+    const atlasUri = secrets.MONGODB_ATLAS_URI;
     
     if (!atlasUri) {
-      throw new Error('MONGODB_URI not found in secrets');
+      throw new Error('MONGODB_ATLAS_URI not found in secrets');
     }
     
     log('✅ Atlas URI retrieved successfully', 'green');
@@ -317,7 +299,31 @@ async function prepareBackupPath(config, backupPath) {
         throw new Error('No valid database backup found in archive');
       }
     } else if (stats.isDirectory()) {
-      return backupPath;
+      // Check if this directory contains .bson files directly
+      const files = await fs.readdir(backupPath);
+      if (files.some(f => f.endsWith('.bson'))) {
+        return backupPath;
+      }
+      
+      // Look for subdirectories with .bson files (S3 download structure)
+      for (const item of files) {
+        const itemPath = path.join(backupPath, item);
+        try {
+          const itemStats = await fs.stat(itemPath);
+          if (itemStats.isDirectory()) {
+            const subFiles = await fs.readdir(itemPath);
+            if (subFiles.some(f => f.endsWith('.bson'))) {
+              log(`📁 Found backup data in subdirectory: ${item}`, 'blue');
+              return itemPath;
+            }
+          }
+        } catch (err) {
+          // Skip if can't read subdirectory
+          continue;
+        }
+      }
+      
+      throw new Error('No .bson files found in backup directory or its subdirectories');
     } else {
       throw new Error('Invalid backup path - must be directory or zip file');
     }
@@ -380,52 +386,6 @@ async function createSafetyBackup(config) {
 }
 
 /**
- * Perform local MongoDB restore using mongorestore
- */
-async function performLocalRestore(config, backupPath, collections) {
-  try {
-    log('🔄 Restoring to local MongoDB...', 'blue');
-    
-    // Copy backup to container
-    const containerBackupPath = '/tmp/restore_backup';
-    
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'rm', '-rf', containerBackupPath
-    ], { silent: true });
-
-    await runCommand('docker', [
-      'cp', backupPath, `${config.database.containerName}:${containerBackupPath}`
-    ]);
-
-    // Build mongorestore command - point to the database folder within the backup
-    const restoreArgs = [
-      'exec', config.database.containerName,
-      'mongorestore',
-      '--host', 'localhost:27017',
-      '--username', config.database.user,
-      '--password', config.database.password,
-      '--authenticationDatabase', 'admin',
-      '--db', config.database.name,
-      '--drop',  // Drop existing collections before restore
-      `${containerBackupPath}/moms_recipe_box`  // Point to the actual database backup folder
-    ];    await runCommand('docker', restoreArgs);
-    
-    // Clean up container backup
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'rm', '-rf', containerBackupPath
-    ], { silent: true });
-    
-    log('✅ Local restore completed successfully', 'green');
-    return true;
-  } catch (error) {
-    log(`❌ Local restore failed: ${error.message}`, 'red');
-    throw error;
-  }
-}
-
-/**
  * Perform Atlas MongoDB restore using mongorestore
  */
 async function performAtlasRestore(config, backupPath, collections) {
@@ -434,9 +394,8 @@ async function performAtlasRestore(config, backupPath, collections) {
     
     const atlasUri = await getAtlasUri(config);
     
-    // Build mongorestore command
+    // Build mongorestore command - arguments properly formatted for spawn()
     const restoreArgs = [
-      'mongorestore',
       '--uri', atlasUri,
       '--db', config.database.name,
       '--drop'  // Drop existing collections before restore
@@ -469,31 +428,14 @@ async function verifyRestore(config, metadata) {
   try {
     log('🔍 Verifying restore integrity...', 'blue');
     
-    const isLocal = config.database.mode === 'local';
-    
     // Get current database statistics
     // Compose stats command as a single line for shell compatibility
     const statsCommand = `db = db.getSiblingDB('${config.database.name}'); const stats = db.stats(); const collections = db.getCollectionNames(); let collectionStats = {}; collections.forEach(col => { collectionStats[col] = db[col].countDocuments(); }); printjson({ collections: stats.collections, collectionCounts: collectionStats });`;
     
-    let result;
-    if (isLocal) {
-      // Use --eval and --quiet, and connect directly to the correct database with authentication
-        result = await runCommand('docker', [
-          'exec', config.database.containerName,
-          'mongosh', 
-          config.database.name, 
-          '--quiet', 
-          '--username', config.database.user,
-          '--password', config.database.password,
-          '--authenticationDatabase', 'admin',
-          '--eval', `"${statsCommand}"`
-        ], { silent: true });
-    } else {
-      const atlasUri = await getAtlasUri(config);
-      result = await runCommand('mongosh', [
-        atlasUri, '--eval', `"${statsCommand}"`, '--quiet'
-      ], { silent: true });
-    }
+    const atlasUri = await getAtlasUri(config);
+    const result = await runCommand('mongosh', [
+      atlasUri, '--eval', `"${statsCommand}"`, '--quiet'
+    ], { silent: true });
     
   // Debug: print raw mongosh output
   log('--- mongosh raw output ---', 'magenta');
@@ -556,7 +498,7 @@ function showRestoreSummary(config, metadata, duration, safetyBackupPath) {
   log('\\n' + '='.repeat(60), 'cyan');
   log('📊 RESTORE SUMMARY', 'cyan');
   log('='.repeat(60), 'cyan');
-  log(`Database: ${config.database.name} (${config.database.mode} mode)`, 'white');
+  log(`Database: ${config.database.name} (atlas mode)`, 'white');
   log(`Source: ${config.restore.backupPath}`, 'white');
   log(`Duration: ${duration}s`, 'white');
   
@@ -582,10 +524,8 @@ async function performRestore(options) {
     banner();
     
     const config = await getRestoreConfig(options);
-    const isLocal = config.database.mode === 'local';
-    
-    log('🚀 Starting MongoDB Restore Process', 'cyan');
-    log(`Mode: ${isLocal ? 'Local Container' : 'Atlas Cloud'}`, 'yellow');
+    log('🚀 Starting MongoDB Atlas Restore Process', 'cyan');
+    log(`Mode: Atlas Cloud`, 'yellow');
     log(`Database: ${config.database.name}`, 'yellow');
     log(`Dry Run: ${config.restore.dryRun ? 'Yes' : 'No'}`, 'yellow');
     
@@ -622,10 +562,7 @@ async function performRestore(options) {
       throw new Error('No backup path specified. Use --backup-path, --from-s3, or --latest');
     }
     
-    // Test connection
-    if (isLocal && !(await testLocalMongoConnection(config))) {
-      throw new Error('Local MongoDB connection failed');
-    }
+    // Connection to Atlas will be tested during restore process
     
     // Prepare backup (extract if needed)
     const preparedBackupPath = await prepareBackupPath(config, backupPath);
@@ -649,12 +586,8 @@ async function performRestore(options) {
       safetyBackupPath = await createSafetyBackup(config);
     }
     
-    // Perform restore
-    if (isLocal) {
-      await performLocalRestore(config, preparedBackupPath, config.restore.collections);
-    } else {
-      await performAtlasRestore(config, preparedBackupPath, config.restore.collections);
-    }
+    // Perform Atlas restore
+    await performAtlasRestore(config, preparedBackupPath, config.restore.collections);
     
     // Verify restore
     await verifyRestore(config, metadata);
@@ -683,11 +616,10 @@ async function performRestore(options) {
  */
 function showHelp() {
   banner();
-  log('MongoDB Restore Manager - Cross-Platform PowerShell Replacement\\n', 'cyan');
+  log('MongoDB Atlas Restore Manager - Cloud-Only Architecture\\n', 'cyan');
   
   log('USAGE:', 'bright');
   log('  node scripts/restore-mongodb.js [options]', 'white');
-  log('  npm run restore:from-local', 'white');
   log('  npm run restore:from-s3', 'white');
   log('  npm run restore:latest', 'white');
   log('');
@@ -712,9 +644,6 @@ function showHelp() {
   log('MIGRATION FROM POWERSHELL:', 'bright');
   log('  Old: .\\\\scripts\\\\Restore-MongoDBFromS3.ps1 -BackupKey latest', 'yellow');
   log('  New: npm run restore:latest', 'green');
-  log('');
-  log('  Old: .\\\\scripts\\\\local_db\\\\restore-mongodb.ps1 -BackupPath ./backup', 'yellow');
-  log('  New: node scripts/restore-mongodb.js --backup-path ./backup', 'green');
   log('');
 }
 

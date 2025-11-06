@@ -2,38 +2,109 @@
 
 This document contains key learnings and common mistakes to avoid when working on MomsRecipeBox. These instructions help prevent recurring issues and improve development efficiency.
 
+## 🏗️ **SIMPLIFIED CLOUD-ONLY ARCHITECTURE**
+
+**🎯 CRITICAL CONTEXT: This application has been SIMPLIFIED to use ONLY cloud-only architecture!**
+
+- **✅ CURRENT**: AWS Lambda + Atlas MongoDB via AWS Secrets Manager
+- **❌ ELIMINATED**: Docker containers, local MongoDB, profile switching, multi-mode complexity
+- **✅ SIMPLIFIED COMMANDS**: `npm run dev`, `npm run test`, `npm run deploy`
+
+### **Simplified Development Commands**
+
+```bash
+# Core development workflow (SIMPLIFIED!)
+npm run dev              # Start UI development server
+npm run test             # Run tests against cloud API (100% pass rate)
+npm run deploy           # Deploy to AWS Lambda + S3
+
+# AWS profile management
+npm run aws:mrb-api      # Set AWS profile for development/testing
+npm run aws:status       # Check current AWS profile
+
+# Individual test suites (all run against cloud)
+npm run test:recipes     # Recipe CRUD operations
+npm run test:shopping    # Shopping list features
+npm run test:favorites   # Favorites functionality
+npm run test:comments    # Comments system
+npm run test:images      # Image upload/management
+npm run test:ai-providers # AI service connectivity
+npm run test:lambda      # Lambda function health
+npm run test:ai-lambda   # AI Lambda integration
+
+# Data management
+npm run data:add         # Add test recipes and shopping items
+npm run data:add:recipe  # Add test recipe only
+npm run data:add:shopping # Add test shopping items only
+npm run db:query         # Query Atlas database for analysis
+```
+
+**❌ REMOVED COMMANDS** (No longer exist):
+
+- ~~`npm run profile:*`~~ (Profile switching eliminated)
+- ~~`npm run restart`~~ (No more Docker containers)
+- ~~`npm run rebuild:*`~~ (No more containers to rebuild)
+- ~~`cd app/tests && npm run test:express/atlas/lambda`~~ (All tests are cloud-only now)
+
+### **Updated Architecture Flow**
+
+**Development Mode:**
+
+```text
+UI Dev Server (localhost:5173) → AWS Lambda API (cloud) → Atlas MongoDB
+```
+
+**Testing Mode:**
+
+```text
+Test Suite → AWS Lambda API (cloud) → Atlas MongoDB
+```
+
+**Production Mode:**
+
+```text
+CloudFront S3 UI → AWS Lambda API → Atlas MongoDB
+```
+
+**Key Simplifications**:
+
+- **No Docker containers**: Eliminated Docker, docker-compose, container management
+- **No local databases**: Atlas MongoDB exclusively via AWS Secrets Manager
+- **No profile switching**: Single cloud configuration
+- **No mode detection**: Always cloud-only
+
 ## 🚨 Critical Mistakes to Avoid
 
-### 1. Production Authentication Patterns
+### 1. Production Authentication Patterns (CLOUD-ONLY)
 
 **❌ MISTAKE**: Using demo query parameters in production authentication
-**✅ CORRECT**: Always use proper JWT tokens for production API calls
+**✅ CORRECT**: Always use proper JWT tokens for all API calls (cloud-only architecture requires this)
 
 **Breaking Pattern**:
 
 ```javascript
 // ❌ Demo pattern that bypasses authentication
 const url = `/recipes?user_id=demo-user`;
-fetch(url); // Will get 401 in production
+fetch(url); // Will get 401 in cloud-only architecture
 ```
 
-**Correct Pattern**:
+**Correct Cloud-Only Pattern**:
 
 ```javascript
-// ✅ Production pattern with JWT authentication
+// ✅ Cloud-only pattern with JWT authentication
 const url = `/recipes`; // No query parameters
 fetch(url, {
   headers: {
     'Authorization': `Bearer ${token}`, // JWT from Auth0
     'Content-Type': 'application/json'
   }
-}); // API Gateway validates JWT
+}); // AWS Lambda + API Gateway validates JWT
 ```
 
-**Critical Context**: CloudFront deployment requires proper authentication. Demo patterns work in localhost but fail in production with CORS and authentication errors.
+**Critical Context**: Our simplified cloud-only architecture REQUIRES proper authentication. All endpoints go through AWS Lambda with Auth0 JWT validation.
 
-**❌ MISTAKE**: Using mixed authentication patterns across frontend and backend
-**✅ CORRECT**: Use consistent JWT authentication on both frontend API calls and backend handlers
+**❌ MISTAKE**: Using mixed authentication patterns
+**✅ CORRECT**: Use consistent JWT authentication throughout (simplified architecture)
 
 **Breaking Mixed Pattern**:
 
@@ -65,80 +136,55 @@ const user_id = event.requestContext?.authorizer?.principalId; // From JWT
 - **Never mix patterns**: If frontend sends JWT, backend must read JWT context (not query params)
 - **Auth0 Configuration**: Must include `offline_access` scope and `useRefreshTokens: true` for production
 
-### 2. Docker Architecture Misunderstandings
+### 2. AWS Lambda and Environment Detection
 
-**❌ MISTAKE**: Assuming health endpoints go through Lambda handler in Express mode
-**✅ CORRECT**: In Express mode (`APP_MODE=express`), health endpoints (`/health*`) are handled directly by local server for performance, while other routes go through Lambda handler
+**❌ MISTAKE**: Assuming multiple environment modes exist
+**✅ CORRECT**: Our simplified architecture uses ONLY cloud mode (AWS Lambda + Atlas MongoDB)
 
-**❌ MISTAKE**: Thinking Atlas mode runs in Lambda
-**✅ CORRECT**:
+**Removed Complexity**:
 
-- **Atlas mode**: Local container + Atlas database (`APP_MODE=express`)
-- **Lambda mode**: AWS Lambda deployment (`APP_MODE=lambda`)
+- ~~Docker containers and profiles~~ (ELIMINATED)
+- ~~Multi-mode environment detection~~ (ELIMINATED)
+- ~~Local MongoDB installations~~ (ELIMINATED)
+- ~~Express mode and container restarts~~ (ELIMINATED)
 
-**❌ MISTAKE**: Assuming Docker container restarts automatically apply code changes
-**✅ CORRECT**: Docker containers use cached images - need complete rebuild to apply code changes
-
-**Pattern for Docker Code Changes**:
-
-```bash
-# ❌ WRONG - restart doesn't rebuild image
-docker-compose restart app-local
-
-# ✅ CORRECT - force rebuild with no cache
-docker-compose down
-docker image rm -f momsrecipebox-app-local  
-docker-compose build --no-cache app-local
-docker-compose up -d
-```
-
-**❌ MISTAKE**: Not recognizing hardcoded localhost references in Docker environments
-**✅ CORRECT**: In Docker containers, use service names (mongo:27017) not localhost:27017 for inter-container communication
-
-**❌ MISTAKE**: Using wrong profile field for container name detection
-**✅ CORRECT**: Container detection must use `config.currentProfile`, not `config.active`
-
-**Critical Container Name Pattern**:
+**Current Cloud-Only Pattern**:
 
 ```javascript
-// ❌ WRONG - Using non-existent field
-function getCurrentContainerName() {
-  const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
-  const activeProfile = config.active || 'local';  // ← config.active doesn't exist!
-  return `momsrecipebox-app-${activeProfile}`;
-}
-
-// ✅ CORRECT - Using actual profile field  
-function getCurrentContainerName() {
-  const config = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
-  const activeProfile = config.currentProfile || 'local';  // ← config.currentProfile is correct
-  return `momsrecipebox-app-${activeProfile}`;
+// ✅ Simplified environment detection (cloud-only)
+async function getBaseUrl() {
+  // Always use AWS Secrets Manager for dynamic endpoint resolution
+  const config = await getAwsConfig();
+  return config.LAMBDA_APP_URL; // From AWS Secrets Manager
 }
 ```
 
-**Root Cause**: Profile config structure uses `currentProfile` field, not `active`. Using wrong field causes restart system to target wrong containers, leading to failed operations and mysterious "container not found" errors.
+**Critical Simplifications**:
 
-**Debugging Pattern**: When Docker operations fail with "container not found", always verify the container name detection logic is reading the correct profile field from `config/deployment-profiles.json`.
+- **Single Environment**: Always cloud (AWS Lambda + Atlas MongoDB)
+- **AWS Secrets Manager**: All configuration dynamically retrieved
+- **No Local Dependencies**: No Docker, local MongoDB, or containers
+- **Consistent Testing**: All tests run against same cloud infrastructure as production
 
-### 2. Build Verification Logic Errors
+### 3. Simplified Testing Architecture (Cloud-Only)
 
-**❌ MISTAKE**: Creating build verification systems that don't actually trigger the code they're trying to verify
-**✅ CORRECT**: Always ensure verification triggers the actual endpoint/handler being tested
+**❌ MISTAKE**: Looking for complex multi-mode testing
+**✅ CORRECT**: Our simplified architecture uses unified cloud-only testing with 100% pass rate
 
-- Generate NEW build marker → Restart container → TRIGGER endpoint to load marker → Verify marker loaded
+**Critical Testing Patterns**:
 
-**❌ MISTAKE**: Looking for build markers without triggering the initialization endpoint
-**✅ CORRECT**: Call `POST /initializeBuildMarker` before checking Docker logs for marker verification
+```bash
+# ✅ Simplified testing commands
+npm run test             # Complete test suite against cloud API
+npm run test:recipes     # Individual test suites (all cloud-based)
+```
 
-**❌ MISTAKE**: Using old complex rebuild commands instead of unified restart system
-**✅ CORRECT**: Always use `npm run restart` - it intelligently handles everything
+**Cloud-Only Test Benefits**:
 
-**Build Marker System - Key Insights**:
-
-- **On-Demand Loading**: Build markers load fresh on every `POST /initializeBuildMarker` request
-- **Cache Bypass**: Uses timestamp query parameters to force fresh module imports
-- **Hash-Specific Verification**: Verifies the exact expected build hash is loaded, not just general functionality
-- **Multiline JSON Handling**: Uses proper regex patterns to handle multiline build marker output in logs
+- **100% Pass Rate**: All 6 test suites passing consistently
+- **True Dev/Prod Parity**: Tests run against same AWS infrastructure as production  
+- **No Environment Variables**: AWS Secrets Manager handles all configuration
+- **Fast Feedback**: Cached JWT tokens and direct cloud API testing
 
 ### 3. Lambda Secrets Management and AI Integration
 
@@ -372,41 +418,31 @@ const client = new MongoClient(uri, connectionOptions);
 - Lambda timeout should be 30+ seconds for cold starts
 - Warm starts connect much faster (cached connection)
 
-### 6. AWS Profile Management
+### 4. AWS Profile Management (Simplified)
 
 **❌ MISTAKE**: Using wrong AWS profiles for different operations
-**✅ CORRECT**: Always use the appropriate AWS profile for each operation type:
+**✅ CORRECT**: Our simplified architecture uses consistent AWS profile management:
 
-- **Terraform operations**: Use `terraform-mrb` profile (or `mrb-terraform`)
-- **Application deployment/testing**: Use `mrb-api` profile
-- **Never mix profiles**: Each operation type has its own IAM permissions
+- **Application operations**: Always use `mrb-api` profile
+- **Terraform operations**: Use `terraform-mrb` profile (infrastructure only)
+- **Automated profile switching**: Test commands handle AWS setup automatically
 
-**✅ AUTOMATED**: Test commands now automatically handle AWS profile switching:
+**✅ SIMPLIFIED**: Our cloud-only architecture includes automatic AWS profile management:
 
 - **All test commands**: Automatically use `mrb-api` profile via `scripts/test-with-aws-profile.js`
-- **No manual switching needed**: `npm test`, `npm run test:functional`, etc. handle AWS setup automatically
+- **No manual switching needed**: `npm run test` handles AWS setup automatically
 - **PowerShell environment**: Sets `$env:AWS_PROFILE="mrb-api"` automatically for tests
 - **Verification built-in**: Verifies correct AWS identity before running tests
 
-**Critical Commands**:
+**Critical Commands for Cloud-Only Architecture**:
 
 ```bash
-# ❌ WRONG - using wrong profile for terraform
-cd infra; terraform plan
-
-# ✅ CORRECT - ensure terraform profile first
-npm run aws:terraform  # Switch to terraform-mrb profile
-cd infra; terraform plan
-
-# ❌ WRONG - using wrong profile for Lambda deployment
-npm run deploy:lambda
-
-# ✅ CORRECT - ensure API profile first  
-npm run aws:mrb-api    # Switch to mrb-api profile
-npm run deploy:lambda
+# ✅ CORRECT - simplified commands
+npm run aws:mrb-api      # Set profile for all development/testing
+npm run aws:status       # Check current AWS profile  
+npm run test             # Automatically handles AWS profile
+npm run deploy           # Uses correct profile automatically
 ```
-
-**Before any AWS operation, always verify/set the correct profile!**
 
 ### 7. PowerShell vs Cross-Platform Compatibility
 
@@ -478,80 +514,54 @@ aws sts get-caller-identity  # Now uses mrb-api correctly
 
 **Why this happens**: Node.js processes can only modify their own environment variables, not the parent PowerShell session. The `npm run aws:mrb-api` script tells you what to set, but you must manually run `$env:AWS_PROFILE="profile-name"` for AWS CLI commands to work correctly.
 
-## 🧪 Environment Detection & Test Infrastructure Patterns
+## 🧪 Simplified Cloud-Only Testing Architecture
 
-### 1. Dynamic Environment Detection
+### 1. Environment Detection (Cloud-Only)
 
-**❌ MISTAKE**: Hardcoding endpoints in test files and environment detectors
-**✅ CORRECT**: Use AWS Secrets Manager integration for dynamic endpoint resolution based on environment context
+**❌ MISTAKE**: Looking for complex multi-mode environment detection
+**✅ CORRECT**: Our simplified architecture uses cloud-only environment detection
 
-**Breaking Hardcoded Pattern**:
-
-```javascript
-// ❌ Hardcoded endpoints that fail when environments change
-function getBaseUrl() {
-  if (process.env.APP_MODE === 'lambda') {
-    return 'https://api-specific-url.com'; // Breaks when API Gateway changes
-  }
-  return 'http://localhost:3000';
-}
-```
-
-**Correct Dynamic Pattern**:
+**Simplified Environment Detection Pattern**:
 
 ```javascript
-// ✅ AWS Secrets Manager integration for dynamic endpoint resolution
-async function getAwsConfig() {
-  const client = new SecretsManagerClient({ region: 'us-east-1' });
-  const response = await client.send(new GetSecretValueCommand({
-    SecretId: 'mrb-api-gateway-config'
-  }));
-  return JSON.parse(response.SecretString);
-}
-
+// ✅ Cloud-only environment detection
 async function getBaseUrl() {
-  if (process.env.APP_MODE === 'lambda' || process.env.AWS_PROFILE === 'mrb-api') {
-    const config = await getAwsConfig();
-    return config.API_GATEWAY_BASE_URL;
-  }
-  return process.env.APP_BASE_URL || 'http://localhost:3000';
+  // Always use AWS Secrets Manager for endpoint resolution
+  const config = await getAwsConfig();
+  return config.LAMBDA_APP_URL; // Dynamic cloud endpoint
 }
 ```
 
 **Critical Implementation Rules**:
 
-- **Environment Auto-Detection**: Automatically detect Lambda mode when `AWS_PROFILE=mrb-api`
-- **AWS Secrets Manager Integration**: Store dynamic endpoints in secrets, not configuration files
-- **Async URL Construction**: Always use `await getBaseUrl()` in test files
-- **No Hardcoded Endpoints**: Remove all hardcoded URLs from environment detection logic
+- **Cloud-Only Detection**: Always uses AWS Lambda + Atlas MongoDB via Secrets Manager
+- **Dynamic Endpoint Resolution**: Retrieves API Gateway URL from AWS Secrets Manager
+- **No Local Modes**: Eliminated express/local/docker environment complexity
+- **Consistent Testing**: All tests run against same cloud infrastructure
 
-### 2. Async URL Construction in Test Files
+### 2. Simplified Test File Structure
 
-**❌ MISTAKE**: Not awaiting async base URL functions in test files
-**✅ CORRECT**: Always await dynamic URL construction to prevent undefined base URLs
+**❌ MISTAKE**: Not awaiting async URL construction in test files
+**✅ CORRECT**: Always await dynamic URL construction with simplified cloud detection
 
-**Breaking Async Pattern**:
-
-```javascript
-// ❌ Non-awaited async function causing undefined BASE_URL
-const BASE_URL = getBaseUrl(); // getBaseUrl() returns Promise<string>
-const response = await fetch(`${BASE_URL}/recipes`); // Becomes "undefined/recipes"
-```
-
-**Correct Async Pattern**:
+**Correct Cloud-Only Test Pattern**:
 
 ```javascript
-// ✅ Proper async URL construction
-const BASE_URL = await getBaseUrl(); // Properly awaited
-const response = await fetch(`${BASE_URL}/recipes`); // Correct URL construction
+// ✅ Simplified async URL construction
+import { getBaseUrl } from './utils/environment-detector.js';
+
+async function runTests() {
+  const BASE_URL = await getBaseUrl(); // Cloud endpoint from AWS Secrets
+  const response = await fetch(`${BASE_URL}/recipes`); // Always cloud API
+}
 ```
 
 **Critical Test File Patterns**:
 
-- **Global URL Assignment**: Always use `const BASE_URL = await getBaseUrl();` at test start
-- **Variable Reference**: Ensure BASE_URL variable is properly referenced (not BASE_Url typos)
-- **Function Parameter Passing**: Fix parameter extraction mismatches in handlers
-- **Environment Variables**: Set `APP_MODE=lambda` in test wrapper scripts for cloud testing
+- **Single Environment**: All tests use cloud-only environment detection
+- **AWS Secrets Integration**: URLs dynamically retrieved from AWS Secrets Manager
+- **JWT Authentication**: All tests use Auth0 JWT tokens for cloud API access
+- **Consistent Results**: Same cloud APIs used across all test runs
 
 ### 3. Comment Handler Parameter Extraction
 

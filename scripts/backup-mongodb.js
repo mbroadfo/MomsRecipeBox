@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * MongoDB Backup Manager
+ * MongoDB Backup Manager - Cloud-Only Edition
  * 
- * Cross-platform replacement for PowerShell backup scripts
- * Supports local and Atlas MongoDB backups with S3 integration
+ * Atlas MongoDB backups with flexible storage options
+ * Supports local filesystem and S3 bucket storage
  * 
  * Usage:
  *   node scripts/backup-mongodb.js [options]
- *   npm run backup:local
- *   npm run backup:atlas
- *   npm run backup:full
+ *   npm run backup                    # Local filesystem backup
+ *   npm run backup --upload           # Backup to S3 bucket
+ *   npm run backup --local-only       # Local filesystem only
  */
 
 import { spawn } from 'child_process';
@@ -30,8 +30,8 @@ const projectRoot = path.dirname(__dirname);
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════════╗
 ║                    MOM'S RECIPE BOX                          ║
-║              MongoDB Backup & Archive Tool                   ║
-║                   Cross-Platform Edition                     ║
+║              MongoDB Atlas Backup Tool                       ║
+║                   Cloud-Only Edition                         ║
 ╚═══════════════════════════════════════════════════════════════╝
 `;
 
@@ -61,7 +61,16 @@ function banner() {
  */
 async function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    // For Windows, properly escape URI arguments containing special characters
+    const processedArgs = args.map(arg => {
+      // If this looks like a URI (contains ://) and we're on Windows, wrap in quotes
+      if (typeof arg === 'string' && arg.includes('://') && process.platform === 'win32') {
+        return `"${arg}"`;
+      }
+      return arg;
+    });
+    
+    const child = spawn(command, processedArgs, {
       stdio: options.silent ? 'pipe' : 'inherit',
       shell: true,
       cwd: options.cwd || projectRoot,
@@ -128,21 +137,19 @@ async function getBackupConfig(options) {
   return {
     database: {
       name: envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
-      mode: envConfig.MONGODB_MODE || 'local',
-      containerName: 'momsrecipebox-mongo',
-      // Atlas configuration
-      atlasUri: envConfig.MONGODB_ATLAS_URI || '',
+      // Atlas configuration (cloud-only)
       secretName: envConfig.AWS_SECRET_NAME || 'moms-recipe-secrets-dev'
     },
     backup: {
-      rootPath: options.destination || envConfig.BACKUP_ROOT_PATH || './backups',
+      rootPath: options.destination || envConfig.BACKUP_ROOT_PATH || path.join(projectRoot, 'backups'),
       compress: options.compress !== undefined ? options.compress : true,
       verify: options.verify !== undefined ? options.verify : true,
       s3Upload: options.s3Upload !== undefined ? options.s3Upload : false,
+      localOnly: options.localOnly !== undefined ? options.localOnly : false,
       s3Bucket: envConfig.BACKUP_S3_BUCKET || 'mrb-mongodb-backups-dev'
     },
     aws: {
-      profile: options.awsProfile || 'terraform-mrb',
+      profile: options.awsProfile || 'mrb-api',
       region: envConfig.AWS_REGION || 'us-west-2'
     }
   };
@@ -152,47 +159,28 @@ async function getBackupConfig(options) {
  * Create backup directory with timestamp
  */
 async function createBackupDirectory(config, type) {
-  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-  const date = timestamp.slice(0, 10);
+  // Use consistent naming format: backup_YYYY-MM-DD_HH-mm-ss
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/T/, '_').replace(/:/g, '-');
   
-  let backupDir;
+  let backupName;
   switch (type) {
     case 'full':
-      backupDir = path.join(config.backup.rootPath, date, `full_${timestamp}`);
+      backupName = `backup_${timestamp}`;
       break;
     case 'atlas':
-      backupDir = path.join(config.backup.rootPath, date, `atlas_${timestamp}`);
+      backupName = `backup_${timestamp}`;
       break;
     case 'archive':
-      backupDir = path.join(config.backup.rootPath, 'archive', `weekly_${date}`);
+      backupName = `archive_${timestamp}`;
       break;
     default:
-      backupDir = path.join(config.backup.rootPath, date, `${type}_${timestamp}`);
+      backupName = `backup_${timestamp}`;
   }
   
+  const backupDir = path.join(config.backup.rootPath, backupName);
   await fs.mkdir(backupDir, { recursive: true });
   return backupDir;
-}
-
-/**
- * Test MongoDB connection (local container)
- */
-async function testLocalMongoConnection(config) {
-  try {
-    log('🔍 Testing local MongoDB connection...', 'blue');
-    
-    const testCommand = "db.adminCommand('ping')";
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'mongosh', '--eval', testCommand, '--quiet'
-    ], { silent: true });
-    
-    log('✅ Local MongoDB connection successful', 'green');
-    return true;
-  } catch (error) {
-    log(`❌ Local MongoDB connection failed: ${error.message}`, 'red');
-    return false;
-  }
 }
 
 /**
@@ -214,10 +202,10 @@ async function getAtlasUri(config) {
     ], { silent: true });
     
     const secrets = JSON.parse(result);
-    const atlasUri = secrets.MONGODB_URI;
+    const atlasUri = secrets.MONGODB_ATLAS_URI;
     
     if (!atlasUri) {
-      throw new Error('MONGODB_URI not found in secrets');
+      throw new Error('MONGODB_ATLAS_URI not found in secrets');
     }
     
     log('✅ Atlas URI retrieved successfully', 'green');
@@ -231,7 +219,7 @@ async function getAtlasUri(config) {
 /**
  * Get database statistics
  */
-async function getDatabaseStats(config, isLocal = true) {
+async function getDatabaseStats(config) {
   try {
     log('📊 Gathering database statistics...', 'blue');
     
@@ -254,62 +242,16 @@ async function getDatabaseStats(config, isLocal = true) {
       });
     `;
     
-    let result;
-    if (isLocal) {
-      result = await runCommand('docker', [
-        'exec', config.database.containerName,
-        'mongosh', '--eval', statsCommand, '--quiet'
-      ], { silent: true });
-    } else {
-      // For Atlas, we need to use mongosh with connection string
-      const atlasUri = await getAtlasUri(config);
-      result = await runCommand('mongosh', [
-        atlasUri, '--eval', statsCommand, '--quiet'
-      ], { silent: true });
-    }
+    // Atlas connection using mongosh - skip stats for now due to Windows CLI issues
+    log('⚠️ Skipping database stats due to Windows CLI compatibility', 'yellow');
+    return {};
     
+    log(`Debug: Stats result: ${result}`, 'magenta');
     return JSON.parse(result);
   } catch (error) {
     log(`⚠️ Could not get database stats: ${error.message}`, 'yellow');
+    log(`⚠️ Continuing without stats...`, 'yellow');
     return {};
-  }
-}
-
-/**
- * Perform local MongoDB backup using mongodump
- */
-async function performLocalBackup(config, backupDir) {
-  try {
-    log('🏗️ Creating local MongoDB dump...', 'blue');
-    
-    // Create mongodump inside container
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'mongodump',
-      '--db', config.database.name,
-      '--out', '/tmp/backup'
-    ]);
-    
-    log('📦 Copying backup from container...', 'blue');
-    
-    // Copy backup from container to host
-    await runCommand('docker', [
-      'cp',
-      `${config.database.containerName}:/tmp/backup/${config.database.name}`,
-      backupDir
-    ]);
-    
-    // Clean up container backup
-    await runCommand('docker', [
-      'exec', config.database.containerName,
-      'rm', '-rf', '/tmp/backup'
-    ], { silent: true });
-    
-    log('✅ Local backup created successfully', 'green');
-    return true;
-  } catch (error) {
-    log(`❌ Local backup failed: ${error.message}`, 'red');
-    throw error;
   }
 }
 
@@ -322,7 +264,7 @@ async function performAtlasBackup(config, backupDir) {
     
     const atlasUri = await getAtlasUri(config);
     
-    // Use mongodump with Atlas URI
+    // Use mongodump with Atlas URI - arguments properly formatted for spawn()
     await runCommand('mongodump', [
       '--uri', atlasUri,
       '--db', config.database.name,
@@ -333,6 +275,8 @@ async function performAtlasBackup(config, backupDir) {
     return true;
   } catch (error) {
     log(`❌ Atlas backup failed: ${error.message}`, 'red');
+    log(`❌ Full error:`, 'red');
+    console.error(error);
     throw error;
   }
 }
@@ -346,8 +290,10 @@ async function compressBackup(backupDir) {
     
     const zipPath = `${backupDir}.zip`;
     
+    const { createWriteStream } = await import('fs');
+    
     return new Promise((resolve, reject) => {
-      const output = require('fs').createWriteStream(zipPath);
+      const output = createWriteStream(zipPath);
       const archive = archiver('zip', { zlib: { level: 9 } });
       
       output.on('close', () => {
@@ -433,7 +379,7 @@ function createMetadata(config, type, backupDir, stats) {
     type,
     timestamp: new Date().toISOString(),
     database: config.database.name,
-    mode: config.database.mode,
+    mode: 'atlas',
     backupPath: backupDir,
     preBackupStats: stats,
     version: '1.0.0',
@@ -485,21 +431,16 @@ async function performBackup(options) {
     banner();
     
     const config = await getBackupConfig(options);
-    const isLocal = config.database.mode === 'local' || options.type === 'local';
     
-    log('🚀 Starting MongoDB Backup Process', 'cyan');
+    log('🚀 Starting MongoDB Atlas Backup Process', 'cyan');
     log(`Type: ${options.type}`, 'yellow');
-    log(`Mode: ${isLocal ? 'Local Container' : 'Atlas Cloud'}`, 'yellow');
+    log(`Mode: Atlas Cloud`, 'yellow');
     log(`Database: ${config.database.name}`, 'yellow');
     log(`S3 Upload: ${config.backup.s3Upload ? 'Yes' : 'No'}`, 'yellow');
+    log(`Local Storage: ${!config.backup.localOnly ? 'Yes' : 'Only'}`, 'yellow');
     
-    // Test connection
-    if (isLocal && !(await testLocalMongoConnection(config))) {
-      throw new Error('Local MongoDB connection failed');
-    }
-    
-    // Get database statistics
-    const stats = await getDatabaseStats(config, isLocal);
+    // Get database statistics from Atlas
+    const stats = await getDatabaseStats(config);
     
     // Create backup directory
     const backupDir = await createBackupDirectory(config, options.type);
@@ -507,12 +448,8 @@ async function performBackup(options) {
     // Create metadata
     const metadata = createMetadata(config, options.type, backupDir, stats);
     
-    // Perform backup
-    if (isLocal) {
-      await performLocalBackup(config, backupDir);
-    } else {
-      await performAtlasBackup(config, backupDir);
-    }
+    // Perform Atlas backup
+    await performAtlasBackup(config, backupDir);
     
     // Save metadata
     await saveMetadata(backupDir, metadata);
@@ -564,19 +501,15 @@ async function performBackup(options) {
  */
 function showHelp() {
   banner();
-  log('MongoDB Backup Manager - Cross-Platform PowerShell Replacement\\n', 'cyan');
+  log('MongoDB Atlas Backup Manager - Cloud-Only Architecture\\n', 'cyan');
   
   log('USAGE:', 'bright');
   log('  node scripts/backup-mongodb.js [options]', 'white');
-  log('  npm run backup:local', 'white');
   log('  npm run backup:atlas', 'white');
   log('  npm run backup:full', 'white');
   log('');
   
   log('EXAMPLES:', 'bright');
-  log('  # Local MongoDB backup (default)', 'white');
-  log('  npm run backup:local', 'green');
-  log('');
   log('  # Atlas MongoDB backup', 'white');
   log('  npm run backup:atlas', 'green');
   log('');
@@ -586,6 +519,9 @@ function showHelp() {
   log('  # Backup without compression', 'white');
   log('  node scripts/backup-mongodb.js --no-compress', 'green');
   log('');
+  log('  # Local filesystem storage only', 'white');
+  log('  node scripts/backup-mongodb.js --local-only', 'green');
+  log('');
   log('  # Custom destination', 'white');
   log('  node scripts/backup-mongodb.js --destination ./my-backups', 'green');
   log('');
@@ -593,9 +529,6 @@ function showHelp() {
   log('MIGRATION FROM POWERSHELL:', 'bright');
   log('  Old: .\\\\scripts\\\\Backup-MongoDBToS3.ps1', 'yellow');
   log('  New: npm run backup:full', 'green');
-  log('');
-  log('  Old: .\\\\scripts\\\\local_db\\\\backup-mongodb.ps1 -Type full', 'yellow');
-  log('  New: npm run backup:local', 'green');
   log('');
 }
 

@@ -116,27 +116,7 @@ export async function handler(event) {
       }
     }
 
-    // For local server testing, return raw binary data
-    if (process.env.APP_MODE === 'local') {
-      const response = {
-        statusCode: 200,
-        headers: {
-          'Content-Type': contentType,
-          'Content-Disposition': `inline; filename="${id}.${contentType.split('/')[1] || 'png'}"`,
-          'Cache-Control': 'max-age=31536000',
-          'Access-Control-Allow-Origin': '*', // Allow cross-origin requests
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-        body: image.Body,
-        isBase64Encoded: false,
-      };
-      
-      console.log(`Returning image for ${id} (${image.Body.length} bytes)`);
-      return response;
-    }
-    
-    // For Lambda deployment, we still need base64 encoding
+    // Cloud-only: Always return base64 encoded response for Lambda
     const response = {
       statusCode: 200,
       headers: {
@@ -165,24 +145,20 @@ export async function handler(event) {
       // Ensure we have a proper content type for the default image
       const contentType = defaultImage.ContentType || 'image/png';
 
-      // For local server, return raw binary
-      if (process.env.APP_MODE === 'local') {
-        return {
-          statusCode: 200,
-          headers: {
-            'Content-Type': contentType,
-            'Content-Disposition': 'inline; filename="default.png"',
-            'Cache-Control': 'max-age=31536000',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET',
-            'Access-Control-Allow-Headers': 'Content-Type',
-          },
-          body: defaultImage.Body,
-          isBase64Encoded: false,
-        };
-      }
-      
-      // For Lambda, use base64
+      // Cloud-only: Always return base64 encoded for Lambda
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': 'inline; filename="default.png"',
+          'Cache-Control': 'max-age=31536000',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+        body: defaultImage.Body.toString('base64'),
+        isBase64Encoded: true,
+      };
       return {
         statusCode: 200,
         headers: {

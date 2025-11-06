@@ -83,43 +83,9 @@ async function fetchMongoUriFromSecretsManager() {
  * @returns {Promise<string>} The MongoDB connection string
  */
 export async function getMongoConnectionString() {
-  // Check which MongoDB mode to use (default: local)
-  const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
-  const dbName = process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev';
-
-  // For MongoDB Atlas
-  if (mongoMode === 'atlas') {
-    // In Lambda mode, fetch from Secrets Manager
-    if (process.env.APP_MODE === 'lambda') {
-      console.log('📦 Using MongoDB Atlas (fetching from Secrets Manager)');
-      return await fetchMongoUriFromSecretsManager();
-    }
-
-    // Check if a full connection string is provided in env var
-    if (process.env.MONGODB_ATLAS_URI) {
-      console.log('📦 Using MongoDB Atlas (connection string from environment)');
-      return process.env.MONGODB_ATLAS_URI;
-    }
-
-    // If we don't have a valid Atlas configuration, warn but fall back to local
-    console.warn('⚠️  MongoDB Atlas configuration incomplete, falling back to local MongoDB');
-    return process.env.MONGODB_URI || `mongodb://admin:supersecret@mongo:27017/${dbName}?authSource=admin`;
-  }
-
-  // For local MongoDB (default)
-  console.log('📦 Using local MongoDB');
-
-  // Use provided URI if available
-  if (process.env.MONGODB_URI) {
-    return process.env.MONGODB_URI;
-  }
-
-  // Otherwise construct from components for Docker setup
-  const user = process.env.MONGODB_ROOT_USER || 'admin';
-  const password = process.env.MONGODB_ROOT_PASSWORD || 'supersecret';
-  const host = process.env.MONGODB_HOST || 'mongo:27017';
-
-  return `mongodb://${user}:${encodeURIComponent(password)}@${host}/${dbName}?authSource=admin`;
+  // Cloud-only: Always use MongoDB Atlas via AWS Secrets Manager
+  console.log('📦 Using MongoDB Atlas (fetching from Secrets Manager)');
+  return await fetchMongoUriFromSecretsManager();
 }
 
 export async function getDb() {
@@ -154,8 +120,7 @@ export async function getDb() {
     // Start periodic health checks if enabled
     checker.startPeriodicHealthChecks();
     
-    const mongoMode = (process.env.MONGODB_MODE || 'local').toLowerCase();
-    console.log(`✅ Connected to MongoDB database (${mongoMode} mode)`);
+    console.log(`✅ Connected to MongoDB Atlas database`);
     return cachedDb;
     
   } catch (error) {
@@ -176,7 +141,7 @@ export async function getDb() {
     const client = new MongoClient(uri, connectionOptions);
     await client.connect();
     cachedDb = client.db(dbName);
-    console.log('✅ Connected to MongoDB database (health checks bypassed)');
+    console.log('✅ Connected to MongoDB Atlas database (health checks bypassed)');
     return cachedDb;
   }
 }

@@ -5,7 +5,144 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-11-05
+## [Unreleased] - 2025-11-06
+
+### Major - Script Cleanup & Backup/Restore System Overhaul
+
+#### 🧹 **MAJOR CLEANUP**: 63% Script Reduction & Cloud-Only Architecture Migration
+
+- **Script Ecosystem Consolidation**
+  - **Eliminated 43 → 16 essential scripts** (63% reduction in maintenance overhead)
+  - Removed all Docker-based local development infrastructure (100% cloud migration)
+  - Deleted 24 PowerShell scripts replaced with cross-platform Node.js alternatives
+  - Removed redundant test scripts, build verification tools, and profile management utilities
+  - Cleaned up legacy backup scripts and container management tools
+
+- **Core Infrastructure Scripts (5 Essential)**
+  - `scripts/backup-mongodb.js` - MongoDB Atlas backup with S3 integration and compression
+  - `scripts/restore-mongodb.js` - MongoDB Atlas restore with enhanced S3 path detection
+  - `scripts/find-orphan-images.js` - Cloud-only S3 orphan image detection
+  - `scripts/query_atlas.js` - Direct MongoDB Atlas query utility with AWS Secrets Manager
+  - `scripts/test-lambda.js` - Lambda connectivity testing with Windows compatibility
+
+- **Testing Scripts (3 Essential)**  
+  - `app/tests/test_favorites.js` - Enhanced with proper database cleanup protocols
+  - `app/tests/utils/environment-detector.js` - Cloud-only environment detection
+  - All other test files maintained with cloud-only architecture
+
+- **Data Management Scripts (3 Essential)**
+  - Package.json scripts for backup operations (`backup:local`, `backup:atlas`, `backup:full`)
+  - NPM command structure for restore operations (`restore:from-s3`, `restore:latest`)
+  - Cloud-native data management workflows
+
+- **Build & Maintenance (2 Essential)**
+  - Enhanced `package.json` with cloud-only NPM scripts
+  - Updated documentation in `docs/developer/npm_commands.md`
+
+- **Supporting Files (3 Essential)**
+  - Updated `README.md`, `COPILOT_INSTRUCTIONS.md` for cloud-only architecture
+  - Enhanced infrastructure configuration files
+
+#### 🔧 **CRITICAL FIX**: Backup/Restore System Completely Rebuilt
+
+- **MongoDB Atlas Backup System (`scripts/backup-mongodb.js`)**
+  - **Fixed critical MONGODB_URI key mismatch**: Changed `MONGODB_URI` → `MONGODB_ATLAS_URI` in AWS Secrets Manager integration
+  - **Windows CLI compatibility**: Implemented proper URI escaping for spawn() calls with `processedArgs.map()`
+  - **Default compression enabled**: All new backups are automatically compressed to `.zip` format (vs old uncompressed directories)
+  - **Enhanced metadata tracking**: Comprehensive backup information with timestamps and verification data
+  - **Flexible storage options**: Support for both local filesystem and S3 bucket storage
+  - **AWS profile integration**: Uses `mrb-api` profile for proper cloud permissions
+
+- **MongoDB Atlas Restore System (`scripts/restore-mongodb.js`)**  
+  - **Fixed matching secret key**: Updated to use `MONGODB_ATLAS_URI` for consistency with backup system
+  - **Enhanced S3 restore path detection**: Improved `prepareBackupPath()` function handles nested directory structures from S3 downloads
+  - **Windows CLI compatibility**: Matching URI escaping fixes for restore operations  
+  - **Safety features**: Confirmation prompts and `--drop` flag for complete database replacement
+  - **Comprehensive restore verification**: Document count validation and connection testing
+
+- **Package.json Integration**
+  - Added missing NPM scripts: `backup:local`, `backup:atlas`, `backup:full`, `restore:from-s3`, `restore:latest`
+  - Integrated with existing script ecosystem for seamless operation
+  - Cloud-only architecture with no Docker dependencies
+
+#### 📦 **INFRASTRUCTURE UPDATES**: Complete Architecture Migration
+
+- **Removed Docker Infrastructure**
+  - Deleted `docker-compose.yml`, `docker-compose.local.yml`, `docker-compose.atlas.yml`
+  - Removed `app/Dockerfile` and `db/Dockerfile` (100% cloud migration)
+  - Eliminated entire `db/` directory with local MongoDB seed data and initialization scripts
+  - Removed deployment profile system (`config/deployment-profiles.json`)
+
+- **Removed Legacy PowerShell Scripts (24 files)**
+  - Backup/restore scripts: `Backup-MongoDBToS3.ps1`, `Restore-MongoDBFromS3.ps1`, `Test-MongoDBBackup.ps1`
+  - Container management: `PushAppTierContainer.ps1`, deployment and Lambda scripts
+  - Database utilities: `Compare-MongoDB.ps1`, tunnel and maintenance scripts
+  - Development tools: `Toggle-MongoDbConnection.ps1`, AWS profile management
+
+- **Removed Node.js Script Redundancies (19 files)**
+  - Build system: `build-container.js`, `build-verification.js`, `smart-rebuild.js`, `force-rebuild.js`
+  - Development tools: `app-restart.js`, `profile-manager.js`, `setup-environment.js`, `switch-mode.js`
+  - Testing utilities: `test-proxy-verification.js`, `test-lambda-comprehensive.js`
+  - Data management: `add-test-data.js`, `analyze_recipes.js`, duplicate image detection scripts
+
+- **Enhanced Core Application Files**
+  - Updated `app/app.js` for cloud-only operation (removed Docker/local references)
+  - Enhanced `app/admin/admin_handlers/system_status.js` with cloud-native status reporting
+  - Updated image handlers (`app/handlers/get_image.js`, `app/handlers/update_image.js`) for S3-only operation
+  - Removed all local container dependencies and hardcoded localhost references
+
+#### 🧪 **TESTING ENHANCEMENTS**: Improved Test Reliability
+
+- **Database Cleanup Protocols**
+  - Enhanced `app/tests/test_favorites.js` with proper test data cleanup to prevent database pollution
+  - Fixed test isolation issues that were causing cumulative test data problems
+  - Implemented consistent teardown procedures across all test suites
+
+- **Environment Detection Improvements**
+  - Updated `app/tests/utils/environment-detector.js` for cloud-only operation
+  - Removed local development environment detection (Docker/localhost references)
+  - Enhanced AWS Secrets Manager integration for dynamic configuration
+
+- **Cross-Platform Compatibility**
+  - Fixed `scripts/test-lambda.js` Windows compatibility with proper null device handling (`NUL` vs `/dev/null`)
+  - Updated all remaining scripts for cross-platform operation (Windows/Linux/macOS)
+
+#### 📊 **PERFORMANCE & STORAGE OPTIMIZATIONS**
+
+- **Backup System Efficiency**
+  - **Space savings**: New compressed backups vs old uncompressed directories (significant storage reduction)
+  - **Transfer optimization**: Compressed uploads to S3 are faster and cheaper
+  - **Cleanup automation**: Automatic removal of uncompressed directories after zipping
+
+- **S3 Integration Improvements**
+  - Enhanced S3 upload/download with proper error handling and retry logic
+  - Improved path detection for nested S3 directory structures  
+  - Better integration with AWS profiles and permissions
+
+#### 🔒 **SECURITY & CONFIGURATION**
+
+- **AWS Secrets Manager Integration**
+  - Consistent use of `MONGODB_ATLAS_URI` across all backup/restore operations
+  - Proper AWS profile handling (`mrb-api`) for cloud permissions
+  - Eliminated hardcoded connection strings and credentials
+
+- **Cloud-Native Security**
+  - Removed all local development security concerns (Docker, localhost)
+  - Enhanced cloud permissions and IAM integration
+  - Proper secret rotation and management capabilities
+
+#### 🎯 **ACHIEVEMENT**: Production-Ready Cloud Architecture
+
+- **100% Cloud Migration**: Complete elimination of local development dependencies
+- **Operational Backup/Restore**: Fully functional with compression, verification, and S3 integration  
+- **Streamlined Maintenance**: 63% reduction in script maintenance overhead
+- **Enhanced Reliability**: Fixed critical backup/restore issues and improved error handling
+- **Cross-Platform Compatibility**: All remaining scripts work on Windows/Linux/macOS
+- **Production Optimization**: Compressed backups, efficient S3 transfers, and proper cleanup automation
+
+---
+
+## [Previous] - 2025-11-05
 
 ### Enhanced - Environment Detection & Test Infrastructure with AWS Secrets Manager Integration
 

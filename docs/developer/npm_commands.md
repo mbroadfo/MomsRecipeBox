@@ -1,54 +1,53 @@
 # NPM Commands Reference
 
-Complete reference for all npm scripts available in Mom's Recipe Box. Use these commands instead of PowerShell scripts for cross-platform compatibility and enhanced functionality.
+Complete reference for all npm scripts available in Mom's Recipe Box cloud-only architecture.
 
 ## Quick Reference
 
 ```bash
 # Development
-npm run dev:local                    # Start full local development stack
-npm run dev:atlas                    # Start development with Atlas database
-npm run fullstack:local              # Start both API and UI in development mode
+npm run dev                          # Start development environment
+npm run test                         # Run all tests
 
 # Testing
-npm run test                         # Run unit tests
-npm run test:lambda                  # Test Lambda connectivity
-npm run test:data                    # Add test data for development
+npm run test:ai-providers            # Test AI provider connectivity
+npm run test:lambda                  # Test Lambda function
+npm run test:ai-lambda               # Test AI Lambda integration
+
+# Data Management
+npm run data:add                     # Add test recipes and shopping items
+npm run data:add:recipe              # Add test recipe only
+npm run data:add:shopping            # Add test shopping items only
 
 # Database Operations
-npm run mode:local                   # Switch to local MongoDB
-npm run mode:atlas                   # Switch to Atlas MongoDB  
-npm run backup:atlas                 # Backup Atlas to S3
-npm run restore:latest               # Restore latest backup
+npm run backup                       # Backup Atlas to S3
+npm run restore                      # Restore latest backup
+npm run db:query                     # Query Atlas database
 
 # Deployment
-
-```bash
 npm run deploy:lambda                # Deploy Lambda function
 npm run deploy:ui                    # Deploy UI to CloudFront
-npm run deploy:full:dev              # Deploy both Lambda and UI (dev)
-```
 
-**Note**: GitHub Actions validates code quality only - all deployment is manual via these commands
-
-## Maintenance
-
-npm run maintenance:find-orphans     # Find orphaned S3 images
+# Infrastructure
 npm run aws:mrb-api                  # Switch to deployment AWS profile
+npm run aws:status                   # Check AWS profile status
+npm run aws:validate                 # Validate AWS configuration
+npm run iam:setup                    # Setup IAM policies
+npm run iam:status                   # Check IAM status
+npm run maintenance                  # Find orphaned S3 images
 
----
+# Build Tools
+npm run build:jwt-authorizer         # Build JWT authorizer package
+```
 
 ## Development Commands
 
-### Environment Management
-
-| Command | Description | Replaces |
+### Quick Start
+| Command | Description | Use Case |
 |---------|-------------|----------|
-| `npm run env:local` | Configure for local MongoDB | Manual .env editing |
-| `npm run env:atlas` | Configure for Atlas MongoDB | Manual .env editing |  
-| `npm run env:lambda` | Configure for Lambda mode | Manual .env editing |
-
-### Development Servers
+| `npm run dev` | Start development environment | Daily development |
+| `npm run test` | Run complete test suite | Verify functionality |
+| `npm run data:add` | Add sample data | Fresh development setup |
 
 | Command | Description | Notes |
 |---------|-------------|-------|

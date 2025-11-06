@@ -110,29 +110,25 @@ export async function handler(event) {
       updatedAt: String(new Date().toISOString())
     };
     
-    // For local development, don't resize the image
-    if (process.env.APP_MODE === 'local') {
-      console.log('Local mode: Uploading original image without processing');
-      await s3.putObject({
-        Bucket: bucketName,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType,
-        Metadata: s3Metadata,
-      }).promise();
-    } else {
-      // For production, resize the image
-      console.log('Production mode: Resizing image before upload');
-      const resizedBuffer = await sharp(buffer).resize({ width: 1280, height: 720, fit: 'inside' }).toBuffer();
-      
-      await s3.putObject({
-        Bucket: bucketName,
-        Key: key,
-        Body: resizedBuffer,
-        ContentType: contentType,
-        Metadata: s3Metadata,
-      }).promise();
-    }
+    // Cloud-only: Always resize images for optimal performance
+    console.log('Resizing image before upload');
+
+    // Process the image with Sharp for optimization
+    const processedBuffer = await sharp(buffer)
+      .resize(800, 600, { 
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+
+    await s3.putObject({
+      Bucket: bucketName,
+      Key: key,
+      Body: processedBuffer,
+      ContentType: 'image/jpeg', // Always convert to JPEG for consistency
+      Metadata: s3Metadata,
+    }).promise();
     
     // Efficiently clean up old images
     const deletedCount = await deleteOldImages(bucketName, id, key);

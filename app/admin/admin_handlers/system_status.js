@@ -475,19 +475,15 @@ async function checkTerraformState() {
         timeout: process.env.AWS_LAMBDA_FUNCTION_TIMEOUT || 'Unknown',
         version: process.env.AWS_LAMBDA_FUNCTION_VERSION || 'Unknown'
       };
-    } else if (process.env.APP_MODE === 'lambda') {
-      deploymentType = 'Lambda (Local Test)';
-    } else if (process.env.PORT && environment === 'production') {
-      deploymentType = 'Production Server';
-    } else if (environment === 'production') {
-      deploymentType = 'Production Environment';
+    } else {
+      deploymentType = 'Cloud Lambda';
     }
     
     // Count configured services with enhanced Lambda awareness
     const services = {
       aws: hasAwsConfig,
       mongodb: !!(process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI),
-      mongodbMode: process.env.MONGODB_MODE || 'local',
+      database: 'atlas',
       auth0: !!(process.env.AUTH0_DOMAIN && process.env.AUTH0_M2M_CLIENT_ID),
       s3Storage: !!process.env.RECIPE_IMAGES_BUCKET,
       s3Backups: !!process.env.MRB_MONGODB_BACKUPS_BUCKET,
@@ -825,7 +821,7 @@ export async function handler(event) {
           platform: process.platform,
           nodeVersion: process.version,
           environment: process.env.NODE_ENV || 'development',
-          appMode: process.env.APP_MODE || 'express',
+          deployment: 'cloud',
           uptime: process.uptime(),
           memoryUsage: process.memoryUsage(),
           isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME

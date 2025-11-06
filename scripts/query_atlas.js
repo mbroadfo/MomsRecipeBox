@@ -1,12 +1,22 @@
 import { MongoClient } from 'mongodb';
-
-const uri = process.env.MONGODB_ATLAS_URI || 'mongodb+srv://mrbapp:${MONGODB_PASSWORD}@momsrecipebox-cluster.vohcix5.mongodb.net/moms_recipe_box_dev?retryWrites=true&w=majority';
+import { getSecret } from '../app/utils/secrets_manager.js';
 
 async function queryAtlas() {
-  const client = new MongoClient(uri);
   try {
+    // Get MongoDB connection string from AWS Secrets Manager
+    const mongoUri = await getSecret('MONGODB_ATLAS_URI');
+    
+    if (!mongoUri) {
+      console.error('❌ Failed to retrieve MongoDB Atlas URI from AWS Secrets Manager');
+      return;
+    }
+    
+    const client = new MongoClient(mongoUri);
+    
     await client.connect();
-    const db = client.db(process.env.MONGODB_DB_NAME || 'moms_recipe_box_dev');
+    console.log('✅ Connected to MongoDB Atlas');
+    
+    const db = client.db('moms_recipe_box_dev');
     const recipes = await db.collection('recipes').find({}, {
       projection: { _id: 1, title: 1, owner_id: 1, visibility: 1 }
     }).toArray();
@@ -23,10 +33,10 @@ async function queryAtlas() {
       console.log('  visibility:', recipe.visibility);
       console.log('');
     });
+    
+    await client.close();
   } catch (error) {
     console.error('Error:', error.message);
-  } finally {
-    await client.close();
   }
 }
 

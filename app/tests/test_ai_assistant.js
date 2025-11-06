@@ -1,6 +1,22 @@
 // File: app/tests/test_ai_assistant.js
 import assert from 'assert';
 import fetch from 'node-fetch';
+import { getBaseUrl } from './utils/environment-detector.js';
+import { getBearerToken, validateConfig } from './utils/auth0-token-generator.js';
+
+// Auth0 JWT token generation for API authentication
+async function getAuthHeaders() {
+  try {
+    const bearerToken = await getBearerToken();
+    return {
+      'Authorization': bearerToken,
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('Failed to generate Auth0 token:', error.message);
+    throw error;
+  }
+}
 
 /**
  * Test the AI Recipe Assistant features
@@ -8,37 +24,25 @@ import fetch from 'node-fetch';
 async function testAIRecipeAssistant() {
   console.log('\n🧪 Testing AI Recipe Assistant API...');
   
-  // Configuration
-
-// Environment-aware base URL configuration
-function getBaseUrl() {
-  // Check for explicit environment variables first
-  if (process.env.BASE_URL) {
-    return process.env.BASE_URL;
-  }
+  // Use our simplified cloud-only environment detection
+  const BASE_URL = await getBaseUrl();
   
-  // Auto-detect based on execution context
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
-    // Lambda mode - use API Gateway URL
-    return 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
-  }
+  console.log(`🔧 Architecture: cloud-only (simplified)`);
+  console.log(`🌐 Base URL: ${BASE_URL}`);
   
-  // Express mode (local development)
-  return 'http://localhost:3000';
-}
-
-const BASE_URL = getBaseUrl();
-console.log(`🔧 Test environment detected: ${BASE_URL.includes('localhost') ? 'EXPRESS' : 'LAMBDA'} mode`);
-console.log(`🌐 Base URL: ${BASE_URL}`);
+  // Validate Auth0 configuration
+  console.log('\n===== Validating Auth0 Configuration =====');
+  await validateConfig();
+  
+  // Get authentication headers
+  const authHeaders = await getAuthHeaders();
   
   try {
     // Test the chat endpoint
     console.log('\n📝 Testing chat endpoint...');
     const chatResponse = await fetch(`${BASE_URL}/ai/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         message: 'Create a simple cookie recipe'
       }),
@@ -101,9 +105,7 @@ console.log(`🌐 Base URL: ${BASE_URL}`);
     
     const pastedResponse = await fetch(`${BASE_URL}/ai/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         message: pastedContent
       }),
@@ -123,9 +125,7 @@ console.log(`🌐 Base URL: ${BASE_URL}`);
     console.log('\n🔗 Testing URL extraction endpoint...');
     const extractResponse = await fetch(`${BASE_URL}/ai/extract`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         url: 'https://www.simplyrecipes.com/recipes/homemade_pizza/'
       }),

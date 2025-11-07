@@ -4,7 +4,8 @@ import tailwind from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   // Load environment-specific configurations
-  const environment = process.env.VITE_ENVIRONMENT || 'local';
+  // Try both process.env (build time) and import.meta.env (runtime)
+  const environment = process.env.VITE_ENVIRONMENT || 'production'; // Default to production for CloudFront
   const isLocal = environment === 'local' || environment === 'atlas';
   
   console.log(`🚀 Vite config - Mode: ${mode}, Environment: ${environment}, Proxy enabled: ${isLocal}`);

@@ -45,27 +45,19 @@ export const useShoppingList = () => {
 
   // Load the shopping list
   const loadShoppingList = useCallback(async () => {
-    console.log('Loading shopping list...');
     setLoading(true);
     setError(null);
     
     try {
       const response = await getShoppingList();
-      console.log('Shopping list response received:', JSON.stringify(response, null, 2));
-      console.log('Shopping list response type:', typeof response);
       
       // Handle ApiResponse structure - actual data is in response.data
       const apiResponse = response as ApiResponse<ShoppingListApiResponse>;
       const data = apiResponse.data || (response as unknown as ShoppingListApiResponse);
-      console.log('Shopping list data:', JSON.stringify(data, null, 2));
-      console.log('Has items property:', data && 'items' in data);
-      console.log('Items is array:', data && data.items && Array.isArray(data.items));
       
       // Check if we have a valid response with items array
       if (data && data.items) {
         if (Array.isArray(data.items)) {
-          console.log('Valid shopping list with items array, setting state');
-          
           // Map the items to ensure they have the expected properties
           const mappedItems = data.items.map((item: ShoppingListItem) => ({
             _id: item._id || item.item_id || '', // Use either _id or item_id
@@ -80,11 +72,11 @@ export const useShoppingList = () => {
             items: mappedItems
           });
         } else {
-          console.warn('Items is not an array:', data.items);
+          console.warn('Shopping list items is not an array:', data.items);
           setShoppingList({ ...data, items: [] });
         }
       } else {
-        console.warn('Received invalid shopping list format:', data);
+        console.warn('Invalid shopping list format received');
         // Initialize with empty items if we get an invalid response
         setShoppingList({ _id: 'default', userId: 'default', items: [] });
       }
@@ -114,24 +106,30 @@ export const useShoppingList = () => {
     setLoading(true);
     setError(null);
     
-    console.log('Adding items to shopping list:', items);
-    
     try {
       const response = await addToShoppingList(items);
-      console.log('Response from adding items:', response);
       
       // Handle various response formats
       if (response) {
         if (response.items && Array.isArray(response.items)) {
-          // Direct shopping list response
-          console.log('Setting shopping list from response:', response);
-          setShoppingList(response);
+          // Direct shopping list response - ensure we have required fields
+          const shoppingListData: ShoppingList = {
+            _id: response._id || 'default',
+            userId: response.userId || 'default', 
+            items: response.items.map(item => ({
+              _id: item._id || item.item_id || item.id || '',
+              name: item.name || item.ingredient || '',
+              recipeId: item.recipeId || item.recipe_id || null,
+              recipeTitle: item.recipeTitle || item.recipe_title || null,
+              checked: item.checked || false
+            }))
+          };
+          setShoppingList(shoppingListData);
         } else if (response.success || response.needsRefresh) {
           // Success message without data - refresh manually
-          console.log('Items added successfully, refreshing shopping list');
           await loadShoppingList();
         } else {
-          console.warn('Unexpected response format:', response);
+          console.warn('Unexpected response format from addToShoppingList');
           // Refresh anyway to be safe
           await loadShoppingList();
         }
@@ -192,12 +190,6 @@ export const useShoppingList = () => {
     
     try {
       const response = await deleteShoppingListItem(itemId);
-      
-      // Log success but not the entire response object
-      if (response && response.success) {
-        console.log(`Item ${itemId} deleted successfully`);
-      }
-      
       return response;
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Unknown error occurred');
@@ -261,11 +253,8 @@ export const useShoppingList = () => {
   // Get items grouped by recipe
   const getItemsByRecipe = useCallback(() => {
     if (!shoppingList || !shoppingList.items || !Array.isArray(shoppingList.items)) {
-      console.warn('No valid shopping list items to group', shoppingList);
       return {};
     }
-    
-    console.log('Grouping items by recipe:', shoppingList.items);
     
     return shoppingList.items.reduce<Record<string, ShoppingListItem[]>>((acc, item) => {
       if (!item) {

@@ -5,6 +5,39 @@
 
 import { apiClient } from '../lib/api-client';
 
+// Type definitions for API responses and data structures
+interface WindowWithUser extends Window {
+  currentUser?: { id: string };
+  currentUserId?: string;
+}
+
+interface ShoppingListItem {
+  _id?: string;
+  id?: string;
+  item_id?: string;
+  name?: string;
+  ingredient?: string;
+  recipe_id?: string;
+  recipeId?: string;
+  recipe_title?: string;
+  recipeTitle?: string;
+  checked: boolean;
+  amount?: string;
+  unit?: string;
+}
+
+interface ShoppingListResponse {
+  _id?: string;
+  userId?: string;
+  success?: boolean;
+  items?: ShoppingListItem[];
+}
+
+interface AddToShoppingListResponse extends ShoppingListResponse {
+  needsRefresh?: boolean;
+  shopping_list?: ShoppingListResponse;
+}
+
 /**
  * Get the current user ID from the window object
  * @returns The user ID string
@@ -18,31 +51,9 @@ export const getCurrentUserId = (): string => {
     return 'auth0|testuser';
   }
   
-  const userId = (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user';
+  const windowWithUser = window as WindowWithUser;
+  const userId = windowWithUser.currentUser?.id || windowWithUser.currentUserId || 'demo-user';
   return userId;
-};
-
-/**
- * Handle API errors consistently
- * @param response The fetch response object
- * @returns The JSON response if successful
- * @throws Error if the response is not ok
- */
-const handleResponse = async (response: Response) => {
-  
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown error');
-    console.error(`API Error ${response.status}: ${errorText}`);
-    throw new Error(`API Error ${response.status}: ${errorText}`);
-  }
-  
-  try {
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error parsing JSON response:', error);
-    throw new Error('Invalid JSON response from API');
-  }
 };
 
 // Recipe API Functions
@@ -54,8 +65,7 @@ const handleResponse = async (response: Response) => {
  */
 export const getRecipe = async (recipeId: string) => {
   const userId = getCurrentUserId();
-  const response = await fetch(`/api/recipes/${recipeId}?user_id=${encodeURIComponent(userId)}`);
-  return handleResponse(response);
+  return await apiClient.get(`/recipes/${recipeId}?user_id=${encodeURIComponent(userId)}`);
 };
 
 /**
@@ -64,8 +74,7 @@ export const getRecipe = async (recipeId: string) => {
  */
 export const getRecipes = async () => {
   const userId = getCurrentUserId();
-  const response = await fetch(`/api/recipes?user_id=${encodeURIComponent(userId)}`);
-  return handleResponse(response);
+  return await apiClient.get(`/recipes?user_id=${encodeURIComponent(userId)}`);
 };
 
 // Shopping List API Functions
@@ -74,16 +83,17 @@ export const getRecipes = async () => {
  * Get the current user's shopping list
  * @returns Shopping list with items
  */
-export const getShoppingList = async () => {
+export const getShoppingList = async (): Promise<ShoppingListResponse> => {
   try {
     const data = await apiClient.get('/shopping-list');
     
     // If we don't have an items array but have success=true, initialize an empty one
-    if (data && (data as any).success === true && !(data as any).items) {
-      (data as any).items = [];
+    const response = data as ShoppingListResponse;
+    if (data && response.success === true && !response.items) {
+      response.items = [];
     }
     
-    return data;
+    return data as ShoppingListResponse;
   } catch (error) {
     console.error('Error in getShoppingList API call:', error);
     throw error;
@@ -102,7 +112,7 @@ export const addToShoppingList = async (items: Array<{
   checked?: boolean;
   amount?: string;
   unit?: string;
-}>) => {
+}>): Promise<AddToShoppingListResponse> => {
   try {
     const payload = {
       items: items.map(item => ({
@@ -118,22 +128,23 @@ export const addToShoppingList = async (items: Array<{
     
     // For successful responses, check for different response formats
     if (data) {
+      const response = data as AddToShoppingListResponse;
       // If we have a shopping_list object in the response, return that
-      if ((data as any).shopping_list) {
-        return (data as any).shopping_list;
+      if (response.shopping_list) {
+        return response.shopping_list;
       } 
       // If we have a success message but need to fetch the full list
-      else if ((data as any).success === true) {
+      else if (response.success === true) {
         // Return the success message with a flag indicating we need to refresh
         return {
-          ...(data as any),
+          ...response,
           needsRefresh: true
         };
       } 
       // If we have the full list already - TypeScript handling for dynamic response
     }
     
-    return data;
+    return data as AddToShoppingListResponse;
   } catch (error) {
     console.error('Error in addToShoppingList API call:', error);
     throw error;
@@ -165,7 +176,6 @@ export const deleteShoppingListItem = async (itemId: string) => {
  * @returns Success message
  */
 export const clearShoppingList = async (action: 'delete' | 'check' | 'delete_purchased' = 'delete') => {
-  const userId = getCurrentUserId();
   let actionParam: string;
   
   // Map friendly action names to API parameters
@@ -179,15 +189,7 @@ export const clearShoppingList = async (action: 'delete' | 'check' | 'delete_pur
     actionParam = action;
   }
   
-  const response = await fetch(`/api/shopping-list/clear`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      user_id: userId,
-      action: actionParam
-    })
+  return await apiClient.post('/shopping-list/clear', {
+    action: actionParam
   });
-  return handleResponse(response);
 };

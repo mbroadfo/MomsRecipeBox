@@ -1,26 +1,17 @@
 import axios from 'axios';
 
 /**
- * Simple authentication check - all requests are allowed in development mode
- * @param {Object} event - Lambda event object
- * @returns {boolean} - True if authenticated, false otherwise
- */
-function isAuthenticated(event) {
-  // In development mode, all requests are allowed
-  // In production, this should be replaced with proper authentication
-  return true;
-}
-
-/**
  * API endpoint for categorizing ingredients using OpenAI
  */
 export async function handler(event) {
   try {
-    // Check if the user is authenticated
-    if (!isAuthenticated(event)) {
+    // Extract user_id from JWT authorizer context
+    const user_id = event.requestContext?.authorizer?.principalId;
+    
+    if (!user_id) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ success: false, message: "Unauthorized" })
+        body: JSON.stringify({ message: 'Unauthorized: No user context found' })
       };
     }
     

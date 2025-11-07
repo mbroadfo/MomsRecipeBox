@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { ShoppingListItem } from './useShoppingList';
 import type { ReactNode } from 'react';
+import { apiClient } from '../../lib/api-client.js';
 
 // Common ingredient categories with their keywords
 const CATEGORIES = {
@@ -202,23 +203,13 @@ export const useIngredientCategories = (items: ShoppingListItem[]) => {
         }
         
         // Call our new API endpoint
-        const response = await fetch('/api/shopping-list/categorize', {
+        const response = await apiClient.request('shopping-list/categorize', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ingredients: ingredientNames }),
-          credentials: 'include'
+          body: { ingredients: ingredientNames }
         });
         
-        if (!response.ok) {
-          throw new Error('Failed to categorize ingredients');
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.categories) {
-          setAiCategorizations(data.categories);
+        if (response.success && response.data?.categories) {
+          setAiCategorizations(response.data.categories);
           setAiCategorized(true);
         }
       } catch (err) {

@@ -15,7 +15,7 @@ export interface EnvironmentConfig {
 
 /**
  * Get current environment from Vite environment variables
- * Falls back to 'local' if not specified
+ * Falls back to 'production' when served from CloudFront
  */
 function getEnvironment(): EnvironmentConfig['environment'] {
   const env = import.meta.env.VITE_ENVIRONMENT?.toLowerCase();
@@ -23,16 +23,23 @@ function getEnvironment(): EnvironmentConfig['environment'] {
   console.log('🔍 Environment detection:', { 
     VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
     processed: env,
+    hostname: window.location.hostname,
     allEnvVars: import.meta.env 
   });
+  
+  // If served from CloudFront, assume production
+  if (window.location.hostname.includes('cloudfront.net')) {
+    console.log('🌐 Detected CloudFront hosting - using production environment');
+    return 'production';
+  }
   
   if (env === 'local' || env === 'atlas' || env === 'lambda' || env === 'production') {
     return env;
   }
   
-  // Default to local development
-  console.log('⚠️ Falling back to local environment');
-  return 'local';
+  // Default to production for deployed builds
+  console.log('⚠️ Falling back to production environment');
+  return 'production';
 }
 
 /**

@@ -377,6 +377,67 @@ Return JSON with EXACT ingredient strings as keys and aisle names as values.
 `;
 ```
 
+### 5. Shopping List Add Item UX Patterns
+
+**❌ MISTAKE**: Multi-step add item process with separate forms and confusing UI flows
+**✅ CORRECT**: Single-step add functionality with unified search/add interface
+
+**Breaking Multi-Step Pattern**:
+
+```tsx
+// ❌ Confusing two-step process
+const [showAddItemForm, setShowAddItemForm] = useState(false);
+const [newItemText, setNewItemText] = useState('');
+
+<button onClick={() => setShowAddItemForm(true)}>Add Item</button>
+{showAddItemForm && (
+  <input 
+    value={newItemText}
+    onChange={(e) => setNewItemText(e.target.value)}
+    onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+  />
+)}
+```
+
+**Single-Step Add Pattern**:
+
+```tsx
+// ✅ Unified search/add interface
+<input
+  placeholder="Type to search or add item..."
+  value={searchText}
+  onChange={(e) => setSearchText(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && searchText.trim()) {
+      handleAddItemFromSearch();
+    }
+  }}
+/>
+<button 
+  onClick={handleAddItemFromSearch}
+  disabled={!searchText.trim()}
+>
+  Add
+</button>
+
+const handleAddItemFromSearch = async () => {
+  await addItems([{
+    name: searchText.trim(),
+    recipeId: undefined,
+    recipeTitle: 'Custom Item',
+    checked: false
+  }]);
+  setSearchText(''); // Clear after adding
+  showToast(`Added "${searchText.trim()}" to shopping list`, ToastType.Success);
+};
+```
+
+**Key UX Principles**:
+- **One Action = One Result**: Type item → press Enter/click Add → item added
+- **Clear Visual Hierarchy**: Search and add functionality clearly separated from other controls
+- **Immediate Feedback**: Success toast, input clearing, disabled states
+- **Keyboard Navigation**: Enter key support for power users
+
 **Critical UI Development Rules**:
 
 - **Button Visibility**: Use both Tailwind classes AND inline styles for critical buttons

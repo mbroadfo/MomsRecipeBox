@@ -29,6 +29,8 @@ This release optimizes the shopping list AI categorization system for better per
 #### **User Experience Enhancements**
 
 - **Crystal Clear Button Visibility**: "By Recipe" and "By Category" buttons now have proper white backgrounds with blue/green text for maximum readability
+- **Single-Step Add Item**: Streamlined add item functionality - type item and press Enter or click Add (eliminates confusing two-step process)
+- **Unified Search/Add Interface**: Combined search and add functionality into one intuitive input field with clear instructions
 - **Accurate Grocery Store Categories**: AI now categorizes items based on real grocery store layouts (e.g., mayonnaise in "Spices & Condiments", not dairy)
 - **Intuitive Categorization Flow**: Users can switch between recipe view and category view seamlessly with visible, responsive buttons
 
@@ -36,8 +38,14 @@ This release optimizes the shopping list AI categorization system for better per
 
 - **Modified Files**:
   - `ui/src/components/shoppingList/useIngredientCategories.tsx` - Implemented on-demand categorization with manual trigger function
-  - `ui/src/components/shoppingList/ShoppingListPage.tsx` - Enhanced button styling with inline styles for guaranteed visibility
+  - `ui/src/components/shoppingList/ShoppingListPage.tsx` - Enhanced button styling, unified search/add interface, single-step add functionality
   - `app/handlers/categorize_ingredients.js` - Simplified AI prompts for better performance and accuracy
+
+- **Code Improvements**:
+  - Eliminated unused state variables (`showAddItemForm`, `newItemText`)
+  - Replaced complex two-step add process with streamlined `handleAddItemFromSearch()` function
+  - Combined search and add functionality using single `searchText` state
+  - Improved keyboard navigation (Enter key to add items)
 
 #### **API Improvements**
 

@@ -32,7 +32,8 @@ const ShoppingListPage: React.FC = () => {
     error, 
     getItemsByRecipe,
     toggleItemChecked,
-    clearList
+    clearList,
+    addItems
   } = useShoppingList();
   
   // Always call hooks at the top level, before any conditional returns
@@ -159,6 +160,29 @@ const ShoppingListPage: React.FC = () => {
     window.print();
   };
 
+  // Handle adding custom items directly from search input
+  const handleAddItemFromSearch = async () => {
+    if (!searchText.trim()) {
+      showToast('Please enter an item to add', ToastType.Info);
+      return;
+    }
+
+    try {
+      await addItems([{
+        name: searchText.trim(),
+        recipeId: undefined,
+        recipeTitle: 'Custom Item',
+        checked: false
+      }]);
+      
+      setSearchText('');
+      showToast(`Added "${searchText.trim()}" to shopping list`, ToastType.Success);
+    } catch (err) {
+      console.error('Error adding item:', err);
+      showToast('Failed to add item', ToastType.Error);
+    }
+  };
+
   // View mode options for the buttons
 
   return (
@@ -171,28 +195,36 @@ const ShoppingListPage: React.FC = () => {
       {/* New sticky control bar */}
       <div className="shopping-list-control-bar">
         <div className="control-bar-grid">
-          {/* Left zone: Add item text + button */}
+          {/* Left zone: Search and add items */}
           <div className="control-bar-left">
-            <div className="flex items-center w-full max-w-sm">
-              <div className="relative flex-1">
+            <div className="w-full max-w-md">
+              {/* Combined Search/Add Bar */}
+              <div className="flex items-center">
                 <input
                   type="text"
-                  placeholder="Add new item..."
-                  className="block w-full px-5 py-3.5 text-[15.2px] text-slate-700 bg-white border-2 border-blue-500 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 font-sans"
+                  placeholder="Type to search or add item..."
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchText.trim()) {
+                      handleAddItemFromSearch();
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 text-[15.2px] text-slate-700 bg-white border-2 border-blue-500 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 font-sans"
                   style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
                 />
+                
+                <button 
+                  className="flex items-center gap-1.5 px-4 py-3 text-[15.2px] font-medium text-white bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 border-2 border-green-600 rounded-r-lg shadow-md transition-all disabled:from-gray-400 disabled:to-gray-500 disabled:border-gray-500 disabled:cursor-not-allowed"
+                  onClick={handleAddItemFromSearch}
+                  disabled={!searchText.trim()}
+                  style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  Add
+                </button>
               </div>
-              
-              <button 
-                className="flex items-center gap-1.5 px-5 py-3.5 text-[15.2px] font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-r-lg shadow-md"
-                onClick={() => showToast('Add item functionality coming soon', ToastType.Info)}
-                style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
-              >
-                <PlusCircle className="w-5 h-5" />
-                Add
-              </button>
+              <p className="text-xs text-gray-600 mt-1 ml-1">💡 Type an item and press Enter or click Add to add it to your list</p>
             </div>
           </div>
           

@@ -279,7 +279,113 @@ curl -H "Authorization: Bearer $TOKEN" \
 # Should return all 5 providers as "available"
 ```
 
-### 4. API Gateway Architecture Patterns
+### 4. UI Styling and AI Categorization Patterns
+
+**❌ MISTAKE**: Relying solely on CSS classes for critical UI element visibility
+**✅ CORRECT**: Use inline styles with `!important` modifiers for elements that must always be visible
+
+**Breaking CSS Dependency Pattern**:
+
+```tsx
+// ❌ Can be overridden by conflicting CSS
+<button className="bg-white text-blue-600 border-blue-300">
+  Button Text
+</button>
+```
+
+**Bulletproof Styling Pattern**:
+
+```tsx
+// ✅ Guaranteed visibility with inline styles + CSS classes
+<button 
+  className={`bg-white text-blue-600 border-2 border-blue-300 ${activeClass}`}
+  style={{
+    backgroundColor: '#ffffff !important',
+    color: '#2563eb !important',
+    border: '2px solid #93c5fd'
+  }}
+>
+  Button Text
+</button>
+```
+
+**❌ MISTAKE**: Automatic AI categorization triggering on data load
+**✅ CORRECT**: Implement on-demand AI categorization only when users request it
+
+**Breaking Auto-Trigger Pattern**:
+
+```tsx
+// ❌ Triggers AI categorization automatically
+useEffect(() => {
+  if (items.length > 0) {
+    categorizeWithAI(); // Runs on every data load!
+  }
+}, [items]);
+```
+
+**On-Demand Categorization Pattern**:
+
+```tsx
+// ✅ Manual categorization only when requested
+const categorizeWithAI = async () => {
+  // Only categorize when user explicitly requests it
+  if (aiCategorized && Object.keys(aiCategorizations).length > 0) {
+    return; // Skip if already categorized
+  }
+  // ... categorization logic
+};
+
+// Called only from button click
+<button onClick={() => {
+  setViewMode('category');
+  categorizeWithAI(); // Explicit user action only
+}}>
+```
+
+**❌ MISTAKE**: Verbose, ingredient-specific AI prompts
+**✅ CORRECT**: Use concise, general prompts for faster and more accurate AI responses
+
+**Verbose AI Prompt (Avoid)**:
+
+```javascript
+// ❌ Long, specific instructions
+const prompt = `
+Categorize these ingredients by grocery store aisle/section to make shopping more efficient. 
+
+Group items based on where they're ACTUALLY located in real grocery stores, not by what they're made from.
+
+Important location guidelines:
+- Mayonnaise, ketchup, mustard, soy sauce, fish sauce = "Spices & Condiments" aisle
+- Milk, cheese, butter, yogurt, eggs = "Dairy & Eggs" section  
+- Fresh herbs, vegetables, fruits, lemons = "Produce" section
+- Raw meat, chicken, fish, seafood = "Meat & Seafood" section
+...
+`;
+```
+
+**Concise AI Prompt (Best Practice)**:
+
+```javascript
+// ✅ Short, effective prompt
+const prompt = `
+Categorize these ingredients by grocery store aisle/section for efficient shopping.
+
+Group items by where they're ACTUALLY located in real grocery stores.
+Use clear aisle names like: Produce, Dairy & Eggs, Meat & Seafood, Spices & Condiments, Bakery, Frozen Foods, Canned Goods.
+
+Return JSON with EXACT ingredient strings as keys and aisle names as values.
+`;
+```
+
+**Critical UI Development Rules**:
+
+- **Button Visibility**: Use both Tailwind classes AND inline styles for critical buttons
+- **AI Performance**: Never auto-trigger expensive AI operations - always user-initiated
+- **Prompt Optimization**: Keep AI prompts short and general for better performance
+- **State Management**: Prevent re-categorization if AI results already exist
+- **User Feedback**: Show loading states during AI operations with clear button text changes
+
+### 5. API Gateway Architecture Patterns
 
 **❌ MISTAKE**: Creating individual API Gateway resources for every endpoint
 **✅ CORRECT**: Use proxy resource pattern for Lambda integration
@@ -357,7 +463,7 @@ export async function handler(event) {
 - **CORS**: Configure OPTIONS method with MOCK integration for preflight
 - **Error Handling**: Use Gateway Responses for 4XX/5XX errors with CORS headers
 
-### 5. Lambda and MongoDB Atlas Integration
+### 6. Lambda and MongoDB Atlas Integration
 
 **❌ MISTAKE**: Calling async functions without `await`
 **✅ CORRECT**: Always await async functions that return Promises
@@ -418,7 +524,7 @@ const client = new MongoClient(uri, connectionOptions);
 - Lambda timeout should be 30+ seconds for cold starts
 - Warm starts connect much faster (cached connection)
 
-### 4. AWS Profile Management (Simplified)
+### 7. AWS Profile Management (Simplified)
 
 **❌ MISTAKE**: Using wrong AWS profiles for different operations
 **✅ CORRECT**: Our simplified architecture uses consistent AWS profile management:
@@ -444,7 +550,7 @@ npm run test             # Automatically handles AWS profile
 npm run deploy           # Uses correct profile automatically
 ```
 
-### 7. PowerShell vs Cross-Platform Compatibility
+### 8. PowerShell vs Cross-Platform Compatibility
 
 **❌ MISTAKE**: Using PowerShell commands in npm scripts that should be cross-platform
 **✅ CORRECT**:
@@ -466,7 +572,7 @@ cd ui; npm run dev
 
 **Key Rule**: When user's shell is PowerShell, use `;` for command chaining, not `&&`
 
-### 8. Terminal Management & AWS Profile Context
+### 9. Terminal Management & AWS Profile Context
 
 **❌ MISTAKE**: Not understanding terminal context when running commands
 **✅ CORRECT**: Always be aware of current working directory and AWS profile

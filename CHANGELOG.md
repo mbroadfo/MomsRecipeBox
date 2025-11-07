@@ -5,7 +5,46 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-11-06
+## [Unreleased] - 2025-11-07
+
+### Major - Shopping List AI Categorization & Performance Optimization
+
+#### 🎯 Enhanced Shopping List Experience
+
+This release optimizes the shopping list AI categorization system for better performance, improved user experience, and more accurate grocery store categorization.
+
+#### **New Features**
+
+- **On-Demand AI Categorization**: AI categorization now only runs when users explicitly click the "Category" button, eliminating automatic triggering and improving performance
+- **Enhanced Button Visibility**: Fixed button styling with high-contrast colors and inline styles to ensure buttons are always readable
+- **Simplified AI Prompts**: Streamlined AI categorization prompts for faster, more accurate grocery store aisle categorization
+- **Clean Production Code**: Removed all debug logging for production-ready codebase
+
+#### **Performance Improvements**
+
+- **Zero Premature AI Calls**: Eliminated automatic AI categorization on shopping list load - now truly on-demand only
+- **Optimized Button Rendering**: Added explicit inline styles with `!important` modifiers to override any CSS conflicts
+- **Faster AI Response**: Simplified prompts reduce AI processing time while maintaining accuracy
+
+#### **User Experience Enhancements**
+
+- **Crystal Clear Button Visibility**: "By Recipe" and "By Category" buttons now have proper white backgrounds with blue/green text for maximum readability
+- **Accurate Grocery Store Categories**: AI now categorizes items based on real grocery store layouts (e.g., mayonnaise in "Spices & Condiments", not dairy)
+- **Intuitive Categorization Flow**: Users can switch between recipe view and category view seamlessly with visible, responsive buttons
+
+#### **Technical Implementation**
+
+- **Modified Files**:
+  - `ui/src/components/shoppingList/useIngredientCategories.tsx` - Implemented on-demand categorization with manual trigger function
+  - `ui/src/components/shoppingList/ShoppingListPage.tsx` - Enhanced button styling with inline styles for guaranteed visibility
+  - `app/handlers/categorize_ingredients.js` - Simplified AI prompts for better performance and accuracy
+
+#### **API Improvements**
+
+- **Streamlined AI Integration**: Reduced prompt complexity while maintaining categorization accuracy
+- **Better Error Handling**: Improved error handling in categorization process with cleaner user feedback
+
+## [Previous] - 2025-11-06
 
 ### Major - User Profile Management System & Recipe Visibility Fix
 

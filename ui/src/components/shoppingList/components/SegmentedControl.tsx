@@ -47,7 +47,10 @@ const SegmentedControl: React.FC<SegmentedControlProps> = ({
                 w-full h-full min-w-[220px]
                 segment-button ${isActive ? 'segment-button-active' : 'segment-button-inactive'}
               `}
-              onClick={() => onChange(option.value)}
+              onClick={() => {
+                console.log('🎯 SegmentedControl button clicked!', { value: option.value, label: option.label });
+                onChange(option.value);
+              }}
             >
               {option.icon && (
                 <span className="w-4 h-4">{option.icon}</span>

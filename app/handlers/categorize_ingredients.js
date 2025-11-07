@@ -58,34 +58,20 @@ export async function handler(event) {
  */
 async function categorizeIngredientsWithAI(ingredients) {
   try {
-    // Define the categories we want to use
-    const categories = [
-      "Produce", 
-      "Dairy & Eggs", 
-      "Meat & Seafood", 
-      "Grains & Bread", 
-      "Canned & Packaged", 
-      "Spices & Condiments", 
-      "Baking", 
-      "Frozen", 
-      "Snacks & Sweets", 
-      "Beverages", 
-      "Other"
-    ];
-    
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_API_KEY) {
       throw new Error("OpenAI API key not found");
     }
     
     const prompt = `
-    Categorize each ingredient into one of the following categories:
-    ${categories.join(', ')}
+    Categorize these ingredients by grocery store aisle/section for efficient shopping.
     
-    Return a JSON object where keys are the EXACT ingredient strings I provide (including quantities and preparations) and values are their categories.
-    It's critically important to use the full ingredient strings I provide as the keys in your response.
+    Group items by where they're ACTUALLY located in real grocery stores.
+    Use clear aisle names like: Produce, Dairy & Eggs, Meat & Seafood, Spices & Condiments, Bakery, Frozen Foods, Canned Goods.
     
-    Ingredients to categorize:
+    Return JSON with EXACT ingredient strings as keys and aisle names as values.
+    
+    Ingredients:
     ${ingredients.join('\n')}
     `;
     
@@ -96,7 +82,7 @@ async function categorizeIngredientsWithAI(ingredients) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that categorizes food ingredients into grocery store categories. Respond only with JSON. Use the EXACT full ingredient strings provided (including quantities and preparations) as the keys in your JSON response."
+            content: "You are a grocery shopping expert. Group ingredients by their actual physical location in real grocery stores for efficient shopping. Use EXACT ingredient strings as JSON keys."
           },
           {
             role: "user",
@@ -125,9 +111,9 @@ async function categorizeIngredientsWithAI(ingredients) {
       console.log("Parsed categorizations:", categorizedIngredients);
     } catch (e) {
       console.error("Error parsing AI response:", e);
-      // Fallback to returning all ingredients as "Other"
+      // Fallback to returning all ingredients as "Miscellaneous"
       return ingredients.reduce((acc, ingredient) => {
-        acc[ingredient] = "Other";
+        acc[ingredient] = "Miscellaneous";
         return acc;
       }, {});
     }
@@ -151,8 +137,8 @@ async function categorizeIngredientsWithAI(ingredients) {
       if (mainIngredient) {
         result[ingredient] = categorizedIngredients[mainIngredient];
       } else {
-        // Fallback to "Other" if no match
-        result[ingredient] = "Other";
+        // Fallback to "Miscellaneous" if no match
+        result[ingredient] = "Miscellaneous";
       }
     }
     
@@ -163,9 +149,9 @@ async function categorizeIngredientsWithAI(ingredients) {
     console.error("API Response:", error.response?.data);
     console.error("API Status:", error.response?.status);
     
-    // Fallback to returning all ingredients as "Other"
+    // Fallback to returning all ingredients as "Miscellaneous"
     return ingredients.reduce((acc, ingredient) => {
-      acc[ingredient] = "Other";
+      acc[ingredient] = "Miscellaneous";
       return acc;
     }, {});
   }

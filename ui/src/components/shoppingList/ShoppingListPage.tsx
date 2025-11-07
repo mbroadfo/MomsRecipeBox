@@ -6,7 +6,6 @@ import { showToast, ToastType } from '../Toast';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
   Chip, 
-  SegmentedControl,
   ConfirmModal 
 } from './components';
 import { 
@@ -40,8 +39,12 @@ const ShoppingListPage: React.FC = () => {
   const itemsByRecipe = getItemsByRecipe();
   const { 
     categories: categorizedItems, 
-    isAiCategorized 
-  } = useIngredientCategories(shoppingList?.items || []);
+    isAiCategorized,
+    categorizeWithAI,
+    isLoading: aiCategorizing
+  } = useIngredientCategories(shoppingList?.items || [], viewMode);
+  
+  // AI categorization is working perfectly!
   
   // Check if any items are selected/checked
   const hasCheckedItems = shoppingList?.items?.some(item => item.checked) || false;
@@ -156,20 +159,7 @@ const ShoppingListPage: React.FC = () => {
     window.print();
   };
 
-  // Segmented control options
-  const viewOptions = [
-    { 
-      value: 'recipe', 
-      label: 'By Recipe', 
-      icon: <ShoppingCart className="w-4 h-4" />
-    },
-    { 
-      value: 'category', 
-      label: 'By Category', 
-      icon: <LayoutGrid className="w-4 h-4" />,
-      isAI: isAiCategorized
-    }
-  ];
+  // View mode options for the buttons
 
   return (
     <div className="shopping-list-page">
@@ -206,14 +196,49 @@ const ShoppingListPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Center zone: Segmented control */}
+          {/* Center zone: Simple button controls (replacement for broken SegmentedControl) */}
           <div className="control-bar-center">
-            <SegmentedControl
-              options={viewOptions}
-              value={viewMode}
-              onChange={(value) => setViewMode(value as 'recipe' | 'category')}
-              fullWidth={window.innerWidth < 768}
-            />
+            <div className="flex gap-2">
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all !important ${
+                  viewMode === 'recipe' 
+                    ? '!bg-blue-600 !text-white !border-2 !border-blue-600 shadow-lg' 
+                    : '!bg-white !text-blue-600 !border-2 !border-blue-300 hover:!bg-blue-50 shadow-md'
+                }`}
+                style={{
+                  backgroundColor: viewMode === 'recipe' ? '#2563eb !important' : '#ffffff !important',
+                  color: viewMode === 'recipe' ? '#ffffff !important' : '#2563eb !important',
+                  border: viewMode === 'recipe' ? '2px solid #2563eb' : '2px solid #93c5fd'
+                }}
+                onClick={() => {
+                  setViewMode('recipe');
+                }}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                By Recipe
+              </button>
+              
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all !important ${
+                  viewMode === 'category' 
+                    ? '!bg-green-600 !text-white !border-2 !border-green-600 shadow-lg' 
+                    : '!bg-white !text-green-600 !border-2 !border-green-300 hover:!bg-green-50 shadow-md'
+                }`}
+                style={{
+                  backgroundColor: viewMode === 'category' ? '#16a34a !important' : '#ffffff !important',
+                  color: viewMode === 'category' ? '#ffffff !important' : '#16a34a !important',
+                  border: viewMode === 'category' ? '2px solid #16a34a' : '2px solid #86efac'
+                }}
+                onClick={() => {
+                  setViewMode('category');
+                  categorizeWithAI();
+                }}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                {aiCategorizing ? 'AI Thinking...' : 'By Category'}
+                {isAiCategorized && <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">AI</span>}
+              </button>
+            </div>
           </div>
           
           {/* Right zone: Global actions */}

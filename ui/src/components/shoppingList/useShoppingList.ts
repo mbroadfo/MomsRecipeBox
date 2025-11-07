@@ -38,7 +38,7 @@ export interface ShoppingList {
   items: ShoppingListItem[];
 }
 
-export const useShoppingList = () => {
+export const useShoppingList = (isAuthenticated?: boolean, authLoading?: boolean) => {
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -89,10 +89,22 @@ export const useShoppingList = () => {
     }
   }, []);
 
-  // Initial load
+  // Initial load - only when authenticated and not loading
   useEffect(() => {
-    loadShoppingList();
-  }, [loadShoppingList]);
+    if (typeof isAuthenticated !== 'undefined' && typeof authLoading !== 'undefined') {
+      // Wait for auth to complete before loading
+      if (!authLoading && isAuthenticated) {
+        // Add a small delay to ensure API client token is properly set
+        const timer = setTimeout(() => {
+          loadShoppingList();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      // Legacy behavior if no auth state provided
+      loadShoppingList();
+    }
+  }, [loadShoppingList, isAuthenticated, authLoading]);
 
   // Add items to the shopping list
   const addItems = useCallback(async (

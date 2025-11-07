@@ -25,12 +25,16 @@ This release optimizes the shopping list AI categorization system for better per
 - **Zero Premature AI Calls**: Eliminated automatic AI categorization on shopping list load - now truly on-demand only
 - **Optimized Button Rendering**: Added explicit inline styles with `!important` modifiers to override any CSS conflicts
 - **Faster AI Response**: Simplified prompts reduce AI processing time while maintaining accuracy
+- **Authentication Race Condition Fix**: Implemented proper Auth0 token timing with 100ms delay to prevent 401 errors on hard refresh
+- **Eliminated Infinite Loops**: Fixed React dependency issues causing endless re-renders in shopping list hook
 
 #### **User Experience Enhancements**
 
 - **Crystal Clear Button Visibility**: "By Recipe" and "By Category" buttons now have proper white backgrounds with blue/green text for maximum readability
 - **Single-Step Add Item**: Streamlined add item functionality - type item and press Enter or click Add (eliminates confusing two-step process)
 - **Unified Search/Add Interface**: Combined search and add functionality into one intuitive input field with clear instructions
+- **Hard Refresh Fix**: Shopping list now loads properly on direct page refresh (Ctrl+F5) without authentication errors
+- **Clean Production Console**: Removed all debug logging for professional, quiet console output in production
 - **Accurate Grocery Store Categories**: AI now categorizes items based on real grocery store layouts (e.g., mayonnaise in "Spices & Condiments", not dairy)
 - **Intuitive Categorization Flow**: Users can switch between recipe view and category view seamlessly with visible, responsive buttons
 
@@ -38,7 +42,10 @@ This release optimizes the shopping list AI categorization system for better per
 
 - **Modified Files**:
   - `ui/src/components/shoppingList/useIngredientCategories.tsx` - Implemented on-demand categorization with manual trigger function
-  - `ui/src/components/shoppingList/ShoppingListPage.tsx` - Enhanced button styling, unified search/add interface, single-step add functionality
+  - `ui/src/components/shoppingList/ShoppingListPage.tsx` - Enhanced button styling, unified search/add interface, single-step add functionality, Auth0 integration
+  - `ui/src/components/shoppingList/useShoppingList.ts` - Added authentication timing control to prevent race conditions and infinite loops
+  - `ui/src/App.tsx` - Cleaned up Auth0 debug logging for production
+  - `ui/src/config/environment.ts` - Removed all debug console logging for clean production output
   - `app/handlers/categorize_ingredients.js` - Simplified AI prompts for better performance and accuracy
 
 - **Code Improvements**:

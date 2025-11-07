@@ -34,7 +34,6 @@ const AuthenticatedApp: React.FC = () => {
     if (isAuthenticated && user) {
       window.currentUser = { id: user.sub || 'unknown' };
       window.currentUserId = user.sub || 'unknown';
-      console.log('🔍 Current user set:', { userId: user.sub, email: user.email });
       
       // Configure API client with Auth0 token
       getAccessTokenSilently({
@@ -42,9 +41,7 @@ const AuthenticatedApp: React.FC = () => {
           audience: 'https://momsrecipebox/api',
         },
       }).then((token) => {
-        console.log('🔐 Token received from Auth0:', token ? `${token.substring(0, 50)}...` : 'null');
         apiClient.setAuthToken(token);
-        console.log('🔐 API client configured with Auth0 token');
       }).catch((error) => {
         console.error('❌ Failed to get Auth0 token:', error);
         // Clear any existing token on error
@@ -52,7 +49,6 @@ const AuthenticatedApp: React.FC = () => {
       });
     } else if (!isAuthenticated && !isLoading) {
       // Only clear token when definitely not authenticated (not during loading)
-      console.log('🚫 User not authenticated, clearing API token');
       apiClient.clearAuthToken();
     }
   }, [isAuthenticated, user, getAccessTokenSilently, isLoading]);

@@ -20,16 +20,10 @@ export interface EnvironmentConfig {
 function getEnvironment(): EnvironmentConfig['environment'] {
   const env = import.meta.env.VITE_ENVIRONMENT?.toLowerCase();
   
-  console.log('🔍 Environment detection:', { 
-    VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
-    processed: env,
-    hostname: window.location.hostname,
-    allEnvVars: import.meta.env 
-  });
+  // Environment detection for debugging (removed for production)
   
   // If served from CloudFront, assume production
   if (window.location.hostname.includes('cloudfront.net')) {
-    console.log('🌐 Detected CloudFront hosting - using production environment');
     return 'production';
   }
   
@@ -55,14 +49,7 @@ function getApiBaseUrl(environment: string): string {
   
   const selectedUrl = urls[environment as keyof typeof urls] || urls.local;
   
-  console.log('🌐 API URL configuration:', { 
-    environment, 
-    selectedUrl,
-    envVars: {
-      VITE_API_URL_LOCAL: import.meta.env.VITE_API_URL_LOCAL,
-      VITE_API_URL_LAMBDA: import.meta.env.VITE_API_URL_LAMBDA
-    }
-  });
+  // API URL configuration logging removed for production
   
   return selectedUrl;
 }
@@ -110,7 +97,7 @@ export const config: EnvironmentConfig = {
   AWS_REGION: getAwsRegion(),
 };
 
-console.log('🚀 Final environment config:', config);
+// Final environment config logging removed for production
 
 /**
  * Helper to check if running in development mode

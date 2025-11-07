@@ -438,6 +438,66 @@ const handleAddItemFromSearch = async () => {
 - **Immediate Feedback**: Success toast, input clearing, disabled states
 - **Keyboard Navigation**: Enter key support for power users
 
+### 6. Authentication Timing & Race Condition Patterns
+
+**❌ MISTAKE**: Making API calls before Auth0 authentication is fully ready (causes 401 errors on hard refresh)
+**✅ CORRECT**: Wait for authentication completion before API calls with proper timing controls
+
+**Breaking Race Condition Pattern**:
+
+```tsx
+// ❌ API call happens immediately, before token is set
+useEffect(() => {
+  loadShoppingList(); // 401 Unauthorized on hard refresh
+}, []);
+```
+
+**Proper Authentication Timing Pattern**:
+
+```tsx
+// ✅ Wait for Auth0 authentication to complete
+const { isAuthenticated, isLoading: authLoading } = useAuth0();
+
+const useShoppingList = (isAuthenticated?: boolean, authLoading?: boolean) => {
+  useEffect(() => {
+    if (typeof isAuthenticated !== 'undefined' && typeof authLoading !== 'undefined') {
+      if (!authLoading && isAuthenticated) {
+        // Small delay ensures API client token is properly set
+        const timer = setTimeout(() => {
+          loadShoppingList();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      // Legacy behavior for non-auth components
+      loadShoppingList();
+    }
+  }, [loadShoppingList, isAuthenticated, authLoading]);
+};
+```
+
+**Production Console Cleanup Pattern**:
+
+```tsx
+// ❌ Debug logging clutters production console
+console.log('🔍 Current user set:', { userId: user.sub, email: user.email });
+console.log('🔐 Token received from Auth0:', token);
+console.log('🌐 API URL configuration:', { environment, selectedUrl });
+
+// ✅ Clean production code - remove debug logs
+// Only keep essential error logging
+if (error) {
+  console.error('❌ Failed to get Auth0 token:', error);
+}
+```
+
+**Authentication Integration Best Practices**:
+- **100ms Delay**: Ensures Auth0 token setup completes before API calls
+- **Stable Dependencies**: Use primitive values (isAuthenticated, authLoading) not objects to prevent infinite loops
+- **Conditional Loading**: Only make API calls when `!authLoading && isAuthenticated`
+- **Legacy Support**: Maintain backward compatibility for components without auth state
+- **Clean Console**: Remove all debug logging in production builds
+
 **Critical UI Development Rules**:
 
 - **Button Visibility**: Use both Tailwind classes AND inline styles for critical buttons

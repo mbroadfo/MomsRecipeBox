@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useShoppingList } from './useShoppingList';
 import { useIngredientCategories } from './useIngredientCategories';
 import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { showToast, ToastType } from '../Toast';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
@@ -22,6 +23,7 @@ import './PrintStyles.css';
 
 const ShoppingListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth0();
   const [viewMode, setViewMode] = useState<'recipe' | 'category'>('recipe');
   const [searchText, setSearchText] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState<'all' | 'purchased' | null>(null);
@@ -34,7 +36,7 @@ const ShoppingListPage: React.FC = () => {
     toggleItemChecked,
     clearList,
     addItems
-  } = useShoppingList();
+  } = useShoppingList(isAuthenticated, authLoading);
   
   // Always call hooks at the top level, before any conditional returns
   const itemsByRecipe = getItemsByRecipe();

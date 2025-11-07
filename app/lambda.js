@@ -238,6 +238,11 @@ export async function handler(event, context) {
       });
     }
 
+    // ADMIN ROUTES - Initialize secrets first for auth validation
+    if (pathOnly.startsWith('/admin/')) {
+      await initializeSecrets(); // Ensure AUTH0_DOMAIN is available for JWT validation
+    }
+    
     // ADMIN ROUTES - Check these FIRST to avoid conflicts with other routes
     if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
       console.log(`🔍 Admin route: GET /admin/users`);

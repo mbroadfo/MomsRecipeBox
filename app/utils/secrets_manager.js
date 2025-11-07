@@ -84,8 +84,11 @@ export async function initializeSecretsToEnv() {
 
     for (const key of secretKeys) {
       if (secrets[key]) {
-        // Only set if not already in environment (environment variables take precedence)
-        if (!process.env[key]) {
+        // Only set if not already in environment OR if it's a template variable (contains ${})
+        const existingValue = process.env[key];
+        const isTemplate = existingValue && existingValue.includes('${');
+        
+        if (!existingValue || isTemplate) {
           process.env[key] = secrets[key];
           loadedCount++;
         }

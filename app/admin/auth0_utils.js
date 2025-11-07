@@ -44,12 +44,18 @@ async function getSecretsFromAWS() {
 // Function to get Auth0 configuration with fallback to environment variables
 export async function getAuth0Config() {
   // Check if we have placeholder values that need AWS retrieval
+  console.log('🔍 Checking Auth0 config - AUTH0_DOMAIN:', process.env.AUTH0_DOMAIN);
+  console.log('🔍 Checking Auth0 config - AUTH0_M2M_CLIENT_ID:', process.env.AUTH0_M2M_CLIENT_ID ? '[SET]' : '[MISSING]');
+  console.log('🔍 Checking Auth0 config - AUTH0_M2M_CLIENT_SECRET:', process.env.AUTH0_M2M_CLIENT_SECRET ? '[SET]' : '[MISSING]');
+  
   const needsAWSSecrets = !process.env.AUTH0_DOMAIN || 
                          process.env.AUTH0_DOMAIN.includes('${') ||
                          !process.env.AUTH0_M2M_CLIENT_ID ||
                          process.env.AUTH0_M2M_CLIENT_ID.includes('${') ||
                          !process.env.AUTH0_M2M_CLIENT_SECRET ||
                          process.env.AUTH0_M2M_CLIENT_SECRET.includes('${');
+  
+  console.log('🔍 needsAWSSecrets:', needsAWSSecrets);
   
   if (needsAWSSecrets) {
     const secrets = await getSecretsFromAWS();

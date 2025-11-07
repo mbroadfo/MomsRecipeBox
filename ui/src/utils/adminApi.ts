@@ -160,9 +160,9 @@ interface UserAnalytics {
   [key: string]: unknown;
 }
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-production-api.com' 
-  : 'http://localhost:3000';
+import { config } from '../config/environment';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 /**
  * Get authorization header with current user token
@@ -205,7 +205,7 @@ const adminApi = {
       params.append('search', search);
     }
     
-    const url = `${API_BASE_URL}/api/admin/users?${params}`;
+    const url = `${API_BASE_URL}/admin/users?${params}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -219,7 +219,7 @@ const adminApi = {
    * Invite a new user
    */
   async inviteUser(token: string | null, userData: InviteUserRequest): Promise<InviteUserResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/invite`, {
+    const response = await fetch(`${API_BASE_URL}/admin/users/invite`, {
       method: 'POST',
       headers: getAuthHeaders(token),
       body: JSON.stringify(userData)
@@ -232,7 +232,7 @@ const adminApi = {
    * Delete a user
    */
   async deleteUser(token: string | null, userId: string): Promise<DeleteUserResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
       headers: getAuthHeaders(token)
     });
@@ -244,7 +244,7 @@ const adminApi = {
    * Test admin API connectivity
    */
   async testConnection(token: string | null): Promise<{ status: string; message: string }> {
-    const url = `${API_BASE_URL}/api/admin/users?page=1&per_page=1`;
+    const url = `${API_BASE_URL}/admin/users?page=1&per_page=1`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -275,11 +275,8 @@ const adminApi = {
     };
     note?: string;
   }> {
-    console.log('🔧 AdminAPI: testSystemStatus called');
-    
     try {
-      const url = `${API_BASE_URL}/api/admin/system-status`;
-      console.log('🔧 AdminAPI: Testing system status at', url);
+      const url = `${API_BASE_URL}/admin/system-status`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -287,7 +284,6 @@ const adminApi = {
       });
       
       const data = await handleResponse(response);
-      console.log('🔧 AdminAPI: System status received', data);
       return data;
     } catch (error) {
       console.error('🔧 AdminAPI: System status error', error);
@@ -317,11 +313,8 @@ const adminApi = {
       stats?: ServiceStats;
     };
   }> {
-    console.log('🔧 AdminAPI: testIndividualService called', serviceName);
-    
     try {
-      const url = `${API_BASE_URL}/api/admin/system-status?service=${encodeURIComponent(serviceName)}`;
-      console.log('🔧 AdminAPI: Testing individual service at', url);
+      const url = `${API_BASE_URL}/admin/system-status?service=${encodeURIComponent(serviceName)}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -329,7 +322,6 @@ const adminApi = {
       });
       
       const data = await handleResponse(response);
-      console.log('🔧 AdminAPI: Individual service test result', data);
       return data;
     } catch (error) {
       console.error('🔧 AdminAPI: Individual service test error', error);
@@ -374,15 +366,12 @@ const adminApi = {
       totalTime: string;
     };
   }> {
-    console.log('🔧 AdminAPI: getAIServicesStatus called', options);
-    
     try {
       const params = new URLSearchParams();
       if (options?.test) params.append('test', 'basic'); // Changed from 'true' to 'basic'
       if (options?.includeUnavailable) params.append('includeUnavailable', 'true');
       
-      const url = `${API_BASE_URL}/api/admin/ai-services-status${params.toString() ? '?' + params : ''}`;
-      console.log('🔧 AdminAPI: Fetching AI services status from', url);
+      const url = `${API_BASE_URL}/admin/ai-services-status${params.toString() ? '?' + params : ''}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -390,7 +379,6 @@ const adminApi = {
       });
       
       const data = await handleResponse(response);
-      console.log('🔧 AdminAPI: AI services status received', data);
       return data;
     } catch (error) {
       console.error('🔧 AdminAPI: AI services status error', error);
@@ -413,11 +401,8 @@ const adminApi = {
       testedAt: string;
     };
   }> {
-    console.log('🔧 AdminAPI: testAIProvider called', providerKey);
-    
     try {
-      const url = `${API_BASE_URL}/api/admin/ai-services-status?provider=${encodeURIComponent(providerKey)}`;
-      console.log('🔧 AdminAPI: Testing specific AI provider at', url);
+      const url = `${API_BASE_URL}/admin/ai-services-status?provider=${encodeURIComponent(providerKey)}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -425,7 +410,6 @@ const adminApi = {
       });
       
       const data = await handleResponse(response);
-      console.log('🔧 AdminAPI: AI provider test result', data);
       return data;
     } catch (error) {
       console.error('🔧 AdminAPI: AI provider test error', error);
@@ -437,11 +421,8 @@ const adminApi = {
    * Get comprehensive user analytics and engagement metrics
    */
   async getUserAnalytics(token: string | null, dateRange: string = '30'): Promise<UserAnalytics> {
-    console.log('🔧 AdminAPI: getUserAnalytics called', { dateRange });
-    
     try {
-      const url = `${API_BASE_URL}/api/admin/user-analytics?range=${encodeURIComponent(dateRange)}`;
-      console.log('🔧 AdminAPI: Fetching analytics from', url);
+      const url = `${API_BASE_URL}/admin/user-analytics?range=${encodeURIComponent(dateRange)}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -449,7 +430,6 @@ const adminApi = {
       });
       
       const data = await handleResponse(response);
-      console.log('🔧 AdminAPI: Analytics data received', data);
       return data;
     } catch (error) {
       console.error('🔧 AdminAPI: Analytics fetch error', error);

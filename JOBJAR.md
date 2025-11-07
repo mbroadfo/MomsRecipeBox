@@ -4,6 +4,67 @@ Future improvements, features, and tasks identified during development but not i
 
 ## 💡 New Ideas & Recent Additions
 
+### 26. Application Logging Cleanup & Optimization
+
+- Clean up verbose Lambda logging that clutters CloudWatch
+- Implement structured logging with appropriate log levels (ERROR, WARN, INFO, DEBUG)
+- Remove development debug logs from production paths
+- Add log aggregation and filtering for better monitoring
+- Implement log retention policies and cost optimization
+- **Impact**: Cleaner production logs, better monitoring, reduced CloudWatch costs
+- **Effort**: Medium - Systematic logging review and optimization
+
+### 27. Windows Subsystem for Linux (WSL) Development Environment
+
+- Investigate using WSL for development to reduce Windows-specific command errors
+- Set up consistent cross-platform development environment
+- Migrate PowerShell scripts to bash/Node.js equivalents
+- Test all deployment and build processes in WSL environment
+- **Impact**: More reliable development environment, fewer platform-specific issues
+- **Effort**: Medium - Environment setup and migration testing
+
+### 28. Infrastructure Metrics & Monitoring Enhancement
+
+- Replace basic infrastructure checks with meaningful business metrics
+- Implement application performance monitoring (APM) for Lambda functions
+- Add user behavior analytics and engagement tracking
+- Create comprehensive dashboards for system health and usage
+- Set up intelligent alerting based on business metrics, not just uptime
+- **Impact**: Better system visibility, proactive issue detection, data-driven decisions
+- **Effort**: High - Comprehensive monitoring and analytics implementation
+
+### 29. Mobile-First UX Optimization
+
+- Redesign navigation and interface components for mobile devices
+- Implement responsive design patterns for recipe viewing and management
+- Optimize touch interactions and gesture support
+- Add mobile-specific features (camera integration for recipe photos)
+- Test and optimize performance on mobile devices
+- **Impact**: Better mobile user experience, increased mobile engagement
+- **Effort**: High - Complete UX redesign and mobile optimization
+
+### 31. Git History Changelog Audit & Fix Process
+
+- **CRITICAL**: Review entire git commit history to find instances where AI overwrote perfectly good changelog entries
+- Identify pattern of "same-day commit" changelog replacement mistakes
+- Document proper changelog append vs replace logic for AI development
+- Create safeguards to prevent future changelog overwrites when multiple commits happen on same day
+- Restore any lost changelog entries from git history if found
+- **Impact**: Historical accuracy, preventing loss of development work documentation
+- **Effort**: Medium - Git history analysis and process improvement
+- **Priority**: High - This is a recurring AI mistake that needs immediate fixing
+- **Note**: Added because AI keeps being a dummy and overwriting good changelog entries! 🤦‍♂️
+
+### 30. UX Navigation Experience Overhaul
+
+- Redesign overall navigation structure and information architecture
+- Implement consistent navigation patterns across all pages
+- Add breadcrumb navigation and clear user flow indicators
+- Improve search and discovery features
+- Streamline user workflows and reduce cognitive load
+- **Impact**: Significantly improved user experience and retention
+- **Effort**: High - Comprehensive UX analysis and redesign
+
 ### 20. Frontend User Profile Integration Testing
 
 - Test user profile functionality in React UI components

@@ -3,6 +3,7 @@ import { useSystemStatus } from '../../../hooks/useAdminData';
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
 import { SectionWrapper } from '../ErrorBoundary';
 import { SystemStatusSkeleton } from '../skeletons';
+import { config } from '../../../config/environment';
 
 const SystemStatusContent: React.FC = () => {
   const { token } = useAdminAuth();
@@ -29,9 +30,7 @@ const SystemStatusContent: React.FC = () => {
     
     try {
       // Use the admin API to test individual service
-      const API_BASE_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://your-production-api.com' 
-        : 'http://localhost:3000';
+      const API_BASE_URL = config.API_BASE_URL;
         
       const result = await fetch(`${API_BASE_URL}/admin/system-status?service=${apiServiceName}`, {
         headers: {

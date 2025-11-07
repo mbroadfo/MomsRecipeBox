@@ -75,7 +75,52 @@ CloudFront S3 UI → AWS Lambda API → Atlas MongoDB
 
 ## 🚨 Critical Mistakes to Avoid
 
-### 1. Production Authentication Patterns (CLOUD-ONLY)
+### 1. NEVER Hardcode Production Credentials (SECURITY CRITICAL)
+
+**❌ ABSOLUTELY FORBIDDEN**: Hardcoding any production domains, credentials, or secrets in code
+**✅ MANDATORY**: Always use proper configuration management and throw errors on malformed settings
+
+**Security Violation Example (NEVER DO THIS)**:
+
+```javascript
+// ❌ SECURITY VIOLATION - NEVER hardcode production domains!
+if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
+  auth0Domain = 'moms-recipe-box.us.auth0.com'; // FORBIDDEN!
+}
+```
+
+**Correct Security Pattern**:
+
+```javascript
+// ✅ SECURE - Throw error on malformed configuration
+if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
+  throw new Error(`Invalid AUTH0_DOMAIN configuration: ${auth0Domain}. Check AWS Secrets Manager.`);
+}
+```
+
+**CRITICAL SECURITY RULES**:
+
+- **NEVER hardcode domains**: Even for "temporary" fixes or debugging
+- **NEVER hardcode API keys**: Use AWS Secrets Manager or environment variables  
+- **NEVER hardcode passwords**: All credentials must be externally managed
+- **ALWAYS fail securely**: Throw errors instead of using fallback credentials
+- **ASSUME PUBLIC REPOSITORIES**: All code may become public - never embed secrets
+
+**Security Violation Consequences**:
+
+- **Immediate security risk**: Hardcoded credentials expose production systems
+- **Repository contamination**: Secrets remain in Git history even after removal
+- **Compliance violations**: Violates security policies and best practices
+- **Attack surface expansion**: Gives attackers direct access paths
+
+**Proper Configuration Management**:
+
+- **AWS Secrets Manager**: For production credentials and sensitive configuration
+- **Environment variables**: For development and testing configuration  
+- **Configuration validation**: Always validate settings and fail safely on invalid values
+- **Error logging**: Log configuration issues without exposing sensitive values
+
+### 2. Production Authentication Patterns (CLOUD-ONLY)
 
 **❌ MISTAKE**: Using demo query parameters in production authentication
 **✅ CORRECT**: Always use proper JWT tokens for all API calls (cloud-only architecture requires this)
@@ -433,6 +478,7 @@ const handleAddItemFromSearch = async () => {
 ```
 
 **Key UX Principles**:
+
 - **One Action = One Result**: Type item → press Enter/click Add → item added
 - **Clear Visual Hierarchy**: Search and add functionality clearly separated from other controls
 - **Immediate Feedback**: Success toast, input clearing, disabled states
@@ -492,6 +538,7 @@ if (error) {
 ```
 
 **Authentication Integration Best Practices**:
+
 - **100ms Delay**: Ensures Auth0 token setup completes before API calls
 - **Stable Dependencies**: Use primitive values (isAuthenticated, authLoading) not objects to prevent infinite loops
 - **Conditional Loading**: Only make API calls when `!authLoading && isAuthenticated`
@@ -1464,10 +1511,12 @@ echo "*.local.json" >> .gitignore
 
 **CHANGELOG.md** - Update on EVERY commit:
 
-- Add entry for current date
-- Describe features added/modified/fixed
-- Note any breaking changes
-- Include relevant technical details
+- **CRITICAL**: ALWAYS APPEND new entries, NEVER overwrite existing entries from the same date
+- **Same-Day Commits**: When multiple commits happen on same day, ADD new section above existing ones
+- **Pattern**: `## [Unreleased] - YYYY-MM-DD` followed by `### [Priority] - [Feature Name]`
+- Add entry for current date describing features added/modified/fixed
+- Note any breaking changes and include relevant technical details
+- **MISTAKE TO AVOID**: Replacing perfectly good changelog entries just because it's the same day
 
 **README.md** - Update if user-facing changes:
 

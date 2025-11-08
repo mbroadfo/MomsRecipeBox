@@ -4,6 +4,9 @@
  */
 
 import { getCollection } from '../utils/db.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('delete_shopping_list_item');
 
 async function handler(event, context) {
   try {
@@ -67,7 +70,7 @@ async function handler(event, context) {
       })
     };
   } catch (error) {
-    console.error('Error removing shopping list item:', error);
+    logger.error('Error removing shopping list item', { error: error.message, stack: error.stack });
     
     return {
       statusCode: 500,

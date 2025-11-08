@@ -1,6 +1,7 @@
 // File: app/lambda.js
 import { getDb } from './app.js'; // DB connection helper
 import { initializeSecretsToEnv } from './utils/secrets_manager.js'; // AWS Secrets Manager integration
+import { createLogger } from './utils/logger.js';
 import listRecipes from './handlers/list_recipes.js';
 import getRecipe from './handlers/get_recipe.js';
 import createRecipe from './handlers/create_recipe.js';
@@ -37,6 +38,8 @@ import { handler as recipeIdsHandler } from './admin/admin_handlers/recipe_ids.j
 // User Profile handler
 import { handler as userProfileHandler } from './handlers/user_profile.js';
 
+const logger = createLogger('lambda');
+
 /**
  * Add CORS headers to the response
  * @param {object} response - The response object
@@ -72,7 +75,7 @@ async function getAiProviders(event) {
       })
     };
   } catch (error) {
-    console.error('Error getting AI providers:', error);
+    logger.error('Failed to get AI providers', error, event);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -109,15 +112,15 @@ async function initializeSecrets() {
     return;
   }
 
-  console.log('🔐 Initializing AWS Secrets Manager...');
+  logger.info('Initializing AWS Secrets Manager');
   try {
     // Load all secrets from AWS Secrets Manager into process.env
     // This includes AI API keys, Auth0 credentials, MongoDB URI, etc.
     await initializeSecretsToEnv();
     secretsInitialized = true;
-    console.log('✅ Secrets initialized for Lambda');
+    logger.info('Secrets initialized for Lambda');
   } catch (error) {
-    console.error('❌ Secrets initialization failed:', error.message);
+    logger.error('Secrets initialization failed', error);
     // Don't throw - Lambda should continue even if secrets fail
     // Individual handlers can handle missing secrets gracefully
   }
@@ -128,7 +131,7 @@ async function initializeDatabase() {
     return cachedDbConnection;
   }
 
-  console.log('🔧 Initializing database connection...');
+  logger.info('Initializing database connection');
   try {
     // Ensure secrets are loaded first (MongoDB URI is in secrets)
     await initializeSecrets();
@@ -151,10 +154,10 @@ async function initializeDatabase() {
     if (originalStartupHealthChecks) process.env.ENABLE_STARTUP_HEALTH_CHECKS = originalStartupHealthChecks;
     if (originalDataQualityChecks) process.env.ENABLE_DATA_QUALITY_CHECKS = originalDataQualityChecks;
 
-    console.log('✅ Database connection initialized for Lambda');
+    logger.info('Database connection initialized for Lambda');
     return cachedDbConnection;
   } catch (error) {
-    console.error('❌ Database initialization failed:', error.message);
+    logger.error('Database initialization failed', error);
     // Don't throw - let individual routes handle database unavailability
     return null;
   }
@@ -166,44 +169,47 @@ let buildMarkerInitialized = false;
 async function initializeBuildMarker() {
   if (buildMarkerInitialized) return;
   
-  console.log('🔧 Loading build marker at container startup...');
+  logger.info('Loading build marker at container startup');
   try {
     const buildMarker = await import('./build-marker.js');
-    console.log('✅ Build marker loaded successfully:', buildMarker.BUILD_INFO);
+    logger.info('Build marker loaded successfully', { buildInfo: buildMarker.BUILD_INFO });
   } catch (e) {
-    console.log('⚠️ Build marker not loaded at startup:', e.message);
+    logger.warn('Build marker not loaded at startup', { error: e.message });
   }
   buildMarkerInitialized = true;
 }
 
 async function loadCurrentBuildMarker() {
-  console.log('🔧 Loading current build marker on demand...');
+  logger.info('Loading current build marker on demand');
   try {
     // Use timestamp to force fresh import (bypass module cache)
     const buildMarker = await import(`./build-marker.js?t=${Date.now()}`);
-    console.log('🏗️ Build marker loaded:', buildMarker.BUILD_INFO);
-    console.log('✅ Build marker loaded successfully:', buildMarker.BUILD_INFO);
+    logger.info('Build marker loaded successfully', { buildInfo: buildMarker.BUILD_INFO });
     return buildMarker.BUILD_INFO;
   } catch (e) {
-    console.log('⚠️ Build marker not loaded:', e.message);
+    logger.warn('Build marker not loaded', { error: e.message });
     return null;
   }
 }
 
 // AWS Lambda entrypoint
 export async function handler(event, context) {
-  console.log('🚀 Lambda handler started');
-  console.log('📥 Received event:', JSON.stringify(event, null, 2));
+  logger.debug('Lambda handler started', {}, event);
+  logger.debug('Event received', { 
+    httpMethod: event.httpMethod, 
+    path: event.path, 
+    queryStringParameters: event.queryStringParameters 
+  }, event);
   
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    console.log('🔄 Handling CORS preflight');
+    logger.debug('Handling CORS preflight', {}, event);
     return handleCorsOptions(event);
   }
 
   const originalPath = event.path || '';
   const pathOnly = originalPath.split('?')[0];
-  console.log(`🛣️  Processing path: ${pathOnly}, method: ${event.httpMethod}`);
+  logger.debug('Processing request', { path: pathOnly, method: event.httpMethod }, event);
 
   try {
     // Health check endpoint - don't require database connection
@@ -226,7 +232,7 @@ export async function handler(event, context) {
     
     // If database is not available, return error for DB-dependent routes
     if (!db && (pathOnly.startsWith('/recipes') || pathOnly.startsWith('/shopping-list') || pathOnly.startsWith('/user/profile'))) {
-      console.error('❌ Database unavailable for route:', pathOnly);
+      logger.error('Database unavailable for route', { path: pathOnly });
       return addCorsHeaders({
         statusCode: 503,
         headers: { 'Content-Type': 'application/json' },
@@ -245,19 +251,19 @@ export async function handler(event, context) {
     
     // ADMIN ROUTES - Check these FIRST to avoid conflicts with other routes
     if (event.httpMethod === 'GET' && pathOnly === '/admin/users') {
-      console.log(`🔍 Admin route: GET /admin/users`);
+      logger.info('Admin route: GET /admin/users');
       return addCorsHeaders(await listUsersHandler(event));
     }
     if (event.httpMethod === 'POST' && pathOnly === '/admin/users/invite') {
-      console.log(`🔍 Admin route: POST /admin/users/invite`);
+      logger.info('Admin route: POST /admin/users/invite');
       return addCorsHeaders(await inviteUserHandler(event));
     }
     // DELETE USER ROUTE - Match any DELETE to /admin/users/[userId]
     if (event.httpMethod === 'DELETE' && pathOnly.startsWith('/admin/users/') && pathOnly !== '/admin/users/invite') {
-      console.log(`🔍 Admin route: DELETE ${pathOnly}`);
+      logger.info('Admin route: DELETE user', { path: pathOnly });
       const userId = decodeURIComponent(pathOnly.split('/').pop());
       event.pathParameters = { id: userId };
-      console.log(`🔍 Delete user request for: ${userId}`);
+      logger.info('Delete user request', { userId });
       return addCorsHeaders(await deleteUserHandler(event));
     }
     if (event.httpMethod === 'GET' && pathOnly === '/admin/system-status') {
@@ -275,7 +281,7 @@ export async function handler(event, context) {
 
     // USER PROFILE ROUTES
     if (pathOnly === '/user/profile') {
-      console.log(`🔍 User profile route: ${event.httpMethod} ${pathOnly}`);
+      logger.info('User profile route', { method: event.httpMethod, path: pathOnly });
       return addCorsHeaders(await userProfileHandler(event));
     }
 
@@ -297,7 +303,7 @@ export async function handler(event, context) {
     }
     // Create
     if (event.httpMethod === 'POST' && pathOnly === '/recipes') {
-      return addCorsHeaders(await createRecipe(db, JSON.parse(event.body)));
+      return addCorsHeaders(await createRecipe(db, JSON.parse(event.body), event));
     }
     // Update
     if (event.httpMethod === 'PUT' && /^\/recipes\/[\w-]+$/.test(pathOnly)) {
@@ -396,7 +402,7 @@ export async function handler(event, context) {
 
     // Build marker initialization endpoint (for deployment verification)
     if (event.httpMethod === 'POST' && pathOnly === '/initializeBuildMarker') {
-      console.log('🔧 Build marker initialization requested via POST /initializeBuildMarker');
+      logger.info('Build marker initialization requested via POST /initializeBuildMarker');
       const currentMarker = await loadCurrentBuildMarker();
       return addCorsHeaders({
         statusCode: 200,
@@ -412,7 +418,7 @@ export async function handler(event, context) {
 
     return addCorsHeaders({ statusCode: 404, body: JSON.stringify({ error: 'Not Found' }) });
   } catch (err) {
-    console.error('❌ Error:', err);
+    logger.error('Lambda handler error', err);
     return addCorsHeaders({ statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) });
   }
 }

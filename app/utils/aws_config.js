@@ -4,7 +4,11 @@
  */
 
 import dotenv from 'dotenv';
+import { createLogger } from './logger.js';
+
 dotenv.config();
+
+const logger = createLogger('aws_config');
 
 export const AWS_CONFIG = {
   REGION: process.env.AWS_REGION || 'us-west-2',
@@ -80,15 +84,14 @@ export function isRunningInAws() {
  * Development logging for AWS configuration
  */
 export function logAwsConfig() {
-  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-    console.log('🔧 AWS Configuration:');
-    console.log(`   Region: ${AWS_CONFIG.REGION}`);
-    console.log(`   Recipe Images Bucket: ${AWS_CONFIG.RECIPE_IMAGES_BUCKET}`);
-    console.log(`   Secrets Name: ${AWS_CONFIG.SECRETS_NAME}`);
-    console.log(`   Recipe Images Base URL: ${AWS_CONFIG.RECIPE_IMAGES_BASE_URL}`);
-    console.log(`   Has AWS Credentials: ${!!getAwsCredentials()}`);
-    console.log(`   Running in AWS: ${isRunningInAws()}`);
-  }
+  logger.debug('AWS Configuration', {
+    region: AWS_CONFIG.REGION,
+    recipeImagesBucket: AWS_CONFIG.RECIPE_IMAGES_BUCKET,
+    secretsName: AWS_CONFIG.SECRETS_NAME,
+    recipeImagesBaseUrl: AWS_CONFIG.RECIPE_IMAGES_BASE_URL,
+    hasAwsCredentials: !!getAwsCredentials(),
+    runningInAws: isRunningInAws()
+  });
 }
 
 export default AWS_CONFIG;

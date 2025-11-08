@@ -2,6 +2,9 @@
 import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
 import AWS from 'aws-sdk';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('delete_recipe');
 
 const s3 = new AWS.S3();
 
@@ -45,7 +48,7 @@ const handler = async (event) => {
         }).promise();
         
         deletedImages.push(key);
-        console.log(`✅ Deleted S3 image: ${key}`);
+        logger.info('Deleted S3 image', { key }, event);
       } catch (error) {
         // Image with this extension doesn't exist, which is normal
         if (error.code !== 'NoSuchKey') {
@@ -62,7 +65,7 @@ const handler = async (event) => {
         Key: legacyKey,
       }).promise();
       deletedImages.push(legacyKey);
-      console.log(`✅ Deleted legacy S3 image: ${legacyKey}`);
+      logger.info('Deleted legacy S3 image', { key: legacyKey }, event);
     } catch (error) {
       // Just continue if this fails
       if (error.code !== 'NoSuchKey') {
@@ -72,13 +75,17 @@ const handler = async (event) => {
 
     // Log results
     if (deletedImages.length > 0) {
-      console.log(`🧹 Recipe ${recipeId} deleted successfully with ${deletedImages.length} associated image(s)`);
+      logger.info('Recipe deleted successfully with images', { 
+        recipeId, 
+        deletedImageCount: deletedImages.length,
+        deletedImages
+      }, event);
     } else {
-      console.log(`⚠️  Recipe ${recipeId} deleted but no associated images found in S3`);
+      logger.warn('Recipe deleted but no associated images found', { recipeId }, event);
     }
 
     if (imageErrors.length > 0) {
-      console.warn(`⚠️  Some image deletion errors:`, imageErrors);
+      logger.warn('Some image deletion errors occurred', { imageErrors }, event);
     }
 
     return { 
@@ -90,7 +97,7 @@ const handler = async (event) => {
       })
     };
   } catch (err) {
-    console.error('❌ Delete recipe error:', err);
+    logger.error('Delete recipe failed', err, event);
     return { 
       statusCode: 500, 
       body: JSON.stringify({ error: err.message }) 

@@ -4,6 +4,9 @@
  */
 
 import { getCollection } from '../utils/db.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('update_shopping_list_item');
 
 async function handler(event, context) {
   try {
@@ -90,7 +93,7 @@ async function handler(event, context) {
       })
     };
   } catch (error) {
-    console.error('Error updating shopping list item:', error);
+    logger.error('Error updating shopping list item', { error: error.message, stack: error.stack });
     
     return {
       statusCode: 500,

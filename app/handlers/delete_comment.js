@@ -7,6 +7,9 @@
  */
 import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('delete_comment');
 
 const handler = async (event) => {
   try {
@@ -54,7 +57,7 @@ const handler = async (event) => {
       }) 
     };
   } catch (err) {
-    console.error('Error deleting comment:', err);
+    logger.error('Error deleting comment', { error: err.message, stack: err.stack });
     return { 
       statusCode: 500, 
       body: JSON.stringify({ error: err.message }) 

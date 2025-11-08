@@ -5,6 +5,9 @@
 
 import { ObjectId } from 'mongodb';
 import { getCollection } from '../utils/db.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('add_shopping_list_items');
 
 async function handler(event, context) {
   try {
@@ -30,12 +33,12 @@ async function handler(event, context) {
     const { items } = body;
     
     // Log the request items for debugging
-    console.log('Received shopping list items:', JSON.stringify(items, null, 2));
+    logger.info('Received shopping list items', { userId: user_id, itemCount: items.length });
     
     // Validate items format
     for (const item of items) {
       if (!item.ingredient && !item.name) {
-        console.error('Invalid item format - missing both name and ingredient:', item);
+        logger.error('Invalid item format - missing both name and ingredient', { userId: user_id, item: item });
         return {
           statusCode: 400,
           body: JSON.stringify({ 
@@ -53,7 +56,7 @@ async function handler(event, context) {
         ...item,
         ingredient: item.ingredient || item.name
       };
-      console.log('Validated item:', result);
+      logger.debug('Validated item', { userId: user_id, ingredient: result.ingredient, recipeId: result.recipe_id });
       return result;
     });
 
@@ -97,12 +100,20 @@ async function handler(event, context) {
       if (!isDuplicate) {
         newItems.push(newItem);
       } else {
-        console.log(`Skipping duplicate item: ${newItem.ingredient || newItem.name}`);
+        logger.debug('Skipping duplicate item', { 
+          userId: user_id, 
+          ingredient: newItem.ingredient || newItem.name, 
+          recipeId: newItem.recipe_id 
+        });
         skippedCount.count++;
       }
     });
     
-    console.log(`Adding ${newItems.length} new items, skipped ${skippedCount.count} duplicates`);
+    logger.info('Processing shopping list items', { 
+      userId: user_id, 
+      newItemsCount: newItems.length, 
+      skippedCount: skippedCount.count 
+    });
     
     // Only proceed with update if we have new items
     let result;
@@ -126,9 +137,12 @@ async function handler(event, context) {
     // Get the full updated shopping list to return
     const updatedShoppingList = await shoppingListsColl.findOne({ user_id });
     
-    console.log('Updated shopping list:', JSON.stringify(updatedShoppingList, null, 2));
-    
-    console.log('Full updated shopping list:', JSON.stringify(updatedShoppingList, null, 2));
+    logger.info('Shopping list updated successfully', { 
+      userId: user_id, 
+      totalItems: updatedShoppingList?.items?.length || 0,
+      addedItems: newItems.length,
+      skippedItems: skippedCount.count
+    });
     
     return {
       statusCode: 200,
@@ -144,7 +158,7 @@ async function handler(event, context) {
       })
     };
   } catch (error) {
-    console.error('Error adding items to shopping list:', error);
+    logger.error('Error adding items to shopping list', { error: error.message, stack: error.stack });
     
     return {
       statusCode: 500,

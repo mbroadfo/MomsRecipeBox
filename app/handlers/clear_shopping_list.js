@@ -4,6 +4,9 @@
  */
 
 import { getCollection } from '../utils/db.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('clear_shopping_list');
 
 async function handler(event, context) {
   try {
@@ -113,7 +116,7 @@ async function handler(event, context) {
       })
     };
   } catch (error) {
-    console.error('Error clearing shopping list:', error);
+    logger.error('Error clearing shopping list', { error: error.message, stack: error.stack });
     
     return {
       statusCode: 500,

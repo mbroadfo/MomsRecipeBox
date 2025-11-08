@@ -4,6 +4,9 @@
  */
 
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { createLogger } from './logger.js';
+
+const logger = createLogger('secrets_manager');
 
 // Cache for secrets to avoid repeated calls
 let secretsCache = null;
@@ -22,7 +25,7 @@ export async function fetchSecrets() {
     const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
     const region = process.env.AWS_REGION || 'us-west-2';
 
-    console.log(`🔐 Fetching secrets from AWS Secrets Manager (${secretName})...`);
+    logger.debug('Fetching secrets from AWS Secrets Manager', { secretName, region });
 
     const client = new SecretsManagerClient({ region });
     const command = new GetSecretValueCommand({ SecretId: secretName });
@@ -31,12 +34,13 @@ export async function fetchSecrets() {
     const secrets = JSON.parse(response.SecretString);
     secretsCache = secrets;
 
-    console.log('✅ Secrets retrieved from AWS Secrets Manager');
-    console.log(`📋 Retrieved ${Object.keys(secrets).length} secret keys`);
+    logger.info('Secrets retrieved from AWS Secrets Manager', { 
+      secretCount: Object.keys(secrets).length 
+    });
 
     return secrets;
   } catch (error) {
-    console.error('❌ Failed to fetch secrets from AWS Secrets Manager:', error.message);
+    logger.error('Failed to fetch secrets from AWS Secrets Manager', error);
     throw error;
   }
 }
@@ -49,7 +53,7 @@ export async function fetchSecrets() {
 export async function initializeSecretsToEnv() {
   // Only initialize once
   if (secretsInitialized) {
-    console.log('✅ Secrets already initialized in process.env');
+    logger.debug('Secrets already initialized in process.env');
     return;
   }
 
@@ -96,7 +100,7 @@ export async function initializeSecretsToEnv() {
     }
 
     secretsInitialized = true;
-    console.log(`✅ Loaded ${loadedCount} secrets into process.env`);
+    logger.info('Secrets loaded into process.env', { loadedCount });
 
     // Log which AI providers will be available
     const aiProviders = [];
@@ -107,13 +111,13 @@ export async function initializeSecretsToEnv() {
     if (process.env.DEEPSEEK_API_KEY) aiProviders.push('DeepSeek');
 
     if (aiProviders.length > 0) {
-      console.log(`🤖 AI providers available: ${aiProviders.join(', ')}`);
+      logger.info('AI providers available', { providers: aiProviders });
     } else {
-      console.warn('⚠️  No AI provider API keys found in secrets');
+      logger.warn('No AI provider API keys found in secrets');
     }
 
   } catch (error) {
-    console.error('❌ Failed to initialize secrets to process.env:', error.message);
+    logger.error('Failed to initialize secrets to process.env', error);
     // Don't throw - Lambda should continue even if secrets fail
     // Individual handlers can handle missing secrets gracefully
   }

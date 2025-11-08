@@ -5,6 +5,9 @@ import path from 'path';
 import formidable from 'formidable';
 import { Readable } from 'stream';
 import url from 'url';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('upload_image');
 
 // Note: This handler is used for both uploading new images and updating existing ones via PUT method
 
@@ -41,15 +44,15 @@ export async function handler(event) {
     const parsedData = await new Promise((resolve, reject) => {
       if (isRawRequest) {
         // For local server - use the raw request object directly
-        console.log("Using raw request object for multipart parsing");
+        logger.debug("Using raw request object for multipart parsing", {}, event);
         form.parse(event.body, (err, fields, files) => {
           if (err) reject(err);
-          console.log('Files received:', JSON.stringify(files, null, 2));
+          logger.debug('Files received from raw request', { fileCount: Object.keys(files).length }, event);
           resolve({ fields, files });
         });
       } else {
         // For Lambda - create a stream from the body string
-        console.log("Using eventToStream for multipart parsing");
+        logger.debug("Using eventToStream for multipart parsing", {}, event);
         const stream = eventToStream(event);
         const headers = { ...event.headers };
         if (!headers['content-length']) {
@@ -57,13 +60,16 @@ export async function handler(event) {
         }
         form.parse(stream, headers, (err, fields, files) => {
           if (err) reject(err);
-          console.log('Files received:', JSON.stringify(files, null, 2));
+          logger.debug('Files received from stream', { fileCount: Object.keys(files).length }, event);
           resolve({ fields, files });
         });
       }
     });
     
-    console.log('parsedData:', JSON.stringify(parsedData, null, 2));
+    logger.debug('Multipart parsing completed', { 
+      fieldCount: Object.keys(parsedData.fields || {}).length,
+      fileCount: Object.keys(parsedData.files || {}).length 
+    }, event);
     
     // Check if files object exists and has the expected structure
     if (!parsedData.files || typeof parsedData.files !== 'object') {
@@ -88,7 +94,11 @@ export async function handler(event) {
     }
     
     // Check if file has path property
-    console.log('File object structure:', JSON.stringify(file, null, 2));
+    logger.debug('File object received', { 
+      fileName: file.originalFilename || file.name,
+      fileSize: file.size,
+      mimeType: file.mimetype || file.type
+    }, event);
     
     if (!file.path) {
       // Try to find filepath in other properties
@@ -100,7 +110,7 @@ export async function handler(event) {
         const tmpFilePath = path.join(tmpDir, file.originalFilename);
         fs.writeFileSync(tmpFilePath, file.buffer || Buffer.from(file.data || ''));
         file.path = tmpFilePath;
-        console.log(`Created temporary file at ${tmpFilePath}`);
+        logger.debug('Created temporary file', { tmpFilePath }, event);
       } else {
         throw new Error('File path is missing and could not be created');
       }
@@ -109,7 +119,7 @@ export async function handler(event) {
     // Calculate file size using fs.statSync
     const fileStats = fs.statSync(file.path);
     const fileSize = fileStats.size;
-    console.log(`File size: ${fileSize} bytes`);
+    logger.debug('File size determined', { fileSize }, event);
 
     // Maximum allowed file size (5MB)
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
@@ -127,7 +137,7 @@ export async function handler(event) {
         throw new Error('Could not read file content');
       }
     } catch (readError) {
-      console.error('Error reading file:', readError);
+      logger.warn('File read error, trying buffer fallback', readError, event);
       // If file can't be read from path, try to get the buffer directly
       if (file.buffer) {
         fileBuffer = file.buffer;
@@ -168,10 +178,10 @@ export async function handler(event) {
       };
       
       contentType = mimeMap[ext] || 'image/png';
-      console.log(`Determined content type ${contentType} from extension ${ext}`);
+      logger.debug('Content type determined from extension', { contentType, extension: ext }, event);
     }
 
-    console.log(`Using content type: ${contentType} for upload`);
+    logger.debug('Final content type for upload', { contentType }, event);
     
     // No image processing - preserve original format
     let processedBuffer = fileBuffer;
@@ -179,36 +189,40 @@ export async function handler(event) {
     try {
       // Get image metadata just for informational purposes
       metadata = await sharp(fileBuffer).metadata();
-      console.log(`Original image: ${metadata.width}x${metadata.height}, format: ${metadata.format}`);
+      logger.debug('Image metadata analyzed', { 
+        width: metadata.width, 
+        height: metadata.height, 
+        format: metadata.format 
+      }, event);
       
       // Set the file extension based on the detected format or content type
       if (metadata.format) {
         fileExtension = metadata.format.toLowerCase();
-        console.log(`Using detected format for extension: ${fileExtension}`);
+        logger.debug('Using detected format for extension', { fileExtension }, event);
       } else if (contentType) {
         // Try to get extension from content type
         const formatFromContentType = contentType.split('/')[1];
         if (formatFromContentType) {
           fileExtension = formatFromContentType.split('+')[0]; // Handle cases like "image/svg+xml"
-          console.log(`Using content type for extension: ${fileExtension}`);
+          logger.debug('Using content type for extension', { fileExtension }, event);
         }
       }
       
       // Set the key with the proper extension
       key = `${id}.${fileExtension}`;
-      console.log(`File will be stored with key: ${key}`);
+      logger.debug('S3 storage key determined', { key }, event);
       
       // No processing - use original file buffer
-      console.log(`Using original image without processing: ${fileBuffer.length} bytes`);
+      logger.debug('Using original image without processing', { bufferSize: fileBuffer.length }, event);
       
     } catch (processingError) {
-      console.error('Error analyzing image:', processingError.message);
+      logger.warn('Image analysis failed, using original', processingError, event);
       // Continue with original file
-      console.log('Using original image without metadata');
+      logger.debug('Using original image without metadata', {}, event);
     }
 
     // Always upload to S3, regardless of environment
-    console.log(`Uploading to S3: bucket=${bucketName}, key=${key}, contentType=${contentType}`);
+    logger.info('Uploading image to S3', { bucketName, key, contentType }, event);
     try {
       await s3.putObject({
         Bucket: bucketName,
@@ -224,7 +238,7 @@ export async function handler(event) {
         }
       }).promise();
       
-      console.log(`Successfully uploaded image to S3: ${bucketName}/${key}`);
+      logger.info('Image uploaded to S3 successfully', { bucketName, key }, event);
       return {
         statusCode: 200,
         body: JSON.stringify({ 
@@ -236,11 +250,11 @@ export async function handler(event) {
         }),
       };
     } catch (s3Error) {
-      console.error('Error uploading to S3:', s3Error);
+      logger.error('S3 upload failed', s3Error, event);
       throw s3Error; // Rethrow to be caught by the outer try/catch
     }
   } catch (error) {
-    console.error(error);
+    logger.error('Image upload handler failed', error, event);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Failed to upload image.', error: error.message }),

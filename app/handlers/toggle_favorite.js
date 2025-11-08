@@ -1,5 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('toggle_favorite');
 
 // New favorites-based like toggle handler
 export const handler = async (event) => {
@@ -19,7 +22,7 @@ export const handler = async (event) => {
     const recipesColl = db.collection('recipes');
     const favoritesColl = db.collection('favorites');
 
-    console.log('[toggle_favorite] recipeId:', recipeId, 'userId:', userId);
+    logger.info('Toggle favorite request', { recipeId, userId }, event);
 
     // Ensure indexes (idempotent) - runs fast after first time
     await favoritesColl.createIndex({ recipeId: 1, userId: 1 }, { unique: true });
@@ -31,24 +34,24 @@ export const handler = async (event) => {
     if (!exists) return { statusCode: 404, body: JSON.stringify({ message: 'Recipe not found' }) };
 
     const beforeCountDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
-    console.log('[toggle_favorite] Before toggle likes_count:', beforeCountDoc?.likes_count);
+    logger.debug('Before toggle state', { likesCount: beforeCountDoc?.likes_count }, event);
 
     const existing = await favoritesColl.findOne({ recipeId: _rid, userId });
     let liked;
     if (existing) {
-      console.log('[toggle_favorite] Existing favorite found. Removing.');
+      logger.info('Removing existing favorite', { favoriteId: existing._id }, event);
       await favoritesColl.deleteOne({ _id: existing._id });
       await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: -1 } });
       liked = false;
     } else {
       try {
-        console.log('[toggle_favorite] No existing favorite. Inserting.');
+        logger.info('Adding new favorite', {}, event);
         await favoritesColl.insertOne({ recipeId: _rid, userId, createdAt: new Date() });
         await recipesColl.updateOne({ _id: _rid }, { $inc: { likes_count: 1 } });
         liked = true;
       } catch (e) {
         if (e?.code === 11000) {
-          console.log('[toggle_favorite] Duplicate key race, treating as liked');
+          logger.debug('Duplicate key race condition, treating as liked', { errorCode: e.code }, event);
           liked = true;
         } else throw e;
       }
@@ -57,15 +60,15 @@ export const handler = async (event) => {
     let recipeDoc = await recipesColl.findOne({ _id: _rid }, { projection: { likes_count: 1 } });
     let likes = recipeDoc?.likes_count;
     if (typeof likes !== 'number') {
-      console.log('[toggle_favorite] likes_count missing, recomputing');
+      logger.warn('Likes count missing, recomputing from favorites collection', {}, event);
       likes = await favoritesColl.countDocuments({ recipeId: _rid });
       await recipesColl.updateOne({ _id: _rid }, { $set: { likes_count: likes } });
     }
-    console.log('[toggle_favorite] After toggle likes_count:', likes, 'liked:', liked);
+    logger.info('Toggle favorite completed', { likesCount: likes, liked }, event);
 
     return { statusCode: 200, body: JSON.stringify({ liked, likes }) };
   } catch (err) {
-    console.error('[toggle_favorite] Error:', err);
+    logger.error('Toggle favorite failed', err, event);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };

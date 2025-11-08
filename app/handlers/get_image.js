@@ -1,6 +1,9 @@
 import AWS from 'aws-sdk';
 import { getDb } from '../app.js';
+import { createLogger } from '../utils/logger.js';
+
 const s3 = new AWS.S3();
+const logger = createLogger('get_image');
 
 export async function handler(event) {
   const { id } = event.pathParameters;
@@ -21,7 +24,7 @@ export async function handler(event) {
       
       // Check if we have a direct S3 URL
       if (recipe && recipe.image_url && recipe.image_url.startsWith('https://') && recipe.image_url.includes('s3.amazonaws.com')) {
-        console.log(`Found direct S3 URL: ${recipe.image_url}`);
+        logger.info('Found direct S3 URL, redirecting', { recipeId: id, imageUrl: recipe.image_url });
         
         // Redirect to the S3 URL
         return {
@@ -36,10 +39,10 @@ export async function handler(event) {
       
       if (recipe && recipe.imageMetadata && recipe.imageMetadata.format) {
         format = recipe.imageMetadata.format;
-        console.log(`Found image format in recipe metadata: ${format}`);
+        logger.debug('Found image format in recipe metadata', { recipeId: id, format: format });
       }
     } catch (dbError) {
-      console.log(`Could not retrieve image format from database: ${dbError.message}`);
+      logger.warn('Could not retrieve image format from database', { recipeId: id, error: dbError.message });
       // Continue without metadata
     }
     
@@ -51,9 +54,9 @@ export async function handler(event) {
           Bucket: bucketName,
           Key: key,
         }).promise();
-        console.log(`Successfully retrieved image with key: ${key}`);
+        logger.debug('Successfully retrieved image with metadata key', { recipeId: id, key: key });
       } catch (error) {
-        console.log(`Image not found with metadata-provided key ${key}, will try other formats`);
+        logger.debug('Image not found with metadata key, trying other formats', { recipeId: id, key: key });
         format = null; // Reset to try other formats
       }
     }
@@ -72,7 +75,7 @@ export async function handler(event) {
           
           foundObject = image;
           key = testKey;
-          console.log(`Found image with key: ${testKey}`);
+          logger.info('Found image with key', { recipeId: id, key: testKey });
           break;
         } catch (error) {
           // Continue trying other extensions
@@ -131,10 +134,10 @@ export async function handler(event) {
       isBase64Encoded: true,
     };
     
-    console.log(`Returning base64 encoded image for ${id} (${image.Body.length} bytes)`);
+    logger.info('Returning base64 encoded image', { recipeId: id, sizeBytes: image.Body.length, contentType: contentType });
     return response;
   } catch (error) {
-    console.log(`Image not found for recipe ${id}, falling back to default image`);
+    logger.info('Image not found for recipe, falling back to default image', { recipeId: id });
 
     try {
       const defaultImage = await s3.getObject({
@@ -173,7 +176,7 @@ export async function handler(event) {
         isBase64Encoded: true,
       };
     } catch (defaultError) {
-      console.error(`Default image not found: ${defaultError.message}`);
+      logger.error('Default image not found', { recipeId: id, error: defaultError.message });
       return {
         statusCode: 404,
         body: JSON.stringify({ 

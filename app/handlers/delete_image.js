@@ -1,5 +1,8 @@
 import AWS from 'aws-sdk';
+import { createLogger } from '../utils/logger.js';
+
 const s3 = new AWS.S3();
+const logger = createLogger('delete_image');
 
 export async function handler(event) {
   const { id } = event.pathParameters;
@@ -55,7 +58,7 @@ export async function handler(event) {
       };
     }
   } catch (error) {
-    console.error(error);
+    logger.error('Error deleting image', { recipeId: id, error: error.message, stack: error.stack });
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Failed to delete image.', error: error.message }),

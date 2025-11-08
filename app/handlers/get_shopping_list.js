@@ -4,6 +4,9 @@
  */
 
 import { getCollection } from '../utils/db.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('get_shopping_list');
 
 async function handler(event, context) {
   try {
@@ -24,7 +27,7 @@ async function handler(event, context) {
     const shoppingList = await shoppingListsColl.findOne({ user_id });
 
     if (!shoppingList) {
-      console.log(`No shopping list found for user ${user_id}, returning empty list`);
+      logger.info('No shopping list found for user, returning empty list', { userId: user_id });
       return {
         statusCode: 200,
         body: JSON.stringify({ 
@@ -39,7 +42,7 @@ async function handler(event, context) {
 
     // Format items to ensure consistency
     if (shoppingList.items && Array.isArray(shoppingList.items)) {
-      console.log(`Found ${shoppingList.items.length} items in shopping list for user ${user_id}`);
+      logger.info('Found shopping list items', { userId: user_id, itemCount: shoppingList.items.length });
       
       // Make sure each item has both _id and item_id for frontend compatibility
       shoppingList.items = shoppingList.items.map((item, index) => {
@@ -51,12 +54,12 @@ async function handler(event, context) {
           name: item.name || item.ingredient
         };
         
-        console.log(`Shopping list item ${index}: ${JSON.stringify(mappedItem)}`);
+        logger.debug('Mapped shopping list item', { userId: user_id, index: index, itemId: mappedItem._id, name: mappedItem.name });
         return mappedItem;
       });
     }
     
-    console.log(`Found shopping list for user ${user_id}:`, JSON.stringify(shoppingList, null, 2));
+    logger.debug('Retrieved shopping list for user', { userId: user_id, itemCount: shoppingList.items?.length || 0 });
     
     return {
       statusCode: 200,
@@ -66,7 +69,7 @@ async function handler(event, context) {
       })
     };
   } catch (error) {
-    console.error('Error retrieving shopping list:', error);
+    logger.error('Error retrieving shopping list', { error: error.message, stack: error.stack });
     
     return {
       statusCode: 500,

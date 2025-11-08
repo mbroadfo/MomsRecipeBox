@@ -1,12 +1,15 @@
 // File: handlers/create_recipe.js
 import { ObjectId } from 'mongodb';
 import { getDb } from '../app.js';
+import { createLogger } from '../utils/logger.js';
 
-export default async function createRecipe(db, body) {
+const logger = createLogger('create_recipe');
+
+export default async function createRecipe(db, body, event) {
   // Generate a new ObjectId here to ensure we can work with it consistently
   const recipeId = new ObjectId();
   
-  console.log(`Creating new recipe with generated _id: ${recipeId}`);
+  logger.info('Creating new recipe', { recipeId: recipeId.toString(), title: body.title }, event);
   
   const recipe = {
     _id: recipeId, // Explicitly set the ID
@@ -33,13 +36,13 @@ export default async function createRecipe(db, body) {
 
   // Log the image URL if provided
   if (body.image_url) {
-    console.log(`Recipe created with image_url: ${body.image_url}`);
+    logger.info('Recipe created with image', { imageUrl: body.image_url }, event);
   } else {
-    console.log(`Recipe created without image_url`);
+    logger.debug('Recipe created without image', {}, event);
   }
 
   const result = await db.collection('recipes').insertOne(recipe);
-  console.log(`Recipe inserted with _id: ${result.insertedId}`);
+  logger.info('Recipe successfully inserted', { insertedId: result.insertedId.toString() }, event);
 
   // Return the ObjectId as a string for consistency
   return {

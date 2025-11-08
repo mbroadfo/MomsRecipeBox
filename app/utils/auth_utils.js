@@ -1,6 +1,9 @@
 /**
  * Authentication utilities for extracting user information from Lambda events
  */
+import { createLogger } from './logger.js';
+
+const logger = createLogger('auth_utils');
 
 /**
  * Extract user ID from Lambda event based on deployment mode
@@ -11,14 +14,14 @@ export function getUserId(event) {
   // Lambda mode with JWT authorizer - user ID is in principalId
   if (event.requestContext?.authorizer?.principalId) {
     const principalId = event.requestContext.authorizer.principalId;
-    console.log('📝 User ID from JWT authorizer:', principalId);
+    logger.debug('User ID from JWT authorizer', { principalId }, event);
     return principalId;
   }
   
   // Fallback for local/atlas modes - user ID in query parameters
   if (event.queryStringParameters?.user_id) {
     const userId = event.queryStringParameters.user_id;
-    console.log('📝 User ID from query parameters:', userId);
+    logger.debug('User ID from query parameters', { userId }, event);
     return userId;
   }
   
@@ -27,7 +30,7 @@ export function getUserId(event) {
     try {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
       if (body.user_id) {
-        console.log('📝 User ID from request body:', body.user_id);
+        logger.debug('User ID from request body', { userId: body.user_id }, event);
         return body.user_id;
       }
     } catch (e) {
@@ -35,7 +38,7 @@ export function getUserId(event) {
     }
   }
   
-  console.log('⚠️ No user ID found in event');
+  logger.debug('No user ID found in event', {}, event);
   return null;
 }
 

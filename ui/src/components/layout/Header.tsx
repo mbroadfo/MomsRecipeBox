@@ -89,7 +89,13 @@ export const Header: React.FC = () => {
                   </div>
                 </>
               )}
-              <button className="avatar-dropdown-item" onClick={() => {/* TODO: Edit profile logic */ setAvatarMenuOpen(false); }}>Edit Profile</button>
+              <Link 
+                to="/profile" 
+                className="avatar-dropdown-item"
+                onClick={() => setAvatarMenuOpen(false)}
+              >
+                Edit Profile
+              </Link>
               <div className="avatar-dropdown-divider"></div>
               {userIsAdmin && (
                 <>

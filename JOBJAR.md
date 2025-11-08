@@ -33,6 +33,50 @@ Future improvements, features, and tasks identified during development but not i
 - **Impact**: Better mobile user experience, increased mobile engagement
 - **Effort**: High - Complete UX redesign and mobile optimization
 
+### 32. User Profile S3 Image Upload Integration
+
+- Implement direct S3 upload for user profile images (using existing recipe images bucket)
+- Add image resizing/optimization pipeline for profile photos
+- Replace URL input field with drag-and-drop upload interface
+- Add image preview, crop, and delete functionality
+- Integrate with existing S3 infrastructure and permissions
+- **Impact**: Professional user experience, eliminate external image hosting dependency
+- **Effort**: Medium - Extend existing S3 image system to user profiles
+- **Priority**: High - User requested, improves UX significantly
+
+### 33. Family Relationship Management System
+
+- Design family membership architecture (self-service vs admin-assigned)
+- Implement multi-family membership (user can be in wife's family AND own family)
+- Create family invitation and approval workflow
+- Add family-level recipe sharing permissions and visibility controls
+- Determine if family sharing is valuable vs complexity (user feedback needed)
+- **Impact**: Core family sharing functionality or simplification decision
+- **Effort**: High - Complex user relationship system, needs design decisions
+- **Priority**: Medium - Requires product decision on family vs individual model
+
+### 34. Auth0 Email and Phone Verification Integration
+
+- Add email verification status display and "Verify Email" CTA button
+- Implement phone verification flow using Auth0's phone verification
+- Show verification checkmarks/badges in user profile
+- Integrate with Auth0 email/phone verification APIs
+- Add verification reminders and benefits explanation
+- **Impact**: Enhanced security and user trust
+- **Effort**: Medium - Auth0 integration and UI components
+- **Priority**: Medium - Security and user confidence improvement
+
+### 35. User Profile UI/UX Enhancement
+
+- Redesign profile page with better contrast and visual hierarchy
+- Fix save button visibility issues (light grey on white)
+- Add proper color scheme and branding consistency
+- Improve form layout and spacing
+- Add loading states and better feedback
+- **Impact**: Professional appearance and usability
+- **Effort**: Low - CSS and design improvements
+- **Priority**: High - User reported visibility issues
+
 ### 31. Git History Changelog Audit & Fix Process
 
 - **CRITICAL**: Review entire git commit history to find instances where AI overwrote perfectly good changelog entries

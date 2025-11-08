@@ -6,6 +6,7 @@ import { apiClient } from './lib/api-client';
 import { HomePage } from './pages/HomePage';
 import { RecipeDetail } from './components/RecipeDetail';
 import ShoppingListPage from './components/shoppingList/ShoppingListPage';
+import { UserProfileEditor } from './components/profile/UserProfile';
 import { Layout } from './components/layout';
 import CallbackPage from './pages/CallbackPage';
 
@@ -132,6 +133,7 @@ const AppRoutes = () => {
         <Route path="/recipe/new" element={<NewRecipeWrapper />} />
         <Route path="/recipe/:id" element={<RecipeDetailRouteWrapper />} />
         <Route path="/shopping-list" element={<ShoppingListPage />} />
+        <Route path="/profile" element={<UserProfileEditor />} />
       </Routes>
     </Layout>
   );

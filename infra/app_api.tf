@@ -102,6 +102,7 @@ resource "aws_lambda_function" "app_lambda" {
       # ==============================================
       NODE_ENV = "production"
       APP_MODE = "lambda"
+      LOG_LEVEL = "INFO"
 
       # ==============================================
       # MongoDB Atlas Configuration

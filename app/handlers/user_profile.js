@@ -12,6 +12,9 @@
 
 import { MongoClient, ObjectId } from 'mongodb';
 import { getSecret } from '../utils/secrets_manager.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('user_profile');
 
 /**
  * Connect to MongoDB Atlas
@@ -34,12 +37,16 @@ async function checkUserProfile(event) {
   let client;
   
   try {
+    logger.info('Checking user profile', {}, event);
     const { client: dbClient, db } = await connectToDatabase();
     client = dbClient;
     
     // Extract user ID from JWT token (passed by API Gateway)
-    const auth0UserId = event.requestContext?.authorizer?.claims?.sub;
+    const auth0UserId = event.requestContext?.authorizer?.principalId;
+    logger.info('Extracted user ID from JWT', { auth0UserId }, event);
+    
     if (!auth0UserId) {
+      logger.warn('No user ID found in JWT token', {}, event);
       return {
         statusCode: 401,
         headers: {
@@ -54,6 +61,10 @@ async function checkUserProfile(event) {
     
     // Check if user profile exists
     const userProfile = await db.collection('users').findOne({ auth0_id: auth0UserId });
+    logger.info('User profile lookup result', { 
+      exists: !!userProfile,
+      profile_complete: userProfile?.profile_complete 
+    }, event);
     
     const response = {
       exists: !!userProfile,
@@ -85,7 +96,7 @@ async function checkUserProfile(event) {
     };
     
   } catch (error) {
-    console.error('Error checking user profile:', error);
+    logger.error('Error checking user profile', error, event);
     return {
       statusCode: 500,
       headers: {
@@ -110,12 +121,17 @@ async function saveUserProfile(event) {
   let client;
   
   try {
+    logger.info('Saving user profile', {}, event);
     const { client: dbClient, db } = await connectToDatabase();
     client = dbClient;
     
     // Extract user ID from JWT token
-    const auth0UserId = event.requestContext?.authorizer?.claims?.sub;
+    const auth0UserId = event.requestContext?.authorizer?.principalId;
     const userEmail = event.requestContext?.authorizer?.claims?.email;
+    logger.info('Profile save request', { 
+      auth0UserId,
+      hasRequestBody: !!event.body 
+    }, event);
     
     if (!auth0UserId) {
       return {
@@ -132,6 +148,13 @@ async function saveUserProfile(event) {
     
     // Parse request body
     const profileData = JSON.parse(event.body || '{}');
+    logger.info('Parsed profile data', { 
+      email: profileData.email,
+      first_name: profileData.first_name,
+      last_name: profileData.last_name,
+      phone: profileData.phone,
+      hasPreferences: !!profileData.preferences
+    }, event);
     
     // Validate required fields (none are actually required, but validate format)
     const errors = [];
@@ -184,6 +207,12 @@ async function saveUserProfile(event) {
       { upsert: true }
     );
     
+    logger.info('Profile save result', {
+      upsertedCount: result.upsertedCount,
+      modifiedCount: result.modifiedCount,
+      matchedCount: result.matchedCount
+    }, event);
+    
     // Get the updated/created user profile
     const savedProfile = await db.collection('users').findOne({ auth0_id: auth0UserId });
     
@@ -216,7 +245,7 @@ async function saveUserProfile(event) {
     };
     
   } catch (error) {
-    console.error('Error saving user profile:', error);
+    logger.error('Error saving user profile', error, event);
     return {
       statusCode: 500,
       headers: {
@@ -276,7 +305,7 @@ export async function handler(event) {
     }
     
   } catch (error) {
-    console.error('Unhandled error in user profile handler:', error);
+    logger.error('Unhandled error in user profile handler', error, event);
     return {
       statusCode: 500,
       headers: {

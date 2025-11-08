@@ -39,7 +39,7 @@ const handler = async (event) => {
     }
 
     // Use existing embedded comments if they exist, otherwise initialize empty array
-    if (!recipe.comments) {
+    if (!recipe.comments || !Array.isArray(recipe.comments)) {
       recipe.comments = [];
     }
     

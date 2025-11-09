@@ -43,9 +43,58 @@
   }
 }
 
+/* Mobile Optimization - Compressed Header */
+@media (max-width: 768px) {
+  .app-header {
+    height: 3.5rem; /* Down from 4.5rem = 56px instead of 72px */
+    padding: 0.5rem 1rem; /* Tighter padding */
+  }
+
+  .app-logo {
+    height: 2.5rem; /* 40px - more reasonable for mobile */
+    width: 2.5rem;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+
+  .app-title {
+    font-size: 1.1rem; /* 17.6px - smaller but readable */
+  }
+
+  /* Make tagline smaller but keep it visible */
+  .app-title + span {
+    font-size: 0.75rem; /* Smaller tagline */
+    line-height: 1.2;
+  }
+}
+
 @media (max-width: 640px) {
   .app-title {
     font-size: 1.25rem;
+  }
+}
+
+/* Ultra-small screens optimization */
+@media (max-width: 374px) {
+  .app-header {
+    height: 3rem; /* 48px */
+    padding: 0.375rem 0.75rem; /* Even tighter */
+  }
+
+  .app-logo {
+    height: 2rem; /* 32px */
+    width: 2rem;
+    min-height: 2rem;
+    min-width: 2rem;
+  }
+
+  .app-title {
+    font-size: 0.95rem; /* 15.2px */
+  }
+
+  /* Hide tagline on ultra-small screens */
+  .app-title + span {
+    display: none;
   }
 }
 

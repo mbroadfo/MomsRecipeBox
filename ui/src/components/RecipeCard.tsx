@@ -1,6 +1,7 @@
 import React from 'react';
 import fallbackImage from '../assets/default.png';
 import { config } from '../config/environment';
+import './RecipeCard.css';
 
 interface Recipe {
   _id?: string;
@@ -45,7 +46,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
         const recipeId = recipe._id || recipe.id;
         if (recipeId) onClick(recipeId);
       }}
-      className="bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"
+      className="recipe-card bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer overflow-hidden flex flex-col"
       style={{
         height: '400px',
         margin: '16px',
@@ -57,10 +58,11 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
       }}
     >
       {/* Image section */}
-      <div className="flex justify-center items-center" style={{ width: '100%', height: '275px', overflow: 'hidden', padding: 0 }}>
+      <div className="recipe-card-image-container flex justify-center items-center" style={{ width: '100%', height: '275px', overflow: 'hidden', padding: 0 }}>
         <img
           src={imageUrl}
           alt={recipe.title}
+          className="recipe-card-image"
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', maxWidth: '275px', maxHeight: '275px', padding: 0 }}
           onError={(e) => {
             const currentSrc = e.currentTarget.src;
@@ -108,7 +110,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
           <svg width="20" height="20" fill={liked ? '#e53e3e' : 'none'} stroke="#e53e3e" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 1.01 4.5 2.09C13.09 4.01 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
           </svg>
-          <span style={{ fontWeight: 700, fontSize: '1rem' }}>{favorites}</span>
+          <span className="likes-count" style={{ fontWeight: 700, fontSize: '1rem' }}>{favorites}</span>
         </span>
         <span className="flex items-center gap-2">
           <svg width="20" height="20" fill="#3182ce" stroke="#3182ce" strokeWidth="2" viewBox="0 0 24 24">
@@ -117,7 +119,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             <rect x="11" y="11" width="2" height="2" rx="1" fill="#fff" />
             <rect x="15" y="11" width="2" height="2" rx="1" fill="#fff" />
           </svg>
-          <span style={{ fontWeight: 700, fontSize: '1rem' }}>{comments}</span>
+          <span className="comments-count" style={{ fontWeight: 700, fontSize: '1rem' }}>{comments}</span>
         </span>
       </div>
     </div>

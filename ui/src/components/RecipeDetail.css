@@ -666,3 +666,114 @@
   .recipe-image-wrapper img { aspect-ratio: 16/9; }
   .recipe-ai-container { height: 500px; margin-bottom: 2rem; }
 }
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .recipe-left {
+    padding: 0 1rem 2rem 1rem; /* Reduce from 3rem to 1rem sides for +60% content width */
+  }
+  
+  .recipe-right {
+    padding: 1rem; /* Reduce from 1.25rem */
+  }
+  
+  .recipe-title {
+    font-size: clamp(1.5rem, 4vw + 0.5rem, 2rem); /* Smaller on mobile */
+  }
+  
+  .subtitle {
+    font-size: 1.15rem; /* Down from 1.35rem */
+    margin: 0.75rem 0 1.25rem 0; /* Tighter margins */
+  }
+  
+  .meta-row {
+    gap: 1.5rem; /* Down from 2.25rem */
+    margin-bottom: 1rem; /* Down from 1.25rem */
+  }
+  
+  .section-block {
+    margin-bottom: 2rem; /* Down from 2.75rem */
+  }
+  
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Smaller min width */
+    gap: 0.75rem; /* Down from 1.25rem */
+    margin: 0 0 1.5rem 0; /* Reduce bottom margin */
+  }
+  
+  .stat-card {
+    padding: 0.65rem 0.85rem; /* Smaller padding */
+  }
+}
+
+@media (max-width: 480px) {
+  .recipe-left {
+    padding: 0 0.75rem 1.5rem 0.75rem; /* Even more aggressive reduction */
+  }
+  
+  .recipe-right {
+    padding: 0.75rem;
+  }
+  
+  .recipe-title {
+    font-size: clamp(1.25rem, 5vw + 0.25rem, 1.75rem); /* Much smaller for small screens */
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+    margin: 0.5rem 0 1rem 0;
+  }
+  
+  .meta-row {
+    gap: 1rem;
+    font-size: 0.85rem; /* Smaller text */
+  }
+  
+  .section-block h2 {
+    font-size: 1rem; /* Down from 1.15rem */
+  }
+  
+  .stat-grid {
+    grid-template-columns: 1fr 1fr; /* Force 2-column layout */
+    gap: 0.5rem;
+  }
+  
+  .stat-card {
+    padding: 0.5rem 0.65rem;
+  }
+  
+  .stat-card h4 {
+    font-size: 0.6rem; /* Smaller labels */
+  }
+  
+  .stat-card p {
+    font-size: 0.85rem; /* Smaller values */
+  }
+}
+
+@media (max-width: 374px) {
+  .recipe-left {
+    padding: 0 0.5rem 1rem 0.5rem; /* Minimal padding for ultra-small screens */
+  }
+  
+  .recipe-right {
+    padding: 0.5rem;
+  }
+  
+  .recipe-title {
+    font-size: clamp(1.125rem, 6vw, 1.5rem);
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+    margin: 0.25rem 0 0.75rem 0;
+  }
+  
+  .section-block {
+    margin-bottom: 1.5rem;
+  }
+  
+  .section-block h2 {
+    font-size: 0.9rem;
+  }
+}

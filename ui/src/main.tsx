@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
 import './index.css'
+import './styles/TouchTargets.css'
+import './styles/MobileTypography.css'
 import App from './App.tsx'
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN;

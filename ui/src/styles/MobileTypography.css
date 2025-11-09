@@ -1,0 +1,313 @@
+/* Mobile Typography Scaling System */
+
+/* 
+ * Consistent mobile typography that maintains readability while optimizing space usage.
+ * Uses a fluid scale that adapts smoothly across different screen sizes.
+ */
+
+/* Base typography improvements for mobile */
+@media (max-width: 768px) {
+  
+  /* Primary headings - recipe titles, page headers */
+  h1, 
+  .text-h1,
+  .recipe-title {
+    font-size: clamp(1.5rem, 4vw + 0.5rem, 2.25rem) !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.025em !important;
+  }
+  
+  /* Secondary headings - section titles */
+  h2,
+  .text-h2,
+  .section-title {
+    font-size: clamp(1.25rem, 3vw + 0.25rem, 1.75rem) !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Tertiary headings - subsection titles */
+  h3,
+  .text-h3 {
+    font-size: clamp(1.125rem, 2.5vw + 0.125rem, 1.5rem) !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Body text - main content */
+  p,
+  .text-body,
+  .recipe-description,
+  .instruction-text {
+    font-size: clamp(0.9375rem, 2vw + 0.125rem, 1.125rem) !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Small text - metadata, captions */
+  .text-small,
+  .meta-text,
+  .caption {
+    font-size: clamp(0.8125rem, 1.5vw + 0.0625rem, 0.9375rem) !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Button text */
+  button,
+  .button,
+  .btn {
+    font-size: clamp(0.875rem, 2vw + 0.0625rem, 1rem) !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Label text - form labels, section headers */
+  label,
+  .label,
+  .filter-label,
+  .sort-label {
+    font-size: clamp(0.75rem, 1.5vw + 0.0625rem, 0.875rem) !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Recipe-specific typography */
+  .recipe-subtitle {
+    font-size: clamp(1rem, 2.5vw + 0.125rem, 1.25rem) !important;
+    line-height: 1.4 !important;
+  }
+  
+  .ingredient-item {
+    font-size: clamp(0.875rem, 2vw + 0.0625rem, 1rem) !important;
+    line-height: 1.4 !important;
+  }
+  
+  .instruction-step {
+    font-size: clamp(0.9375rem, 2vw + 0.125rem, 1.0625rem) !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Stats and counters */
+  .stat-card h4 {
+    font-size: clamp(0.625rem, 1vw + 0.0625rem, 0.75rem) !important;
+  }
+  
+  .stat-card p {
+    font-size: clamp(0.875rem, 1.5vw + 0.0625rem, 1rem) !important;
+  }
+  
+  /* Recipe card typography */
+  .recipe-card h2 {
+    font-size: clamp(0.9375rem, 2vw + 0.0625rem, 1.125rem) !important;
+    line-height: 1.3 !important;
+  }
+  
+  .recipe-card .meta-text {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem) !important;
+  }
+}
+
+/* Smaller mobile screens - more aggressive scaling */
+@media (max-width: 480px) {
+  
+  /* Tighten up spacing for smaller screens */
+  h1, 
+  .text-h1,
+  .recipe-title {
+    font-size: clamp(1.375rem, 5vw + 0.25rem, 2rem) !important;
+    line-height: 1.15 !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  h2,
+  .text-h2,
+  .section-title {
+    font-size: clamp(1.125rem, 4vw + 0.125rem, 1.5rem) !important;
+    line-height: 1.25 !important;
+    margin-bottom: 0.625rem !important;
+  }
+  
+  h3,
+  .text-h3 {
+    font-size: clamp(1rem, 3vw + 0.125rem, 1.25rem) !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Body text - maintain readability */
+  p,
+  .text-body {
+    font-size: clamp(0.875rem, 2.5vw + 0.0625rem, 1rem) !important;
+    line-height: 1.45 !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Buttons - ensure they remain readable */
+  button,
+  .button,
+  .btn {
+    font-size: clamp(0.8125rem, 2.5vw, 0.9375rem) !important;
+  }
+  
+  /* Recipe card adjustments */
+  .recipe-card h2 {
+    font-size: clamp(0.875rem, 2.5vw, 1rem) !important;
+    line-height: 1.25 !important;
+  }
+  
+  /* Filter and toolbar text */
+  .filter-segment-button {
+    font-size: clamp(0.75rem, 2vw, 0.8125rem) !important;
+  }
+  
+  .sort-dropdown-button {
+    font-size: clamp(0.8125rem, 2vw, 0.875rem) !important;
+  }
+  
+  /* Ingredient and instruction text */
+  .ingredient-item {
+    font-size: clamp(0.8125rem, 2vw, 0.9375rem) !important;
+  }
+  
+  .instruction-step {
+    font-size: clamp(0.875rem, 2vw, 1rem) !important;
+  }
+}
+
+/* Ultra-small screens - maximum optimization */
+@media (max-width: 374px) {
+  
+  /* Minimal but readable sizes */
+  h1, 
+  .text-h1,
+  .recipe-title {
+    font-size: clamp(1.25rem, 6vw, 1.75rem) !important;
+    line-height: 1.1 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  h2,
+  .text-h2,
+  .section-title {
+    font-size: clamp(1rem, 5vw, 1.25rem) !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  h3,
+  .text-h3 {
+    font-size: clamp(0.9375rem, 4vw, 1.125rem) !important;
+    margin-bottom: 0.375rem !important;
+  }
+  
+  /* Body text - absolute minimum for readability */
+  p,
+  .text-body {
+    font-size: clamp(0.8125rem, 3vw, 0.9375rem) !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0.625rem !important;
+  }
+  
+  /* Buttons - as small as safely possible */
+  button,
+  .button,
+  .btn {
+    font-size: clamp(0.75rem, 3vw, 0.8125rem) !important;
+  }
+  
+  /* Recipe cards - ultra-compact */
+  .recipe-card h2 {
+    font-size: clamp(0.8125rem, 3vw, 0.9375rem) !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Filter controls */
+  .filter-segment-button {
+    font-size: clamp(0.6875rem, 2.5vw, 0.75rem) !important;
+  }
+  
+  /* Meta information */
+  .text-small,
+  .meta-text,
+  .caption {
+    font-size: clamp(0.6875rem, 2vw, 0.75rem) !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Stats */
+  .stat-card p {
+    font-size: clamp(0.75rem, 2.5vw, 0.8125rem) !important;
+  }
+  
+  .stat-card h4 {
+    font-size: clamp(0.5625rem, 2vw, 0.625rem) !important;
+  }
+}
+
+/* Typography utilities for consistent spacing */
+@media (max-width: 768px) {
+  
+  /* Reduce margins and padding for better space utilization */
+  .section-block {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .separator {
+    margin: 1.5rem 0 1.25rem 0 !important;
+  }
+  
+  .badge-row {
+    margin-bottom: 1rem !important;
+  }
+  
+  .meta-row {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Tighter line spacing for lists */
+  .ingredients-list .ingredient-item {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .ol-steps li {
+    margin-bottom: 0.75rem !important;
+  }
+}
+
+/* Font weight optimizations for mobile screens */
+@media (max-width: 480px) {
+  
+  /* Slightly reduce font weights to improve readability on smaller screens */
+  h1, h2, h3 {
+    font-weight: 700 !important; /* Down from 800 */
+  }
+  
+  .recipe-title {
+    font-weight: 750 !important; /* Compromise between bold and readable */
+  }
+  
+  button,
+  .button {
+    font-weight: 500 !important; /* Down from 600 to prevent cramped appearance */
+  }
+  
+  .filter-segment-button {
+    font-weight: 500 !important;
+  }
+}
+
+/* Accessibility: Ensure contrast is maintained with smaller text */
+@media (max-width: 768px) {
+  
+  /* Slightly darken text colors for better readability at smaller sizes */
+  .text-small,
+  .meta-text,
+  .caption {
+    color: #374151 !important; /* Darker gray for better contrast */
+  }
+  
+  /* Ensure button text remains highly visible */
+  button,
+  .button {
+    font-weight: 500 !important;
+  }
+  
+  /* Recipe card text contrast */
+  .recipe-card .meta-text {
+    color: #1f2937 !important; /* Very dark for small text */
+  }
+}

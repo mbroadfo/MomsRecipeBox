@@ -1,0 +1,90 @@
+/* RecipeCard Mobile Optimization */
+
+/* Apply mobile optimizations to recipe cards */
+@media (max-width: 768px) {
+  .recipe-card {
+    height: 320px !important; /* Down from 400px */
+    margin: 12px 8px !important; /* Tighter margins */
+  }
+
+  .recipe-card-image-container {
+    height: 200px !important; /* Down from 275px */
+  }
+
+  .recipe-card-image {
+    max-width: 200px !important;
+    max-height: 200px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .recipe-card {
+    height: 280px !important;
+    margin: 8px 4px !important;
+    padding: 14px !important; /* Down from 18px */
+    border-radius: 12px !important; /* Slightly smaller radius */
+  }
+
+  .recipe-card-image-container {
+    height: 160px !important; /* Much smaller for mobile */
+  }
+
+  .recipe-card-image {
+    max-width: 160px !important;
+    max-height: 160px !important;
+  }
+
+  /* Smaller title typography */
+  .recipe-card h2 {
+    font-size: 1rem !important; /* Down from 1.125rem */
+    line-height: 1.4rem !important;
+    min-height: 2.8rem !important; /* Adjust for smaller text */
+    max-height: 2.8rem !important;
+  }
+
+  /* Smaller icons and counts */
+  .recipe-card svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .recipe-card .likes-count,
+  .recipe-card .comments-count {
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Ultra-small screens */
+@media (max-width: 374px) {
+  .recipe-card {
+    height: 260px !important;
+    margin: 6px 2px !important;
+    padding: 12px !important;
+  }
+
+  .recipe-card-image-container {
+    height: 140px !important;
+  }
+
+  .recipe-card-image {
+    max-width: 140px !important;
+    max-height: 140px !important;
+  }
+
+  .recipe-card h2 {
+    font-size: 0.9rem !important;
+    line-height: 1.3rem !important;
+    min-height: 2.6rem !important;
+    max-height: 2.6rem !important;
+  }
+
+  .recipe-card svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .recipe-card .likes-count,
+  .recipe-card .comments-count {
+    font-size: 0.8125rem !important;
+  }
+}

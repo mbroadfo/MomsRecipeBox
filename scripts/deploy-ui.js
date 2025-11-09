@@ -40,6 +40,10 @@ class UIDeployer {
       throw new Error(`Unknown environment: ${environment}. Use 'dev' or 'prod'`);
     }
     
+    // Automatically set AWS profile to mrb-api for deployments
+    process.env.AWS_PROFILE = 'mrb-api';
+    console.log(`🔧 AWS Profile automatically set to: mrb-api`);
+    
     this.s3Client = new S3Client({ region: CONFIG.region });
     this.cloudFrontClient = new CloudFrontClient({ region: CONFIG.region });
     

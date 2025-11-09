@@ -536,6 +536,10 @@ function showHelp() {
  * CLI setup and main execution
  */
 async function main() {
+  // Automatically set AWS profile to mrb-api for backup operations
+  process.env.AWS_PROFILE = 'mrb-api';
+  console.log('🔧 AWS Profile automatically set to: mrb-api');
+  
   const program = new Command();
   
   program

@@ -221,6 +221,10 @@ async function setupIAMPolicy() {
  * Main execution
  */
 async function main() {
+  // Automatically set AWS profile to terraform-mrb for IAM operations
+  process.env.AWS_PROFILE = 'terraform-mrb';
+  log('🔧 AWS Profile automatically set to: terraform-mrb', 'blue');
+  
   const command = process.argv[2] || 'setup';
 
   try {

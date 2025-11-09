@@ -119,6 +119,10 @@ async function testLambda(functionName = 'mrb-app-api') {
  * Main execution
  */
 async function main() {
+  // Automatically set AWS profile to mrb-api for Lambda testing
+  process.env.AWS_PROFILE = 'mrb-api';
+  log(`🔧 AWS Profile automatically set to: mrb-api`, 'blue');
+  
   try {
     // Parse arguments, filtering out flags
     const args = process.argv.slice(2).filter(arg => !arg.startsWith('--'));

@@ -121,6 +121,10 @@ async function listAllImages() {
 }
 
 async function main() {
+  // Automatically set AWS profile to mrb-api for S3 operations
+  process.env.AWS_PROFILE = 'mrb-api';
+  logger.info('🔧 AWS Profile automatically set to: mrb-api');
+  
   try {
     logger.info(`Starting image conversion for bucket: ${bucketName}`);
     

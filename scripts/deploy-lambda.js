@@ -256,6 +256,10 @@ async function deployLambda(options) {
  * CLI setup and main execution
  */
 async function main() {
+  // Automatically set AWS profile to mrb-api for deployments
+  process.env.AWS_PROFILE = 'mrb-api';
+  log(`🔧 AWS Profile automatically set to: mrb-api`, 'blue');
+  
   const program = new Command();
   
   program

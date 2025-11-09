@@ -6,6 +6,10 @@
 
 import { getBearerToken } from '../app/tests/utils/auth0-token-generator.js';
 
+// Automatically set AWS profile to mrb-api for AI Lambda testing
+process.env.AWS_PROFILE = 'mrb-api';
+console.log('🔧 AWS Profile automatically set to: mrb-api');
+
 const LAMBDA_API_URL = 'https://b31emm78z4.execute-api.us-west-2.amazonaws.com/dev';
 
 async function testAIEndpoint() {

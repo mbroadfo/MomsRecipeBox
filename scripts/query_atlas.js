@@ -1,6 +1,10 @@
 import { MongoClient } from 'mongodb';
 import { getSecret } from '../app/utils/secrets_manager.js';
 
+// Automatically set AWS profile to mrb-api for Secrets Manager access
+process.env.AWS_PROFILE = 'mrb-api';
+console.log('🔧 AWS Profile automatically set to: mrb-api');
+
 async function queryAtlas() {
   try {
     // Get MongoDB connection string from AWS Secrets Manager

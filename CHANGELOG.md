@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-09
 
+### Enhancement - AWS Profile Automation Across All Scripts
+
+#### 🔧 Automated AWS Profile Management System
+
+This release eliminates manual AWS profile switching by implementing automatic profile setting within Node.js scripts, resolving PowerShell parent process limitations that prevented profile persistence across script executions.
+
+#### **Problem Identified**
+
+- **Manual Profile Switching**: Users had to manually set `$env:AWS_PROFILE` before each deployment/maintenance script
+- **PowerShell Limitations**: Node.js scripts couldn't set PowerShell parent process environment variables
+- **Profile Inconsistencies**: Wrong profiles used for different operation types causing AWS authentication failures
+- **Developer Friction**: Required remembering which profile to use for each script type
+
+#### **Solution: Internal Profile Automation**
+
+**✅ Automatic AWS Profile Setting:**
+
+- Added automatic `process.env.AWS_PROFILE` setting at script startup
+- **Application Operations**: Auto-set to `mrb-api` profile (backup, deploy, test, find-orphan-images, etc.)
+- **Infrastructure Operations**: Auto-set to `terraform-mrb` profile (setup-iam-policy)
+- **Consistent Visual Feedback**: All scripts show "🔧 AWS Profile automatically set to: {profile-name}"
+
+**✅ Scripts Updated with Profile Automation:**
+
+- `scripts/backup-mongodb.js` → `mrb-api`
+- `scripts/restore-mongodb.js` → `mrb-api`
+- `scripts/deploy-lambda.js` → `mrb-api`
+- `scripts/deploy-ui.js` → `mrb-api`
+- `scripts/find-orphan-images.js` → `mrb-api`
+- `scripts/test-lambda.js` → `mrb-api`
+- `scripts/test-ai-lambda.js` → `mrb-api`
+- `scripts/test-ai-providers-status.js` → `mrb-api`
+- `scripts/query_atlas.js` → `mrb-api`
+- `scripts/setup-iam-policy.js` → `terraform-mrb`
+- `app/convert-images-to-jpeg.js` → `mrb-api`
+
+#### **Technical Implementation**
+
+**Profile Auto-Setting Pattern:**
+
+```javascript
+// Automatically set AWS profile to mrb-api for application operations
+process.env.AWS_PROFILE = 'mrb-api';
+console.log('🔧 AWS Profile automatically set to: mrb-api');
+```
+
+**Developer Experience Improvements:**
+
+- **Zero Manual Setup**: Scripts work immediately without profile switching
+- **Clear Feedback**: Visual confirmation of which profile is being used
+- **Operation-Appropriate**: Infrastructure vs application operations use correct profiles automatically
+- **PowerShell Compatibility**: Works within PowerShell limitations by setting internal process environment
+
+#### **Testing & Verification**
+
+Successfully tested with `npm run db:query` showing automatic profile setting and proper MongoDB Atlas connection with 37 recipes retrieved.
+
 ### Major - Image Format Standardization & Display Consistency (Data Fix Over Code Complexity)
 
 #### 🎯 Complete Image System Cleanup & Standardization

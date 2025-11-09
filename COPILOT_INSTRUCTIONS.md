@@ -141,6 +141,33 @@ if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
 - **Configuration validation**: Always validate settings and fail safely on invalid values
 - **Error logging**: Log configuration issues without exposing sensitive values
 
+### 1b. PowerShell AWS Profile Limitations (RESOLVED)
+
+**❌ MISTAKE**: Expecting Node.js scripts to set PowerShell parent process environment variables
+**✅ CORRECT**: Set AWS profiles internally within Node.js script processes
+
+**Breaking PowerShell Environment Pattern**:
+
+```javascript
+// ❌ This doesn't work - can't modify parent PowerShell process
+process.env.AWS_PROFILE = 'mrb-api';
+// User runs: aws sts get-caller-identity
+// Still uses old profile from PowerShell environment!
+```
+
+**Working Internal Process Pattern**:
+
+```javascript
+// ✅ Set profile for current Node.js process only
+process.env.AWS_PROFILE = 'mrb-api';
+console.log('🔧 AWS Profile automatically set to: mrb-api');
+// All AWS SDK calls within this script use mrb-api
+```
+
+**Root Cause**: Node.js child processes cannot modify their parent PowerShell session's environment variables. PowerShell environment persists independently.
+
+**Solution Implemented**: All deployment and maintenance scripts now automatically set their required AWS profile at startup, eliminating need for manual profile switching.
+
 ### 2. Production Authentication Patterns (CLOUD-ONLY)
 
 **❌ MISTAKE**: Using demo query parameters in production authentication
@@ -713,31 +740,46 @@ const client = new MongoClient(uri, connectionOptions);
 - Lambda timeout should be 30+ seconds for cold starts
 - Warm starts connect much faster (cached connection)
 
-### 7. AWS Profile Management (Simplified)
+### 7. AWS Profile Management (Fully Automated)
 
-**❌ MISTAKE**: Using wrong AWS profiles for different operations
-**✅ CORRECT**: Our simplified architecture uses consistent AWS profile management:
+**❌ MISTAKE**: Manual AWS profile switching before running scripts
+**✅ CORRECT**: All Node.js scripts now automatically set their required AWS profile internally
 
-- **Application operations**: Always use `mrb-api` profile
-- **Terraform operations**: Use `terraform-mrb` profile (infrastructure only)
-- **Automated profile switching**: Test commands handle AWS setup automatically
+**✅ AUTOMATED PROFILE SYSTEM**: Scripts automatically set correct AWS profiles at startup:
 
-**✅ SIMPLIFIED**: Our cloud-only architecture includes automatic AWS profile management:
+- **Application Scripts**: Automatically use `mrb-api` profile (backup, deploy, test, data scripts)
+- **Infrastructure Scripts**: Automatically use `terraform-mrb` profile (IAM setup, Terraform operations)
+- **Visual Feedback**: All scripts show "🔧 AWS Profile automatically set to: {profile-name}"
+- **PowerShell Compatible**: Works within PowerShell environment limitations by setting internal process.env
 
-- **All test commands**: Automatically use `mrb-api` profile via `scripts/test-with-aws-profile.js`
-- **No manual switching needed**: `npm run test` handles AWS setup automatically
-- **PowerShell environment**: Sets `$env:AWS_PROFILE="mrb-api"` automatically for tests
-- **Verification built-in**: Verifies correct AWS identity before running tests
+**✅ SCRIPTS WITH AUTOMATIC PROFILE SETTING**:
 
-**Critical Commands for Cloud-Only Architecture**:
+```javascript
+// Pattern used in all deployment/maintenance scripts
+process.env.AWS_PROFILE = 'mrb-api';
+console.log('🔧 AWS Profile automatically set to: mrb-api');
+```
+
+**Scripts Updated:**
+
+- `scripts/backup-mongodb.js`, `scripts/restore-mongodb.js` → `mrb-api`
+- `scripts/deploy-lambda.js`, `scripts/deploy-ui.js` → `mrb-api`
+- `scripts/test-lambda.js`, `scripts/test-ai-lambda.js` → `mrb-api`
+- `scripts/find-orphan-images.js`, `scripts/query_atlas.js` → `mrb-api`
+- `scripts/setup-iam-policy.js` → `terraform-mrb`
+- `app/convert-images-to-jpeg.js` → `mrb-api`
+
+**Critical Commands (No Manual Profile Setup Needed)**:
 
 ```bash
-# ✅ CORRECT - simplified commands
-npm run aws:mrb-api      # Set profile for all development/testing
-npm run aws:status       # Check current AWS profile  
-npm run test             # Automatically handles AWS profile
-npm run deploy           # Uses correct profile automatically
+# ✅ CORRECT - scripts handle profiles automatically
+npm run deploy           # Auto-sets mrb-api profile
+npm run backup           # Auto-sets mrb-api profile
+npm run restore:latest   # Auto-sets mrb-api profile
+npm run test:lambda      # Auto-sets mrb-api profile
 ```
+
+**PowerShell Limitation Resolved**: Previous PowerShell parent process limitation prevented Node.js scripts from setting `$env:AWS_PROFILE` for the shell. New approach sets `process.env.AWS_PROFILE` within each script's execution context, eliminating need for manual profile switching.
 
 ### 8. PowerShell vs Cross-Platform Compatibility
 

@@ -256,43 +256,148 @@
   }
 }
 
-/* Ultra-small screens - abbreviated button text */
-@media (max-width: 480px) {
-  .filter-toolbar {
-    padding: 0.5rem;
+/* Mobile-First Design: ATK-Inspired Layout */
+@media (max-width: 768px) {
+  
+  /* Hide desktop toolbar on mobile */
+  .desktop-toolbar {
+    display: none;
+  }
+  
+  /* Show mobile filter tabs */
+  .mobile-filter-tabs {
+    display: flex;
+    overflow-x: auto;
     gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
   }
+  
+  .mobile-filter-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+  
+  .mobile-filter-tab {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 20px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: fit-content;
+  }
+  
+  .mobile-filter-tab.active {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  .filter-toolbar {
+    display: none; /* Hide completely on mobile - filters now in hamburger menu */
+  }
+  
+  /* Mobile Bottom Action Bar (ATK-inspired) */
+  .mobile-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    z-index: 50;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-action-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.5rem 0.5rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 36px;
+  }
+  
+  .mobile-action-btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  .mobile-action-btn-primary:hover {
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+  }
+  
+  .mobile-action-btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  
+  .mobile-action-btn-secondary:hover {
+    background: #e5e7eb;
+    color: #374151;
+    text-decoration: none;
+  }
+  
+  /* Recipe grid container - ATK 2x2 style */
+  .recipe-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Always 2 columns on mobile */
+    gap: 0.75rem;
+    padding: 1rem;
+    padding-bottom: 6rem; /* Space for bottom bar */
+  }
+  
+  /* Mobile status messages */
+  .mobile-status-message {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+}
 
-  .btn-add-recipe,
-  .btn-shopping-list {
-    padding: 0.5rem; /* Even tighter */
-    font-size: 0.8125rem; /* 13px */
+/* Desktop: Show desktop toolbar, hide mobile elements */
+@media (min-width: 769px) {
+  .mobile-filter-tabs {
+    display: none;
   }
-
-  /* Abbreviate button text on very small screens */
-  .btn-add-recipe span::after {
-    content: 'Recipe';
+  
+  .mobile-bottom-bar {
+    display: none;
   }
-  .btn-add-recipe span {
-    font-size: 0;
+  
+  .desktop-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
   }
-  /* Result: "Add Recipe" → "Recipe" */
-
-  .btn-shopping-list span::after {
-    content: 'List';
-  }
-  .btn-shopping-list span {
-    font-size: 0;
-  }
-  /* Result: "Shopping List" → "List" */
-
-  .filter-segment-button {
-    padding: 0.25rem 0.5rem; /* Very tight on small screens */
-    font-size: 0.75rem; /* 12px */
-  }
-
-  .sort-dropdown-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
+  
+  /* Desktop recipe grid */
+  .recipe-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
   }
 }

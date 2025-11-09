@@ -86,7 +86,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
       {/* Title section */}
       <div className="mt-3 flex-1 flex flex-col justify-start">
         <h2
-          className="font-bold text-gray-900 text-left text-lg leading-tight"
+          className="font-bold text-gray-900 text-left leading-tight"
           style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -97,8 +97,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             minHeight: '3em',
             maxHeight: '3em',
             fontWeight: 700, /* Explicitly set font-weight to bold */
-            fontSize: '1.125rem', /* Explicitly set font size to match text-lg */
-            lineHeight: '1.75rem',
+            /* fontSize and lineHeight removed - let CSS control everything */
           }}
         >
           {recipe.title}

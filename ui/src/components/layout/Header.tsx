@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { isUserAdmin } from '../../auth/types';
+import { useFilter } from '../../contexts/FilterContext';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
 export const Header: React.FC = () => {
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  
+  // Get filter context (always available now since FilterProvider wraps everything)
+  const { filter, setFilter, sort, setSort } = useFilter();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth0();
 
   // Check if current user has admin privileges
@@ -38,9 +44,9 @@ export const Header: React.FC = () => {
         
         <Link to="/" className="flex items-center gap-4 flex-shrink-0">
           <img src={defaultLogo} alt="MRB Logo" className="app-logo" />
-          <div className="flex flex-col">
+          <div className="flex flex-col mobile-header-text">
             <span className="app-title block">Mom's Recipe Box</span>
-            <span className="font-semibold italic text-blue-500 drop-shadow-sm text-sm md:text-lg">
+            <span className="app-tagline font-semibold italic text-blue-500 drop-shadow-sm text-sm md:text-lg">
               Family favorites, all in one place
             </span>
           </div>
@@ -48,6 +54,21 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-end gap-3 md:gap-4 flex-shrink-0 ml-auto">
+        {/* Mobile: Hamburger menu (only show on HomePage) */}
+        {location.pathname === '/' && (
+          <button
+            className="mobile-hamburger-btn md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Filter and sort menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        )}
+        
         <nav className="hidden md:flex gap-8 mr-4">
           <Link 
             to="/" 
@@ -125,6 +146,106 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Filter/Sort Menu */}
+      {mobileMenuOpen && isHomePage && (
+        <div className="mobile-filter-menu">
+          {/* Filter Section */}
+          <div className="mobile-menu-section">
+            <h3 className="mobile-menu-title">Show:</h3>
+            <div className="mobile-menu-buttons">
+              <button 
+                className={`mobile-menu-btn ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => {
+                  setFilter?.('all');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                All
+              </button>
+              <button 
+                className={`mobile-menu-btn ${filter === 'mine' ? 'active' : ''}`}
+                onClick={() => {
+                  setFilter?.('mine');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Mine
+              </button>
+              <button 
+                className={`mobile-menu-btn ${filter === 'families' ? 'active' : ''}`}
+                onClick={() => {
+                  setFilter?.('families');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Family
+              </button>
+              <button 
+                className={`mobile-menu-btn ${filter === 'favorites' ? 'active' : ''}`}
+                onClick={() => {
+                  setFilter?.('favorites');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Favorites
+              </button>
+            </div>
+          </div>
+
+          {/* Sort Section */}
+          <div className="mobile-menu-section">
+            <h3 className="mobile-menu-title">Sort by:</h3>
+            <div className="mobile-menu-buttons">
+              <button 
+                className={`mobile-menu-btn ${sort === 'newest' ? 'active' : ''}`}
+                onClick={() => {
+                  setSort?.('newest');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Newest
+              </button>
+              <button 
+                className={`mobile-menu-btn ${sort === 'popular' ? 'active' : ''}`}
+                onClick={() => {
+                  setSort?.('popular');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Most Popular
+              </button>
+              <button 
+                className={`mobile-menu-btn ${sort === 'favorites' ? 'active' : ''}`}
+                onClick={() => {
+                  setSort?.('favorites');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Most Favorited
+              </button>
+              <button 
+                className={`mobile-menu-btn ${sort === 'az' ? 'active' : ''}`}
+                onClick={() => {
+                  setSort?.('az');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                A-Z
+              </button>
+              <button 
+                className={`mobile-menu-btn ${sort === 'updated' ? 'active' : ''}`}
+                onClick={() => {
+                  setSort?.('updated');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Recently Updated
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

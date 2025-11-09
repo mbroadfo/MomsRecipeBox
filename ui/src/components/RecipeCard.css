@@ -1,48 +1,50 @@
 /* RecipeCard Mobile Optimization */
 
-/* Apply mobile optimizations to recipe cards */
+/* Mobile Recipe Cards - ATK 2x2 Grid Optimized */
 @media (max-width: 768px) {
   .recipe-card {
-    height: 320px !important; /* Down from 400px */
-    margin: 12px 8px !important; /* Tighter margins */
+    /* ATK-style compact cards for 2x2 grid */
+    height: 240px !important; /* Much more compact */
+    margin: 0 !important; /* No margins - grid handles spacing */
+    padding: 0.75rem !important; /* 12px padding */
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid #f3f4f6 !important;
   }
 
   .recipe-card-image-container {
-    height: 200px !important; /* Down from 275px */
+    height: 140px !important; /* Compact square-ish image */
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin-bottom: 0.5rem !important;
   }
 
   .recipe-card-image {
-    max-width: 200px !important;
-    max-height: 200px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .recipe-card {
-    height: 280px !important;
-    margin: 8px 4px !important;
-    padding: 14px !important; /* Down from 18px */
-    border-radius: 12px !important; /* Slightly smaller radius */
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    max-width: none !important;
+    max-height: none !important;
   }
 
-  .recipe-card-image-container {
-    height: 160px !important; /* Much smaller for mobile */
+  /* Compact title for 2x2 grid - VERY aggressive selector */
+  .recipe-card h2,
+  .recipe-card h2.font-bold,
+  .recipe-card h2.text-lg,
+  div.recipe-card h2 {
+    font-size: 12px !important; /* Small but readable */
+    line-height: 14px !important;
+    min-height: 28px !important; /* 2 lines max */
+    max-height: 28px !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 600 !important;
   }
 
-  .recipe-card-image {
-    max-width: 160px !important;
-    max-height: 160px !important;
+  /* Compact stats for mobile */
+  .recipe-card .flex.items-center {
+    gap: 1rem !important; /* Tighter gap between stats */
   }
 
-  /* Smaller title typography */
-  .recipe-card h2 {
-    font-size: 1rem !important; /* Down from 1.125rem */
-    line-height: 1.4rem !important;
-    min-height: 2.8rem !important; /* Adjust for smaller text */
-    max-height: 2.8rem !important;
-  }
-
-  /* Smaller icons and counts */
   .recipe-card svg {
     width: 16px !important;
     height: 16px !important;
@@ -50,32 +52,33 @@
 
   .recipe-card .likes-count,
   .recipe-card .comments-count {
-    font-size: 0.875rem !important;
+    font-size: 0.75rem !important; /* 12px */
+    font-weight: 500 !important;
   }
 }
 
-/* Ultra-small screens */
-@media (max-width: 374px) {
+/* Smaller mobile screens - even more compact */
+@media (max-width: 480px) {
   .recipe-card {
-    height: 260px !important;
-    margin: 6px 2px !important;
-    padding: 12px !important;
+    height: 220px !important; /* Very compact for small screens */
+    padding: 0.625rem !important; /* 10px padding */
   }
 
   .recipe-card-image-container {
-    height: 140px !important;
-  }
-
-  .recipe-card-image {
-    max-width: 140px !important;
-    max-height: 140px !important;
+    height: 120px !important; /* Smaller image */
+    margin-bottom: 0.375rem !important;
   }
 
   .recipe-card h2 {
-    font-size: 0.9rem !important;
-    line-height: 1.3rem !important;
-    min-height: 2.6rem !important;
-    max-height: 2.6rem !important;
+    font-size: 0.6875rem !important; /* 11px - even smaller for very small screens */
+    line-height: 0.9rem !important;
+    min-height: 1.8rem !important; /* Adjust for smaller text */
+    max-height: 1.8rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+
+  .recipe-card .flex.items-center {
+    gap: 0.75rem !important; /* Even tighter for small screens */
   }
 
   .recipe-card svg {
@@ -85,6 +88,51 @@
 
   .recipe-card .likes-count,
   .recipe-card .comments-count {
-    font-size: 0.8125rem !important;
+    font-size: 0.6875rem !important; /* 11px */
+  }
+}
+
+/* Ultra-small screens */
+@media (max-width: 374px) {
+  .recipe-card {
+    height: 200px !important; /* Minimal size */
+    padding: 0.5rem !important; /* 8px padding */
+  }
+
+  .recipe-card-image-container {
+    height: 100px !important; /* Very small image */
+    margin-bottom: 0.25rem !important;
+  }
+
+  .recipe-card h2 {
+    font-size: 0.625rem !important; /* 10px - minimal for ultra-small */
+    line-height: 0.8rem !important;
+    min-height: 1.6rem !important; /* 2 lines */
+    max-height: 1.6rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .recipe-card .flex.items-center {
+    gap: 0.5rem !important; /* Minimal gap */
+  }
+
+  .recipe-card svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .recipe-card .likes-count,
+  .recipe-card .comments-count {
+    font-size: 0.625rem !important; /* 10px */
+  }
+}
+
+/* ULTIMATE OVERRIDE - Force small text on mobile */
+@media (max-width: 768px) {
+  .recipe-card h2,
+  .recipe-card > div > h2,
+  div.recipe-card h2.font-bold.text-gray-900.text-left.text-lg.leading-tight {
+    font-size: 12px !important;
+    line-height: 14px !important;
   }
 }

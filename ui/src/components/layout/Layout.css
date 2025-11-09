@@ -13,10 +13,24 @@
   flex-direction: column;
   overflow-y: auto; /* Enable vertical scrolling */
   overflow-x: hidden; /* Prevent horizontal scrolling */
-  height: calc(100vh - 4.5rem); /* Account for header height */
   position: relative; /* Create a positioning context for sticky elements */
   padding-top: 0; /* No padding at the top */
   margin-top: 0; /* No margin at the top */
+}
+
+/* Desktop: Normal header height */
+@media (min-width: 768px) {
+  .app-content {
+    height: calc(100vh - 4.5rem); /* Account for header height */
+  }
+}
+
+/* Mobile: Shorter header, space for bottom bar */
+@media (max-width: 767px) {
+  .app-content {
+    height: calc(100vh - 2.75rem); /* Account for shorter mobile header */
+    padding-bottom: 5rem; /* Space for mobile bottom bar */
+  }
 }
 
 /* Adjust spacing for specific pages */

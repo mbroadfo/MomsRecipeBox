@@ -22,7 +22,7 @@ interface RecipeListProps {
   maxColumns?: number;
 }
 
-export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter = 'all', sort = 'newest', maxColumns = 5 }) => {
+export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter = 'all', sort = 'newest' }) => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -104,17 +104,14 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
       break;
   }
 
-  // Limit max columns in grid
-  const gridTemplate = `repeat(${maxColumns}, minmax(275px, 1fr))`;
-
   return (
     <>
-      {loading && <p>Loading recipes...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      {loading && <p className="mobile-status-message">Loading recipes...</p>}
+      {error && <p className="mobile-status-message text-red-500">{error}</p>}
       {filteredRecipes.length === 0 && !loading && !error && (
-        <p className="text-gray-500">No recipes found.</p>
+        <p className="mobile-status-message text-gray-500">No recipes found.</p>
       )}
-      <div className="grid gap-8" style={{ gridTemplateColumns: gridTemplate }}>
+      <div className="recipe-grid-container">
         {filteredRecipes.map((recipe, idx) => (
           <RecipeCard
             key={recipe._id || recipe.id || idx}

@@ -24,8 +24,8 @@ function getCurrentProfile() {
     const profileData = config.profiles[profileName];
     return { name: profileName, data: profileData };
   } catch (error) {
-    console.log('⚠️ Could not read profile config, defaulting to local');
-    return { name: 'local', data: null };
+    console.log('⚠️ Could not read profile config, defaulting to cloud-only (lambda)');
+    return { name: 'lambda', data: null };
   }
 }
 

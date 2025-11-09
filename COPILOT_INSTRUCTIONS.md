@@ -2,6 +2,27 @@
 
 This document contains key learnings and common mistakes to avoid when working on MomsRecipeBox. These instructions help prevent recurring issues and improve development efficiency.
 
+## 🎯 **FUNDAMENTAL PRINCIPLE: DATA FIXES OVER CODE COMPLEXITY**
+
+**⚠️ CRITICAL MANDATE: Always consider simple data fixes rather than complex code fixes!**
+
+When encountering data inconsistency or mixed format issues:
+
+1. **✅ FIRST**: Can I fix the data to be consistent? (Update database records, standardize S3 files, etc.)
+2. **❌ AVOID**: Writing complex code to handle multiple inconsistent formats
+
+**Example from Image Standardization:**
+
+- **❌ WRONG**: Complex frontend logic to handle `.png`, `.webp`, `.jpg`, and API URLs with fallbacks  
+- **✅ RIGHT**: Convert all S3 images to `.jpg` and standardize all database URLs to direct S3 format
+- **Result**: Simple frontend code assumes one format, no fallback complexity needed
+
+**Keep It Simple, Stupid (KISS) Principle:**
+
+- Fix the minority format to match the majority
+- Standardize data at the source rather than accommodate chaos in code
+- One format, one pattern, one simple solution
+
 ## 🏗️ **SIMPLIFIED CLOUD-ONLY ARCHITECTURE**
 
 **🎯 CRITICAL CONTEXT: This application has been SIMPLIFIED to use ONLY cloud-only architecture!**

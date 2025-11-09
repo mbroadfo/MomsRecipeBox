@@ -27,8 +27,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
     const match = imageUrl.match(/\/api\/recipes\/([^/]+)\/image/);
     if (match) {
       const recipeId = match[1];
-      // Convert to direct S3 URL - try .png first, then .jpg if .png fails
-      imageUrl = `${config.S3_RECIPE_IMAGES_BASE_URL}/${recipeId}.png`;
+      // All images are now JPEG format after standardization
+      imageUrl = `${config.S3_RECIPE_IMAGES_BASE_URL}/${recipeId}.jpg`;
     }
   }
 
@@ -66,20 +66,16 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             const currentSrc = e.currentTarget.src;
             e.currentTarget.onerror = null;
             
-            // If it was a converted API URL ending in .png, try .jpg
-            if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.png')) {
-              const jpgUrl = currentSrc.replace('.png', '.jpg');
-              e.currentTarget.src = jpgUrl;
-            } else if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.jpg')) {
-              // If .jpg also failed, try .jpeg
-              const jpegUrl = currentSrc.replace('.jpg', '.jpeg');
-              e.currentTarget.src = jpegUrl;
-            } else if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL) && currentSrc.endsWith('.jpeg')) {
-              // If .jpeg also failed, try .webp
-              const webpUrl = currentSrc.replace('.jpeg', '.webp');
-              e.currentTarget.src = webpUrl;
+            // Smart fallback for mixed S3 formats: jpg -> webp -> png -> default
+            if (currentSrc.includes(config.S3_RECIPE_IMAGES_BASE_URL)) {
+              if (currentSrc.endsWith('.jpg')) {
+                e.currentTarget.src = currentSrc.replace('.jpg', '.webp');
+              } else if (currentSrc.endsWith('.webp')) {
+                e.currentTarget.src = currentSrc.replace('.webp', '.png');
+              } else {
+                e.currentTarget.src = fallbackImage;
+              }
             } else {
-              // Final fallback to default image
               e.currentTarget.src = fallbackImage;
             }
           }}

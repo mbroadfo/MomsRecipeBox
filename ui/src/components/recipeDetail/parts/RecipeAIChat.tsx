@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { getApiUrl } from '../../../config/environment.js';
 // Importing types from useRecipe is unnecessary for this component
 
 interface Message {
@@ -20,8 +22,8 @@ interface ParsedRecipe {
   author?: string;
   source?: string;
   yield?: string;
-  time?: any;
-  ingredients?: any[];
+  time?: { prep?: string; cook?: string; total?: string };
+  ingredients?: { quantity?: string; name?: string }[];
   steps?: string[];
   tags?: string[];
   notes?: string;
@@ -42,6 +44,9 @@ export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVis
   const [availableProviders, setAvailableProviders] = useState<AIProvider[]>([]);
   const [providersLoading, setProvidersLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // Auth0 hook for authentication
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   
   // Add initial greeting when the component mounts
   useEffect(() => {
@@ -64,9 +69,22 @@ Simply type your request or paste a recipe or URL to get started!`
   // Fetch available AI providers
   useEffect(() => {
     const fetchProviders = async () => {
+      if (!isAuthenticated) return;
+      
       try {
         setProvidersLoading(true);
-        const response = await fetch('/api/ai/providers');
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://momsrecipebox/api',
+          },
+        });
+        
+        const response = await fetch(getApiUrl('ai/providers'), {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (response.ok) {
           const data = await response.json();
@@ -95,7 +113,7 @@ Simply type your request or paste a recipe or URL to get started!`
     if (isVisible) {
       fetchProviders();
     }
-  }, [isVisible, selectedModel]);
+  }, [isVisible, selectedModel, isAuthenticated, getAccessTokenSilently]);
 
   // Scroll to bottom of chat when messages update
   useEffect(() => {
@@ -121,18 +139,25 @@ Simply type your request or paste a recipe or URL to get started!`
       setIsLoading(true);
       setError(null);
       
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api',
+        },
+      });
+      
       // All requests now go to the chat endpoint which handles URLs automatically
-      const endpoint = '/api/ai/chat';
+      const endpoint = getApiUrl('ai/chat');
       
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: userInput,
           messages: messages,  // The backend expects 'messages' instead of 'history'
-          user_id: (window as any).currentUser?.id || (window as any).currentUserId || 'demo-user',
+          user_id: 'demo-user', // Simplified user ID for demo purposes
           model: selectedModel // Send the selected model to the backend
         }),
       });

@@ -17,20 +17,30 @@ async function queryAtlas() {
     console.log('✅ Connected to MongoDB Atlas');
     
     const db = client.db('moms_recipe_box_dev');
+    // First get all recipes with image URLs
     const recipes = await db.collection('recipes').find({}, {
-      projection: { _id: 1, title: 1, owner_id: 1, visibility: 1 }
+      projection: { _id: 1, title: 1, image_url: 1 }
     }).toArray();
     
-    console.log('Direct Atlas Query Results:');
+    console.log('Atlas Database Image URL Analysis:');
     console.log('Total recipes found:', recipes.length);
     console.log('');
     
+    // Check for galette specifically first
+    const galette = recipes.find(r => r.title && r.title.toLowerCase().includes('galette'));
+    if (galette) {
+      console.log('🍅 GALETTE RECIPE FOUND:');
+      console.log('  _id:', galette._id);
+      console.log('  title:', galette.title);
+      console.log('  image_url:', galette.image_url || 'NO IMAGE URL');
+      console.log('');
+    }
+    
+    // Show all recipes with their image URLs
     recipes.forEach((recipe, index) => {
-      console.log(`Recipe ${index + 1}:`);
+      console.log(`Recipe ${index + 1}: "${recipe.title}"`);
       console.log('  _id:', recipe._id);
-      console.log('  title:', recipe.title);
-      console.log('  owner_id:', recipe.owner_id);
-      console.log('  visibility:', recipe.visibility);
+      console.log('  image_url:', recipe.image_url || 'NO IMAGE URL');
       console.log('');
     });
     

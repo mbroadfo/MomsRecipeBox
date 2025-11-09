@@ -49,6 +49,17 @@ Future improvements, features, and tasks identified during development but not i
 - Design family membership architecture (self-service vs admin-assigned)
 - Implement multi-family membership (user can be in wife's family AND own family)
 - Create family invitation and approval workflow
+
+### 36. Mobile Recipe App UX Inspiration Integration
+
+- Research mobile recipe app design patterns and user interactions from friend's app demo
+- Implement mobile-first navigation and recipe browsing optimizations
+- Add mobile-specific features like swipe gestures for recipe navigation
+- Integrate enhanced mobile photo capture and editing capabilities
+- Design mobile-optimized recipe creation and editing workflows
+- **Impact**: Modern mobile experience competitive with dedicated recipe apps
+- **Effort**: High - Complete mobile UX overhaul based on competitive analysis
+- **Priority**: Medium - Strategic enhancement for mobile engagement
 - Add family-level recipe sharing permissions and visibility controls
 - Determine if family sharing is valuable vs complexity (user feedback needed)
 - **Impact**: Core family sharing functionality or simplification decision

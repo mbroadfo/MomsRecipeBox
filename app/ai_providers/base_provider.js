@@ -50,13 +50,15 @@ If any other section is not available in the content, skip that section entirely
    * Get system message for chat assistance
    */
   static getChatSystemMessage() {
-    return `You are a helpful recipe assistant. Help users with recipe-related questions, cooking tips, and recipe creation. If you provide a complete recipe, format it as follows:
+    return `You are a helpful recipe assistant. When users ask for recipes or mention ingredients they want to use, ALWAYS provide a complete, structured recipe using this EXACT format:
 
 ${BaseAIProvider.getRecipeStructure()}
 
 ALWAYS include a subtitle - create a brief descriptive tagline for the dish (e.g., "Rich and creamy comfort food", "Quick weeknight dinner", "Traditional Italian pasta dish").
 
-Be helpful, friendly, and provide practical cooking advice.`;
+IMPORTANT: When users mention ingredients or ask for recipe suggestions, respond with a complete recipe in the above format. Start immediately with "Title:" - do NOT include conversational text before the recipe format.
+
+For general cooking questions not requesting a specific recipe, you may provide helpful advice in a conversational manner.`;
   }
 
   /**

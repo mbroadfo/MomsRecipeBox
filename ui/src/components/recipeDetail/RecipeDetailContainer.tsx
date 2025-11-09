@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
+import { getApiUrl } from '../../config/environment.js';
 import { useRecipe } from './hooks/useRecipe';
 import type { RawRecipe } from './hooks/useRecipe';
 import { useNewRecipe } from './hooks/useNewRecipe';
@@ -43,6 +45,7 @@ declare const window: WindowWithUser;
 interface Props { recipeId?: string; isNew?: boolean; onBack: () => void; }
 export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false, onBack }) => {
   const navigate = useNavigate();
+  const { getAccessTokenSilently } = useAuth0();
   const [editMode, setEditMode] = useState(isNew);
   const [saving, setSaving] = useState(false);
   const [showAIChat, setShowAIChat] = useState(isNew); // Show AI chat by default for new recipes
@@ -134,10 +137,20 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const toggleLike = async () => {
     setLiked((l: boolean) => !l);
     try {
+      // Get authentication token
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api'
+        }
+      });
+
       const userId = getCurrentUserId();
-      const resp = await fetch(`/api/recipes/${recipeId}/like`, {
+      const resp = await fetch(getApiUrl(`recipes/${recipeId}/like`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ user_id: userId })
       });
       if (!resp.ok) throw new Error('Like toggle failed');
@@ -171,6 +184,13 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const save = async () => {
     setSaving(true);
     try {
+      // Get authentication token for API calls
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api'
+        }
+      });
+
       // Validate title
       if (!working.title.trim()) {
         showToast("Recipe title is required", ToastType.Error);
@@ -209,9 +229,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                 const filename = urlParts[urlParts.length - 1];
                 
                 // Tell the backend to copy the image from temp to permanent ID
-                await fetch(`/api/recipes/${newRecipeId}/copy-image`, {
+                await fetch(getApiUrl(`recipes/${newRecipeId}/copy-image`), {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
                   body: JSON.stringify({
                     sourceKey: `${tempId}.${filename.split('.').pop()}`,
                     targetKey: `${newRecipeId}.${filename.split('.').pop()}`
@@ -236,10 +259,13 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
       } else {
         // Updating an existing recipe
         try {
-          const resp = await fetch(`/api/recipes/${recipeId}`, { 
-            method: 'PUT', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(payload) 
+          const resp = await fetch(getApiUrl(`recipes/${recipeId}`), { 
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
           });
           
           if (!resp.ok) {
@@ -264,7 +290,19 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   
   const deleteRecipe = async () => {
     try {
-      const resp = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+      // Get authentication token
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api'
+        }
+      });
+
+      const resp = await fetch(getApiUrl(`recipes/${recipeId}`), { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!resp.ok) throw new Error(`Delete failed (${resp.status})`);
       showToast('Recipe deleted successfully', ToastType.Success);
       navigate('/');
@@ -447,10 +485,20 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                     
                     console.log("Creating new recipe with payload:", payload);
                     
+                    // Get authentication token
+                    const token = await getAccessTokenSilently({
+                      authorizationParams: {
+                        audience: 'https://momsrecipebox/api'
+                      }
+                    });
+                    
                     // Make the API call to create the recipe
-                    const response = await fetch('/api/recipes', {
+                    const response = await fetch(getApiUrl('recipes'), {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
                       body: JSON.stringify(payload)
                     });
                     
@@ -468,7 +516,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                         console.log("Uploading image from URL:", initialImageUrl);
                         
                         // Fetch the image from the URL
-                        const imageResponse = await fetch(`/api/recipes/${data._id}/image`, {
+                        const imageResponse = await fetch(getApiUrl(`recipes/${data._id}/image`), {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ 
@@ -496,7 +544,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                               // Wait between attempts with increasing delay
                               await new Promise(resolve => setTimeout(resolve, attempt * 1000));
                               
-                              const refreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${getCurrentUserId()}`);
+                              const refreshResponse = await fetch(getApiUrl(`recipes/${data._id}?user_id=${getCurrentUserId()}`), {
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              });
                               if (refreshResponse.ok) {
                                 const refreshedData = await refreshResponse.json();
                                 console.log("Refreshed recipe data with image:", refreshedData);
@@ -508,9 +560,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                                   imageUrlConfirmed = true;
                                   // If imageUrl is confirmed, manually update MongoDB again just to be absolutely sure
                                   try {
-                                    const manualUpdateResponse = await fetch(`/api/recipes/${data._id}`, {
+                                    const manualUpdateResponse = await fetch(getApiUrl(`recipes/${data._id}`), {
                                       method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
+                                      headers: { 
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                      },
                                       body: JSON.stringify({ 
                                         image_url: refreshedData.image_url 
                                       })
@@ -549,9 +604,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                           const filename = urlParts[urlParts.length - 1];
                           
                           // Tell the backend to copy the image
-                          await fetch(`/api/recipes/${data._id}/copy-image`, {
+                          await fetch(getApiUrl(`recipes/${data._id}/copy-image`), {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
                             body: JSON.stringify({
                               sourceKey: `${tempId}.${filename.split('.').pop()}`,
                               targetKey: `${data._id}.${filename.split('.').pop()}`
@@ -576,7 +634,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                     
                     // Do one final refresh to get the most up-to-date data including the S3 image URL
                     try {
-                      const finalRefreshResponse = await fetch(`/api/recipes/${data._id}?user_id=${getCurrentUserId()}`);
+                      const finalRefreshResponse = await fetch(getApiUrl(`recipes/${data._id}?user_id=${getCurrentUserId()}`), {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
                       if (finalRefreshResponse.ok) {
                         const finalData = await finalRefreshResponse.json();
                         console.log("Final recipe data before navigation:", finalData);

@@ -73,10 +73,39 @@ export class GoogleGeminiProvider extends BaseAIProvider {
    * Extract response from API response
    */
   extractResponseFromData(data) {
-    const response = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Debug logging to understand response structure
+    console.info("Google API raw response structure:", Object.keys(data || {}));
+    console.info("First candidate structure:", Object.keys(data?.candidates?.[0] || {}));
+    console.info("Content structure:", Object.keys(data?.candidates?.[0]?.content || {}));
+    
+    // Try multiple possible response formats
+    let response = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    // Alternative format: check if content has direct text property
+    if (!response) {
+      response = data?.candidates?.[0]?.content?.text;
+    }
+    
+    // Alternative format: check if parts exist but differently structured
+    if (!response && data?.candidates?.[0]?.content?.parts) {
+      const parts = data.candidates[0].content.parts;
+      if (Array.isArray(parts) && parts.length > 0 && parts[0].text) {
+        response = parts[0].text;
+      }
+    }
+    
+    // Alternative format: check for message content
+    if (!response && data?.candidates?.[0]?.message) {
+      response = data.candidates[0].message;
+    }
+    
+    // Alternative format: check output field
+    if (!response && data?.candidates?.[0]?.output) {
+      response = data.candidates[0].output;
+    }
     
     if (!response) {
-      console.error("Invalid Google API response format:", data);
+      console.error("Invalid Google API response format:", JSON.stringify(data, null, 2));
       throw new Error("Invalid Google API response format");
     }
     

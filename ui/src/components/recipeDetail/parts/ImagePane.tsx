@@ -54,7 +54,6 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
       }
       
       let recipeId = '';
-      let extension = '';
       
       // Extract recipe ID from various URL formats
       if (imageUrl.includes('/api/recipes/')) {
@@ -62,27 +61,19 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
         const match = imageUrl.match(/\/api\/recipes\/([^/]+)\/image/);
         if (match) {
           recipeId = match[1];
-          extension = 'png'; // Default extension for API URLs
         }
       } else if (imageUrl.includes('/')) {
         // Format: some/path/{id}.{ext}
         const parts = imageUrl.split('/');
         const filename = parts[parts.length - 1];
         const fileParts = filename.split('.');
-        if (fileParts.length >= 2) {
+        if (fileParts.length >= 1) {
           recipeId = fileParts[0];
-          extension = fileParts[fileParts.length - 1];
         }
       } else {
         // Format: {id}.{ext} or just {id}
         const fileParts = imageUrl.split('.');
-        if (fileParts.length >= 2) {
-          recipeId = fileParts[0];
-          extension = fileParts[fileParts.length - 1];
-        } else {
-          recipeId = imageUrl;
-          extension = 'png'; // Default extension
-        }
+        recipeId = fileParts[0];
       }
       
       if (!recipeId) {
@@ -90,12 +81,9 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
         return imageUrl; // Return original if we can't parse it
       }
       
-      // Try different extensions in order of preference
-      const extensions = extension ? [extension] : ['png', 'jpg', 'jpeg', 'webp'];
+      // Backend always converts all images to JPEG, so extension is always .jpg
       const baseUrl = 'https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com';
-      
-      // Return the first extension to try
-      const s3Url = `${baseUrl}/${recipeId}.${extensions[0]}`;
+      const s3Url = `${baseUrl}/${recipeId}.jpg`;
       return s3Url;
     };
     
@@ -110,41 +98,10 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
     }
   }, [url]);
   
-  // Handle image load errors with fallback to different extensions
+  // Handle image load errors - no extension guessing needed since backend always converts to JPEG
   const handleImageError = () => {
-    
-    if (!effectiveUrl || !effectiveUrl.includes('mrb-recipe-images-dev.s3.us-west-2.amazonaws.com')) {
-      setEffectiveUrl(undefined);
-      return;
-    }
-    
-    // Extract recipe ID and current extension
-    const urlParts = effectiveUrl.split('/');
-    const filename = urlParts[urlParts.length - 1].split('?')[0]; // Remove query params
-    const fileParts = filename.split('.');
-    
-    if (fileParts.length < 2) {
-      setEffectiveUrl(undefined);
-      return;
-    }
-    
-    const recipeId = fileParts[0];
-    const currentExt = fileParts[1];
-    
-    // Define fallback extensions
-    const fallbackExtensions = ['png', 'jpg', 'jpeg', 'webp'];
-    const currentIndex = fallbackExtensions.indexOf(currentExt);
-    
-    if (currentIndex >= 0 && currentIndex < fallbackExtensions.length - 1) {
-      // Try next extension
-      const nextExt = fallbackExtensions[currentIndex + 1];
-      const baseUrl = 'https://mrb-recipe-images-dev.s3.us-west-2.amazonaws.com';
-      const nextUrl = `${baseUrl}/${recipeId}.${nextExt}`;
-      setEffectiveUrl(nextUrl);
-    } else {
-      // All extensions exhausted, use default image
-      setEffectiveUrl(undefined);
-    }
+    // If image fails to load, just use default
+    setEffectiveUrl(undefined);
   };
   
   // Update when upload completes

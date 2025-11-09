@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { getApiUrl } from '../../../config/environment.js';
 
 export function useImageUpload(recipeId: string, onComplete: (url: string) => void) {
+  const { getAccessTokenSilently } = useAuth0();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUploadTime, setLastUploadTime] = useState<number | null>(null);
@@ -28,10 +31,20 @@ export function useImageUpload(recipeId: string, onComplete: (url: string) => vo
         reader.readAsDataURL(file);
       });
       
+      // Get authentication token
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api'
+        }
+      });
+
       // Upload the image
-      const putImgResp = await fetch(`/api/recipes/${recipeId}/image`, { 
+      const putImgResp = await fetch(getApiUrl(`recipes/${recipeId}/image`), { 
         method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
         body: JSON.stringify({ imageBase64: base64, contentType: file.type }) 
       });
       
@@ -44,12 +57,15 @@ export function useImageUpload(recipeId: string, onComplete: (url: string) => vo
       console.log('Image uploaded successfully');
       
       // Create a proper URL for the image that will work with our API
-      const imageApiUrl = `/api/recipes/${recipeId}/image`;
+      const imageApiUrl = getApiUrl(`recipes/${recipeId}/image`);
       
       // Update the recipe with the image URL
-      const putRecipeResp = await fetch(`/api/recipes/${recipeId}`, { 
+      const putRecipeResp = await fetch(getApiUrl(`recipes/${recipeId}`), { 
         method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
         body: JSON.stringify({ image_url: imageApiUrl }) 
       });
       
@@ -66,9 +82,9 @@ export function useImageUpload(recipeId: string, onComplete: (url: string) => vo
       
       // Return the API URL for the image
       onComplete(`${imageApiUrl}`);
-    } catch (e: any) { 
+    } catch (e: unknown) { 
       console.error('Error uploading image:', e);
-      setError(e.message); 
+      setError(e instanceof Error ? e.message : String(e)); 
     } finally { 
       setUploading(false); 
     }

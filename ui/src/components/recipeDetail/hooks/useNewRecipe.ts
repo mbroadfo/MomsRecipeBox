@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiUrl } from '../../../config/environment.js';
 import type { RawRecipe } from './useRecipe';
 
 // Type definitions for window global properties
@@ -110,7 +111,7 @@ export function useNewRecipe() {
       
       console.log("Saving new recipe with payload:", payload);
       
-      const response = await fetch('/api/recipes', {
+      const response = await fetch(getApiUrl('recipes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -26,6 +26,7 @@
     "test:ai-lambda": "node scripts/test-ai-lambda.js",
     
     "maintenance": "node scripts/find-orphan-images.js",
+    "convert:images": "node app/convert-images-to-jpeg.js",
     "backup": "node scripts/backup-mongodb.js",
     "backup:local": "node scripts/backup-mongodb.js --type local",
     "backup:atlas": "node scripts/backup-mongodb.js --type atlas --s3-upload",

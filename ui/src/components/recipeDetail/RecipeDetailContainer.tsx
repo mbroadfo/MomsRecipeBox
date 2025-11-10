@@ -11,6 +11,8 @@ import { useImageUpload } from './hooks/useImageUpload';
 import { showToast, ToastType } from '../../components/Toast';
 import ConfirmModal from '../../components/shoppingList/components/ConfirmModal';
 import { Header as RecipeHeader } from './parts/Header';
+import { ImageMetadata } from './parts/ImageMetadata';
+import { RecipeTitle } from './parts/RecipeTitle';
 import { Tags } from './parts/Tags';
 import { Subtitle } from './parts/Subtitle';
 import { Meta } from './parts/Meta';
@@ -319,19 +321,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     <div className="recipe-page">
       <div className="recipe-left">{/* flex column; header separated from scroll area */}
         <RecipeHeader
-          title={working.title}
           editing={editMode}
           saving={saving}
-          onTitleChange={(v: string) => patch({ title: v })}
           onEdit={startEdit}
           onSave={save}
           onCancel={cancelEdit}
           onBack={handleBack}
-          liked={liked}
-          onToggleLike={toggleLike}
-          visibility={working.visibility}
-          owner_id={working.owner_id}
-          onVisibilityChange={patch}
         />
         <div className="recipe-left-scroll">{/* new scroll container */}
           {isNew && (
@@ -427,11 +422,24 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
       </div>
       <div className="recipe-right">
         <div className="recipe-right-content">
+          <RecipeTitle 
+            title={working.title}
+            editing={editMode}
+            onTitleChange={(v: string) => patch({ title: v })}
+          />
           <ImagePane 
             url={working.image_url} 
             uploading={uploading} 
             onUpload={f => upload(f)}
             lastUploadTime={lastUploadTime} 
+          />
+          <ImageMetadata
+            liked={liked}
+            onToggleLike={toggleLike}
+            visibility={working.visibility}
+            owner_id={working.owner_id}
+            editing={editMode}
+            onVisibilityChange={patch}
           />
           
           {isNew && (

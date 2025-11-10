@@ -5,6 +5,53 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-10
+
+### UX - Recipe Detail Header Layout Restructure
+
+#### 📱 Simplified Recipe Header with Under-Image Controls
+
+This release implements a major restructure of the recipe detail page header layout, moving from a complex multi-control header to a clean minimal design with relocated metadata controls.
+
+#### **Key Header Layout Changes**
+
+**✅ Minimal Header Design:**
+
+- Simplified header to only show back button (`<` arrow) left of title and edit button (pencil) right of title
+- Removed all other controls (like, visibility, user info) from header area
+- Created clean, uncluttered top navigation experience
+- Maintained all editing functionality with streamlined interface
+
+**✅ New Image Metadata Component:**
+
+- Created `ImageMetadata.tsx` component to display controls under recipe image
+- Positioned heart (like) button, visibility badge, and user email in attractive horizontal layout
+- Converted Auth0 user IDs to readable email format for better UX
+- Used compact visibility badges with shortened text for mobile optimization
+
+**✅ Component Architecture Improvements:**
+
+- Simplified `Header.tsx` interface by removing unused props (liked, onToggleLike, visibility, owner_id, onVisibilityChange)
+- Streamlined component dependencies and reduced coupling between header and metadata concerns
+- Maintained all existing functionality while improving code organization
+- Added proper TypeScript interfaces for new ImageMetadata component
+
+#### **Technical Implementation Details**
+
+- Restructured `Header.tsx` to minimal back/edit button layout with title positioning
+- Created new `ImageMetadata.tsx` component for under-image controls display
+- Updated `RecipeDetailContainer.tsx` to use simplified Header interface and new ImageMetadata component
+- Implemented user-friendly email conversion from Auth0 IDs for better display
+- Used existing `Visibility.tsx` component in compact mode for consistent styling
+- Added hover effects and interactive styling to all metadata controls
+
+#### **User Experience Impact**
+
+- **Cleaner Visual Hierarchy**: Recipe title and navigation are now the primary focus of the header
+- **Better Mobile Experience**: Simplified header reduces visual complexity on small screens  
+- **Contextual Controls**: Like, visibility, and user info are now positioned with the recipe content rather than navigation
+- **Maintained Functionality**: All existing features preserved while improving layout and usability
+
 ## [Unreleased] - 2025-11-09
 
 ### UX - Advanced Mobile Experience Redesign
@@ -16,24 +63,28 @@ This release completes a comprehensive mobile interface overhaul inspired by Ame
 #### **Key Mobile UX Improvements**
 
 **✅ Hamburger Menu Integration:**
+
 - Moved all filter and sort controls to clean hamburger menu in header
 - Eliminated cluttered filter tabs from main view
 - Implemented FilterContext for state management across components
 - Added mobile dropdown with filter buttons (All, Mine, Family, Favorites) and sort options
 
 **✅ Streamlined Bottom Action Bar:**
+
 - Replaced Sort button with Search functionality  
 - Optimized button heights from 44px to 36px for better proportions
 - Maintained Add Recipe (primary) and Shop buttons with new Search integration
 - Improved button padding and spacing for better touch targets
 
 **✅ Recipe Card Typography Optimization:**
+
 - Fixed font size override issues with aggressive CSS specificity
 - Reduced recipe title font from 18px to 12px for better content fit
 - Implemented responsive typography with clamp() functions
 - Now displays full recipe names instead of truncated text (e.g., "Creamy Mushroom Soup" vs just "Creamy")
 
 **✅ Clean Mobile Layout Architecture:**
+
 - Hidden filter toolbar completely on mobile (filters moved to hamburger)
 - Achieved true 2x2 recipe grid layout without visual clutter
 - Maintained desktop functionality while optimizing mobile experience
@@ -65,32 +116,38 @@ This release implements systematic mobile optimizations across the entire user i
 #### **Mobile Optimization Areas**
 
 **✅ Header Compression:**
+
 - Reduced header height from 72px to 56px on mobile (22% space savings)
 - Optimized logo sizing (40px) and typography scaling
 - Progressive scaling for ultra-small screens (48px header on <374px)
 
 **✅ Homepage Toolbar Optimization:**
+
 - Compressed toolbar padding and button spacing
 - Abbreviated button text on small screens ("Add Recipe" → "Recipe", "Shopping List" → "List")
 - Improved filter segment buttons with proper touch targets
 
 **✅ Recipe Card Mobile Adaptation:**
+
 - Reduced card height from 400px to 280px on mobile (30% reduction)
 - Optimized image containers (275px → 160px on small screens)
 - Improved typography scaling and icon sizing
 - Created dedicated `RecipeCard.css` for mobile-specific styles
 
 **✅ Recipe Detail Layout Enhancement:**
+
 - Reduced side padding from 48px to 16px (+60% content width on mobile)
 - Progressive typography scaling for better readability
 - Optimized stat cards and section spacing for mobile consumption
 
 **✅ Touch Target Accessibility System:**
+
 - New `TouchTargets.css` ensuring 44x44px minimum interactive elements
 - Enhanced button sizing, checkbox targets, and link areas
 - Proper touch feedback and visual indicators for mobile devices
 
 **✅ Fluid Typography System:**
+
 - New `MobileTypography.css` with clamp-based responsive scaling
 - Consistent text size reduction while maintaining readability
 - Progressive font weight adjustments for smaller screens
@@ -98,6 +155,7 @@ This release implements systematic mobile optimizations across the entire user i
 #### **Technical Implementation**
 
 **Mobile-First CSS Architecture:**
+
 ```css
 /* Responsive breakpoint strategy */
 @media (max-width: 768px)  /* Primary mobile optimizations */
@@ -106,12 +164,14 @@ This release implements systematic mobile optimizations across the entire user i
 ```
 
 **Typography Scaling System:**
+
 ```css
 /* Fluid scaling with minimum readable sizes */
 font-size: clamp(0.875rem, 2vw + 0.0625rem, 1rem);
 ```
 
 **Touch Target Compliance:**
+
 ```css
 /* Accessibility-compliant interactive elements */
 min-height: 44px !important;

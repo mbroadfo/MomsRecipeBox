@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { IngredientGroup, IngredientItem } from '../hooks/useWorkingRecipe';
 import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { addToShoppingList, getShoppingList, deleteShoppingListItem } from '../../../utils/api';
 import { showToast } from '../../../components/Toast';
 
@@ -37,6 +38,7 @@ export const IngredientsView: React.FC<{
   recipeTitle = "Recipe" 
 }) => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth0();
   const list = groups[0] || { items: [] } as IngredientGroup;
   
   // For tracking if we're modifying the shopping list
@@ -58,96 +60,60 @@ export const IngredientsView: React.FC<{
     }
   });
   
-  // Load shopping list to check which items are already added
-  // Poll for shopping list changes only when tab is not visible
+  // Load shopping list once to check which items are already added (only when authenticated)
   useEffect(() => {
     if (!recipeId) return;
     
-    const loadShoppingList = async () => {
-      try {
-        const response = await getShoppingList();
-        
-        // Handle ApiResponse structure - actual data is in response.data
-        const apiResponse = response as ApiResponse<ShoppingListApiResponse>;
-        const data = apiResponse.data || (response as unknown as ShoppingListApiResponse);
-        
-        if (data && data.items && Array.isArray(data.items)) {
-          // Create a map of ingredient names from this recipe that are in the shopping list
-          const ingredientMap: Record<string, {id: string, name: string, checked: boolean}> = {};
-          
-          data.items.forEach((item: ShoppingListItem) => {
-            const itemName = item.name || item.ingredient || '';
-            const itemRecipeId = item.recipeId || item.recipe_id || '';
-            const itemId = item._id || item.item_id || '';
-            const checked = item.checked || false;
-            
-            // Check if this item belongs to the current recipe
-            if (itemRecipeId === recipeId) {
-              ingredientMap[itemName] = {
-                id: itemId,
-                name: itemName,
-                checked: checked // Track checked state
-              };
+    // Only make API call when authentication is ready
+    if (typeof isAuthenticated !== 'undefined' && typeof authLoading !== 'undefined') {
+      if (!authLoading && isAuthenticated) {
+        // Add small delay to ensure API client token is properly set
+        const timer = setTimeout(() => {
+          const loadShoppingList = async () => {
+            try {
+              const response = await getShoppingList();
+              
+              // Handle ApiResponse structure - actual data is in response.data
+              const apiResponse = response as ApiResponse<ShoppingListApiResponse>;
+              const data = apiResponse.data || (response as unknown as ShoppingListApiResponse);
+              
+              if (data && data.items && Array.isArray(data.items)) {
+                // Create a map of ingredient names from this recipe that are in the shopping list
+                const ingredientMap: Record<string, {id: string, name: string, checked: boolean}> = {};
+                
+                data.items.forEach((item: ShoppingListItem) => {
+                  const itemName = item.name || item.ingredient || '';
+                  const itemRecipeId = item.recipeId || item.recipe_id || '';
+                  const itemId = item._id || item.item_id || '';
+                  const checked = item.checked || false;
+                  
+                  // Check if this item belongs to the current recipe
+                  if (itemRecipeId === recipeId) {
+                    ingredientMap[itemName] = {
+                      id: itemId,
+                      name: itemName,
+                      checked: checked // Track checked state
+                    };
+                  }
+                });
+                
+                setShoppingListItems(ingredientMap);
+              }
+              
+              setShoppingListLoaded(true);
+            } catch (error) {
+              console.error('Error loading shopping list for ingredient checkmarks:', error);
+              setShoppingListLoaded(true);
             }
-          });
+          };
           
-          setShoppingListItems(ingredientMap);
-        }
+          loadShoppingList();
+        }, 100);
         
-        setShoppingListLoaded(true);
-      } catch (error) {
-        setShoppingListLoaded(true);
+        return () => clearTimeout(timer);
       }
-    };
-    
-    // Initial load
-    loadShoppingList();
-    
-    // Set up visibility change detection
-    let intervalId: NodeJS.Timeout | null = null;
-    let isPolling = false;
-    
-    const startPolling = () => {
-      if (!isPolling) {
-        intervalId = setInterval(loadShoppingList, 3000);
-        isPolling = true;
-      }
-    };
-    
-    const stopPolling = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-        isPolling = false;
-      }
-    };
-    
-    // Handle visibility change
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Tab is not visible, start polling
-        startPolling();
-      } else {
-        // Tab is visible, stop polling but do one refresh
-        stopPolling();
-        loadShoppingList(); // Refresh once when becoming visible
-      }
-    };
-    
-    // Set initial polling state based on visibility
-    if (document.hidden) {
-      startPolling();
     }
-    
-    // Add visibility change listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Cleanup function to clear interval and event listener when component unmounts
-    return () => {
-      stopPolling();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [recipeId]);
+  }, [recipeId, isAuthenticated, authLoading]);
   
   // Pre-check ingredients that are already in shopping list
   useEffect(() => {

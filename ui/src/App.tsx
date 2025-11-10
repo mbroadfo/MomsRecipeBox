@@ -47,12 +47,22 @@ const AuthenticatedApp: React.FC = () => {
         console.error('❌ Failed to get Auth0 token:', error);
         // Clear any existing token on error
         apiClient.clearAuthToken();
+        
+        // If the error is about missing refresh token, force a re-login to get one
+        if (error.message && error.message.includes('Missing Refresh Token')) {
+          console.log('🔄 Missing refresh token - forcing re-login to get fresh tokens');
+          loginWithRedirect({
+            authorizationParams: {
+              prompt: 'login' // Force fresh login to get new refresh token
+            }
+          });
+        }
       });
     } else if (!isAuthenticated && !isLoading) {
       // Only clear token when definitely not authenticated (not during loading)
       apiClient.clearAuthToken();
     }
-  }, [isAuthenticated, user, getAccessTokenSilently, isLoading]);
+  }, [isAuthenticated, user, getAccessTokenSilently, isLoading, loginWithRedirect]);
 
   // Show loading spinner while Auth0 initializes
   if (isLoading) {

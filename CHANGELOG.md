@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-10
 
+### Fix - Authentication and API Optimization
+
+#### 🔐 Auth0 Refresh Token and API Call Optimization
+
+This release resolves critical authentication issues where users encountered 401 Unauthorized errors and implements proper API call optimization to reduce unnecessary network requests.
+
+#### **Authentication Fixes**
+
+**✅ Auth0 Refresh Token Error Resolution:**
+
+- Fixed "Missing Refresh Token" error that prevented users from accessing authenticated API endpoints
+- Added automatic re-login flow when refresh token is missing to obtain fresh tokens
+- Improved error handling in App.tsx to detect and handle Auth0 token retrieval failures
+- Users with expired or missing refresh tokens will now be automatically redirected to login
+
+**✅ Recipe Page API Call Optimization:**
+
+- Eliminated excessive shopping list API polling (every 3 seconds) from recipe detail page
+- Updated IngredientsView component to call shopping list API only once when authenticated
+- Added proper authentication state checking before making API calls to prevent 401 errors
+- Implemented 100ms delay to ensure Auth0 token is properly set before API requests
+
+**✅ Authentication Timing Improvements:**
+
+- Added `isAuthenticated` and `authLoading` state checks in IngredientsView component
+- Prevents API calls during authentication loading state
+- Follows same pattern as other components (useShoppingList hook) for consistent auth handling
+- Eliminates race conditions between Auth0 initialization and API calls
+
+#### **Technical Implementation Details**
+
+- Enhanced App.tsx authentication error handling with specific refresh token error detection
+- Modified IngredientsView.tsx to use Auth0 authentication state properly
+- Removed complex polling mechanism that made unnecessary API calls every 3 seconds
+- Added proper dependency arrays and error handling for authentication state changes
+- Implemented graceful degradation when authentication is not yet ready
+
+#### **User Experience Impact**
+
+- **No More 401 Errors**: Recipe pages now load without authentication errors
+- **Better Performance**: Eliminated unnecessary API calls reducing server load and network usage  
+- **Seamless Re-authentication**: Users with expired tokens automatically get fresh tokens without manual intervention
+- **Faster Page Loads**: Recipe detail page no longer waits for shopping list data unnecessarily
+
 ### UX - Recipe Detail Header Layout Restructure
 
 #### 📱 Simplified Recipe Header with Under-Image Controls

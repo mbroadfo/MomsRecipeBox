@@ -42,22 +42,23 @@ export const Visibility: React.FC<VisibilityProps> = ({ visibility = 'private', 
           style={{ 
             backgroundColor: bgColor, 
             color: '#fff', 
-            padding: '.2rem .5rem', 
-            borderRadius: '.25rem', 
-            fontSize: '.7rem',
-            fontWeight: '500',
-            marginRight: '.5rem',
+            padding: '.25rem .4rem', 
+            borderRadius: '.375rem', 
+            fontSize: '.65rem',
+            fontWeight: '600',
             cursor: editing ? 'pointer' : 'default',
             border: 'none',
             outline: editing ? '1px solid #fff' : 'none',
             transition: 'background-color 0.2s, transform 0.1s',
             transform: editing ? 'scale(1)' : 'none',
-            boxShadow: editing ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            minWidth: '50px',
+            textAlign: 'center' as const
           }}
           disabled={!editing}
           title={editing ? "Click to change visibility" : undefined}
         >
-          {label}
+          {label.charAt(0).toUpperCase()}
         </button>
       );
     };

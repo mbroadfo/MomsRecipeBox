@@ -36,7 +36,7 @@ export const RecipeTitle: React.FC<Props> = ({
           className="recipe-title"
           style={{ 
             textAlign: 'center',
-            marginBottom: '1.5rem',
+            marginBottom: '0.5rem',
             fontSize: 'clamp(1.5rem, 4vw + 0.5rem, 2.25rem)',
             fontWeight: 800,
             letterSpacing: '-0.5px',
@@ -72,7 +72,7 @@ export const RecipeTitle: React.FC<Props> = ({
           }}
           className="recipe-title-edit"
           style={{ 
-            margin: '0 0 1.5rem 0',
+            margin: '0 0 0.5rem 0',
             textAlign: 'center',
             fontSize: 'clamp(1.5rem, 4vw + 0.5rem, 2.25rem)',
             fontWeight: 800,

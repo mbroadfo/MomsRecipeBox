@@ -1,0 +1,95 @@
+/* AI Assistant Panel Styling - Phase 4 */
+
+.ai-assistant-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Toggle Button Styling */
+.recipe-ai-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.recipe-ai-toggle:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.recipe-ai-toggle svg {
+  flex-shrink: 0;
+}
+
+/* Desktop Layout (> 768px) */
+@media (min-width: 769px) {
+  .ai-assistant-panel {
+    /* Part of the right column scroll container */
+    width: 100%;
+  }
+
+  .recipe-ai-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    overflow: hidden;
+    height: auto;
+    max-height: 600px; /* Reasonable max height for desktop */
+  }
+}
+
+/* Mobile Layout (≤ 768px) */
+@media (max-width: 768px) {
+  .ai-assistant-panel {
+    position: relative;
+    z-index: 10;
+  }
+
+  .recipe-ai-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60vh; /* 60% of viewport height when open */
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+    z-index: 1000;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Backdrop for mobile */
+  .recipe-ai-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 60vh; /* Cover area above panel */
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+  }
+}

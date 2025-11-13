@@ -176,4 +176,27 @@ recipe-page
 4. **Image container optimization** (space efficiency)
 5. **AI assistant integration** (feature enhancement)
 
-## Status: Ready to implement Phase 1
+## 🎯 Phase 5: Mode-Specific AI Capabilities (Future Enhancement)
+
+### 5.1 View Mode AI Features:
+- Ask questions about the recipe
+- Suggest ingredient substitutions
+- Convert measurements
+- Scale recipe portions
+- Nutrition information queries
+
+### 5.2 Edit Mode AI Features:
+- Improve recipe descriptions
+- Suggest better ingredient groupings
+- Rewrite instructions for clarity
+- Add missing steps
+- Optimize cooking techniques
+
+### 5.3 New Recipe Mode AI Features:
+- Extract recipe from URL (current)
+- Create recipe from description (current)
+- Generate recipe from ingredients (current)
+- Image upload with AI extraction
+- Multi-step guided recipe creation
+
+## Status: Phase 1-4 Complete, Phase 5 Planned

@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-13
 
+### UI - AI Assistant Integration (Phase 4)
+
+#### 🤖 Unified AI Assistant Available in All Recipe Modes
+
+**✅ AI Assistant Now Available Everywhere:**
+
+- Previously limited to new recipe creation only
+- Now available in **all modes**: view, edit, and new recipe
+- Unified AIAssistantPanel component handles all modes
+- Better AI feature discoverability across the application
+
+**✅ Desktop Implementation:**
+
+- AI assistant appears below image in right column
+- Part of the right column scroll container
+- Proper styling with 600px max height
+- Always accessible via toggle button
+- Independent scrolling for long AI conversations
+
+**✅ Mobile Implementation:**
+
+- Fixed position panel slides up from bottom
+- 60% viewport height when expanded
+- Smooth slide-up animation (0.3s ease-out)
+- Semi-transparent backdrop overlay
+- Rounded top corners for modern mobile UX
+- Proper z-index layering (z-index: 1000)
+
+**✅ Component Architecture:**
+
+- Created `AIAssistantPanel.css` for responsive styling
+- Updated `AIAssistantPanel.tsx` to remove `isNew` restriction
+- Integrated into `RecipeDetailContainer.tsx` after ImagePane
+- Removed old inline toggle button (now handled by component)
+- Clean separation of concerns between layout and functionality
+
+**✅ User Experience Improvements:**
+
+- Toggle button with clear show/hide labels
+- Consistent behavior across all recipe modes
+- No layout shift when toggling (mobile: overlay, desktop: in-flow)
+- AI assistant state preserved during mode switches
+
+**Future Enhancement (Phase 5):**
+
+- Mode-specific AI capabilities (view/edit/new will have different prompts/features)
+
 ### UI - Image Container Optimization (Phase 3)
 
 #### 🖼️ Smart Image Container Sizing & Dead Space Elimination

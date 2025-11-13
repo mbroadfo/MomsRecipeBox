@@ -1,6 +1,6 @@
 import React from 'react';
 import { RecipeAIChat } from './RecipeAIChat';
-import './ResponsiveLayout.css';
+import './AIAssistantPanel.css';
 
 interface ParsedRecipe {
   title?: string;
@@ -19,21 +19,19 @@ interface ParsedRecipe {
 
 interface AIAssistantPanelProps {
   isVisible: boolean;
-  isNew: boolean;
+  mode: 'new' | 'edit' | 'view';
   onToggleVisibility: () => void;
   onApplyRecipe: (recipe: ParsedRecipe) => void;
 }
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   isVisible,
-  isNew,
+  mode: _mode, // Available for future mode-specific behavior
   onToggleVisibility,
   onApplyRecipe,
 }) => {
-  // Only show for new recipes
-  if (!isNew) {
-    return null;
-  }
+  // Available in all modes now (Phase 4)
+  // No longer restricted to isNew only
 
   return (
     <div className="ai-assistant-panel" style={{ marginBottom: '1rem' }}>

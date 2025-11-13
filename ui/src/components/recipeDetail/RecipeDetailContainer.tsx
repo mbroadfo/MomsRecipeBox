@@ -22,11 +22,10 @@ import { Notes } from './parts/Notes';
 import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { InstructionsEditor } from './parts/StepsEditor';
-import { RecipeAIChat } from './parts/RecipeAIChat';
 import { Description } from './parts/Description';
+import { AIAssistantPanel } from './parts/AIAssistantPanel';
 // import { RecipeHeader } from './parts/RecipeHeader';
-// import { ResponsiveLayout, FullWidthContainer, ContentSection } from './parts/ResponsiveLayout';
-// import { AIAssistantPanel } from './parts/AIAssistantPanel';
+// import { ResponsiveLayout, FullWidthContainer, ContentSection} from './parts/ResponsiveLayout';
 import '../RecipeDetail.css';
 import './parts/RecipeAIChat.css';
 import '../../components/shoppingList/ShoppingListPage.css';
@@ -322,32 +321,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     <div className="recipe-page">
       <div className="recipe-left">{/* flex column; header separated from scroll area */}
         <div className="recipe-left-scroll">{/* new scroll container */}
-          {isNew && (
-            <button 
-              className="recipe-ai-toggle" 
-              onClick={() => setShowAIChat(!showAIChat)}
-              type="button"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {showAIChat ? (
-                  <>
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                  </>
-                ) : (
-                  <>
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                    <line x1="9" y1="9" x2="9.01" y2="9" />
-                    <line x1="15" y1="9" x2="15.01" y2="9" />
-                  </>
-                )}
-              </svg>
-              {showAIChat ? "Hide Recipe AI Assistant" : "Show Recipe AI Assistant"}
-            </button>
-          )}
-          
           <Subtitle value={working.subtitle} editing={editMode} onChange={v => patch({ subtitle: v })} />
           <Description value={working.description} editing={editMode} onChange={v => patch({ description: v })} />
           <Meta source={working.source} author={working.author} editing={editMode} onChange={patch} />
@@ -602,11 +575,12 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             lastUploadTime={lastUploadTime} 
           />
           
-          {isNew && (
-            <div className="recipe-ai-container">
-              <RecipeAIChat 
-                isVisible={showAIChat} 
-                onApplyRecipe={async (recipeData) => {
+          {/* Phase 4: AI Assistant available in all modes */}
+          <AIAssistantPanel
+            isVisible={showAIChat}
+            mode={isNew ? 'new' : (editMode ? 'edit' : 'view')}
+            onToggleVisibility={() => setShowAIChat(!showAIChat)}
+            onApplyRecipe={async (recipeData) => {
                   // We'll directly create the recipe using the recipe data without updating the form
                   try {
                     setSaving(true);
@@ -827,8 +801,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   }
                 }}
               />
-            </div>
-          )}
         </div>
       </div>
       

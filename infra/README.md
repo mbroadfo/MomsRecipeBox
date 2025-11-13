@@ -7,12 +7,11 @@ This directory contains Terraform configuration for deploying MomsRecipeBox to A
 ### Core Components
 
 - **API Gateway**: RESTful API endpoints with JWT authentication
-- **Lambda Functions**: Serverless application runtime (mrb-app-api)
+- **Lambda Functions**: Serverless application runtime (mrb-app-api) with ZIP deployment
 - **JWT Authorizer**: Auth0-integrated Lambda authorizer (mrb-jwt-authorizer)
 - **S3 Buckets**: Recipe images and UI hosting
 - **CloudFront**: CDN for UI distribution
 - **MongoDB Atlas**: Managed database integration
-- **ECR**: Container registry for Lambda deployment
 
 ### Security Features
 

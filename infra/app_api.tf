@@ -1,24 +1,5 @@
 # app_api.tf
 ##############################################
-# Create the ECR repository
-##############################################
-resource "aws_ecr_repository" "app_repo" {
-  count = var.enable_app_api ? 1 : 0
-  name  = "mrb-app-api"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  image_tag_mutability = "MUTABLE"
-
-  encryption_configuration {
-    encryption_type = "AES256"
-  }
-  force_delete         = true
-}
-
-##############################################
 # Lambda execution role
 ##############################################
 resource "aws_iam_role" "app_lambda_role" {
@@ -84,16 +65,22 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
 }
 
 ##############################################
-# Lambda function from ECR image
+# Lambda function from ZIP file
 ##############################################
 resource "aws_lambda_function" "app_lambda" {
-  count = var.enable_app_api ? 1 : 0
+  count         = var.enable_app_api ? 1 : 0
   function_name = "mrb-app-api"
   role          = aws_iam_role.app_lambda_role[count.index].arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.app_repo[count.index].repository_url}:dev"
+  
+  # ZIP deployment instead of container image
+  package_type  = "Zip"
+  filename      = "${path.module}/../lambda-deployment.zip"
+  handler       = "lambda.handler"
+  runtime       = "nodejs18.x"
+  source_code_hash = filebase64sha256("${path.module}/../lambda-deployment.zip")
+  
   timeout       = 30
-  memory_size   = 256
+  memory_size   = 512
 
   environment {
     variables = {

@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 
 /**
- * Lambda Deployment Manager
+ * Lambda Deployment Manager (DEPRECATED - Docker/ECR)
  * 
- * Modern replacement for Deploy-Lambda.ps1
- * Builds Docker image, pushes to ECR, and updates Lambda function
+ * ⚠️ DEPRECATED: This Docker/ECR deployment is no longer used.
+ * Use deploy-lambda-zip.js instead for cheaper, faster ZIP deployments.
  * 
- * Usage:
+ * This script is kept for reference only.
+ * ECR repository has been removed from infrastructure.
+ * 
+ * Legacy Usage:
  *   node scripts/deploy-lambda.js [options]
- *   npm run deploy:lambda
- *   npm run deploy:lambda -- --tag production
+ *   npm run deploy:lambda:docker
  */
+
+console.log('\x1b[33m⚠️ WARNING: This Docker/ECR deployment script is deprecated!\x1b[0m');
+console.log('\x1b[33mUse "npm run deploy:lambda" instead (ZIP deployment)\x1b[0m');
+console.log('\x1b[33mECR repository has been removed from infrastructure.\x1b[0m\n');
 
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';

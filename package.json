@@ -8,7 +8,8 @@
     "ui:build": "cd ui && npm run build",
     
     "deploy": "npm run deploy:lambda && npm run deploy:ui",
-    "deploy:lambda": "node scripts/deploy-lambda.js",
+    "deploy:lambda": "node scripts/deploy-lambda-zip.js",
+    "deploy:lambda:docker": "node scripts/deploy-lambda.js",
     "deploy:ui": "node scripts/deploy-ui.js",
     "deploy:ui:prod": "node scripts/deploy-ui.js --prod",
     

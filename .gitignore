@@ -19,6 +19,7 @@ config/.mongodb_*
 .terraform/
 *.tfstate
 *.tfstate.backup
+*.tfstate.*.backup
 *.tfplan
 tfplan
 .terraform.lock.hcl

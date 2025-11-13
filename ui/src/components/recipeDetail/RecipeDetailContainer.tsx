@@ -385,20 +385,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
           
           {/* Only show delete button in edit mode for recipe owners */}
           {editMode && !isNew && getCurrentUserId() === working.owner_id && (
-            <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <button 
+            <div className="recipe-danger-zone">
+              <button
+                type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                style={{ 
-                  background: '#dc2626', 
-                  color: '#fff', 
-                  fontSize: '0.875rem',
-                  fontWeight: 600, 
-                  padding: '0.75rem 1.5rem', 
-                  borderRadius: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
+                className="button-danger"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 6h18"></path>
@@ -415,16 +406,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
       </div>
       <div className="recipe-right">
         <div className="recipe-right-content">
-          {/* Compact Mobile Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.5rem',
-            marginBottom: '0.5rem',
-            width: '100%',
-            padding: '0'
-          }}>
-            {/* Back Arrow - Clean icon like edit button */}
+          {/* Header Row: Back Button + Title + Actions */}
+          <div className="recipe-header-actions">
+            {/* Back Arrow */}
             <button 
               onClick={handleBack}
               aria-label="Back to recipes"
@@ -454,8 +438,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
               </svg>
             </button>
 
-            {/* Title Column - Just Title */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Title in the middle */}
+            <div className="recipe-header-title">
               <RecipeTitle 
                 title={working.title}
                 editing={editMode}
@@ -463,51 +447,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
               />
             </div>
 
-            {/* Right Side Actions */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem',
-              flexShrink: 0
-            }}>
-              {/* Like Heart - Only for existing recipes */}
-              {!isNew && (
-                <button
-                  onClick={toggleLike}
-                  aria-label={liked ? "Unlike recipe" : "Like recipe"}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '0.25rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="22" 
-                    height="22" 
-                    viewBox="0 0 24 24" 
-                    fill={liked ? "#dc2626" : "none"} 
-                    stroke={liked ? "#dc2626" : "#6b7280"} 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </button>
-              )}
-              
+            {/* Right Side Actions - Edit/Save/Cancel only */}
               {/* Edit Button */}
               {!editMode ? (
                 <button 
@@ -580,25 +520,13 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   </button>
                 </div>
               )}
-            </div>
           </div>
           
           {/* User Email and Visibility Badge - FULL WIDTH ROW */}
           {working.owner_id && (
-            <div style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              marginBottom: '0.5rem',
-              padding: '0'
-            }}>
+            <div className="recipe-owner-row">
               {/* User Email - True Left Edge */}
-              <div style={{
-                color: '#6b7280',
-                fontSize: '0.8rem',
-                whiteSpace: 'nowrap'
-              }}>
+              <div className="recipe-owner-email">
                 by {(() => {
                   const authId = working.owner_id;
                   if (authId.includes('@')) return authId;
@@ -609,18 +537,60 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   return `${authId.substring(0, 8)}@example.com`;
                 })()}
               </div>
-              {/* Visibility Badge - True Right Edge */}
-              <div style={{
-                background: working.visibility === 'public' ? '#dcfdf7' : '#f3f4f6',
-                color: working.visibility === 'public' ? '#047857' : '#6b7280',
-                padding: '0.125rem 0.375rem',
-                borderRadius: '0.25rem',
-                fontSize: '0.7rem',
-                fontWeight: '600',
-                border: `1px solid ${working.visibility === 'public' ? '#10b981' : '#d1d5db'}`,
-                flexShrink: 0
-              }}>
-                {working.visibility === 'public' ? 'Public' : 'Private'}
+              
+              {/* Right side: Like + Visibility Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                {/* Like Heart - Only for existing recipes */}
+                {!isNew && (
+                  <button
+                    onClick={toggleLike}
+                    aria-label={liked ? "Unlike recipe" : "Like recipe"}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill={liked ? "#dc2626" : "none"} 
+                      stroke={liked ? "#dc2626" : "#6b7280"} 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </button>
+                )}
+                
+                {/* Visibility Badge */}
+                <div style={{
+                  background: working.visibility === 'public' ? '#dcfdf7' : '#f3f4f6',
+                  color: working.visibility === 'public' ? '#047857' : '#6b7280',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.7rem',
+                  fontWeight: '600',
+                  border: `1px solid ${working.visibility === 'public' ? '#10b981' : '#d1d5db'}`,
+                  flexShrink: 0
+                }}>
+                  {working.visibility === 'public' ? 'Public' : 'Private'}
+                </div>
               </div>
             </div>
           )}

@@ -5,6 +5,89 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-12
+
+### Infrastructure - Lambda ECR to ZIP Migration & Mobile Layout Refinements
+
+#### 🚀 Major Cost & Performance Infrastructure Migration
+
+**✅ Migrated Lambda from ECR Container to ZIP Deployment:**
+
+- **Cost Savings**: Eliminated ECR charges ($0.70/month = $8.40/year savings)
+- **Deployment Speed**: Reduced from 60-90s to ~34s (2-3x faster)
+- **Package Size**: Reduced from 300MB container to 30MB ZIP (10x smaller)
+- **Simplified Pipeline**: No Docker dependency for deployments
+- **Infrastructure Changes**: Updated Terraform configuration for ZIP package type
+- **Lambda Memory**: Increased from 256MB to 512MB for ZIP deployment performance
+
+**✅ New ZIP Deployment System (`scripts/deploy-lambda-zip.js`):**
+
+- Automated build → package → upload pipeline (310 lines)
+- Production dependency installation with `--omit=dev --platform=linux --arch=x64`
+- Copies handlers, models, utils, ai_providers, admin, health, scripts, config
+- Creates compressed ZIP with archiver (~30MB)
+- AWS CLI direct Lambda update via `update-function-code`
+- Automatic cleanup of `.lambda-build/` temp directory
+- Full deployment in ~34 seconds vs 60-90s for Docker
+
+**✅ Infrastructure Updates:**
+
+- Removed ECR repository from Terraform (`infra/app_api.tf`)
+- Updated Lambda function to ZIP package type with proper runtime/handler
+- Added `source_code_hash` for proper change detection
+- Deprecated Docker deployment script with warnings
+- Updated npm scripts: `deploy:lambda` now uses ZIP by default
+
+**✅ Comprehensive Migration Documentation:**
+
+- Created `docs/guides/ECR-to-ZIP-Migration.md` (402 lines)
+- Benefits analysis, cost comparison, deployment steps
+- Troubleshooting guide and rollback procedures
+- Created `ECR-REMOVAL-PLAN.md` with step-by-step action plan
+- Risk assessment and verification checklist
+
+#### 🎨 Mobile Layout Refinements (Phase 2 Completion)
+
+**✅ Recipe Detail Header Restructure:**
+
+- Consolidated header layout: back button + title + actions in single row
+- Moved like button from header to owner/visibility row
+- Better visual hierarchy and cleaner mobile experience
+- Title now properly centered with flex layout
+
+**✅ Spacing Optimization:**
+
+- Reduced all content spacing to 4px (`--space-1`) for tighter mobile layout
+- Removed flexbox gap from `.recipe-right-content` (was 16px)
+- Optimized margins: header actions (8px), owner-row (12px), content sections (4px)
+- Recipe image wrapper margin reduced from 16px to 4px
+- Cleaner, more compact mobile interface
+
+**✅ Component Updates:**
+
+- `RecipeDetailContainer.tsx`: Restructured header and owner row layout
+- `RecipeDetail.css`: Comprehensive spacing audit and optimization
+- All changes deployed and verified on CloudFront production
+
+#### 🔄 Migration Process
+
+**Successful Migration Steps:**
+
+1. Created new ZIP deployment script with automated pipeline
+2. Updated Terraform configuration for ZIP package type
+3. Removed Lambda from Terraform state (`terraform state rm`)
+4. Manual deletion of existing Lambda function (permission limitations)
+5. Terraform apply recreated Lambda with ZIP configuration
+6. First ZIP deployment successful (34.4s, 30.09MB)
+7. API verification confirmed working (returns 401 Unauthorized correctly)
+
+**Technical Notes:**
+
+- Lambda package_type change requires function recreation
+- User manually deleted ECR repository due to IAM permission constraints
+- ZIP deployment fully tested and operational
+- CloudWatch logs available at `/aws/lambda/mrb-app-api`
+
 ## [Unreleased] - 2025-11-11
 
 ### Architecture - Mobile Responsive Component System (Phase 1)

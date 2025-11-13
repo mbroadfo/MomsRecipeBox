@@ -155,10 +155,10 @@
 
 .recipe-image-wrapper {
   width: 100%;
-  max-width: 540px;
-  aspect-ratio: 16/10; /* Maintain reasonable proportions */
-  max-height: 60vh; /* Responsive to viewport height */
-  min-height: 250px;
+  max-width: 500px; /* Desktop max width */
+  aspect-ratio: 4/3; /* More compact aspect ratio */
+  max-height: 400px; /* Desktop max height */
+  min-height: auto; /* Allow natural sizing */
   border-radius: 1.5rem; /* 24px */
   overflow: hidden;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 4px 8px -2px rgba(0,0,0,0.08);
@@ -169,10 +169,16 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Hide container completely when empty (no dead space) */
+.recipe-image-wrapper:empty {
+  display: none;
+}
+
 .recipe-image-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Changed to cover for better image presentation */
+  object-fit: contain; /* Maintain aspect ratio without cropping */
   object-position: center;
   background: #f8fafc;
   transition: transform 0.3s ease; /* Add subtle hover effect */
@@ -182,9 +188,6 @@
 .recipe-image-wrapper:hover img {
   transform: scale(1.02);
 }
-
-/* When image is detected small, constrain wrapper to natural width */
-.recipe-image-wrapper.small-image { width: auto; max-width: 100%; }
 
 /* Typography & Sections */
 .recipe-title {
@@ -932,12 +935,15 @@
   .recipe-right { order: 1; position: relative; top: auto; border-left: none; padding: var(--space-4); height: auto; }
   .recipe-right-content { height: auto; }
   .recipe-image-wrapper {
-    height: auto;
-    max-height: 400px; /* Reasonable max on mobile */
-    aspect-ratio: 16/9; /* Standard mobile aspect ratio */
+    width: 100%; /* Full width on mobile */
+    max-width: 100%; /* Override desktop constraint */
+    height: auto; /* Natural height */
+    max-height: 350px; /* Reasonable max to prevent excessive space */
+    aspect-ratio: 4/3; /* Maintain aspect ratio */
+    min-height: auto; /* Allow natural sizing, no minimum */
   }
   .recipe-image-wrapper img {
-    object-fit: cover;
+    object-fit: contain; /* Maintain aspect ratio without cropping */
   }
   .recipe-ai-container { height: 500px; margin-bottom: var(--space-5); }
 }

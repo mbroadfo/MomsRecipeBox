@@ -5,6 +5,40 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-13
+
+### UI - Image Container Optimization (Phase 3)
+
+#### 🖼️ Smart Image Container Sizing & Dead Space Elimination
+
+**✅ Desktop Image Container Optimization:**
+
+- Reduced max dimensions: 500px width × 400px height (was 540px × 60vh)
+- Changed aspect ratio from 16:10 to 4:3 for more compact display
+- Removed minimum height constraint (was 250px) for natural sizing
+- Changed `object-fit: contain` to preserve aspect ratio without cropping
+
+**✅ Mobile Image Container Optimization:**
+
+- Full width with max-height of 350px (was 400px)
+- 4:3 aspect ratio maintained across all screen sizes
+- Removed forced minimum heights for natural image scaling
+- `object-fit: contain` prevents image distortion
+
+**✅ Dead Space Elimination:**
+
+- Added `.recipe-image-wrapper:empty { display: none; }` rule
+- Containers without images collapse completely (no empty space)
+- Images smaller than container automatically shrink to fit
+- No more excessive whitespace from empty or small images
+
+**Impact:**
+
+- More compact recipe detail layout on mobile and desktop
+- No dead space when recipes lack images
+- Images maintain proper aspect ratios without cropping
+- Better visual hierarchy with tighter spacing
+
 ## [Unreleased] - 2025-11-12
 
 ### Infrastructure - Lambda ECR to ZIP Migration & Mobile Layout Refinements

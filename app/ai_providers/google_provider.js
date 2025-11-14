@@ -78,6 +78,21 @@ export class GoogleGeminiProvider extends BaseAIProvider {
     console.info("First candidate structure:", Object.keys(data?.candidates?.[0] || {}));
     console.info("Content structure:", Object.keys(data?.candidates?.[0]?.content || {}));
     
+    const candidate = data?.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    
+    // Check if response was truncated due to MAX_TOKENS
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn("Google API response was truncated due to MAX_TOKENS limit");
+      // When MAX_TOKENS is hit, Google may not include parts in the response
+      // This is a known issue with Gemini 2.5 - it returns incomplete responses
+      // Return a helpful error message instead of throwing
+      return "I apologize, but my response was too long and got cut off. Could you please:\n\n" +
+             "1. Ask a more specific question, or\n" +
+             "2. Try selecting a different AI model from the dropdown (like OpenAI or Anthropic)\n\n" +
+             "This helps me provide you with a complete answer! 😊";
+    }
+    
     // Try multiple possible response formats
     let response = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     
@@ -263,7 +278,8 @@ ${textContent.substring(0, 8000)} // Limit to 8k characters to stay within token
     ]);
     
     console.log("Sending chat request to Google Gemini API...");
-    const rawResponse = await this.makeRequest(formattedConversation, 0.7, 1024);
+    // Increased token limit from 1024 to 2048 to handle longer responses with recipe context
+    const rawResponse = await this.makeRequest(formattedConversation, 0.7, 2048);
     console.log("Received chat response length:", rawResponse.length);
     
     // Check if this contains a recipe

@@ -34,21 +34,33 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   // No longer restricted to isNew only
 
   return (
-    <div className="ai-assistant-panel" style={{ marginBottom: '1rem' }}>
-      {/* Toggle Button */}
-      <button 
-        className="recipe-ai-toggle" 
-        onClick={onToggleVisibility}
-        type="button"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.75rem 1rem',
-          border: '1px solid #e5e7eb',
-          borderRadius: '0.5rem',
-          background: '#f9fafb',
-          cursor: 'pointer',
+    <>
+      {/* Mobile backdrop - click to close */}
+      {isVisible && (
+        <div 
+          className="ai-assistant-backdrop"
+          onClick={onToggleVisibility}
+          style={{
+            display: 'none', // Hidden on desktop
+          }}
+        />
+      )}
+      
+      <div className="ai-assistant-panel" style={{ marginBottom: '1rem' }}>
+        {/* Toggle Button */}
+        <button 
+          className="recipe-ai-toggle" 
+          onClick={onToggleVisibility}
+          type="button"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.5rem',
+            background: '#f9fafb',
+            cursor: 'pointer',
           fontSize: '0.875rem',
           fontWeight: '500',
           color: '#374151',
@@ -111,5 +123,6 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         </div>
       )}
     </div>
+    </>
   );
 };

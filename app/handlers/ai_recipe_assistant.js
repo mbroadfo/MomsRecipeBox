@@ -80,7 +80,7 @@ export async function handler(event) {
   try {
     // Parse the request body
     const body = JSON.parse(event.body);
-    const { message, messages = [], url = null, user_id = null, model = 'auto' } = body;
+    const { message, messages = [], url = null, user_id = null, model = 'auto', currentRecipe = null, mode = 'new' } = body;
     
     // Initialize AI provider based on selected model (or auto-select)
     let aiProvider;
@@ -145,7 +145,7 @@ export async function handler(event) {
         return await handlePastedRecipeContent(message, aiProvider);
       }
       
-      return await handleChatMessage(message, messages || [], aiProvider);
+      return await handleChatMessage(message, messages || [], aiProvider, currentRecipe, mode);
     } else {
       // Unknown endpoint
       return {
@@ -155,6 +155,24 @@ export async function handler(event) {
     }
   } catch (error) {
     console.error("Error in AI recipe assistant:", error);
+    
+    // Check if this is a rate limit or service unavailable error
+    const isRateLimitError = error.message?.includes('rate limit') || 
+                             error.message?.includes('overloaded') ||
+                             error.message?.includes('503') ||
+                             error.message?.includes('429');
+    
+    if (isRateLimitError) {
+      return {
+        statusCode: 200, // Return 200 so frontend can display the message
+        body: JSON.stringify({
+          success: true,
+          message: "The AI service is currently overloaded. Please try again in a moment or select a different AI model from the dropdown. 🔄",
+          recipeData: null
+        })
+      };
+    }
+    
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -528,8 +546,29 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
 /**
  * Process chat messages for recipe creation/modification
  */
-async function handleChatMessage(message, history, aiProvider) {
+async function handleChatMessage(message, history, aiProvider, currentRecipe = null, mode = 'new') {
   try {
+    console.log(`📝 Chat message in ${mode} mode with recipe context:`, currentRecipe ? 'Yes' : 'No');
+    
+    // If in view mode with a recipe, prefix the message with recipe context
+    let enhancedMessage = message;
+    if (mode === 'view' && currentRecipe) {
+      enhancedMessage = `I'm viewing a recipe with the following details:
+Title: ${currentRecipe.title || 'Unknown'}
+Ingredients: ${currentRecipe.ingredients?.map(ing => 
+  typeof ing === 'string' ? ing : `${ing.quantity || ''} ${ing.name || ''}`.trim()
+).join(', ') || 'None listed'}
+Instructions: ${Array.isArray(currentRecipe.instructions) ? currentRecipe.instructions.join(' ') : currentRecipe.instructions || 'None listed'}
+Yield: ${currentRecipe.yield || 'Not specified'}
+${currentRecipe.tags ? `Tags: ${currentRecipe.tags.join(', ')}` : ''}
+
+User question: ${message}
+
+Please answer the user's question about this recipe. In view mode, you should provide suggestions and answer questions, but do NOT return recipeData to modify the recipe - just provide helpful information in your response.`;
+      
+      console.log('Enhanced message with recipe context (first 200 chars):', enhancedMessage.substring(0, 200));
+    }
+    
     // Add retry logic with exponential backoff for API calls
     let retries = 3;
     let delay = 1000; // Start with 1 second delay
@@ -540,23 +579,26 @@ async function handleChatMessage(message, history, aiProvider) {
       try {
         console.log(`LLM API attempt ${attempt + 1}/${retries + 1}`);
         
-        // Use the provider to handle the chat message
-        const aiResponse = await aiProvider.handleChatMessage(message, history);
+        // Use the provider to handle the chat message (with enhanced message in view mode)
+        const aiResponse = await aiProvider.handleChatMessage(enhancedMessage, history);
         
         // Log the AI response for debugging
         console.log("Chat AI Response from provider:", aiProvider.getConfig().name);
         console.log("Chat Response sample (first 200 chars):", aiResponse.substring(0, 200));
         
         // Check if response contains a complete recipe
+        // In view mode, we should NOT parse recipe data - just return the conversational response
         const containsCompleteRecipe = 
+          mode !== 'view' && 
           aiResponse.includes("Title:") && 
           aiResponse.includes("Ingredients:") && 
           (aiResponse.includes("Instructions:") || aiResponse.includes("Steps:"));
         
         console.log("Contains complete recipe:", containsCompleteRecipe);
+        console.log("Mode:", mode, "- Recipe data will", mode === 'view' ? 'NOT' : 'be', "parsed");
         
         let recipeData = null;
-        if (containsCompleteRecipe) {
+        if (containsCompleteRecipe && mode !== 'view') {
           // Parse the response to extract structured recipe data
           recipeData = parseRecipeFromText(aiResponse);
           
@@ -647,6 +689,24 @@ async function handleChatMessage(message, history, aiProvider) {
     throw lastError || new Error('API failed after multiple retries');
   } catch (error) {
     console.error("Error in chat handling:", error);
+    
+    // Check if this is a service overload/unavailable error (503)
+    const isServiceUnavailable = error.response?.status === 503 || 
+                                 error.message?.includes('503') ||
+                                 error.message?.includes('overloaded') ||
+                                 error.message?.includes('UNAVAILABLE');
+    
+    if (isServiceUnavailable) {
+      // Return a friendly message instead of an error
+      return {
+        statusCode: 200, // Return 200 so frontend displays the message
+        body: JSON.stringify({
+          success: true,
+          message: "The AI service is temporarily overloaded. Please try again in a moment or select a different AI model from the dropdown (like OpenAI or Anthropic). 🔄",
+          recipeData: null
+        })
+      };
+    }
     
     return {
       statusCode: 500,

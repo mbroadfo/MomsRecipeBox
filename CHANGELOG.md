@@ -5,6 +5,41 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-14
+
+### Fix - Global AI Assistant Close Button Integration
+
+#### ✨ Clean Header Layout with Integrated Close Button
+
+**❌ Problem Identified:**
+
+- Close button was rendered in separate div above AI header component
+- Created unwanted spacing and visual hierarchy issues
+- Button was external to the component it should control
+
+**✅ Solution Implemented:**
+
+- **Component Props Pattern**: Added `onClose?: () => void` prop to RecipeAIChat component
+- **Internal Button Rendering**: Close button now renders inside `recipe-ai-header-compact` div
+- **Conditional Display**: Button only appears when `onClose` callback is provided
+- **Clean Layout**: Header now contains button (left), centered title, and model selector (right)
+
+**✅ Technical Implementation:**
+
+- **RecipeAIChat.tsx**: Added onClose prop, conditional close button JSX inside header
+- **RecipeAIChat.css**: Added `.recipe-ai-close-btn` styling to match gradient header
+- **GlobalAIAssistant.tsx**: Removed separate close button div, passes `onClose={hideAI}` to RecipeAIChat
+- **GlobalAIAssistant.css**: Cleaned up orphaned `.global-ai-close` styles
+
+**✅ Layout Improvements:**
+
+- **Flexbox + Absolute Positioning**: Button and selector use flexbox, title centered with absolute positioning
+- **Semi-transparent Styling**: Button has `rgba(255, 255, 255, 0.2)` background matching header gradient
+- **Proper Component Boundaries**: Close button now part of the header it visually belongs to
+- **No Extra Spacing**: Eliminated unwanted div that created visual gap
+
+**Impact**: Clean, professional AI header layout with properly integrated close button. Follows React best practices for component composition using props instead of wrapper divs.
+
 ## [Unreleased] - 2025-11-13
 
 ### UI - AI Assistant Integration (Phase 4)

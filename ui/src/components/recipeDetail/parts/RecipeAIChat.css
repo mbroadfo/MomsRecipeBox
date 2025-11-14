@@ -18,63 +18,77 @@
   flex-direction: column;
 }
 
-.recipe-ai-header {
+/* Compact header - Phase 4 streamlined */
+.recipe-ai-header-compact {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
-  padding: 0.75rem 1.25rem;
+  padding: 0.5rem 0.75rem;
   color: white;
   flex-shrink: 0;
-}
-
-.recipe-ai-header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
-.recipe-ai-header h2 {
-  font-size: 1.25rem;
+.recipe-ai-header-compact h3 {
+  font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
 }
 
-.recipe-ai-model-select-container {
+.recipe-ai-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  z-index: 1;
 }
 
-.recipe-ai-model-select {
+.recipe-ai-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.recipe-ai-model-select-compact {
   background-color: rgba(255, 255, 255, 0.2);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   cursor: pointer;
   outline: none;
   transition: all 0.2s;
 }
 
-.recipe-ai-model-select:hover {
+.recipe-ai-model-select-compact:hover {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-.recipe-ai-model-select option {
+.recipe-ai-model-select-compact option {
   background-color: #ffffff;
   color: #1e293b;
 }
 
-.recipe-ai-subtitle {
-  font-size: 0.85rem;
-  margin: 0.5rem 0 0;
-  opacity: 0.9;
-}
-
 .recipe-ai-chat-container {
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
+  gap: 0.75rem;
 }
 
 .recipe-ai-messages {
@@ -84,6 +98,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 200px; /* Ensure reasonable minimum height */
+  max-height: 100%; /* Allow to grow but constrained by container */
 }
 
 .recipe-ai-message {
@@ -91,6 +107,37 @@
   border-radius: 0.75rem;
   max-width: 85%;
   line-height: 1.5;
+}
+
+/* Markdown formatting styles */
+.recipe-ai-message strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.recipe-ai-message em {
+  font-style: italic;
+}
+
+.recipe-ai-message code {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.recipe-ai-assistant code {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.recipe-ai-user code {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.recipe-ai-message li {
+  margin-left: 1.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .recipe-ai-assistant {
@@ -144,7 +191,7 @@
 
 .recipe-ai-input-form {
   display: flex;
-  margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 .recipe-ai-input {

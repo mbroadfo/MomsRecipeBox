@@ -2,6 +2,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { FilterProvider } from '../../contexts/FilterContext';
 import { Header } from './Header';
+import { GlobalAIAssistant } from './GlobalAIAssistant';
 import './Layout.css';
 
 interface LayoutProps {
@@ -18,6 +19,7 @@ export const Layout: React.FC<LayoutProps> = ({
         <div className="app-content p-0 m-0">
           {children}
         </div>
+        <GlobalAIAssistant />
       </div>
     </FilterProvider>
   );

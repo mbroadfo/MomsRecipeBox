@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { isUserAdmin } from '../../auth/types';
 import { useFilter } from '../../contexts/FilterContext';
+import { useAI } from '../../contexts/AIContext';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
@@ -12,6 +13,7 @@ export const Header: React.FC = () => {
   
   // Get filter context (always available now since FilterProvider wraps everything)
   const { filter, setFilter, sort, setSort } = useFilter();
+  const { isVisible: aiVisible, toggleAI } = useAI();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth0();
@@ -77,6 +79,33 @@ export const Header: React.FC = () => {
             Recipes
           </Link>
         </nav>
+        
+        {/* AI Assistant Toggle Button */}
+        <button
+          onClick={toggleAI}
+          className="ai-toggle-btn"
+          aria-label="AI Assistant"
+          title="AI Assistant"
+        >
+          <svg 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={aiVisible ? 'ai-icon-active' : ''}
+          >
+            {/* Sparkles/AI icon */}
+            <path d="M12 3L14 8L19 10L14 12L12 17L10 12L5 10L10 8L12 3Z" />
+            <path d="M5 3v4" />
+            <path d="M19 17v4" />
+            <path d="M3 5h4" />
+            <path d="M17 19h4" />
+          </svg>
+        </button>
         
         <div className="relative">
           <span

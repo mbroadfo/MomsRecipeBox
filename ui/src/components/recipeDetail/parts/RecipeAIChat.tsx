@@ -8,6 +8,23 @@ interface Message {
   content: string;
 }
 
+// Simple Markdown to HTML converter for chat messages
+function renderMarkdown(text: string): string {
+  return text
+    // Bold: **text** or __text__
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    // Lists: * item or - item
+    .replace(/^[*-]\s+(.+)$/gm, '<li>$1</li>')
+    // Code: `code`
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    // Line breaks
+    .replace(/\n/g, '<br/>');
+}
+
 interface AIProvider {
   name: string;
   key: string;
@@ -33,9 +50,13 @@ interface ParsedRecipe {
 interface RecipeAIChatProps {
   onApplyRecipe: (recipe: ParsedRecipe) => void;
   isVisible: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  currentRecipe?: Record<string, any> | null;
+  mode?: 'view' | 'edit' | 'new';
+  onClose?: () => void; // Optional close button handler
 }
 
-export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVisible }) => {
+export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVisible, currentRecipe, mode = 'new', onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,23 +69,8 @@ export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVis
   // Auth0 hook for authentication
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   
-  // Add initial greeting when the component mounts
-  useEffect(() => {
-    setMessages([
-      {
-        role: 'assistant',
-        content: `Hello! I'm your recipe creation assistant. I can help you:
-
-1. Build a recipe from scratch by describing what you want to make
-2. Extract a recipe from a URL you paste
-3. Process recipe content you copy/paste directly from a website
-4. Create a recipe based on ingredients you have
-5. Adapt existing recipes with modifications
-
-Simply type your request or paste a recipe or URL to get started!`
-      }
-    ]);
-  }, []);
+  // Start with clean conversation - no initial greeting
+  // User can start chatting immediately
 
   // Fetch available AI providers
   useEffect(() => {
@@ -158,7 +164,9 @@ Simply type your request or paste a recipe or URL to get started!`
           message: userInput,
           messages: messages,  // The backend expects 'messages' instead of 'history'
           user_id: 'demo-user', // Simplified user ID for demo purposes
-          model: selectedModel // Send the selected model to the backend
+          model: selectedModel, // Send the selected model to the backend
+          currentRecipe: currentRecipe || undefined, // Include current recipe for context
+          mode: mode // Include mode to guide AI behavior
         }),
       });
       
@@ -209,8 +217,23 @@ Simply type your request or paste a recipe or URL to get started!`
         return; // Exit early, we've handled the rate limit case
       }
       
-      // For other non-OK responses
+      // For other non-OK responses - but check if we still got recipe data
       if (!response.ok) {
+        // If we got recipe data despite the error, use it
+        if (data.recipeData) {
+          console.warn(`⚠️ API returned ${response.status} but included recipe data, proceeding with creation`);
+          setMessages(prev => [
+            ...prev, 
+            { 
+              role: 'assistant', 
+              content: `I've extracted the recipe. Creating it now...` 
+            }
+          ]);
+          handleApplyRecipe(data.recipeData);
+          return; // Exit early, we handled it
+        }
+        
+        // Otherwise throw the error
         throw new Error(`API request failed with status ${response.status}`);
       }
       
@@ -261,51 +284,44 @@ Simply type your request or paste a recipe or URL to get started!`
     onApplyRecipe(recipeData);
   };
 
-  // Handle example prompts
-  const handleExampleClick = (example: string) => {
-    setUserInput(example);
-  };
-
-  // Show example prompts for users
-  const examplePrompts = [
-    "https://www.example.com/my-recipe",
-    "Create a recipe for chocolate chip cookies",
-    "I have chicken, rice, and broccoli. What can I make?",
-    "Paste your recipe content here"
-  ];
-
   if (!isVisible) return null;
 
   return (
     <div className="recipe-ai-chat">
-      <div className="recipe-ai-header">
-        <div className="recipe-ai-header-top">
-          <h2>Recipe AI Assistant</h2>
-          <div className="recipe-ai-model-select-container">
-            <select 
-              className="recipe-ai-model-select"
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              disabled={providersLoading}
-            >
-              <option value="auto">Auto-select Best Model</option>
-              {providersLoading ? (
-                <option value="">Loading providers...</option>
-              ) : (
-                availableProviders
-                  .filter(provider => provider.status === 'available')
-                  .map(provider => (
-                    <option key={provider.key} value={provider.key}>
-                      {provider.name}
-                    </option>
-                  ))
-              )}
-            </select>
-          </div>
-        </div>
-        <p className="recipe-ai-subtitle">
-          Let me help you create a recipe by chatting or extracting from a URL
-        </p>
+      <div className="recipe-ai-header-compact">
+        {onClose && (
+          <button 
+            className="recipe-ai-close-btn"
+            onClick={onClose}
+            aria-label="Close AI Assistant"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        )}
+        <h3>AI Assistant</h3>
+        <select 
+          className="recipe-ai-model-select-compact"
+          value={selectedModel}
+          onChange={(e) => setSelectedModel(e.target.value)}
+          disabled={providersLoading}
+          title="Select AI Model"
+        >
+          <option value="auto">Auto</option>
+          {providersLoading ? (
+            <option value="">Loading...</option>
+          ) : (
+            availableProviders
+              .filter(provider => provider.status === 'available')
+              .map(provider => (
+                <option key={provider.key} value={provider.key}>
+                  {provider.name}
+                </option>
+              ))
+          )}
+        </select>
       </div>
 
       <div className="recipe-ai-chat-container">
@@ -314,14 +330,8 @@ Simply type your request or paste a recipe or URL to get started!`
             <div 
               key={index} 
               className={`recipe-ai-message ${message.role === 'assistant' ? 'recipe-ai-assistant' : 'recipe-ai-user'}`}
-            >
-              {message.content.split('\n').map((line, i) => (
-                <React.Fragment key={i}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </div>
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+            />
           ))}
           {isLoading && (
             <div className="recipe-ai-message recipe-ai-assistant recipe-ai-loading">
@@ -347,7 +357,7 @@ Simply type your request or paste a recipe or URL to get started!`
             type="text"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Ask me to create a recipe or paste a URL..."
+            placeholder="Type a recipe idea, paste a URL, or describe ingredients..."
             className="recipe-ai-input"
             disabled={isLoading}
           />
@@ -362,21 +372,6 @@ Simply type your request or paste a recipe or URL to get started!`
             </svg>
           </button>
         </form>
-
-        <div className="recipe-ai-examples">
-          <p className="recipe-ai-examples-title">Try asking:</p>
-          <div className="recipe-ai-example-chips">
-            {examplePrompts.map((prompt, index) => (
-              <button
-                key={index}
-                onClick={() => handleExampleClick(prompt)}
-                className="recipe-ai-example-chip"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

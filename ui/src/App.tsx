@@ -10,8 +10,12 @@ import { UserProfileEditor } from './components/profile/UserProfile';
 import { Layout } from './components/layout';
 import CallbackPage from './pages/CallbackPage';
 
-// Admin Components
+// Context Providers
+import { AIProvider } from './contexts/AIContext';
+import { RecipeProvider } from './contexts/RecipeContext';
 import { AdminProvider } from './contexts/AdminContext';
+
+// Admin Components
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
 import AdminErrorBoundary from './components/admin/AdminErrorBoundary';
 import AdminLayout from './components/admin/AdminLayout';
@@ -169,7 +173,11 @@ const AdminRoutes = () => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AuthenticatedApp />
+      <RecipeProvider>
+        <AIProvider>
+          <AuthenticatedApp />
+        </AIProvider>
+      </RecipeProvider>
     </BrowserRouter>
   );
 };

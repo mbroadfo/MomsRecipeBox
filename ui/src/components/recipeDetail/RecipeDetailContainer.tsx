@@ -10,6 +10,8 @@ import { getCurrentUserId } from '../../types/global';
 import { useImageUpload } from './hooks/useImageUpload';
 import { showToast, ToastType } from '../../components/Toast';
 import ConfirmModal from '../../components/shoppingList/components/ConfirmModal';
+import { RecipeCreationProvider } from '../../contexts/RecipeCreationContext';
+import { useRecipe as useRecipeContext } from '../../contexts/RecipeContext';
 import { RecipeTitle } from './parts/RecipeTitle';
 import { Tags } from './parts/Tags';
 import { Subtitle } from './parts/Subtitle';
@@ -23,7 +25,7 @@ import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { InstructionsEditor } from './parts/StepsEditor';
 import { Description } from './parts/Description';
-import { AIAssistantPanel } from './parts/AIAssistantPanel';
+// AI Assistant now global - import removed
 // import { RecipeHeader } from './parts/RecipeHeader';
 // import { ResponsiveLayout, FullWidthContainer, ContentSection} from './parts/ResponsiveLayout';
 import '../RecipeDetail.css';
@@ -50,8 +52,11 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const { getAccessTokenSilently } = useAuth0();
   const [editMode, setEditMode] = useState(isNew);
   const [saving, setSaving] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(isNew); // Show AI chat by default for new recipes
+  // AI Assistant state now managed globally via AIContext
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Recipe context for global AI assistant
+  const { setCurrentRecipe, setRecipeMode } = useRecipeContext();
   
   // Always call hooks, but conditionally use their results
   const existingRecipeHook = useRecipe(recipeId || '');
@@ -91,6 +96,19 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   const recipe = isNew ? newRecipe : existingRecipe;
   const loading = isNew ? newLoading : existingLoading;
   const error = isNew ? newError : existingError;
+  
+  // Update recipe context for global AI assistant
+  useEffect(() => {
+    if (recipe) {
+      setCurrentRecipe(recipe);
+      setRecipeMode(isNew ? 'new' : (editMode ? 'edit' : 'view'));
+    }
+    return () => {
+      // Clear context when leaving recipe page
+      setCurrentRecipe(null);
+      setRecipeMode(null);
+    };
+  }, [recipe, isNew, editMode, setCurrentRecipe, setRecipeMode]);
   
   // Clean up any temp image data when navigating away
   useEffect(() => {
@@ -314,10 +332,157 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
     setShowDeleteConfirm(false);
   };
 
+  // AI Recipe Creation Handler - used by GlobalAIAssistant
+  const handleApplyRecipe = async (recipeData: {
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    author?: string;
+    source?: string;
+    yield?: string;
+    time?: { prep?: string; cook?: string; total?: string };
+    ingredients?: { quantity?: string; name?: string }[];
+    steps?: string[];
+    tags?: string[];
+    notes?: string;
+    imageUrl?: string;
+  }) => {
+    try {
+      setSaving(true);
+      
+      // Build a complete recipe object
+      const userId = getCurrentUserId();
+      
+      // Prepare ingredients in the right format
+      const ingredients = Array.isArray(recipeData.ingredients) ? recipeData.ingredients.map(ingredient => ({
+        name: ingredient.name || "",
+        quantity: ingredient.quantity || "",
+        position: 1
+      })) : [];
+      
+      // Normalize tags to lowercase
+      const normalizedTags = Array.isArray(recipeData.tags) 
+        ? recipeData.tags.map(tag => tag.toLowerCase()) 
+        : [];
+      
+      // Save the AI extraction image URL for later use
+      const initialImageUrl = recipeData.imageUrl || null;
+      if (initialImageUrl) {
+        console.log("Found image URL from AI extraction:", initialImageUrl);
+      }
+      
+      // Build the payload
+      const payload = {
+        title: recipeData.title || "New Recipe",
+        subtitle: recipeData.subtitle || "",
+        description: recipeData.description || "",
+        author: recipeData.author || "",
+        source: recipeData.source || "",
+        owner_id: userId,
+        visibility: "private",
+        tags: normalizedTags,
+        yield: recipeData.yield || "",
+        time: recipeData.time || {},
+        ingredients: ingredients,
+        instructions: Array.isArray(recipeData.steps) ? recipeData.steps : [],
+        notes: recipeData.notes || "",
+      };
+      
+      console.log("Creating new recipe with payload:", payload);
+      
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://momsrecipebox/api'
+        }
+      });
+      
+      const response = await fetch(getApiUrl('recipes'), {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Recipe creation failed (${response.status}): ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Successfully created recipe:", data);
+      
+      // Upload image from URL if provided
+      if (initialImageUrl) {
+        try {
+          console.log("Uploading image from URL:", initialImageUrl);
+          
+          const imageResponse = await fetch(getApiUrl(`recipes/${data._id}/image`), {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              imageUrl: initialImageUrl,
+              recipeName: recipeData.title || "Recipe" 
+            })
+          });
+          
+          if (!imageResponse.ok) {
+            console.error("Failed to upload image from URL:", await imageResponse.text());
+          } else {
+            console.log("Successfully uploaded image from URL");
+            
+            // Verify image was saved
+            const maxAttempts = 5;
+            let attempt = 0;
+            let imageUrlConfirmed = false;
+            
+            while (attempt < maxAttempts && !imageUrlConfirmed) {
+              attempt++;
+              console.log(`Verification attempt ${attempt}/${maxAttempts} for image URL...`);
+              
+              await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+              
+              const refreshResponse = await fetch(getApiUrl(`recipes/${data._id}?user_id=${getCurrentUserId()}`), {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (refreshResponse.ok) {
+                const refreshedData = await refreshResponse.json();
+                if (refreshedData?.image_url) {
+                  console.log("Image URL confirmed:", refreshedData.image_url);
+                  imageUrlConfirmed = true;
+                }
+              }
+            }
+          }
+        } catch (imageErr) {
+          console.error("Error uploading image from URL:", imageErr);
+        }
+      }
+      
+      // Wait for processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Navigate to the newly created recipe
+      navigate(`/recipe/${data._id}`);
+      
+    } catch (err) {
+      console.error("Error creating recipe:", err);
+      showToast(`Failed to create recipe: ${err instanceof Error ? err.message : String(err)}`, ToastType.Error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <p style={{ padding: '2rem' }}>Loading...</p>;
   if (error || !recipe) return <p style={{ padding: '2rem' }}>Error loading recipe.</p>;
 
   return (
+    <RecipeCreationProvider onApplyRecipe={handleApplyRecipe}>
     <div className="recipe-page">
       <div className="recipe-left">{/* flex column; header separated from scroll area */}
         <div className="recipe-left-scroll">{/* new scroll container */}
@@ -575,7 +740,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             lastUploadTime={lastUploadTime} 
           />
           
-          {/* Phase 4: AI Assistant available in all modes */}
+          {/* Phase 4: AI Assistant now in global header - removed from page
           <AIAssistantPanel
             isVisible={showAIChat}
             mode={isNew ? 'new' : (editMode ? 'edit' : 'view')}
@@ -801,6 +966,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   }
                 }}
               />
+          */}
         </div>
       </div>
       
@@ -816,5 +982,6 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         variant="danger"
       />
     </div>
+    </RecipeCreationProvider>
   );
 };

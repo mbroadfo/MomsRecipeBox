@@ -49,11 +49,44 @@
   }
 }
 
+/* Mobile backdrop - click to dismiss */
+.ai-assistant-backdrop {
+  display: none;
+}
+
 /* Mobile Layout (≤ 768px) */
 @media (max-width: 768px) {
+  /* Show backdrop on mobile when panel is open */
+  .ai-assistant-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   .ai-assistant-panel {
     position: relative;
     z-index: 10;
+  }
+
+  /* Toggle button stays in flow on mobile */
+  .recipe-ai-toggle {
+    position: relative;
+    z-index: 1001; /* Above backdrop and panel */
   }
 
   .recipe-ai-container {
@@ -70,6 +103,8 @@
     overflow: hidden;
     animation: slideUp 0.3s ease-out;
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
   }
 
   @keyframes slideUp {
@@ -81,15 +116,15 @@
     }
   }
 
-  /* Backdrop for mobile */
-  .recipe-ai-container::before {
+  /* Mobile close handle */
+  .recipe-ai-chat::before {
     content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 60vh; /* Cover area above panel */
-    background: rgba(0, 0, 0, 0.3);
-    z-index: -1;
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 2px;
+    margin: 8px auto;
+    flex-shrink: 0;
   }
 }

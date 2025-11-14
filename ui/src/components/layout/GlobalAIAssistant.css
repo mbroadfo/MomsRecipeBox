@@ -1,0 +1,138 @@
+/* Global AI Assistant - Floating Panel */
+
+/* Desktop: Floating panel on the right */
+@media (min-width: 769px) {
+  .global-ai-backdrop {
+    display: none; /* No backdrop on desktop */
+  }
+  
+  .global-ai-handle {
+    display: none; /* No drag handle on desktop */
+  }
+  
+  .global-ai-panel {
+    position: fixed;
+    top: 5rem; /* Below header */
+    right: 1.5rem;
+    width: 400px;
+    max-width: calc(100vw - 3rem);
+    height: calc(100vh - 6rem);
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .global-ai-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Make RecipeAIChat fill the panel */
+  .global-ai-content .recipe-ai-container {
+    height: 100%;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Mobile: Bottom sheet panel */
+@media (max-width: 768px) {
+  .global-ai-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .global-ai-handle {
+    display: block;
+    padding: 0.5rem 0;
+    text-align: center;
+    cursor: grab;
+  }
+  
+  .handle-bar {
+    width: 40px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 2px;
+    margin: 0 auto;
+  }
+  
+  .global-ai-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80vh;
+    max-height: 80vh;
+    background: white;
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  .global-ai-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Make RecipeAIChat fill the mobile panel */
+  .global-ai-content .recipe-ai-container {
+    height: 100%;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+}

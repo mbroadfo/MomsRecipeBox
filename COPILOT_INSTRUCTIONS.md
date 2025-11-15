@@ -964,12 +964,35 @@ const comment_id = event.pathParameters?.comment_id; // Correct source
 
 ## 🚨 IAM Policy Management Rules
 
-**❌ CRITICAL MISTAKE**: Attempting to modify AWS IAM policies or permissions without explicit user approval
+### Critical Principle
+
+⚠️ **IAM User permissions are ALWAYS managed manually by the HUMAN**
+
+**❌ CRITICAL MISTAKE**: Attempting to modify AWS IAM User policies or permissions without explicit user approval
+
 **✅ STRICT RULE**:
 
-- **NEVER attempt to modify IAM policies directly via AWS CLI or API calls**
-- **NEVER run commands like**: `aws iam put-user-policy`, `aws iam attach-user-policy`, `terraform apply` for IAM changes
-- **ALWAYS ask for explicit permission first** with clear justification
+- **NEVER attempt to modify IAM User policies directly via AWS CLI or API calls**
+- **NEVER run commands like**: `aws iam put-user-policy`, `aws iam attach-user-policy`, `terraform apply` for IAM User changes
+- **IAM User permissions** (like `mrb-api`, `terraform-mrb`) are **ALWAYS managed manually by the HUMAN**
+- **Infrastructure as Code (IAC) IAM resources** (Lambda execution roles, etc.) can be modified via Terraform as part of application infrastructure
+- **ALWAYS ask for explicit permission first** with clear justification when ANY IAM changes are needed
+
+### IAM Change Categories
+
+**1. IAM User Permissions** (Manual Only - Human Managed):
+
+- **Examples**: `mrb-api` user, `terraform-mrb` user
+- **Management**: Manual AWS Console or AWS CLI by human operator only
+- **Copilot Role**: Identify needed permissions and explain why, but NEVER apply
+- **Pattern**: "The `mrb-api` user needs `ssm:GetParameter` permission. Should I document this requirement?"
+
+**2. Infrastructure IAM Resources** (Terraform Managed):
+
+- **Examples**: Lambda execution roles, API Gateway invoke roles
+- **Management**: Terraform in `infra/*.tf` files
+- **Copilot Role**: Can propose and implement Terraform changes after approval
+- **Pattern**: Add IAM policy to `infra/app_api.tf` for Lambda to access Parameter Store
 
 ### When IAM Changes Are Actually Needed
 

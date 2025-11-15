@@ -6,7 +6,7 @@
 
 **Current State**:
 
-- Secret: `vehical-wellness-center-dev` contains 7 fields (MongoDB credentials, Auth0 config, Gemini API key))
+- Secret: `moms-recipe-secrets-dev` contains 12+ fields (MongoDB credentials, Auth0 config, AI provider API keys)
 - Used by: Lambda functions, Terraform, integration tests, utility scripts
 - Dependencies: 15+ code references, 8+ documentation files
 
@@ -33,18 +33,18 @@
 
 **Option A: Single JSON Parameter** (Recommended - mirrors current structure)
 
-- Name: `/vwc/dev/secrets` (single parameter))
-- Value: JSON string with all 7 fields
-- Pros: Simple migration, single IAM permission, atomic readss
+- Name: `/mrb/dev/secrets` (single parameter)
+- Value: JSON string with all 12+ fields
+- Pros: Simple migration, single IAM permission, atomic reads
 - Cons: All-or-nothing updates, larger payload
 - **Cost**: FREE (Standard tier, <4KB)
 
 ##### Option B: Individual Parameters
 
-- Names: `/vwc/dev/mongodb-uri`, `/vwc/dev/auth0-domain`, etc..
+- Names: `/mrb/dev/mongodb-uri`, `/mrb/dev/auth0-domain`, etc.
 - Values: Individual secret strings
-- Pros: Granular permissions possible, smaller individual payloadss
-- Cons: 7 IAM permissions needed, 7 API calls to load all secrets, more complex code
+- Pros: Granular permissions possible, smaller individual payloads
+- Cons: 12+ IAM permissions needed, 12+ API calls to load all secrets, more complex code
 - **Cost**: FREE (Standard tier, each <4KB)
 
 **Recommendation**: Option A (Single JSON) - Keep it simple, matches current `getSecrets()` pattern.
@@ -52,27 +52,39 @@
 #### 1.2 Create Terraform Configuration
 
 ```hcl
-# infra/main.tf - Add after auth0_token_cache resource
+# infra/app_api.tf - Add new resource for Parameter Store
 
 resource "aws_ssm_parameter" "application_secrets" {
-  name        = "/vwc/${var.environment}/secrets"
-  description = "Application secrets for Vehicle Wellness Center (MongoDB, Auth0, Gemini)"
+  name        = "/mrb/dev/secrets"
+  description = "Application secrets for Mom's Recipe Box (MongoDB, Auth0, AI providers)"
   type        = "SecureString"  # Encrypted at rest with AWS KMS
   value       = jsonencode({
-    MONGODB_URI                = "not-initialized"
-    MONGODB_ATLAS_USERNAME     = "not-initialized"
-    MONGODB_ATLAS_PASSWORD     = "not-initialized"
+    # MongoDB Atlas
+    MONGODB_ATLAS_URI          = "not-initialized"
+    
+    # Auth0 Configuration
     AUTH0_DOMAIN               = "not-initialized"
-    AUTH0_AUDIENCE             = "not-initialized"
     AUTH0_M2M_CLIENT_ID        = "not-initialized"
     AUTH0_M2M_CLIENT_SECRET    = "not-initialized"
-    GOOGLE_GEMINI_API_KEY      = "not-initialized"
+    AUTH0_API_AUDIENCE         = "not-initialized"
+    AUTH0_MRB_CLIENT_ID        = "not-initialized"
+    
+    # AI Provider API Keys
+    OPENAI_API_KEY             = "not-initialized"
+    ANTHROPIC_API_KEY          = "not-initialized"
+    GROQ_API_KEY               = "not-initialized"
+    GOOGLE_API_KEY             = "not-initialized"
+    DEEPSEEK_API_KEY           = "not-initialized"
+    
+    # AWS Configuration
+    AWS_ACCOUNT_ID             = "not-initialized"
+    RECIPE_IMAGES_BUCKET       = "not-initialized"
   })
   tier        = "Standard"  # Free tier
 
   tags = {
-    Project     = "Vehicle Wellness Center"
-    Environment = var.environment
+    Project     = "MomsRecipeBox"
+    Environment = "dev"
     ManagedBy   = "Terraform"
     Purpose     = "Application secrets - replacing Secrets Manager for cost optimization"
   }
@@ -86,11 +98,12 @@ resource "aws_ssm_parameter" "application_secrets" {
 #### 1.3 Update Lambda IAM Role
 
 ```hcl
-# infra/main.tf - Update vwc_lambda_secrets policy
+# infra/app_api.tf - Add IAM policy for Parameter Store access
 
-resource "aws_iam_role_policy" "vwc_lambda_secrets" {
-  name = "vwc-lambda-secrets-access"
-  role = aws_iam_role.vwc_lambda_exec.id
+# Update the existing IAM role attachment or add new inline policy
+resource "aws_iam_role_policy" "lambda_parameter_store_access" {
+  name = "mrb-lambda-parameter-store-access"
+  role = aws_iam_role.lambda_exec.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -101,15 +114,7 @@ resource "aws_iam_role_policy" "vwc_lambda_secrets" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = data.aws_secretsmanager_secret_version.mongodb_database_user.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameter",
-          "ssm:PutParameter"
-        ]
-        Resource = aws_ssm_parameter.auth0_token_cache.arn
+        Resource = "arn:aws:secretsmanager:us-west-2:*:secret:moms-recipe-secrets-dev*"
       },
       {
         Effect = "Allow"
@@ -121,10 +126,10 @@ resource "aws_iam_role_policy" "vwc_lambda_secrets" {
 }
 ```
 
-#### 1.4 Update terraform-vwc IAM Policy
+#### 1.4 Update terraform-mrb IAM Policy
 
 ```json
-// infra/terraform-vwc-core-policy-updated.json
+// docs/iam-policy-terraform-mrb-updated.json
 // ParameterStoreManagement statement - add SecureString actions:
 {
   "Sid": "ParameterStoreManagement",
@@ -138,23 +143,23 @@ resource "aws_iam_role_policy" "vwc_lambda_secrets" {
     "ssm:PutParameter",
     "ssm:RemoveTagsFromResource"
   ],
-  "Resource": "arn:aws:ssm:us-west-2:*:parameter/vwc/*"
+  "Resource": "arn:aws:ssm:us-west-2:*:parameter/mrb/*"
 }
 ```
 
 #### 1.5 Add Lambda Environment Variable
 
 ```hcl
-# infra/main.tf - Lambda environment block
+# infra/app_api.tf - Lambda environment block (update existing)
 
 environment {
   variables = {
-    AWS_SECRET_ID              = data.aws_secretsmanager_secret_version.mongodb_database_user.secret_id
+    AWS_SECRET_NAME            = var.aws_secret_name  # Current: moms-recipe-secrets-dev
     SSM_SECRETS_PARAMETER_NAME = aws_ssm_parameter.application_secrets.name  # NEW
-    MONGODB_DATABASE           = var.mongodb_database_name
-    LAMBDA_APP_URL             = aws_apigatewayv2_api.vwc_api.api_endpoint
-    NODE_ENV                   = var.environment
-    AUTH0_TOKEN_PARAMETER_NAME = aws_ssm_parameter.auth0_token_cache.name
+    MONGODB_DATABASE           = "momsrecipebox"
+    LAMBDA_APP_URL             = aws_apigatewayv2_api.mrb_api.api_endpoint
+    NODE_ENV                   = "production"
+    LOG_LEVEL                  = "INFO"
   }
 }
 ```
@@ -169,44 +174,56 @@ environment {
 
 #### 2.1 Create New Parameter Store Module
 
-```typescript
-// backend/src/lib/parameterStore.ts
+```javascript
+// app/utils/parameter_store.js
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { createLogger } from './logger.js';
+
+const logger = createLogger('parameter_store');
 
 const ssmClient = new SSMClient({
   region: process.env.AWS_REGION || 'us-west-2'
 });
 
-export interface AppSecrets {
-  MONGODB_URI: string;
-  MONGODB_ATLAS_USERNAME: string;
-  MONGODB_ATLAS_PASSWORD: string;
-  AUTH0_DOMAIN: string;
-  AUTH0_AUDIENCE: string;
-  AUTH0_M2M_CLIENT_ID: string;
-  AUTH0_M2M_CLIENT_SECRET: string;
-  GOOGLE_GEMINI_API_KEY?: string;
-}
+// Define the structure of our application secrets
+export const REQUIRED_SECRETS = [
+  'MONGODB_ATLAS_URI',
+  'AUTH0_DOMAIN',
+  'AUTH0_M2M_CLIENT_ID',
+  'AUTH0_M2M_CLIENT_SECRET',
+  'AUTH0_API_AUDIENCE',
+  'AUTH0_MRB_CLIENT_ID'
+];
+
+export const OPTIONAL_SECRETS = [
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'GROQ_API_KEY',
+  'GOOGLE_API_KEY',
+  'DEEPSEEK_API_KEY',
+  'AWS_ACCOUNT_ID',
+  'RECIPE_IMAGES_BUCKET'
+];
 
 let cachedSecrets: AppSecrets | null = null;
 
 /**
  * Get application secrets from Parameter Store
  * 
- * Reads from SSM parameter at /vwc/{env}/secrets
+ * Reads from SSM parameter at /mrb/dev/secrets
  * Caches in memory for Lambda container lifetime
  * Expects JSON SecureString parameter
  * 
- * @returns Application secrets object
- * @throws Error if parameter not found or invalid JSON
+ * @returns {Promise<Object>} Application secrets object
+ * @throws {Error} if parameter not found or invalid JSON
  */
-export async function getSecretsFromParameterStore(): Promise<AppSecrets> {
+export async function getSecretsFromParameterStore() {
   // Return cached secrets if available
   if (cachedSecrets) {
     return cachedSecrets;
   }
 
-  const parameterName = process.env.SSM_SECRETS_PARAMETER_NAME || '/vwc/dev/secrets';
+  const parameterName = process.env.SSM_SECRETS_PARAMETER_NAME || '/mrb/dev/secrets';
 
   try {
     const command = new GetParameterCommand({
@@ -221,70 +238,94 @@ export async function getSecretsFromParameterStore(): Promise<AppSecrets> {
     }
 
     // Parse JSON value
-    const secrets = JSON.parse(response.Parameter.Value) as AppSecrets;
+    const secrets = JSON.parse(response.Parameter.Value);
 
     // Validate required fields
-    const requiredFields = [
-      'MONGODB_URI',
-      'MONGODB_ATLAS_USERNAME',
-      'MONGODB_ATLAS_PASSWORD',
-      'AUTH0_DOMAIN',
-      'AUTH0_AUDIENCE',
-      'AUTH0_M2M_CLIENT_ID',
-      'AUTH0_M2M_CLIENT_SECRET'
-    ];
-
-    for (const field of requiredFields) {
-      if (!secrets[field as keyof AppSecrets]) {
+    for (const field of REQUIRED_SECRETS) {
+      if (!secrets[field]) {
         throw new Error(`Missing required secret field: ${field}`);
       }
     }
 
     // Cache for container lifetime
     cachedSecrets = secrets;
+    
+    logger.info('Secrets cached from Parameter Store', { 
+      secretCount: Object.keys(secrets).length 
+    });
+    
     return secrets;
 
   } catch (error) {
-    console.error('Failed to get secrets from Parameter Store:', error);
-    throw new Error(`Parameter Store secrets retrieval failed: ${error}`);
+    logger.error('Failed to get secrets from Parameter Store', error);
+    throw new Error(`Parameter Store secrets retrieval failed: ${error.message}`);
   }
 }
 
 /**
  * Clear cached secrets (useful for testing)
  */
-export function clearSecretsCache(): void {
+export function clearSecretsCache() {
   cachedSecrets = null;
+  secretsInitialized = false;
 }
 ```
 
-#### 2.2 Update mongodb.ts for Dual-Read
+#### 2.2 Update secrets_manager.js for Dual-Read
 
-```typescript
-// backend/src/lib/mongodb.ts - Add at top
+```javascript
+// app/utils/secrets_manager.js - Update fetchSecrets function
 
-import { getSecretsFromParameterStore } from './parameterStore';
+import { getSecretsFromParameterStore } from './parameter_store.js';
 
-// Update getSecrets function
-export async function getSecrets(): Promise<AppSecrets> {
+/**
+ * Fetch all secrets from AWS Secrets Manager (with Parameter Store fallback)
+ * @returns {Promise<Object>} All secrets as key-value pairs
+ */
+export async function fetchSecrets() {
+  if (secretsCache) {
+    return secretsCache;
+  }
+
   // Try Parameter Store first if SSM_SECRETS_PARAMETER_NAME is set
   const useParameterStore = process.env.SSM_SECRETS_PARAMETER_NAME;
   
   if (useParameterStore) {
     try {
-      console.log('Reading secrets from Parameter Store...');
+      logger.info('Reading secrets from Parameter Store...');
       const secrets = await getSecretsFromParameterStore();
-      console.log('✅ Successfully loaded secrets from Parameter Store');
+      logger.info('✅ Successfully loaded secrets from Parameter Store');
+      secretsCache = secrets;
       return secrets;
     } catch (error) {
-      console.warn('⚠️  Parameter Store read failed, falling back to Secrets Manager:', error);
+      logger.warn('⚠️ Parameter Store read failed, falling back to Secrets Manager', error);
       // Fall through to Secrets Manager
     }
   }
 
   // Fallback to Secrets Manager (current implementation)
-  console.log('Reading secrets from Secrets Manager...');
-  // ... existing Secrets Manager code ...
+  logger.info('Reading secrets from Secrets Manager...');
+  
+  try {
+    const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
+    const region = process.env.AWS_REGION || 'us-west-2';
+
+    const client = new SecretsManagerClient({ region });
+    const command = new GetSecretValueCommand({ SecretId: secretName });
+    const response = await client.send(command);
+
+    const secrets = JSON.parse(response.SecretString);
+    secretsCache = secrets;
+
+    logger.info('Secrets retrieved from AWS Secrets Manager', { 
+      secretCount: Object.keys(secrets).length 
+    });
+
+    return secrets;
+  } catch (error) {
+    logger.error('Failed to fetch secrets from AWS Secrets Manager', error);
+    throw error;
+  }
 }
 ```
 
@@ -308,9 +349,9 @@ export async function getSecrets(): Promise<AppSecrets> {
 # Get current secrets as JSON
 
 aws secretsmanager get-secret-value `
-  --secret-id vehical-wellness-center-dev `
+  --secret-id moms-recipe-secrets-dev `
   --region us-west-2 `
-  --profile terraform-vwc `
+  --profile terraform-mrb `
   --query SecretString `
   --output text > temp-secrets.json
 
@@ -325,20 +366,20 @@ Get-Content temp-secrets.json
 # Put secrets into Parameter Store (SecureString = encrypted)
 
 aws ssm put-parameter `
-  --name /vwc/dev/secrets `
+  --name /mrb/dev/secrets `
   --value (Get-Content temp-secrets.json -Raw) `
   --type SecureString `
   --overwrite `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 
 # Verify parameter created
 
 aws ssm get-parameter `
-  --name /vwc/dev/secrets `
+  --name /mrb/dev/secrets `
   --with-decryption `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 ```
 
 #### 3.3 Secure Cleanup
@@ -382,12 +423,12 @@ npx tsx backend/src/test-ai-chat.ts
 - Verify no "⚠️ Parameter Store read failed" warnings
 - Validate all API endpoints working correctly
 
-#### 4.4 Performance Comparison
+#### 4.3 Performance Comparison
 
-```typescript
-// Add timing to getSecrets() for comparison
+```javascript
+// Add timing to fetchSecrets() for comparison
 console.time('Secrets load time');
-const secrets = await getSecrets();
+const secrets = await fetchSecrets();
 console.timeEnd('Secrets load time');
 
 // Expected:
@@ -395,12 +436,12 @@ console.timeEnd('Secrets load time');
 // - Parameter Store: ~50-100ms (similar performance)
 ```
 
-**Success Criteria**::
+**Success Criteria**:
 
-- ✅ All 35 tests passing
-- ✅ No fallback warnings in logss
+- ✅ All tests passing (recipes, shopping, favorites, comments, images, AI)
+- ✅ No fallback warnings in logs
 - ✅ CloudWatch shows "Parameter Store" in logs
-- ✅ API endpoints responding normallyy
+- ✅ API endpoints responding normally
 - ✅ Integration tests pass end-to-end
 
 **Deliverable**: Confirmation that Parameter Store works as drop-in replacement.
@@ -413,15 +454,14 @@ console.timeEnd('Secrets load time');
 
 #### 5.1 Files to Update
 
-- [ ] `README.md` - Prerequisites, setup instructionss
-- [ ] `backend/README.md` - Environment variables, deployment
-- [ ] `infra/README.md` - Infrastructure overview, secrets managementt
-- [ ] `docs/MongoDB-Atlas-Setup-Guide.md` - References to secrets
-- [ ] `docs/Auth0-Setup-Guide.md` - M2M credential storagee
-- [ ] `docs/atlas-secrets-todo.md` - Rename/update to parameter-store-setup.md
-- [ ] `docs/auth0-secrets-todo.md` - Update for Parameter Storee
-- [ ] `infra/secret-example.json` - Rename to parameter-example.json
-- [ ] `.github/copilot-instructions.md` - Update development rules
+- [ ] `README.md` - Prerequisites, setup instructions
+- [ ] `app/README.md` - Environment variables, deployment
+- [ ] `infra/README.md` - Infrastructure overview, secrets management
+- [ ] `docs/MongoDB-Atlas-Management-Guide.md` - References to secrets
+- [ ] `docs/developer/npm_commands.md` - Update AWS profile commands
+- [ ] `COPILOT_INSTRUCTIONS.md` - Update development rules
+- [ ] Create `docs/parameter-store-setup.md` - New setup guide
+- [ ] `infra/secret-example.json` - Create parameter-example.json
 
 #### 5.2 Create New Migration Guide
 
@@ -432,11 +472,10 @@ console.timeEnd('Secrets load time');
 
 ### Prerequisites
 
-- AWS CLI installed with `terraform-vwc` profile configuredd
+- AWS CLI installed with `terraform-mrb` profile configured
 - Access to current Secrets Manager secret (for migration)
 
 ### Initial Setup (New Projects)
-
 
 1. Copy parameter template:
 
@@ -446,18 +485,18 @@ console.timeEnd('Secrets load time');
 
 1. Fill in all values in temp-secrets.json
 
-2. Create Parameter Store parameter:
+1. Create Parameter Store parameter:
 
    ```powershell
    aws ssm put-parameter `
-     --name /vwc/dev/secrets `
+     --name /mrb/dev/secrets `
      --value (Get-Content temp-secrets.json -Raw) `
      --type SecureString `
      --region us-west-2 `
-     --profile terraform-vwc
+     --profile terraform-mrb
    ```
 
-3. Delete temp file: `Remove-Item temp-secrets.json -Force`
+1. Delete temp file: `Remove-Item temp-secrets.json -Force`
 
 ### Migration from Secrets Manager
 
@@ -468,13 +507,13 @@ console.timeEnd('Secrets load time');
 ```powershell
 # Get current value
 
-aws ssm get-parameter --name /vwc/dev/secrets --with-decryption --query Parameter.Value --output text > temp.json
+aws ssm get-parameter --name /mrb/dev/secrets --with-decryption --query Parameter.Value --output text > temp.json
 
 # Edit temp.json with your changes
 
 # Update parameter
 
-aws ssm put-parameter --name /vwc/dev/secrets --value (Get-Content temp.json -Raw) --type SecureString --overwrite
+aws ssm put-parameter --name /mrb/dev/secrets --value (Get-Content temp.json -Raw) --type SecureString --overwrite
 
 # Cleanup
 
@@ -496,45 +535,28 @@ Remove-Item temp.json -Force
 #### 6.1 Update Terraform to Remove Secrets Manager
 
 ```hcl
-# infra/main.tf - REMOVE these blocks:
+# infra/app_api.tf - REMOVE Secrets Manager IAM attachment
 
-# DELETE this data source
-
-# data "aws_secretsmanager_secret_version" "mongodb_database_user" {
-#   secret_id = var.mongodb_database_user_secret_id
-
-# }
-
-# DELETE this variable
-
-# variable "mongodb_database_user_secret_id" {
-#   description = "Secrets Manager identifier..."
-
-#   type        = string
+# DELETE this resource:
+# resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
+#   role       = aws_iam_role.lambda_exec.name
+#   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 # }
 ```
 
 #### 6.2 Update Lambda IAM Policy
 
 ```hcl
-# infra/main.tf - Remove Secrets Manager permissions
+# infra/app_api.tf - Update inline policy to remove Secrets Manager
 
-resource "aws_iam_role_policy" "vwc_lambda_secrets" {
-  name = "vwc-lambda-secrets-access"
-  role = aws_iam_role.vwc_lambda_exec.id
+resource "aws_iam_role_policy" "lambda_parameter_store_access" {
+  name = "mrb-lambda-parameter-store-access"
+  role = aws_iam_role.lambda_exec.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       # REMOVE Secrets Manager statement entirely
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameter",
-          "ssm:PutParameter"
-        ]
-        Resource = aws_ssm_parameter.auth0_token_cache.arn
-      },
       {
         Effect = "Allow"
         Action = "ssm:GetParameter"
@@ -548,35 +570,39 @@ resource "aws_iam_role_policy" "vwc_lambda_secrets" {
 #### 6.3 Update Lambda Environment
 
 ```hcl
-# infra/main.tf - Remove AWS_SECRET_ID
+# infra/app_api.tf - Remove AWS_SECRET_NAME
 
 environment {
   variables = {
-    # REMOVE: AWS_SECRET_ID = ...
+    # REMOVE: AWS_SECRET_NAME = var.aws_secret_name
     SSM_SECRETS_PARAMETER_NAME = aws_ssm_parameter.application_secrets.name
-    MONGODB_DATABASE           = var.mongodb_database_name
-    LAMBDA_APP_URL             = aws_apigatewayv2_api.vwc_api.api_endpoint
-    NODE_ENV                   = var.environment
-    AUTH0_TOKEN_PARAMETER_NAME = aws_ssm_parameter.auth0_token_cache.name
+    MONGODB_DATABASE           = "momsrecipebox"
+    LAMBDA_APP_URL             = aws_apigatewayv2_api.mrb_api.api_endpoint
+    NODE_ENV                   = "production"
+    LOG_LEVEL                  = "INFO"
   }
 }
 ```
 
-#### 6.4 Update terraform.tfvars.example
+#### 6.4 Update variables.tf
 
 ```hcl
-# infra/terraform.tfvars.example
+# infra/variables.tf
 
-# REMOVE this line:
-# mongodb_database_user_secret_id = "vehical-wellness-center-dev"
+# REMOVE this variable:
+# variable "aws_secret_name" {
+#   description = "AWS Secrets Manager secret name for MongoDB Atlas credentials"
+#   type        = string
+#   default     = "moms-recipe-secrets-dev"
+# }
 ```
 
 #### 6.5 Simplify Backend Code
 
-```typescript
-// backend/src/lib/mongodb.ts - Remove Secrets Manager code entirely
+```javascript
+// app/utils/secrets_manager.js - Remove Secrets Manager code entirely
 
-export async function getSecrets(): Promise<AppSecrets> {
+export async function fetchSecrets() {
   // Parameter Store is now the only source
   return await getSecretsFromParameterStore();
 }
@@ -584,15 +610,6 @@ export async function getSecrets(): Promise<AppSecrets> {
 // REMOVE: Old Secrets Manager client code
 // REMOVE: SecretsManagerClient import
 // REMOVE: GetSecretValueCommand import
-```
-
-#### 6.6 Update load-tf-env.js
-
-```javascript
-// infra/load-tf-env.js
-// REMOVE Secrets Manager secret loading
-// REMOVE TF_VAR_mongodb_database_user_secret_id export
-// Keep only Parameter Store references
 ```
 
 #### 6.7 Apply Terraform Changes
@@ -624,15 +641,15 @@ npm run infra:apply
 
 ```powershell
 aws secretsmanager delete-secret `
-  --secret-id vehical-wellness-center-dev `
+  --secret-id moms-recipe-secrets-dev `
   --recovery-window-in-days 7 `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 ```
 
 #### 7.2 Verify No Impact
 
-- Run full test suite: `npm run test``
+- Run full test suite: `npm run test`
 - Test all API endpoints
 - Check CloudWatch logs for errors
 
@@ -640,9 +657,9 @@ aws secretsmanager delete-secret `
 
 ```powershell
 aws secretsmanager restore-secret `
-  --secret-id vehical-wellness-center-dev `
+  --secret-id moms-recipe-secrets-dev `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 ```
 
 **Deliverable**: Secrets Manager secret deleted, $4.80/year cost savings achieved.
@@ -653,21 +670,19 @@ aws secretsmanager restore-secret `
 
 **Goal**: Remove all Secrets Manager references from codebase.
 
-#### 8.1 Update terraform-vwc IAM Policy
+#### 8.1 Update terraform-mrb IAM Policy
 
 ```json
-// infra/terraform-vwc-core-policy-updated.json
-// REMOVE SecretsManagerAccess statement entirely
+// docs/iam-policy-terraform-mrb-updated.json
+// REMOVE SecretsManagerAccess statement entirely if present
 ```
 
 #### 8.2 Remove Dead Files
 
 ```bash
-# Files to delete:
+# Files to delete (if they exist):
 
-rm docs/atlas-secrets-todo.md  # Replaced by parameter-store-setup.md
-rm docs/auth0-secrets-todo.md  # Replaced by parameter-store-setup.md
-rm infra/secret-example.json   # Replaced by parameter-example.json
+rm infra/secret-example.json   # Will be replaced by parameter-example.json
 ```
 
 #### 8.3 Search and Replace
@@ -675,8 +690,9 @@ rm infra/secret-example.json   # Replaced by parameter-example.json
 ```bash
 # Find any remaining "Secrets Manager" references
 
-grep -r "Secrets Manager" . --include="*.md" --include="*.ts" --include="*.js"
-grep -r "secretsmanager" . --include="*.md" --include="*.ts" --include="*.js"
+grep -r "Secrets Manager" . --include="*.md" --include="*.js"
+grep -r "secretsmanager" . --include="*.md" --include="*.js"
+grep -r "AWS_SECRET_NAME" . --include="*.md" --include="*.js"
 
 # Update any found references to "Parameter Store"
 ```
@@ -684,12 +700,13 @@ grep -r "secretsmanager" . --include="*.md" --include="*.ts" --include="*.js"
 #### 8.4 Final Test Suite
 
 ```bash
-npm run lint
-npm run typecheck
 npm run test
-npm run test:integration
-npx tsx backend/src/test-connection.ts
-npx tsx backend/src/test-ai-chat.ts
+npm run test:recipes
+npm run test:shopping
+npm run test:favorites
+npm run test:comments
+npm run test:images
+npm run test:ai-providers
 ```
 
 **Deliverable**: Clean codebase with no Secrets Manager remnants.
@@ -710,11 +727,11 @@ git commit -m "infra: add Parameter Store for application secrets (parallel to S
 ### Commit 2: Dual-Read Implementation
 
 ```bash
-git add backend/src/lib/
+git add app/utils/
 git commit -m "feat(backend): implement dual-read secrets (Parameter Store with Secrets Manager fallback)"
 ```
 
-**Files**: parameterStore.ts, updated mongodb.ts
+**Files**: parameter_store.js, updated secrets_manager.js
 
 ### Commit 3: Enable Parameter Store
 
@@ -739,11 +756,11 @@ git commit -m "docs: update all documentation for Parameter Store migration"
 ### Commit 5: Remove Secrets Manager
 
 ```bash
-git add infra/ backend/src/lib/ CHANGELOG.md
+git add infra/ app/utils/ CHANGELOG.md
 git commit -m "refactor: remove Secrets Manager dependency - $4.80/year cost savings"
 ```
 
-***Files**: Terraform cleanup, simplified code, changelog
+**Files**: Terraform cleanup, simplified code, changelog
 
 ### Commit 6: Final Cleanup
 
@@ -752,7 +769,7 @@ git add .
 git commit -m "chore: remove remaining Secrets Manager references and dead files"
 ```
 
-***Files**: IAM policy, deleted files, search/replace updates
+**Files**: IAM policy, deleted files, search/replace updates
 
 ---
 
@@ -760,42 +777,42 @@ git commit -m "chore: remove remaining Secrets Manager references and dead files
 
 ### Rollback Plan (Per Phase)
 
-**Phase 1-2**: No risk - Secrets Manager still primaryy
+**Phase 1-2**: No risk - Secrets Manager still primary
 
 - Action: None needed, Parameter Store not yet used
 
-**Phase 3-4**: Parameter Store populated but not in usee
+**Phase 3-4**: Parameter Store populated but not in use
 
 - Action: Delete Parameter Store parameter, no code changes needed
 
-**Phase 5-6**: Using Parameter Store, Secrets Manager still existss
+**Phase 5-6**: Using Parameter Store, Secrets Manager still exists
 
 - Rollback: Unset `SSM_SECRETS_PARAMETER_NAME` environment variable, redeploy Lambda
 - Time: ~2 minutes
 
-**Phase 7**: Secrets Manager deleted (7-day recovery window))
+**Phase 7**: Secrets Manager deleted (7-day recovery window)
 
-- Rollback: Restore secret via AWS CLI/Console, set `AWS_SECRET_ID` env var, redeploy
+- Rollback: Restore secret via AWS CLI/Console, set `AWS_SECRET_NAME` env var, redeploy
 - Time: ~5 minutes
 
-**Phase 8**: Secrets Manager permanently deletedd
+**Phase 8**: Secrets Manager permanently deleted
 
 - Rollback: Recreate secret manually, restore old code from git history
 - Time: ~30 minutes
 
 ### Testing Checkpoints
 
-- ✅ After Phase 2: Tests pass with Secrets Managerr
+- ✅ After Phase 2: Tests pass with Secrets Manager
 - ✅ After Phase 4: Tests pass with Parameter Store
-- ✅ After Phase 6: Tests pass without Secrets Manager referencee
+- ✅ After Phase 6: Tests pass without Secrets Manager reference
 - ✅ After Phase 8: Full regression test suite
 
 ### Monitoring
 
-- CloudWatch logs: Watch for "Parameter Store" vs "Secrets Manager" in Lambda logss
+- CloudWatch logs: Watch for "Parameter Store" vs "Secrets Manager" in Lambda logs
 - Lambda errors: Monitor for SSM permission errors or JSON parsing failures
-- API Gateway: Watch 5xx error rates during cutoverr
-- Integration tests: Run every 15 minutes during migration (automated)
+- API Gateway: Watch 5xx error rates during cutover
+- Integration tests: Run test suite after each deployment phase
 
 ---
 

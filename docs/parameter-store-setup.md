@@ -1,6 +1,6 @@
 # AWS Systems Manager Parameter Store Setup
 
-This guide covers setup of application secrets in AWS Systems Manager Parameter Store for the Vehicle Wellness Center.
+This guide covers setup of application secrets in AWS Systems Manager Parameter Store for Mom's Recipe Box.
 
 ## Overview
 
@@ -14,8 +14,8 @@ This guide covers setup of application secrets in AWS Systems Manager Parameter 
 ## Prerequisites
 
 - AWS CLI installed and configured
-- AWS profile `terraform-vwc` with appropriate permissions
-- Access to current secrets (MongoDB, Auth0, Gemini API keys)
+- AWS profile `terraform-mrb` with appropriate permissions
+- Access to current secrets (MongoDB, Auth0, AI provider API keys)
 
 ## Initial Setup
 
@@ -47,11 +47,11 @@ Edit `temp-secrets.json` with your actual values:
 
 ```powershell
 aws ssm put-parameter `
-  --name /vwc/dev/secrets `
+  --name /mrb/dev/secrets `
   --value (Get-Content temp-secrets.json -Raw) `
   --type SecureString `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 ```
 
 ### 4. Secure Cleanup
@@ -66,16 +66,16 @@ Remove-Item temp-secrets.json -Force
 ```powershell
 # Check parameter exists (value will show as encrypted)
 aws ssm get-parameter `
-  --name /vwc/dev/secrets `
+  --name /mrb/dev/secrets `
   --region us-west-2 `
-  --profile terraform-vwc
+  --profile terraform-mrb
 
 # View decrypted value to verify (be careful - secrets visible!)
 aws ssm get-parameter `
-  --name /vwc/dev/secrets `
+  --name /mrb/dev/secrets `
   --with-decryption `
   --region us-west-2 `
-  --profile terraform-vwc `
+  --profile terraform-mrb `
   --query 'Parameter.Value' `
   --output text
 ```
@@ -86,12 +86,12 @@ aws ssm get-parameter `
 
 ```powershell
 # 1. Get current value
-aws ssm get-parameter --name /vwc/dev/secrets --with-decryption --query Parameter.Value --output text --region us-west-2 --profile terraform-vwc > temp.json
+aws ssm get-parameter --name /mrb/dev/secrets --with-decryption --query Parameter.Value --output text --region us-west-2 --profile terraform-mrb > temp.json
 
 # 2. Edit temp.json with your changes
 
 # 3. Update parameter
-aws ssm put-parameter --name /vwc/dev/secrets --value (Get-Content temp.json -Raw) --type SecureString --overwrite --region us-west-2 --profile terraform-vwc
+aws ssm put-parameter --name /mrb/dev/secrets --value (Get-Content temp.json -Raw) --type SecureString --overwrite --region us-west-2 --profile terraform-mrb
 
 # 4. Clean up
 Remove-Item temp.json -Force
@@ -109,25 +109,30 @@ If migrating from AWS Secrets Manager:
 
 ```powershell
 aws secretsmanager get-secret-value `
-  --secret-id vehical-wellness-center-dev `
+  --secret-id moms-recipe-secrets-dev `
   --region us-west-2 `
-  --profile terraform-vwc `
+  --profile terraform-mrb `
   --query SecretString `
   --output text > temp-secrets-full.json
 ```
 
 ### 2. Extract Required Fields
 
-Create `temp-secrets.json` with only the fields needed by Lambda:
+Create `temp-secrets.json` with the fields needed by Lambda:
 
-- `MONGODB_ATLAS_HOST`
-- `MONGODB_ATLAS_USERNAME`
-- `MONGODB_ATLAS_PASSWORD`
+- `MONGODB_ATLAS_URI`
 - `AUTH0_DOMAIN`
-- `AUTH0_AUDIENCE`
 - `AUTH0_M2M_CLIENT_ID`
 - `AUTH0_M2M_CLIENT_SECRET`
-- `GOOGLE_GEMINI_API_KEY` (optional)
+- `AUTH0_API_AUDIENCE`
+- `AUTH0_MRB_CLIENT_ID`
+- `OPENAI_API_KEY` (optional)
+- `ANTHROPIC_API_KEY` (optional)
+- `GROQ_API_KEY` (optional)
+- `GOOGLE_API_KEY` (optional)
+- `DEEPSEEK_API_KEY` (optional)
+- `AWS_ACCOUNT_ID`
+- `RECIPE_IMAGES_BUCKET`
 
 ### 3. Upload to Parameter Store
 
@@ -162,13 +167,13 @@ Error: Parameter /vwc/dev/secrets not found
 Error: User is not authorized to perform: ssm:GetParameter
 ```
 
-**Solution**: Update IAM policy for `terraform-vwc` user to include:
+**Solution**: Update IAM policy for `terraform-mrb` user to include:
 
 ```json
 {
   "Effect": "Allow",
   "Action": ["ssm:GetParameter", "ssm:PutParameter"],
-  "Resource": "arn:aws:ssm:us-west-2:*:parameter/vwc/*"
+  "Resource": "arn:aws:ssm:us-west-2:*:parameter/mrb/*"
 }
 ```
 
@@ -197,5 +202,5 @@ For our use case (simple credential storage without auto-rotation), Parameter St
 
 - [AWS Systems Manager Parameter Store Documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
 - [SecureString Parameters](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-securestring.html)
-- [MongoDB Atlas Setup Guide](./MongoDB-Atlas-Setup-Guide.md)
-- [Auth0 Setup Guide](./Auth0-Setup-Guide.md)
+- [MongoDB Atlas Management Guide](./MongoDB-Atlas-Management-Guide.md)
+- [Migration Plan: Secrets Manager to Parameter Store](./job-jar-secrets-to-parameter-store-migration.md)

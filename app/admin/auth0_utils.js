@@ -4,6 +4,7 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { SSMClient, GetParameterCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
 
 // Load .env from parent directory
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +14,15 @@ config({ path: path.join(__dirname, '../../config/current-profile.env'), overrid
 
 // Cache for AWS secrets to avoid repeated calls
 let secretsCache = null;
+
+// AWS SSM client for Parameter Store
+const ssmClient = new SSMClient({ 
+  region: process.env.AWS_REGION || 'us-west-2' 
+});
+
+// Parameter Store configuration
+const PARAMETER_NAME = process.env.AUTH0_TOKEN_PARAMETER_NAME || '/mrb/dev/auth0-token-cache';
+const TOKEN_EXPIRATION_BUFFER_MS = 5 * 60 * 1000; // 5 minutes buffer before expiry
 
 // Function to retrieve secrets from AWS Secrets Manager
 async function getSecretsFromAWS() {
@@ -80,23 +90,108 @@ export async function getAuth0Config() {
   };
 }
 
-// Token cache - stores token and expiration
+// Token cache - stores token and expiration (Tier 1: Memory cache)
 let tokenCache = {
   token: null,
   expiresAt: null
 };
 
-export async function getManagementToken() {
-  // Check if we have a valid cached token
-  if (tokenCache.token && tokenCache.expiresAt && Date.now() < tokenCache.expiresAt) {
-    console.log('🔄 Using cached M2M token');
-    return tokenCache.token;
+/**
+ * Get cached token from Parameter Store (Tier 2: Shared cache)
+ * @returns {Promise<{token: string, expiresAt: number}|null>}
+ */
+async function getTokenFromParameterStore() {
+  try {
+    console.log('🗄️  Checking Parameter Store for cached token...');
+    
+    const command = new GetParameterCommand({
+      Name: PARAMETER_NAME,
+      WithDecryption: false // Token is not sensitive data (expires in 24h)
+    });
+    
+    const response = await ssmClient.send(command);
+    
+    if (!response.Parameter?.Value) {
+      console.log('ℹ️  No cached token found in Parameter Store');
+      return null;
+    }
+    
+    // Parse token data from JSON
+    let tokenData;
+    try {
+      tokenData = JSON.parse(response.Parameter.Value);
+    } catch (parseError) {
+      console.log('ℹ️  Invalid token format in Parameter Store');
+      return null;
+    }
+    
+    const { token, expiresAt } = tokenData;
+    if (!token || !expiresAt) {
+      console.log('ℹ️  Incomplete token data in Parameter Store');
+      return null;
+    }
+    
+    const now = Date.now();
+    
+    // Validate token is not expired (with buffer)
+    if (expiresAt <= now + TOKEN_EXPIRATION_BUFFER_MS) {
+      console.log(`⏰ Parameter Store token expired or expiring soon (${new Date(expiresAt).toISOString()})`);
+      return null;
+    }
+    
+    console.log(`✅ Retrieved valid token from Parameter Store (expires: ${new Date(expiresAt).toISOString()})`);
+    return {
+      token: token,
+      expiresAt: expiresAt
+    };
+    
+  } catch (error) {
+    if (error.name === 'ParameterNotFound') {
+      console.log('ℹ️  Parameter not found in Parameter Store (first run)');
+      return null;
+    }
+    console.warn('⚠️  Error retrieving token from Parameter Store:', error.message);
+    return null; // Fail gracefully, will fetch from Auth0
   }
+}
 
-  console.log('🔑 Fetching new M2M token from Auth0');
-  
-  // Get Auth0 configuration (from AWS or environment)
-  const config = await getAuth0Config();
+/**
+ * Save token to Parameter Store (Tier 2: Shared cache)
+ * @param {string} token - The Auth0 access token
+ * @param {number} expiresAt - Expiration timestamp (milliseconds)
+ */
+async function saveTokenToParameterStore(token, expiresAt) {
+  try {
+    console.log('💾 Saving token to Parameter Store...');
+    
+    // Store token and expiration as JSON
+    const tokenData = JSON.stringify({ token, expiresAt });
+    
+    const command = new PutParameterCommand({
+      Name: PARAMETER_NAME,
+      Value: tokenData,
+      Type: 'String',
+      Description: `Auth0 Management API token cache`,
+      Overwrite: true,
+      Tier: 'Standard' // Free tier
+    });
+    
+    await ssmClient.send(command);
+    console.log(`✅ Token saved to Parameter Store (expires: ${new Date(expiresAt).toISOString()})`);
+    
+  } catch (error) {
+    console.warn('⚠️  Error saving token to Parameter Store:', error.message);
+    // Non-fatal error - token is still cached in memory
+  }
+}
+
+/**
+ * Fetch a fresh token from Auth0 (Tier 3: Most expensive)
+ * @param {object} config - Auth0 configuration
+ * @returns {Promise<{token: string, expiresAt: number}>}
+ */
+async function fetchNewTokenFromAuth0(config) {
+  console.log('🔑 Fetching new M2M token from Auth0 API...');
   
   const url = `https://${config.AUTH0_DOMAIN}/oauth/token`;
   const body = {
@@ -112,19 +207,77 @@ export async function getManagementToken() {
     });
     
     const data = response.data;
-    
-    // Cache the token with 24-hour expiration (or use expires_in from response)
     const expiresIn = data.expires_in || 86400; // Default 24 hours in seconds
-    tokenCache.token = data.access_token;
-    tokenCache.expiresAt = Date.now() + (expiresIn * 1000) - 60000; // Subtract 1 minute for safety
+    const expiresAt = Date.now() + (expiresIn * 1000) - 60000; // Subtract 1 minute for safety
     
-    console.log(`✅ M2M token cached until ${new Date(tokenCache.expiresAt).toISOString()}`);
-    return tokenCache.token;
+    console.log(`✅ New token fetched from Auth0 (expires: ${new Date(expiresAt).toISOString()})`);
+    
+    return {
+      token: data.access_token,
+      expiresAt: expiresAt
+    };
     
   } catch (error) {
     const errorMsg = error.response?.data || error.message;
     throw new Error(`Failed to get Auth0 M2M token: ${error.response?.status || 'Unknown'} ${errorMsg}`);
   }
+}
+
+/**
+ * Get Auth0 Management API token with three-tier caching
+ * 
+ * Tier 1: Memory cache (0-1ms) - Fastest, but lost on Lambda cold start
+ * Tier 2: Parameter Store (50-100ms) - Shared across all Lambda containers
+ * Tier 3: Auth0 API (500-1000ms) - Most expensive, only when token expired
+ * 
+ * @returns {Promise<string>} Auth0 Management API access token
+ */
+export async function getManagementToken() {
+  const now = Date.now();
+  
+  // Tier 1: Check memory cache (fastest)
+  if (tokenCache.token && tokenCache.expiresAt && tokenCache.expiresAt > now + TOKEN_EXPIRATION_BUFFER_MS) {
+    console.log('⚡ Using memory-cached token (Tier 1)');
+    return tokenCache.token;
+  }
+  
+  // Tier 2: Check Parameter Store (shared across Lambda containers)
+  const cachedToken = await getTokenFromParameterStore();
+  if (cachedToken) {
+    // Update memory cache
+    tokenCache.token = cachedToken.token;
+    tokenCache.expiresAt = cachedToken.expiresAt;
+    console.log('🗄️  Using Parameter Store cached token (Tier 2)');
+    return cachedToken.token;
+  }
+  
+  // Tier 3: Fetch fresh token from Auth0 (most expensive)
+  console.log('🌐 No valid cached token - fetching from Auth0 (Tier 3)');
+  
+  // Get Auth0 configuration (from AWS or environment)
+  const config = await getAuth0Config();
+  
+  // Fetch new token
+  const newToken = await fetchNewTokenFromAuth0(config);
+  
+  // Update memory cache
+  tokenCache.token = newToken.token;
+  tokenCache.expiresAt = newToken.expiresAt;
+  
+  // Save to Parameter Store for other Lambda containers
+  await saveTokenToParameterStore(newToken.token, newToken.expiresAt);
+  
+  return newToken.token;
+}
+
+/**
+ * Clear token cache (for testing purposes)
+ * Clears memory cache but NOT Parameter Store
+ */
+export function clearAuth0TokenCache() {
+  console.log('🧹 Clearing memory token cache');
+  tokenCache.token = null;
+  tokenCache.expiresAt = null;
 }
 
 export async function listAuth0Users() {

@@ -2,7 +2,7 @@
 // Tests Auth0 M2M connectivity, Management API access, and token caching
 
 import dotenv from 'dotenv';
-import { getManagementToken, listAuth0Users } from '../auth0_utils.js';
+import { getManagementToken, listAuth0Users, getAuth0Config } from '../auth0_utils.js';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import path from 'path';
@@ -57,7 +57,8 @@ async function testConnection() {
     
     // Test direct API call
     console.log('\n5️⃣ Testing Direct API Call...');
-    const response = await axios.get(`https://${process.env.AUTH0_DOMAIN}/api/v2/users?per_page=1`, {
+    const config = await getAuth0Config();
+    const response = await axios.get(`https://${config.AUTH0_DOMAIN}/api/v2/users?per_page=1`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

@@ -65,6 +65,29 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
 }
 
 ##############################################
+# Custom policy for SSM Parameter Store access (Auth0 token caching)
+##############################################
+resource "aws_iam_role_policy" "lambda_parameter_store_access" {
+  count = var.enable_app_api ? 1 : 0
+  name  = "lambda-parameter-store-auth0-token-cache"
+  role  = aws_iam_role.app_lambda_role[count.index].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:PutParameter"
+        ]
+        Resource = "arn:aws:ssm:us-west-2:*:parameter/mrb/dev/*"
+      }
+    ]
+  })
+}
+
+##############################################
 # Lambda function from ZIP file
 ##############################################
 resource "aws_lambda_function" "app_lambda" {

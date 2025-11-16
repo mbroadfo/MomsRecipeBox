@@ -121,8 +121,6 @@ variable "ui_hosting_bucket" {
   default     = "mrb-ui-hosting-dev"
 }
 
-variable "aws_secret_name" {
-  description = "AWS Secrets Manager secret name for MongoDB Atlas credentials"
-  type        = string
-  default     = "moms-recipe-secrets-dev"
-}
+# aws_secret_name variable removed - migrated to Parameter Store (cost optimization)
+# See SSM_SECRETS_PARAMETER_NAME in app_api.tf
+

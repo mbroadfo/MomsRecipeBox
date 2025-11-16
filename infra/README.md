@@ -220,7 +220,7 @@ aws lambda invoke --function-name mrb-jwt-authorizer --payload '{}' response.jso
 | `auth0_domain` | Auth0 tenant domain | `momsrecipebox.us.auth0.com` | Yes |
 | `auth0_audience` | JWT audience for API | `https://momsrecipebox.com/api` | Yes |
 | `recipe_images_bucket` | S3 bucket for images | `mrb-recipe-images-dev` | Yes |
-| `aws_secret_name` | Secrets Manager secret name | `mrb-mongodb-atlas` | Yes |
+| ~~`aws_secret_name`~~ | ~~Secrets Manager secret (deprecated)~~ | Migrated to Parameter Store | No |
 
 ## 🚀 Outputs Reference
 

@@ -27,11 +27,8 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_secretsmanager_access" {
-  count = var.enable_app_api ? 1 : 0
-  role       = aws_iam_role.app_lambda_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
-}
+# Secrets Manager policy removed - migrated to Parameter Store for cost savings
+# See aws_iam_role_policy.lambda_parameter_store_access for new approach
 
 ##############################################
 # Custom policy for S3 access to recipe images bucket
@@ -168,7 +165,6 @@ resource "aws_lambda_function" "app_lambda" {
       # ==============================================
       # AWS Configuration
       # ==============================================
-      AWS_SECRET_NAME = var.aws_secret_name
       SSM_SECRETS_PARAMETER_NAME = var.enable_app_api ? aws_ssm_parameter.application_secrets[0].name : ""
       RECIPE_IMAGES_BUCKET = var.recipe_images_bucket
 

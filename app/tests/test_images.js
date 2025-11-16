@@ -240,27 +240,33 @@ async function deleteImage() {
     console.log(`✅ Image deleted successfully`);
     console.log(`Response:`, response.data);
     
-    // Verify deletion by getting image and checking if we get default image
-    const retrievedImageResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
-      responseType: 'arraybuffer',
-      headers: {
-        ...authHeaders,
-        'Accept': 'image/png'
+    // Verify deletion by attempting to get the image - should return 404 or default image
+    try {
+      const retrievedImageResponse = await axios.get(`${BASE_URL}/recipes/${recipeId}/image`, {
+        responseType: 'arraybuffer',
+        headers: {
+          ...authHeaders,
+          'Accept': 'image/png'
+        }
+      });
+      
+      const outputPath = path.join(TEST_OUTPUT_DIR, 'test_default_image.png');
+      await writeFile(outputPath, retrievedImageResponse.data);
+      
+      const stats = fs.statSync(outputPath);
+      console.log(`✅ Verification: Retrieved default image`);
+      console.log(`- Saved to: ${outputPath}`);
+      console.log(`- Size: ${stats.size} bytes`);
+    } catch (verifyError) {
+      // 404 is acceptable - means no image exists (no default image configured)
+      if (verifyError.response && verifyError.response.status === 404) {
+        console.log(`✅ Verification: Image properly deleted (404 response as expected)`);
+      } else {
+        throw verifyError;
       }
-    });
+    }
     
-    const outputPath = path.join(TEST_OUTPUT_DIR, 'test_default_image.png');
-    await writeFile(outputPath, retrievedImageResponse.data);
-    
-    // Check if the returned image is different from our original
-    const stats = fs.statSync(outputPath);
-    
-    console.log('✅ Image deleted successfully');
-    console.log(`- Retrieved default image saved to: ${outputPath}`);
-    console.log(`- Size: ${stats.size} bytes`);
     testResults.deleteImage = { success: true, details: { 
-      path: outputPath, 
-      size: stats.size,
       responseData: response.data
     }};
     return true;

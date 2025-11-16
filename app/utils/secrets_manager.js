@@ -1,9 +1,13 @@
 /**
  * AWS Secrets Manager Utility
- * Fetches all secrets from AWS Secrets Manager and loads them into process.env
+ * Fetches all secrets and loads them into process.env
+ * 
+ * Migration Complete: Now uses Parameter Store instead of Secrets Manager
+ * Cost: $0/year (Parameter Store Standard tier is free)
+ * Previous: $4.80/year (Secrets Manager)
  */
 
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { getSecretsFromParameterStore } from './parameter_store.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('secrets_manager');
@@ -13,7 +17,7 @@ let secretsCache = null;
 let secretsInitialized = false;
 
 /**
- * Fetch all secrets from AWS Secrets Manager
+ * Fetch all secrets from Parameter Store
  * @returns {Promise<Object>} All secrets as key-value pairs
  */
 export async function fetchSecrets() {
@@ -22,25 +26,15 @@ export async function fetchSecrets() {
   }
 
   try {
-    const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
-    const region = process.env.AWS_REGION || 'us-west-2';
-
-    logger.debug('Fetching secrets from AWS Secrets Manager', { secretName, region });
-
-    const client = new SecretsManagerClient({ region });
-    const command = new GetSecretValueCommand({ SecretId: secretName });
-    const response = await client.send(command);
-
-    const secrets = JSON.parse(response.SecretString);
+    logger.info('Fetching secrets from Parameter Store');
+    const secrets = await getSecretsFromParameterStore();
     secretsCache = secrets;
-
-    logger.info('Secrets retrieved from AWS Secrets Manager', { 
+    logger.info('Secrets retrieved from Parameter Store', { 
       secretCount: Object.keys(secrets).length 
     });
-
     return secrets;
   } catch (error) {
-    logger.error('Failed to fetch secrets from AWS Secrets Manager', error);
+    logger.error('Failed to fetch secrets from Parameter Store', error);
     throw error;
   }
 }
@@ -117,9 +111,12 @@ export async function initializeSecretsToEnv() {
     }
 
   } catch (error) {
+    console.error('❌ CRITICAL ERROR: Failed to initialize secrets to process.env');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     logger.error('Failed to initialize secrets to process.env', error);
-    // Don't throw - Lambda should continue even if secrets fail
-    // Individual handlers can handle missing secrets gracefully
+    // Re-throw to prevent Lambda from running without secrets
+    throw new Error(`Secrets initialization failed: ${error.message}`);
   }
 }
 

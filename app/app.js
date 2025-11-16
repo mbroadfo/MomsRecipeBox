@@ -2,7 +2,6 @@
 import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 import { ApplicationHealthChecker } from './health/application-health.js';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
 let cachedDb = null;
 let healthChecker = null;
@@ -52,29 +51,16 @@ async function fetchMongoUriFromSecretsManager() {
     return cachedMongoUri;
   }
 
-  try {
-    const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
-    const region = process.env.AWS_REGION || 'us-west-2';
+  // Secrets are now loaded into process.env by secrets_manager.js during Lambda init
+  // This happens in lambda.js initializeSecrets() before database initialization
+  cachedMongoUri = process.env.MONGODB_ATLAS_URI;
 
-    console.log(`🔐 Fetching MongoDB Atlas URI from Secrets Manager (${secretName})...`);
-
-    const client = new SecretsManagerClient({ region });
-    const command = new GetSecretValueCommand({ SecretId: secretName });
-    const response = await client.send(command);
-
-    const secrets = JSON.parse(response.SecretString);
-    cachedMongoUri = secrets.MONGODB_ATLAS_URI;
-
-    if (!cachedMongoUri) {
-      throw new Error('MONGODB_ATLAS_URI not found in secrets');
-    }
-
-    console.log('✅ MongoDB Atlas URI retrieved from Secrets Manager');
-    return cachedMongoUri;
-  } catch (error) {
-    console.error('❌ Failed to fetch MongoDB Atlas URI from Secrets Manager:', error.message);
-    throw error;
+  if (!cachedMongoUri) {
+    throw new Error('MONGODB_ATLAS_URI not found in process.env - secrets may not be initialized');
   }
+
+  console.log('✅ MongoDB Atlas URI retrieved from environment (loaded from Parameter Store)');
+  return cachedMongoUri;
 }
 
 /**

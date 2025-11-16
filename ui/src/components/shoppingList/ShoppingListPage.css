@@ -118,18 +118,41 @@
   }
 }
 
-/* Small mobile screens */
+/* Small mobile screens - Compact action buttons */
 @media (max-width: 640px) {
   .control-bar-right > div {
-    flex-direction: column;
+    flex-direction: row;
     width: 100%;
     gap: 0.5rem;
     margin: 0;
+    justify-content: space-between;
   }
   
+  /* Make action buttons more compact on mobile */
   .control-bar-right button {
-    width: 100%;
+    padding: 0.5rem;
+    min-width: auto;
+    flex: 1;
     justify-content: center;
+    font-size: 0.85rem;
+  }
+  
+  /* Hide button text on very small screens, show icons only */
+  .control-bar-right button > span:not([class*="bg-white"]) {
+    display: none;
+  }
+  
+  /* Keep icon visible */
+  .control-bar-right button svg {
+    margin: 0;
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Show badge count still */
+  .control-bar-right button [class*="bg-white"] {
+    display: inline-flex;
+    margin-left: 0;
   }
   
   .control-bar-left,
@@ -137,6 +160,46 @@
   .control-bar-center {
     width: 100%;
     margin: 0;
+  }
+  
+  /* Make search input more compact */
+  .control-bar-left input {
+    font-size: 14px;
+    padding: 0.65rem 0.75rem;
+  }
+  
+  .control-bar-left button {
+    padding: 0.65rem 0.75rem;
+    font-size: 14px;
+  }
+}
+
+/* Extra small screens - Even more compact */
+@media (max-width: 480px) {
+  .control-bar-grid {
+    gap: 1rem;
+  }
+  
+  /* Smaller view mode buttons */
+  .control-bar-center button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .control-bar-center button svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  /* Ultra compact action buttons */
+  .control-bar-right button {
+    padding: 0.4rem;
+    border-width: 1px;
+  }
+  
+  .control-bar-right button svg {
+    width: 16px;
+    height: 16px;
   }
 }
 

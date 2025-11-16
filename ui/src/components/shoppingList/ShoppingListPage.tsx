@@ -281,22 +281,28 @@ const ShoppingListPage: React.FC = () => {
               <button
                 onClick={() => showToast('Export functionality coming soon', ToastType.Info)}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-lg shadow-md"
+                title="Export shopping list"
+                aria-label="Export shopping list"
               >
                 <Download className="w-4 h-4" />
-                Export
+                <span>Export</span>
               </button>
               
               <button
                 onClick={handlePrint}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-lg shadow-md"
+                title="Print shopping list"
+                aria-label="Print shopping list"
               >
                 <Printer className="w-4 h-4" />
-                Print
+                <span>Print</span>
               </button>
               
               <button
                 onClick={handleClearAll}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg shadow-md"
+                title="Clear all items"
+                aria-label="Clear all items"
                 style={{
                   background: 'linear-gradient(to bottom right, #e11d48, #be123c)',
                   borderWidth: '2px',
@@ -409,6 +415,8 @@ const ShoppingListPage: React.FC = () => {
               <button
                 onClick={handleClearPurchased}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg shadow-md"
+                title={`Clear ${purchasedCount} purchased item${purchasedCount !== 1 ? 's' : ''}`}
+                aria-label={`Clear ${purchasedCount} purchased item${purchasedCount !== 1 ? 's' : ''}`}
                 style={{
                   background: 'linear-gradient(to bottom right, #e11d48, #be123c)',
                   borderWidth: '2px',

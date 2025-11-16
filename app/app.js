@@ -43,15 +43,16 @@ function initializeHealthChecker() {
 }
 
 /**
- * Fetch MongoDB Atlas URI from AWS Secrets Manager
+ * Fetch MongoDB Atlas URI from environment
+ * Secrets are loaded into process.env by secrets_manager.js during Lambda init
  * @returns {Promise<string>} The MongoDB Atlas connection string
  */
-async function fetchMongoUriFromSecretsManager() {
+async function fetchMongoUriFromEnvironment() {
   if (cachedMongoUri) {
     return cachedMongoUri;
   }
 
-  // Secrets are now loaded into process.env by secrets_manager.js during Lambda init
+  // Secrets loaded into process.env during Lambda cold start (from Parameter Store)
   // This happens in lambda.js initializeSecrets() before database initialization
   cachedMongoUri = process.env.MONGODB_ATLAS_URI;
 
@@ -64,14 +65,13 @@ async function fetchMongoUriFromSecretsManager() {
 }
 
 /**
- * Gets the appropriate MongoDB connection string based on the environment configuration.
- * Supports toggling between local Docker MongoDB and MongoDB Atlas.
+ * Gets the MongoDB connection string from environment variables
  * @returns {Promise<string>} The MongoDB connection string
  */
 export async function getMongoConnectionString() {
-  // Cloud-only: Always use MongoDB Atlas via AWS Secrets Manager
-  console.log('📦 Using MongoDB Atlas (fetching from Secrets Manager)');
-  return await fetchMongoUriFromSecretsManager();
+  // Cloud-only: Always use MongoDB Atlas via Parameter Store
+  console.log('📦 Using MongoDB Atlas (loaded from Parameter Store)');
+  return await fetchMongoUriFromEnvironment();
 }
 
 export async function getDb() {

@@ -27,8 +27,8 @@ When encountering data inconsistency or mixed format issues:
 
 **🎯 CRITICAL CONTEXT: This application has been SIMPLIFIED to use ONLY cloud-only architecture!**
 
-- **✅ CURRENT**: AWS Lambda + Atlas MongoDB via AWS Secrets Manager
-- **❌ ELIMINATED**: Docker containers, local MongoDB, profile switching, multi-mode complexity
+- **✅ CURRENT**: AWS Lambda + Atlas MongoDB via AWS Parameter Store
+- **❌ ELIMINATED**: Docker containers, local MongoDB, profile switching, multi-mode complexity, Secrets Manager
 - **✅ SIMPLIFIED COMMANDS**: `npm run dev`, `npm run test`, `npm run deploy`
 
 ### **Simplified Development Commands**
@@ -90,7 +90,7 @@ CloudFront S3 UI → AWS Lambda API → Atlas MongoDB
 **Key Simplifications**:
 
 - **No Docker containers**: Eliminated Docker, docker-compose, container management
-- **No local databases**: Atlas MongoDB exclusively via AWS Secrets Manager
+- **No local databases**: Atlas MongoDB exclusively via AWS Parameter Store
 - **No profile switching**: Single cloud configuration
 - **No mode detection**: Always cloud-only
 
@@ -115,14 +115,14 @@ if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
 ```javascript
 // ✅ SECURE - Throw error on malformed configuration
 if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
-  throw new Error(`Invalid AUTH0_DOMAIN configuration: ${auth0Domain}. Check AWS Secrets Manager.`);
+  throw new Error(`Invalid AUTH0_DOMAIN configuration: ${auth0Domain}. Check AWS Parameter Store.`);
 }
 ```
 
 **CRITICAL SECURITY RULES**:
 
 - **NEVER hardcode domains**: Even for "temporary" fixes or debugging
-- **NEVER hardcode API keys**: Use AWS Secrets Manager or environment variables  
+- **NEVER hardcode API keys**: Use AWS Parameter Store or environment variables  
 - **NEVER hardcode passwords**: All credentials must be externally managed
 - **ALWAYS fail securely**: Throw errors instead of using fallback credentials
 - **ASSUME PUBLIC REPOSITORIES**: All code may become public - never embed secrets
@@ -136,7 +136,7 @@ if (!auth0Domain || auth0Domain === '$' || auth0Domain.includes('${')) {
 
 **Proper Configuration Management**:
 
-- **AWS Secrets Manager**: For production credentials and sensitive configuration
+- **AWS Parameter Store**: For production credentials and sensitive configuration (FREE tier)
 - **Environment variables**: For development and testing configuration  
 - **Configuration validation**: Always validate settings and fail safely on invalid values
 - **Error logging**: Log configuration issues without exposing sensitive values
@@ -246,16 +246,16 @@ const user_id = event.requestContext?.authorizer?.principalId; // From JWT
 ```javascript
 // ✅ Simplified environment detection (cloud-only)
 async function getBaseUrl() {
-  // Always use AWS Secrets Manager for dynamic endpoint resolution
+  // Always use AWS Parameter Store for dynamic endpoint resolution
   const config = await getAwsConfig();
-  return config.LAMBDA_APP_URL; // From AWS Secrets Manager
+  return config.LAMBDA_APP_URL; // From AWS Parameter Store
 }
 ```
 
 **Critical Simplifications**:
 
 - **Single Environment**: Always cloud (AWS Lambda + Atlas MongoDB)
-- **AWS Secrets Manager**: All configuration dynamically retrieved
+- **AWS Parameter Store**: All configuration dynamically retrieved (FREE tier)
 - **No Local Dependencies**: No Docker, local MongoDB, or containers
 - **Consistent Testing**: All tests run against same cloud infrastructure as production
 
@@ -276,12 +276,12 @@ npm run test:recipes     # Individual test suites (all cloud-based)
 
 - **100% Pass Rate**: All 6 test suites passing consistently
 - **True Dev/Prod Parity**: Tests run against same AWS infrastructure as production  
-- **No Environment Variables**: AWS Secrets Manager handles all configuration
+- **No Environment Variables**: AWS Parameter Store handles all configuration
 - **Fast Feedback**: Cached JWT tokens and direct cloud API testing
 
 ### 3. Lambda Secrets Management and AI Integration
 
-**❌ MISTAKE**: Not loading AI API keys from AWS Secrets Manager at Lambda cold start
+**❌ MISTAKE**: Not loading AI API keys from AWS Parameter Store at Lambda cold start
 **✅ CORRECT**: Initialize all secrets into process.env at Lambda cold start, before any handlers run
 
 **Critical Pattern for Lambda Secrets**:
@@ -289,7 +289,7 @@ npm run test:recipes     # Individual test suites (all cloud-based)
 ```javascript
 // ❌ WRONG - Only fetching MongoDB URI
 async function initializeDatabase() {
-  const mongoUri = await fetchMongoUriFromSecretsManager();
+  const mongoUri = await fetchMongoUriFromEnvironment();
   // AI providers won't find their API keys!
 }
 
@@ -332,14 +332,14 @@ const providers = AIProviderFactory.getAvailableProviders();
 // Returns: ['google', 'openai', 'groq', 'anthropic', 'deepseek']
 ```
 
-**Secrets Manager Integration Pattern**:
+**Parameter Store Integration Pattern**:
 
 ```javascript
-// Create utility: app/utils/secrets_manager.js
+// Create utility: app/utils/secrets_manager.js (delegates to parameter_store.js)
 export async function initializeSecretsToEnv() {
   if (secretsInitialized) return; // Only once per container
 
-  const secrets = await fetchSecrets();
+  const secrets = await fetchSecrets(); // Fetches from Parameter Store
 
   // Load all secrets into process.env
   for (const key of SECRET_KEYS) {
@@ -694,28 +694,28 @@ const uri = getMongoConnectionString();  // Returns Promise, not string!
 const uri = await getMongoConnectionString();
 ```
 
-**Root Cause**: When `getMongoConnectionString()` was changed from synchronous to async (to fetch from Secrets Manager), the calling code wasn't updated with `await`. This caused the function to return a Promise object instead of the connection string, leading to MongoDB connection failures.
+**Root Cause**: When `getMongoConnectionString()` was changed from synchronous to async (to fetch from Parameter Store), the calling code wasn't updated with `await`. This caused the function to return a Promise object instead of the connection string, leading to MongoDB connection failures.
 
 **❌ MISTAKE**: Storing MongoDB Atlas credentials in Lambda environment variables
-**✅ CORRECT**: Fetch MongoDB Atlas URI from AWS Secrets Manager at runtime
+**✅ CORRECT**: Load MongoDB Atlas URI from Parameter Store into process.env at Lambda cold start
 
 **Why This Matters**:
 
-- Terraform only has access to local MongoDB passwords, not Atlas passwords
-- Atlas passwords stored securely in AWS Secrets Manager
-- Lambda must fetch credentials at runtime using AWS SDK
-- Environment variables would contain wrong/stale passwords
+- Credentials stored securely in AWS Parameter Store (KMS-encrypted, FREE tier)
+- Lambda loads all secrets into process.env during cold start initialization
+- All application code reads from process.env (simple, fast)
+- No individual AWS SDK calls needed per request
 
 **Lambda MongoDB Connection Pattern**:
 
 ```javascript
-// Fetch from Secrets Manager (Lambda only)
-if (process.env.APP_MODE === 'lambda') {
-  const client = new SecretsManagerClient({ region: 'us-west-2' });
-  const command = new GetSecretValueCommand({ SecretId: secretName });
-  const response = await client.send(command);
-  const secrets = JSON.parse(response.SecretString);
-  return secrets.MONGODB_ATLAS_URI;
+// Secrets loaded at Lambda cold start by secrets_manager.js
+// Application code simply reads from process.env
+async function fetchMongoUriFromEnvironment() {
+  if (!cachedMongoUri) {
+    cachedMongoUri = process.env.MONGODB_ATLAS_URI; // From Parameter Store
+  }
+  return cachedMongoUri;
 }
 ```
 
@@ -735,10 +735,10 @@ const client = new MongoClient(uri, connectionOptions);
 
 **Lambda Timeout Considerations**:
 
-- Secrets Manager fetch: ~1-2 seconds
+- Parameter Store fetch: ~50-100ms (cached secrets)
 - MongoDB Atlas connection: ~2-5 seconds
 - Lambda timeout should be 30+ seconds for cold starts
-- Warm starts connect much faster (cached connection)
+- Warm starts connect much faster (cached connection and cached secrets in process.env)
 
 ### 7. AWS Profile Management (Fully Automated)
 
@@ -908,7 +908,7 @@ aws sts get-caller-identity  # Now uses mrb-api correctly
 ```javascript
 // ✅ Cloud-only environment detection
 async function getBaseUrl() {
-  // Always use AWS Secrets Manager for endpoint resolution
+  // Always use AWS Parameter Store for endpoint resolution
   const config = await getAwsConfig();
   return config.LAMBDA_APP_URL; // Dynamic cloud endpoint
 }
@@ -916,7 +916,7 @@ async function getBaseUrl() {
 
 **Critical Implementation Rules**:
 
-- **Cloud-Only Detection**: Always uses AWS Lambda + Atlas MongoDB via Secrets Manager
+- **Cloud-Only Detection**: Always uses AWS Lambda + Atlas MongoDB via Parameter Store
 - **Dynamic Endpoint Resolution**: Retrieves API Gateway URL from AWS Secrets Manager
 - **No Local Modes**: Eliminated express/local/docker environment complexity
 - **Consistent Testing**: All tests run against same cloud infrastructure

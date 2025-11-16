@@ -803,7 +803,52 @@ cd ui; npm run dev
 
 **Key Rule**: When user's shell is PowerShell, use `;` for command chaining, not `&&`
 
-### 9. Terminal Management & AWS Profile Context
+### 9. PowerShell File Encoding and AWS Parameter Store
+
+**❌ MISTAKE**: Using default PowerShell `Out-File` encoding for JSON data
+**✅ CORRECT**: Use ASCII encoding without BOM to avoid JSON parsing errors
+
+**Breaking UTF-8 BOM Pattern**:
+
+```powershell
+# ❌ Creates UTF-8 with BOM (ï»¿ characters at start)
+Get-Content file.json | Out-File -Encoding utf8 output.json
+aws ssm put-parameter --value (Get-Content output.json -Raw)
+# Result: JSON.parse() fails with "Unexpected token 'ï'"
+```
+
+**Correct ASCII Encoding Pattern**:
+
+```powershell
+# ✅ Use ASCII encoding without BOM for clean JSON
+Get-Content file.json | Out-File -Encoding ascii -NoNewline output.json
+aws ssm put-parameter --value file://output.json
+# Result: Clean JSON, successful parsing
+```
+
+**Critical Rules for AWS Parameter Store Uploads**:
+
+- **Use `file://` protocol**: Avoids PowerShell string interpretation issues
+- **ASCII encoding**: Prevents UTF-8 BOM corruption
+- **No trailing newlines**: Use `-NoNewline` to avoid extra whitespace
+- **Verify format**: Check raw parameter value after upload to confirm valid JSON
+
+**JSON Format Verification**:
+
+```powershell
+# After upload, verify JSON format is preserved
+aws ssm get-parameter --name /param/name --with-decryption --query 'Parameter.Value' --output text
+# Should show: {"key":"value"} NOT {key:value}
+```
+
+**Why This Matters**:
+
+- UTF-8 BOM adds invisible `ï»¿` characters at file start
+- PowerShell `Get-Content -Raw` can convert JSON to PowerShell object notation
+- AWS Parameter Store stores exact bytes uploaded, preserving any corruption
+- Node.js `JSON.parse()` requires valid JSON format with quoted keys
+
+### 10. Terminal Management & AWS Profile Context
 
 **❌ MISTAKE**: Not understanding terminal context when running commands
 **✅ CORRECT**: Always be aware of current working directory and AWS profile

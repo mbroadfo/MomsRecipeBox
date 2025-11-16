@@ -5,6 +5,55 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-15
+
+### Feat - Parameter Store Infrastructure for Secrets Migration
+
+#### 🎯 Cost Optimization: Secrets Manager → Parameter Store Migration (Phase 1)
+
+**Goal**: Eliminate $4.80/year Secrets Manager cost by migrating to free Parameter Store.
+
+**✅ Phase 1 Complete - Infrastructure Created & Validated:**
+
+- **Parameter Store Resource**: Created `/mrb/dev/secrets` (SecureString, Standard tier, FREE)
+- **Secrets Populated**: All 19 application secrets migrated from Secrets Manager to Parameter Store
+- **Retrieval Module**: New `app/utils/parameter_store.js` utility for reading secrets
+- **Lambda Environment**: Added `SSM_SECRETS_PARAMETER_NAME=/mrb/dev/secrets` variable
+- **IAM Permissions**: Added SSM permissions to terraform-mrb and mrb-app-core policies
+
+**✅ Technical Implementation:**
+
+- **File**: `infra/app_api.tf` - Added `aws_ssm_parameter.application_secrets` resource
+- **File**: `app/utils/parameter_store.js` - Parameter Store retrieval utility (not yet integrated)
+- **Terraform**: Lifecycle `ignore_changes` on parameter value (user-managed secrets)
+- **Validation**: Successfully retrieved and parsed all 19 secret keys from Parameter Store
+
+**✅ IAM Policy Updates:**
+
+- **terraform-mrb-infrastructure**: Added `ssm:DescribeParameters` (global), SSM CRUD operations
+- **mrb-app-core**: Already had `ssm:GetParameter`, `ssm:PutParameter` permissions
+- **Lambda execution role**: SSM permissions already present from token cache work
+
+**✅ JSON Format Resolution:**
+
+- **Issue**: PowerShell UTF-8 BOM corruption caused JSON parsing errors
+- **Solution**: Used ASCII encoding without BOM for secret upload via `file://` protocol
+- **Result**: Clean JSON format with quoted keys, successful parsing
+
+**⏳ Next Steps (Phase 2 - Hard Cutover):**
+
+1. Replace Secrets Manager code in `app/utils/secrets_manager.js` with Parameter Store
+2. Update Lambda environment to remove `AWS_SECRET_NAME` variable
+3. Remove Secrets Manager IAM policy attachments from Lambda role
+4. Schedule deletion of `moms-recipe-secrets-dev` secret (7-day recovery window)
+5. Update documentation
+
+**📊 Expected Benefits:**
+
+- **Cost Savings**: $4.80/year eliminated (100% reduction)
+- **Performance**: Similar retrieval times (~50-100ms)
+- **Security**: KMS-encrypted SecureString maintains same security posture
+
 ## [Unreleased] - 2025-11-14
 
 ### Feat - Auth0 Management API Token Caching with Parameter Store

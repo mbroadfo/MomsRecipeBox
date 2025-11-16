@@ -88,6 +88,50 @@ resource "aws_iam_role_policy" "lambda_parameter_store_access" {
 }
 
 ##############################################
+# Parameter Store for application secrets
+##############################################
+resource "aws_ssm_parameter" "application_secrets" {
+  count       = var.enable_app_api ? 1 : 0
+  name        = "/mrb/dev/secrets"
+  description = "Application secrets for Mom's Recipe Box (MongoDB, Auth0, AI providers)"
+  type        = "SecureString"  # Encrypted at rest with AWS KMS
+  value = jsonencode({
+    # MongoDB Atlas
+    MONGODB_ATLAS_URI          = "not-initialized"
+    
+    # Auth0 Configuration
+    AUTH0_DOMAIN               = "not-initialized"
+    AUTH0_M2M_CLIENT_ID        = "not-initialized"
+    AUTH0_M2M_CLIENT_SECRET    = "not-initialized"
+    AUTH0_API_AUDIENCE         = "not-initialized"
+    AUTH0_MRB_CLIENT_ID        = "not-initialized"
+    
+    # AI Provider API Keys
+    OPENAI_API_KEY             = "not-initialized"
+    ANTHROPIC_API_KEY          = "not-initialized"
+    GROQ_API_KEY               = "not-initialized"
+    GOOGLE_API_KEY             = "not-initialized"
+    DEEPSEEK_API_KEY           = "not-initialized"
+    
+    # AWS Configuration
+    AWS_ACCOUNT_ID             = "not-initialized"
+    RECIPE_IMAGES_BUCKET       = "not-initialized"
+  })
+  tier        = "Standard"  # Free tier
+
+  tags = {
+    Project     = "MomsRecipeBox"
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Purpose     = "Application secrets - replacing Secrets Manager for cost optimization"
+  }
+
+  lifecycle {
+    ignore_changes = [value]  # User manages secret values manually, but Terraform can read metadata
+  }
+}
+
+##############################################
 # Lambda function from ZIP file
 ##############################################
 resource "aws_lambda_function" "app_lambda" {
@@ -125,6 +169,7 @@ resource "aws_lambda_function" "app_lambda" {
       # AWS Configuration
       # ==============================================
       AWS_SECRET_NAME = var.aws_secret_name
+      SSM_SECRETS_PARAMETER_NAME = var.enable_app_api ? aws_ssm_parameter.application_secrets[0].name : ""
       RECIPE_IMAGES_BUCKET = var.recipe_images_bucket
 
       # ==============================================

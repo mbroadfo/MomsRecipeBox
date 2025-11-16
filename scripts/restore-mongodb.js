@@ -135,7 +135,7 @@ async function getRestoreConfig(options) {
   return {
     database: {
       name: options.database || envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
-      secretName: envConfig.AWS_SECRET_NAME || 'moms-recipe-secrets-dev'
+      parameterName: envConfig.SSM_SECRETS_PARAMETER_NAME || '/mrb/dev/secrets'
     },
     restore: {
       backupPath: options.backupPath || '',
@@ -158,16 +158,17 @@ async function getRestoreConfig(options) {
  */
 async function getAtlasUri(config) {
   try {
-    log('🔑 Retrieving MongoDB Atlas URI from AWS Secrets Manager...', 'blue');
+    log('🔑 Retrieving MongoDB Atlas URI from AWS Parameter Store...', 'blue');
     
     // Set AWS profile
     process.env.AWS_PROFILE = config.aws.profile;
     
     const result = await runCommand('aws', [
-      'secretsmanager', 'get-secret-value',
-      '--secret-id', config.database.secretName,
+      'ssm', 'get-parameter',
+      '--name', config.database.parameterName,
+      '--with-decryption',
       '--region', config.aws.region,
-      '--query', 'SecretString',
+      '--query', 'Parameter.Value',
       '--output', 'text'
     ], { silent: true });
     

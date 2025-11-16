@@ -137,8 +137,8 @@ async function getBackupConfig(options) {
   return {
     database: {
       name: envConfig.MONGODB_DB_NAME || 'moms_recipe_box_dev',
-      // Atlas configuration (cloud-only)
-      secretName: envConfig.AWS_SECRET_NAME || 'moms-recipe-secrets-dev'
+      // Atlas configuration (cloud-only) - using Parameter Store
+      parameterName: envConfig.SSM_SECRETS_PARAMETER_NAME || '/mrb/dev/secrets'
     },
     backup: {
       rootPath: options.destination || envConfig.BACKUP_ROOT_PATH || path.join(projectRoot, 'backups'),
@@ -184,20 +184,21 @@ async function createBackupDirectory(config, type) {
 }
 
 /**
- * Get MongoDB Atlas URI from AWS Secrets Manager
+ * Get MongoDB Atlas URI from AWS Parameter Store
  */
 async function getAtlasUri(config) {
   try {
-    log('🔑 Retrieving MongoDB Atlas URI from AWS Secrets Manager...', 'blue');
+    log('🔑 Retrieving MongoDB Atlas URI from AWS Parameter Store...', 'blue');
     
     // Set AWS profile
     process.env.AWS_PROFILE = config.aws.profile;
     
     const result = await runCommand('aws', [
-      'secretsmanager', 'get-secret-value',
-      '--secret-id', config.database.secretName,
+      'ssm', 'get-parameter',
+      '--name', config.database.parameterName,
+      '--with-decryption',
       '--region', config.aws.region,
-      '--query', 'SecretString',
+      '--query', 'Parameter.Value',
       '--output', 'text'
     ], { silent: true });
     

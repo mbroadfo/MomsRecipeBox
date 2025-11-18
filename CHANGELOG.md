@@ -5,6 +5,36 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-18
+
+### Fix - Shopping List UX: Remove Sticky Positioning & Excessive Spacing
+
+#### 🎯 Problem: Control bar sticky behavior consuming too much screen space on mobile
+
+**User Issue**: "The by recipe, by category buttons and action buttons scroll up a little bit until the title and tag disappear, and then that massive DIV sticks to the top - essentially cutting the scrollable ingredients to only half the screen."
+
+**✅ Changes:**
+
+- **File**: `ui/src/components/shoppingList/ShoppingListPage.css`
+  - Removed sticky positioning from `.shopping-list-control-bar` (position: relative)
+  - Removed `z-index: 20`, `top: 0`, `backdrop-filter: blur(8px)`
+  - Reduced header margin from 2rem to 0.5rem (eliminated big empty line)
+  - Reduced control bar padding from 1rem to 0.75rem
+  - Reduced control bar margin from 2rem to 1rem
+
+**✅ Result:**
+
+- Everything scrolls naturally (title, subtitle, category buttons, action buttons)
+- No sticky behavior - full screen available for ingredient list
+- Tighter spacing between header sections (75% reduction in wasted space)
+- Better mobile UX with more vertical space for shopping list items
+
+**Technical Details:**
+
+- Before: Control bar stuck at top after scrolling past title (sticky at top: 0)
+- After: All content scrolls together, no sticky elements
+- Space savings: 3.5rem reduced to 1.5rem total vertical space
+
 ## [Unreleased] - 2025-11-15
 
 ### Feat - Parameter Store Migration Complete (All Phases)

@@ -12,7 +12,7 @@
 .shopping-list-header {
   position: relative;
   padding-bottom: 0;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .back-button-container {
@@ -66,13 +66,10 @@
 }
 
 .shopping-list-control-bar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  padding: 1rem 0;
-  margin-bottom: 2rem;
+  position: relative;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
   background-color: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(8px);
   border-bottom: 1px solid #e2e8f0;
 }
 

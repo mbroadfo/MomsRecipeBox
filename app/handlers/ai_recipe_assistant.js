@@ -193,7 +193,65 @@ async function handleUrlExtraction(url, aiProvider) {
   
   try {
     // Fetch the page content
-    const response = await axios.get(url);
+    let response;
+    try {
+      response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0'
+        },
+        timeout: 15000 // 15 second timeout
+      });
+    } catch (fetchError) {
+      // Handle HTTP errors when fetching the URL
+      if (fetchError.response) {
+        const status = fetchError.response.status;
+        console.log(`Failed to fetch URL: ${url}, Status: ${status}`);
+        
+        if (status === 403) {
+          const errorResponse = {
+            statusCode: 200, // Return 200 so frontend displays the message
+            body: JSON.stringify({
+              success: false,
+              message: `Unable to access the recipe at ${url}. The website is blocking automated access. Please try copying and pasting the recipe content directly into the chat, or try a different recipe URL.`
+            })
+          };
+          console.log('Returning 403 error response to user');
+          return errorResponse;
+        } else if (status === 404) {
+          const errorResponse = {
+            statusCode: 200, // Return 200 so frontend displays the message
+            body: JSON.stringify({
+              success: false,
+              message: `The recipe URL was not found (404). Please check the URL and try again.`
+            })
+          };
+          console.log('Returning 404 error response to user');
+          return errorResponse;
+        } else if (status >= 500) {
+          const errorResponse = {
+            statusCode: 200, // Return 200 so frontend displays the message
+            body: JSON.stringify({
+              success: false,
+              message: `The recipe website is currently unavailable (error ${status}). Please try again later or paste the recipe content directly.`
+            })
+          };
+          console.log(`Returning ${status} error response to user`);
+          return errorResponse;
+        }
+      }
+      // Re-throw if it's not a handled HTTP error
+      throw fetchError;
+    }
     const htmlContent = response.data;
     
     // First, extract potential image URLs from the HTML
@@ -532,12 +590,28 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
       };
     }
     
-    // For other errors
+    // For other errors (network issues, parsing errors, etc.)
+    console.error("Unhandled error in URL extraction:", error);
+    
+    // Check if this is a network error
+    if (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+      console.log(`Network error (${error.code}), returning error response to user`);
+      return {
+        statusCode: 200, // Return 200 so frontend displays the message
+        body: JSON.stringify({
+          success: false,
+          message: `Unable to connect to the website. Please check the URL and try again, or paste the recipe content directly into the chat.`,
+        })
+      };
+    }
+    
+    // Generic error message
+    console.log('Generic error in URL extraction, returning error response to user');
     return {
-      statusCode: 500,
+      statusCode: 200, // Return 200 so frontend displays the message
       body: JSON.stringify({
         success: false,
-        message: `I couldn't extract a recipe from the URL: ${error.message}. Please try a different URL or manually enter the recipe details.`,
+        message: `I couldn't extract a recipe from the URL. This could be due to the website's structure or access restrictions. Try copying and pasting the recipe content directly into the chat instead.`,
       })
     };
   }

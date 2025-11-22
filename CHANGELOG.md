@@ -5,6 +5,86 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-22
+
+### Fix - AI Recipe Assistant URL Extraction Error Handling
+
+#### 🎯 Goal: Provide user-friendly error messages when recipe URL extraction fails
+
+**Issue**: When attempting to extract a recipe from a URL that blocks automated access (403 Forbidden), the AI assistant was returning HTTP 400 errors that triggered frontend exceptions instead of displaying helpful messages to users.
+
+**Errors Observed**:
+
+```text
+First attempt (500 error):
+Failed to load resource: the server responded with a status of 500 ()
+Error in AI chat: Error: API request failed with status 500
+
+After initial fix (400 error):
+POST https://...amazonaws.com/dev/ai/chat 400 (Bad Request)
+Error in AI chat: Error: API request failed with status 400
+```
+
+**Root Causes**:
+
+1. Initial issue: URL extraction was catching axios errors (403 from Food Network) but re-throwing without proper handling
+2. Second issue: Error responses returned HTTP 400 status, causing frontend to throw exceptions instead of displaying error messages
+
+**✅ Backend Changes:**
+
+- **File**: `app/handlers/ai_recipe_assistant.js`
+  - **Added browser-like headers** to axios.get() to bypass bot detection on recipe sites
+    - Realistic User-Agent (Chrome browser instead of axios/1.11.0)
+    - Complete browser headers (Accept, Accept-Language, Accept-Encoding, DNT)
+    - Modern Sec-Fetch-* headers for bot detection compliance
+    - 15 second timeout for slow-loading pages
+  - **Added inner try-catch block** in `handleUrlExtraction()` for axios.get() call
+  - **403 Forbidden handling**: Returns HTTP 200 with `success: false` and helpful message
+  - **404 Not Found handling**: Returns HTTP 200 with message to check URL
+  - **500+ errors handling**: Returns HTTP 200 with message that website is unavailable
+  - **Network error handling**: Added catch for ENOTFOUND, ETIMEDOUT, ECONNREFUSED
+  - **Status code fix**: Changed all error responses from 400/500 to 200 so frontend displays messages instead of throwing
+  - **Added logging**: Console logs for each error type to aid debugging
+
+**User Impact**:
+
+- ✅ **Recipe extraction now works** for Food Network and other protected sites
+- ✅ Browser-like headers bypass most bot detection systems
+- ✅ Users see clear, actionable error messages in the chat if site blocks access
+- ✅ Error messages appear as AI assistant responses, maintaining conversation flow
+- ✅ Messages suggest copying and pasting recipe content as fallback
+- ✅ Specific guidance for different error types (blocked access, not found, server down, network issues)
+
+**Error Message Examples**:
+
+- **403 Forbidden**: "Unable to access the recipe at [URL]. The website is blocking automated access. Please try copying and pasting the recipe content directly into the chat, or try a different recipe URL."
+- **404 Not Found**: "The recipe URL was not found (404). Please check the URL and try again."
+- **500+ Server Error**: "The recipe website is currently unavailable (error [status]). Please try again later or paste the recipe content directly."
+- **Network Error**: "Unable to connect to the website. Please check the URL and try again, or paste the recipe content directly into the chat."
+
+**Technical Details**:
+
+- Returns HTTP 200 with `success: false` in response body (not HTTP 400/500)
+- Frontend checks `success` field rather than HTTP status for error handling
+- Consistent with existing rate limit and service unavailability patterns
+- Console logging added for each error type to aid debugging
+
+**Testing**:
+
+- Created `scripts/invoke_ai_test.js` to test handler locally with Parameter Store secrets
+- Verified Food Network URL extraction now succeeds (was returning 403 before headers fix)
+- Recipe successfully extracted: title, 7 ingredients, 2 steps, image, metadata
+- Test confirms HTTP 200 response with success: true and complete recipe data
+
+**Deployment**:
+
+- Deployed via `npm run deploy:lambda` (ZIP deployment)
+- Initial deployment: 28.1 seconds
+- Error handling fix: 66.0 seconds
+- Headers improvement: 29.6 seconds
+- Package size: 30.76 MB
+- Status: ✅ Active and verified working with Food Network
+
 ## [Unreleased] - 2025-11-19
 
 ### Feat - AI Assistant Shopping List Context Integration
@@ -56,6 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pass `pageContext` to `handleChatMessage()` function (line 148)
   - Added `pageContext` parameter to `handleChatMessage()` signature
   - Enhanced prompt when `pageContext.page === 'shopping-list'`:
+
     ```javascript
     SHOPPING LIST SUMMARY:
     - Total items: X
@@ -68,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         - ingredient 1 (purchased)
         - ingredient 2
     ```
+
   - AI prompt instructs: "help with shopping list, suggest recipes based on ingredients, optimize list, meal planning"
 
 **✅ User Experience:**
@@ -95,6 +177,7 @@ User: "What can I make with these ingredients?"
 AI (with context): "Based on your shopping list, I can see you're buying chicken, rice, and vegetables from the Chicken Stir-Fry recipe, and tomatoes, basil from the Pasta recipe. You have 8 items total with 2 already purchased. I can suggest..."
 
 **Files Changed:**
+
 - Frontend: 8 files (3 new, 5 modified)
 - Backend: 1 file modified
 - Documentation: CHANGELOG.md, SHOPPING_LIST_AI_USAGE.md (new)

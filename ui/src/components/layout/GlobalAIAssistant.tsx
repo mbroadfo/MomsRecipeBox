@@ -25,7 +25,7 @@ interface ParsedRecipe {
 }
 
 export const GlobalAIAssistant: React.FC = () => {
-  const { isVisible, hideAI } = useAI();
+  const { isVisible, hideAI, pageContext } = useAI();
   const { currentRecipe, recipeMode } = useRecipe();
   const navigate = useNavigate();
   const { getAccessTokenSilently } = useAuth0();
@@ -202,6 +202,7 @@ export const GlobalAIAssistant: React.FC = () => {
             currentRecipe={currentRecipe}
             mode={recipeMode || 'new'}
             onClose={hideAI}
+            pageContext={pageContext}
           />
         </div>
       </div>

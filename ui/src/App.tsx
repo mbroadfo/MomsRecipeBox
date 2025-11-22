@@ -11,7 +11,7 @@ import { Layout } from './components/layout';
 import CallbackPage from './pages/CallbackPage';
 
 // Context Providers
-import { AIProvider } from './contexts/AIContext';
+import { AIProvider } from './contexts/AIProvider';
 import { RecipeProvider } from './contexts/RecipeContext';
 import { AdminProvider } from './contexts/AdminContext';
 

@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
         
         {/* AI Assistant Toggle Button */}
         <button
-          onClick={toggleAI}
+          onClick={() => toggleAI()}
           className="ai-toggle-btn"
           aria-label="AI Assistant"
           title="AI Assistant"

@@ -1,27 +1,20 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext } from 'react';
 
-interface AIContextType {
-  isVisible: boolean;
-  showAI: () => void;
-  hideAI: () => void;
-  toggleAI: () => void;
+export interface PageContext {
+  page: 'shopping-list' | 'recipe' | 'other';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: any;
 }
 
-const AIContext = createContext<AIContextType | undefined>(undefined);
+export interface AIContextType {
+  isVisible: boolean;
+  pageContext: PageContext | null;
+  showAI: (context?: PageContext) => void;
+  hideAI: () => void;
+  toggleAI: (context?: PageContext) => void;
+}
 
-export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  const showAI = () => setIsVisible(true);
-  const hideAI = () => setIsVisible(false);
-  const toggleAI = () => setIsVisible(prev => !prev);
-
-  return (
-    <AIContext.Provider value={{ isVisible, showAI, hideAI, toggleAI }}>
-      {children}
-    </AIContext.Provider>
-  );
-};
+export const AIContext = createContext<AIContextType | undefined>(undefined);
 
 export const useAI = () => {
   const context = useContext(AIContext);

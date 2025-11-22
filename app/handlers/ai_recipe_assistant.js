@@ -80,7 +80,7 @@ export async function handler(event) {
   try {
     // Parse the request body
     const body = JSON.parse(event.body);
-    const { message, messages = [], url = null, user_id = null, model = 'auto', currentRecipe = null, mode = 'new' } = body;
+    const { message, messages = [], url = null, user_id = null, model = 'auto', currentRecipe = null, mode = 'new', pageContext = null } = body;
     
     // Initialize AI provider based on selected model (or auto-select)
     let aiProvider;
@@ -145,7 +145,7 @@ export async function handler(event) {
         return await handlePastedRecipeContent(message, aiProvider);
       }
       
-      return await handleChatMessage(message, messages || [], aiProvider, currentRecipe, mode);
+      return await handleChatMessage(message, messages || [], aiProvider, currentRecipe, mode, pageContext);
     } else {
       // Unknown endpoint
       return {
@@ -546,9 +546,10 @@ Would you like me to apply this to your recipe form? You'll be able to make addi
 /**
  * Process chat messages for recipe creation/modification
  */
-async function handleChatMessage(message, history, aiProvider, currentRecipe = null, mode = 'new') {
+async function handleChatMessage(message, history, aiProvider, currentRecipe = null, mode = 'new', pageContext = null) {
   try {
     console.log(`📝 Chat message in ${mode} mode with recipe context:`, currentRecipe ? 'Yes' : 'No');
+    console.log(`📋 Page context:`, pageContext ? `${pageContext.page}` : 'None');
     
     // If in view mode with a recipe, prefix the message with recipe context
     let enhancedMessage = message;
@@ -567,6 +568,45 @@ User question: ${message}
 Please answer the user's question about this recipe. In view mode, you should provide suggestions and answer questions, but do NOT return recipeData to modify the recipe - just provide helpful information in your response.`;
       
       console.log('Enhanced message with recipe context (first 200 chars):', enhancedMessage.substring(0, 200));
+    }
+    
+    // If shopping list context is provided, enhance the message with that context
+    if (pageContext && pageContext.page === 'shopping-list' && pageContext.data) {
+      const { items = [], totalItems = 0, checkedItems = 0, viewMode = 'recipe' } = pageContext.data;
+      const uncheckedItems = totalItems - checkedItems;
+      
+      // Build a summary of items by recipe if available
+      let itemsSummary = '';
+      if (items.length > 0) {
+        const itemsByRecipe = {};
+        items.forEach(item => {
+          const recipe = item.recipeTitle || 'Custom Items';
+          if (!itemsByRecipe[recipe]) {
+            itemsByRecipe[recipe] = [];
+          }
+          itemsByRecipe[recipe].push(`${item.name}${item.checked ? ' (purchased)' : ''}`);
+        });
+        
+        itemsSummary = Object.entries(itemsByRecipe)
+          .map(([recipe, recipeItems]) => `\n  ${recipe}:\n    - ${recipeItems.join('\n    - ')}`)
+          .join('');
+      }
+      
+      enhancedMessage = `I'm on my shopping list page. Here's my current shopping list context:
+
+SHOPPING LIST SUMMARY:
+- Total items: ${totalItems}
+- Purchased: ${checkedItems}
+- Still need to buy: ${uncheckedItems}
+- View mode: ${viewMode}
+
+ITEMS:${itemsSummary}
+
+User question: ${message}
+
+Please help me with my shopping list. You can suggest recipes based on what I'm planning to buy, help optimize my list, suggest meal planning, estimate quantities, or answer any shopping-related questions. Be specific and reference items from my list when relevant.`;
+      
+      console.log('Enhanced message with shopping list context (first 300 chars):', enhancedMessage.substring(0, 300));
     }
     
     // Add retry logic with exponential backoff for API calls

@@ -5,6 +5,100 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-19
+
+### Feat - AI Assistant Shopping List Context Integration
+
+#### 🎯 Goal: Enable AI assistant to provide intelligent suggestions based on shopping list contents
+
+**User Need**: "Give the AI assistant the shopping list context when it is invoked on the shopping list page"
+
+**✅ Frontend Changes:**
+
+- **File**: `ui/src/contexts/AIContext.tsx` - Refactored to export context definition and `useAI` hook only
+  - Added `PageContext` interface with `page` type and optional `data` field
+  - Moved component logic to separate file for React Fast Refresh compliance
+  
+- **File**: `ui/src/contexts/AIProvider.tsx` - NEW FILE - Provider component extracted
+  - Manages AI visibility state and page context state
+  - `showAI(context)` now accepts optional `PageContext` parameter
+  - Preserves context for 500ms after hiding to handle quick reopens
+
+- **File**: `ui/src/App.tsx` - Updated import path
+  - Changed: `import { AIProvider } from './contexts/AIContext'` → `'./contexts/AIProvider'`
+
+- **File**: `ui/src/components/layout/Header.tsx` - Fixed onClick type error
+  - Changed: `onClick={toggleAI}` → `onClick={() => toggleAI()}`
+
+- **File**: `ui/src/components/layout/GlobalAIAssistant.tsx` - Pass context to chat
+  - Extracts `pageContext` from `useAI()` hook
+  - Passes `pageContext` prop to `RecipeAIChat` component
+
+- **File**: `ui/src/components/recipeDetail/parts/RecipeAIChat.tsx` - Accept and send context
+  - Added `pageContext` prop to interface
+  - Includes `pageContext` in API request body: `body: JSON.stringify({ ..., pageContext })`
+
+- **File**: `ui/src/components/shoppingList/ShoppingListPage.tsx` - NEW "Ask AI" button
+  - Imported `useAI` hook at component top
+  - Added `handleOpenAIWithContext()` function that gathers:
+    - Full items array
+    - Items grouped by recipe
+    - Total item count
+    - Checked item count
+    - Current view mode (recipe/category)
+  - Added purple "Ask AI" button to control bar with sparkle icon
+  - Button calls `showAI({ page: 'shopping-list', data: {...} })`
+
+**✅ Backend Changes:**
+
+- **File**: `app/handlers/ai_recipe_assistant.js` - Process shopping list context
+  - Extract `pageContext` from request body (line 93)
+  - Pass `pageContext` to `handleChatMessage()` function (line 148)
+  - Added `pageContext` parameter to `handleChatMessage()` signature
+  - Enhanced prompt when `pageContext.page === 'shopping-list'`:
+    ```javascript
+    SHOPPING LIST SUMMARY:
+    - Total items: X
+    - Purchased: Y
+    - Still need to buy: Z
+    - View mode: recipe/category
+    
+    ITEMS:
+      RecipeName:
+        - ingredient 1 (purchased)
+        - ingredient 2
+    ```
+  - AI prompt instructs: "help with shopping list, suggest recipes based on ingredients, optimize list, meal planning"
+
+**✅ User Experience:**
+
+- New purple "Ask AI" button appears in shopping list control bar
+- When clicked, AI receives complete shopping list snapshot
+- AI can now:
+  - Suggest meals based on planned purchases
+  - Optimize shopping list grouping
+  - Provide meal planning advice
+  - Reference specific items from list
+  - Estimate quantities or costs
+
+**✅ Technical Details:**
+
+- Context passing is backward compatible (optional parameter)
+- Frontend sends `pageContext` only when explicitly provided
+- Backend gracefully handles missing `pageContext` (falls back to normal chat)
+- Shopping list data includes: items array, recipe groupings, counts, view mode
+
+**Example Interaction:**
+
+User: "What can I make with these ingredients?"
+
+AI (with context): "Based on your shopping list, I can see you're buying chicken, rice, and vegetables from the Chicken Stir-Fry recipe, and tomatoes, basil from the Pasta recipe. You have 8 items total with 2 already purchased. I can suggest..."
+
+**Files Changed:**
+- Frontend: 8 files (3 new, 5 modified)
+- Backend: 1 file modified
+- Documentation: CHANGELOG.md, SHOPPING_LIST_AI_USAGE.md (new)
+
 ## [Unreleased] - 2025-11-18
 
 ### Fix - Shopping List UX: Remove Sticky Positioning & Excessive Spacing

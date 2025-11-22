@@ -54,9 +54,11 @@ interface RecipeAIChatProps {
   currentRecipe?: Record<string, any> | null;
   mode?: 'view' | 'edit' | 'new';
   onClose?: () => void; // Optional close button handler
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pageContext?: any; // Additional page-specific context (e.g., shopping list data)
 }
 
-export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVisible, currentRecipe, mode = 'new', onClose }) => {
+export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVisible, currentRecipe, mode = 'new', onClose, pageContext }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,7 +168,8 @@ export const RecipeAIChat: React.FC<RecipeAIChatProps> = ({ onApplyRecipe, isVis
           user_id: 'demo-user', // Simplified user ID for demo purposes
           model: selectedModel, // Send the selected model to the backend
           currentRecipe: currentRecipe || undefined, // Include current recipe for context
-          mode: mode // Include mode to guide AI behavior
+          mode: mode, // Include mode to guide AI behavior
+          pageContext: pageContext || undefined // Include page-specific context (e.g., shopping list)
         }),
       });
       

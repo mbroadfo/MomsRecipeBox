@@ -3,6 +3,7 @@ import { useShoppingList } from './useShoppingList';
 import { useIngredientCategories } from './useIngredientCategories';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useAI } from '../../contexts/AIContext';
 import { showToast, ToastType } from '../Toast';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
@@ -24,6 +25,7 @@ import './PrintStyles.css';
 const ShoppingListPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
+  const { showAI } = useAI();
   const [viewMode, setViewMode] = useState<'recipe' | 'category'>('recipe');
   const [searchText, setSearchText] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState<'all' | 'purchased' | null>(null);
@@ -162,6 +164,22 @@ const ShoppingListPage: React.FC = () => {
     window.print();
   };
 
+  const handleOpenAIWithContext = () => {
+    // Prepare shopping list context
+    const context = {
+      page: 'shopping-list' as const,
+      data: {
+        items: shoppingList?.items || [],
+        itemsByRecipe: getItemsByRecipe(),
+        totalItems: shoppingList?.items?.length || 0,
+        checkedItems: shoppingList?.items?.filter(item => item.checked).length || 0,
+        viewMode: viewMode // 'recipe' or 'category'
+      }
+    };
+
+    showAI(context);
+  };
+
   // Handle adding custom items directly from search input
   const handleAddItemFromSearch = async () => {
     if (!searchText.trim()) {
@@ -296,6 +314,16 @@ const ShoppingListPage: React.FC = () => {
               >
                 <Printer className="w-4 h-4" />
                 <span>Print</span>
+              </button>
+              
+              <button
+                onClick={handleOpenAIWithContext}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 border-2 border-purple-600 rounded-lg shadow-md"
+                title="Ask AI about your shopping list"
+                aria-label="Ask AI about your shopping list"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 4.2-4.3.6 3.1 3- .7 4.2 3.8-2 3.8 2-.7-4.2 3.1-3-4.3-.6z"/></svg>
+                <span>Ask AI</span>
               </button>
               
               <button

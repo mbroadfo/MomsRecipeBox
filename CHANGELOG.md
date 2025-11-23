@@ -7,6 +7,124 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-23
 
+### Fixed - Recipe Image Update File Extension Mismatch
+
+#### 🎯 Goal: Fix uploaded images not displaying in UI after successful S3 upload
+
+**Problem**:
+
+- Image successfully uploaded to S3 (confirmed by logs)
+- MongoDB successfully updated with image URL
+- BUT: Images not displaying in recipe list or detail views
+- Frontend showed default placeholder image instead of uploaded image
+
+**Root Cause (After Investigation)**:
+
+1. Backend converts all images to JPEG format using Sharp library for optimization
+2. Backend INCORRECTLY used original file extension in S3 key (e.g., `69168d761e4762a02e7b43d7.png`)
+3. Frontend CORRECTLY expected `.jpg` extension (since backend converts to JPEG)
+4. Result: Frontend requested `69168d761e4762a02e7b43d7.jpg` but S3 had `69168d761e4762a02e7b43d7.png`
+5. HTTP 404 error loading image, displaying default placeholder
+
+**Investigation Process**:
+
+- Initially thought MongoDB update was failing (verification warning logs)
+- Fixed verification query to use consistent `documentId` variable
+- Enhanced logging revealed MongoDB update was actually successful
+- Discovered file extension mismatch between backend upload and frontend expectations
+
+**Solution**:
+
+- Changed backend to always use `.jpg` extension in S3 key
+- Removed extension mapping logic that used original content type
+- Now matches frontend expectation that all images are converted to JPEG
+
+**Additional Issue Found**:
+
+- Frontend made redundant API call AFTER backend upload
+- Overwrote correct S3 URL with old API proxy URL format (`/api/recipes/{id}/image`)
+- This second update undid the backend's correct S3 URL assignment
+
+**Files Modified**:
+
+- `app/handlers/update_image.js` - Lines 105-110: Always use `.jpg` extension since Sharp converts to JPEG
+- `app/handlers/update_image.js` - Lines 302-312: Enhanced verification logging (for debugging)
+- `ui/src/components/recipeDetail/hooks/useImageUpload.ts` - Lines 56-68: Removed redundant recipe update that overwrote S3 URL
+
+**Impact**:
+
+- ✅ **Images display correctly** - Frontend can now load uploaded images from S3
+- ✅ **Consistent file format** - All images stored as `.jpg` in S3, matching Sharp conversion
+- ✅ **No more 404 errors** - Frontend requests correct file extension
+- ✅ **Better debugging** - Enhanced logging shows exact verification query results
+
+**Testing**:
+
+- Tested with PNG image upload to existing recipe (ID: `69168d761e4762a02e7b43d7`)
+- Verified S3 upload with `.jpg` extension
+- Confirmed image loads correctly in UI immediately after upload
+- No CloudFront invalidation needed for new images
+
+### Fixed - Recipe Image Update Complete Workflow (Multiple Issues)
+
+#### 🎯 Goal: Fix complete image upload and display workflow including persistence and browser caching
+
+**Additional Problems Discovered**:
+
+After fixing the file extension mismatch, multiple additional issues were found:
+
+1. **Frontend Redundant Update**: Frontend made second API call that overwrote backend's correct S3 URL
+2. **Image Reverting After Save**: Image displayed correctly after upload but reverted to old image when clicking "Save"
+3. **MongoDB Read-After-Write Consistency**: Immediate refresh after save got stale data from MongoDB Atlas
+4. **Browser Caching**: Same filename (`{recipeId}.jpg`) meant browser showed cached old image even when S3 had new image
+
+**Solutions Implemented**:
+
+1. **Backend Returns S3 URL**:
+   - Modified `app/handlers/update_image.js` to return `imageUrl: s3Url` in response (lines 389-393)
+   - Frontend now uses backend-provided S3 URL instead of constructing own
+
+2. **Frontend Uses Backend URL**:
+   - Modified `ui/src/components/recipeDetail/hooks/useImageUpload.ts` (lines 56-64)
+   - Parse response JSON to extract `imageUrl` from backend
+   - Removed redundant PUT request that was overwriting S3 URL with proxy URL
+   - Add cache-busting timestamp to URL: `${s3Url}?t=${timestamp}`
+
+3. **MongoDB Consistency Delay**:
+   - Modified `ui/src/components/recipeDetail/RecipeDetailContainer.tsx` (lines 299-305)
+   - Added 500ms delay before refresh after save: `await new Promise(resolve => setTimeout(resolve, 500))`
+   - Gives MongoDB Atlas time to propagate write before read
+
+4. **Browser Cache-Busting**:
+   - Modified `ui/src/components/recipeDetail/parts/ImagePane.tsx` (lines 32-52)
+   - Append `?t=${lastUploadTime}` query parameter to all S3 image URLs
+   - Forces browser to treat as new request instead of using cached version
+   - Updated useEffect dependencies to include `lastUploadTime` (line 103)
+
+**Files Modified**:
+
+- `app/handlers/update_image.js` - Lines 150-153, 389-393: Return S3 URL in API response
+- `ui/src/components/recipeDetail/hooks/useImageUpload.ts` - Lines 56-64: Use backend URL with cache-buster
+- `ui/src/components/recipeDetail/RecipeDetailContainer.tsx` - Lines 299-305: Add MongoDB consistency delay
+- `ui/src/components/recipeDetail/parts/ImagePane.tsx` - Lines 32-52, 103: Add cache-busting timestamps
+
+**Impact**:
+
+- ✅ **Complete End-to-End Fix** - Images upload, display, persist, and refresh correctly
+- ✅ **No Redundant Updates** - Single source of truth for S3 URL (backend response)
+- ✅ **MongoDB Consistency** - Delayed refresh ensures latest data is fetched
+- ✅ **Browser Cache Solved** - Timestamp query parameters force fresh image loads
+- ✅ **User Experience** - Images persist correctly after save, no reverting to old images
+
+**Testing**:
+
+- Uploaded new PNG image to existing recipe
+- Verified image displayed immediately after upload
+- Clicked "Save" and confirmed image persisted (did not revert)
+- Refreshed page and confirmed new image still displayed
+- Verified S3 had correct file with correct timestamp
+- Confirmed browser cache-busting parameter in network requests
+
 ### Fixed - Next.js Recipe Extraction Frontend Integration
 
 #### 🎯 Goal: Fix recipe data format mismatch between Next.js extraction and frontend expectations

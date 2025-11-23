@@ -30,6 +30,9 @@ tfplan
 # Claude Code workspace
 .claude/
 
+# Temp Builds
+.lambda-build
+
 # output
 output/
 

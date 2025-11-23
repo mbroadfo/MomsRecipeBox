@@ -34,16 +34,26 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
       // If it's already an S3 URL but missing region, fix it
       if (url.includes('mrb-recipe-images-dev.s3.amazonaws.com')) {
         // Replace the generic amazonaws.com URL with the region-specific one
-        const fixedUrl = url.replace(
+        let fixedUrl = url.replace(
           'mrb-recipe-images-dev.s3.amazonaws.com',
           'mrb-recipe-images-dev.s3.us-west-2.amazonaws.com'
         );
+        
+        // Add cache-busting parameter if we have a recent upload time
+        if (lastUploadTime) {
+          fixedUrl += `?t=${lastUploadTime}`;
+        }
+        
         setEffectiveUrl(fixedUrl);
         return;
       }
       
-      // For other external URLs, use as-is
-      setEffectiveUrl(url);
+      // For other external URLs, add cache-busting if we have upload time
+      let finalUrl = url;
+      if (lastUploadTime) {
+        finalUrl += `?t=${lastUploadTime}`;
+      }
+      setEffectiveUrl(finalUrl);
       return;
     }
     
@@ -90,7 +100,7 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
     
     const s3Url = convertToS3Url(url);
     setEffectiveUrl(s3Url);
-  }, [url]);
+  }, [url, lastUploadTime]);
   
   // Reset urlKey when url changes to force re-render
   useEffect(() => {

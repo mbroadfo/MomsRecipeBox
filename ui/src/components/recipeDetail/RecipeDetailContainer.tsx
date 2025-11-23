@@ -301,6 +301,9 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             throw new Error(`Save failed (${resp.status}): ${errorText}`);
           }
           
+          // Wait a moment for MongoDB to be consistent after the write
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           await refresh();
           setEditMode(false);
         } catch (err) {
@@ -387,7 +390,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
         author: recipeData.author || "",
         source: recipeData.source || "",
         owner_id: userId,
-        visibility: "private",
+        visibility: "public",
         tags: normalizedTags,
         yield: recipeData.yield || "",
         time: recipeData.time || {},
@@ -802,7 +805,7 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                       author: recipeData.author || "",
                       source: recipeData.source || "",
                       owner_id: userId,
-                      visibility: "private", // Default to private for AI-generated recipes
+                      visibility: "public", // Default to public for AI-generated recipes
                       tags: normalizedTags,
                       yield: recipeData.yield || "",
                       time: recipeData.time || {},

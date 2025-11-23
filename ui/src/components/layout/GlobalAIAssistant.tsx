@@ -63,7 +63,7 @@ export const GlobalAIAssistant: React.FC = () => {
         author: recipe.author || "",
         source: recipe.source || "",
         owner_id: userId,
-        visibility: "private",
+        visibility: "public",
         tags: normalizedTags,
         yield: recipe.yield || "",
         time: recipe.time || {},

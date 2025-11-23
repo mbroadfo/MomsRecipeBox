@@ -1,3 +1,4 @@
+
 import AWS from 'aws-sdk';
 import sharp from 'sharp';
 import { getDb } from '../app.js';
@@ -103,16 +104,9 @@ export async function handler(event) {
   
   const bucketName = process.env.RECIPE_IMAGES_BUCKET;
   
-  // Determine file extension based on content type
-  const extensionMap = {
-    'image/png': 'png',
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/gif': 'gif',
-    'image/webp': 'webp'
-  };
-  
-  const extension = extensionMap[contentType] || 'png';
+  // Since we always convert to JPEG with Sharp, always use .jpg extension
+  // This matches what the frontend expects
+  const extension = 'jpg';
   const key = `${id}.${extension}`;
   
   logger.info('Processing image upload for recipe', { 
@@ -156,10 +150,11 @@ export async function handler(event) {
     // Efficiently clean up old images
     const deletedCount = await deleteOldImages(bucketName, id, key);
 
+    // Construct the correct S3 URL for the image (used in return statement)
+    const s3Url = `https://${bucketName}.s3.amazonaws.com/${key}`;
+
     // Store image metadata in the recipe document
     try {
-      // Construct the correct S3 URL for the image
-      const s3Url = `https://${bucketName}.s3.amazonaws.com/${key}`;
       
       logger.info('Setting image URL for recipe', { 
         recipeId: id, 
@@ -300,10 +295,19 @@ export async function handler(event) {
             dbUpdateSuccess = true;
             
             // Verify the update actually persisted by reading it back
+            // Use the same documentId that was used for the update
             const verifyDoc = await db.collection('recipes').findOne(
-              { _id: id },
-              { projection: { image_url: 1 } }
+              { _id: documentId },
+              { projection: { image_url: 1, _id: 1 } }
             );
+            
+            logger.info('Verification query result', {
+              found: !!verifyDoc,
+              docId: verifyDoc?._id,
+              imageUrl: verifyDoc?.image_url,
+              expected: s3Url,
+              documentIdUsed: documentId
+            }, event);
             
             if (verifyDoc && verifyDoc.image_url === s3Url) {
               logger.debug('Verified image URL is correctly set in MongoDB', { 
@@ -312,7 +316,8 @@ export async function handler(event) {
             } else {
               logger.warn('Verification check failed - image URL not set correctly in MongoDB', { 
                 expected: s3Url, 
-                actual: verifyDoc?.image_url || 'undefined' 
+                actual: verifyDoc?.image_url || 'undefined',
+                verifyDocFound: !!verifyDoc
               }, event);
               
               // Try one more time with a different update approach
@@ -320,7 +325,7 @@ export async function handler(event) {
                 logger.debug('Attempting final update with different approach', {}, event);
                 
                 const lastAttempt = await db.collection('recipes').findOneAndUpdate(
-                  { _id: id },
+                  { _id: documentId },
                   { $set: { image_url: s3Url } },
                   { returnOriginal: false }
                 );
@@ -337,7 +342,7 @@ export async function handler(event) {
             
             if (attempt === maxAttempts) {
               // Last attempt, try a different approach
-              const checkDoc = await db.collection('recipes').findOne({ _id: id });
+              const checkDoc = await db.collection('recipes').findOne({ _id: documentId });
               if (!checkDoc) {
                 logger.error('Recipe not found in database', { 
                   recipeId: id 
@@ -348,7 +353,7 @@ export async function handler(event) {
                 }, event);
                 // Try a different update method
                 const lastAttempt = await db.collection('recipes').findOneAndUpdate(
-                  { _id: id },
+                  { _id: documentId },
                   { $set: { image_url: s3Url } },
                   { returnOriginal: false }
                 );
@@ -385,7 +390,8 @@ export async function handler(event) {
       body: JSON.stringify({ 
         message: 'Image updated successfully!',
         key: key,
-        contentType: contentType
+        contentType: contentType,
+        imageUrl: s3Url  // Return the S3 URL so frontend can use it immediately
       })
     };
   } catch (error) {

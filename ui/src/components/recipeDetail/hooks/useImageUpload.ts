@@ -53,35 +53,17 @@ export function useImageUpload(recipeId: string, onComplete: (url: string) => vo
         throw new Error(errorData.error || `Image API error ${putImgResp.status}`);
       }
       
-      // Successfully uploaded the image
-      console.log('Image uploaded successfully');
-      
-      // Create a proper URL for the image that will work with our API
-      const imageApiUrl = getApiUrl(`recipes/${recipeId}/image`);
-      
-      // Update the recipe with the image URL
-      const putRecipeResp = await fetch(getApiUrl(`recipes/${recipeId}`), { 
-        method: 'PUT', 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }, 
-        body: JSON.stringify({ image_url: imageApiUrl }) 
-      });
-      
-      if (!putRecipeResp.ok) {
-        const errorData = await putRecipeResp.json().catch(() => ({}));
-        throw new Error(errorData.error || `Recipe update error ${putRecipeResp.status}`);
-      }
-      
-      console.log('Recipe updated with new image URL:', imageApiUrl);
+      // Get the response which includes the S3 URL
+      const responseData = await putImgResp.json();
+      console.log('Image uploaded successfully', responseData);
       
       // Record the upload time
       const now = Date.now();
       setLastUploadTime(now);
       
-      // Return the API URL for the image
-      onComplete(`${imageApiUrl}`);
+      // Return the S3 URL from the backend response with cache-busting timestamp
+      const s3Url = responseData.imageUrl || `/api/recipes/${recipeId}/image`;
+      onComplete(`${s3Url}?t=${now}`);
     } catch (e: unknown) { 
       console.error('Error uploading image:', e);
       setError(e instanceof Error ? e.message : String(e)); 

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Visibility } from './Visibility';
 import { showToast, ToastType } from '../../Toast';
+import { useAuth0 } from '@auth0/auth0-react';
+import { getCurrentUserId } from '../../../types/global';
 
 interface Props {
   liked: boolean;
@@ -19,26 +21,28 @@ export const ImageMetadata: React.FC<Props> = ({
   editing,
   onVisibilityChange
 }) => {
-  // Convert Auth0 ID to email format for display
+  // Convert Auth0 ID to a readable display string. Use real Auth0 email for the current user when available.
+  const { user } = useAuth0();
+
   const getUserEmail = (authId: string) => {
     if (!authId) return '';
-    
+
     // If it's already an email, return as is
-    if (authId.includes('@')) {
-      return authId;
-    }
-    
-    // If it's an auth0 ID like "auth0|123456", extract and format
+    if (authId.includes('@')) return authId;
+
+    // If this is the current user, prefer Auth0 email when available
+    if (authId === getCurrentUserId() && user?.email) return user.email;
+
+    // If it's an auth0 ID like "auth0|123456", show a short identifier instead of fabricating an email
     if (authId.includes('|')) {
       const parts = authId.split('|');
       if (parts.length > 1) {
-        // For demo purposes, create a mock email from the ID
-        return `user${parts[1].substring(0, 6)}@example.com`;
+        return `user-${parts[1].substring(0, 8)}`;
       }
     }
-    
-    // Fallback - create email from the ID
-    return `${authId.substring(0, 8)}@example.com`;
+
+    // Fallback: truncate the id for display
+    return authId.substring(0, 8);
   };
 
   return (

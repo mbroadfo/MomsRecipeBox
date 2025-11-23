@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-22
 
+### Fix - Change Image Button Visibility and AI Assistant Context
+
+#### 🎯 Goal: Fix Change Image button disappearing on hover and ensure AI assistant has complete recipe context
+
+**Issues Fixed**:
+
+1. **Change Image Button Disappearing**: Button would show when far away but become invisible when mouse approached in edit mode
+2. **AI Assistant Missing Context**: AI couldn't see live edits, Notes section, or key fields like Description, Source, Author
+
+**Root Causes**:
+
+1. **CSS Hover Effect**: `.recipe-image-wrapper:hover img { transform: scale(1.02); }` was scaling the image up, causing it to cover the absolutely-positioned button
+2. **Frontend Context**: RecipeDetailContainer was sending original recipe instead of working recipe (with live edits) to AI context
+3. **Backend Filtering**: AI assistant handler was only sending minimal fields in view mode, excluding Description, Source, Author, and Notes
+
+**✅ Frontend Changes:**
+
+- **File**: `ui/src/components/RecipeDetail.css`
+  - **Removed hover scale effect** on line 189 to prevent image from covering button
+  - Added comment explaining the removal
+
+- **File**: `ui/src/components/recipeDetail/RecipeDetailContainer.tsx`
+  - **Added useEffect** to send `working` recipe (with live edits) to AI context instead of `recipe` (original data)
+  - Ensures AI assistant sees all user changes in real-time during edit mode
+
+- **File**: `ui/src/components/recipeDetail/parts/ImagePane.tsx`
+  - **Added `editing` prop** to conditionally render Change Image button only in edit mode
+  - Button wrapped in `{editing && (` to prevent showing in view mode
+
+**✅ Backend Changes:**
+
+- **File**: `app/handlers/ai_recipe_assistant.js`
+  - **Enhanced recipe context builder** (lines 625-665) to send ALL recipe fields conditionally
+  - Added support for `mode: 'edit'` in addition to `mode: 'view'`
+  - Comprehensive field list now includes:
+    - Core: title, subtitle, description, author, source
+    - Content: ingredients (with nested group handling), instructions, notes
+    - Metadata: yield, time (formatted object), tags, visibility
+  - Improved ingredient formatting to handle both string arrays and object arrays with quantities
+  - Added time object formatting (prep, cook, total)
+  - Different prompts for edit vs view mode - edit mode allows modification suggestions
+
+**Technical Details**:
+
+- **CSS Specificity**: Hover transform on parent was causing positioned child to be covered
+- **Context Timing**: Working recipe updates via useWorkingRecipe hook needed to propagate to AI context
+- **Field Filtering**: Backend mode checking (`mode === 'view'`) was preventing comprehensive context delivery
+
+**User Impact**:
+
+- ✅ Change Image button stays visible and clickable in edit mode
+- ✅ AI assistant sees all recipe details including Description, Source, Author
+- ✅ AI assistant receives live edits during editing sessions
+- ✅ AI assistant can see and reference Notes section
+- ✅ Complete recipe context enables more accurate AI assistance
+
+**Files Modified**:
+
+- `ui/src/components/RecipeDetail.css` - Removed hover scale effect
+- `ui/src/components/recipeDetail/RecipeDetailContainer.tsx` - Added working recipe context sync
+- `ui/src/components/recipeDetail/parts/ImagePane.tsx` - Added editing prop
+- `app/handlers/ai_recipe_assistant.js` - Comprehensive AI context with all fields
+
+## [Unreleased] - 2025-11-22
+
 ### Fix - AI Recipe Assistant URL Extraction Error Handling
 
 #### 🎯 Goal: Provide user-friendly error messages when recipe URL extraction fails

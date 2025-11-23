@@ -6,8 +6,9 @@ interface Props {
   uploading: boolean;
   onUpload: (file: File) => void;
   lastUploadTime?: number | null;
+  editing?: boolean;
 }
-export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploadTime }) => {
+export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploadTime, editing = false }) => {
   const inputRef = useRef<HTMLInputElement|null>(null);
   const [effectiveUrl, setEffectiveUrl] = useState<string | undefined>(url);
   const [urlKey, setUrlKey] = useState(Date.now().toString());
@@ -124,14 +125,16 @@ export const ImagePane: React.FC<Props> = ({ url, uploading, onUpload, lastUploa
           e.target.value = ''; 
         }} 
       />
-      <button 
-        type="button" 
-        className="image-upload-trigger" 
-        onClick={() => inputRef.current?.click()} 
-        disabled={uploading}
-      >
-        {uploading ? 'Uploading...' : 'Change Image'}
-      </button>
+      {editing && (
+        <button 
+          type="button" 
+          className="image-upload-trigger" 
+          onClick={() => inputRef.current?.click()} 
+          disabled={uploading}
+        >
+          {uploading ? 'Uploading...' : 'Change Image'}
+        </button>
+      )}
       {effectiveUrl ? (
         <img 
           src={effectiveUrl} 

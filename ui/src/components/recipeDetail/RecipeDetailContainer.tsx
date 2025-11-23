@@ -25,6 +25,7 @@ import { Comments } from './parts/Comments';
 import { ImagePane } from './parts/ImagePane';
 import { InstructionsEditor } from './parts/StepsEditor';
 import { Description } from './parts/Description';
+import { Visibility } from './parts/Visibility';
 // AI Assistant now global - import removed
 // import { RecipeHeader } from './parts/RecipeHeader';
 // import { ResponsiveLayout, FullWidthContainer, ContentSection} from './parts/ResponsiveLayout';
@@ -121,6 +122,13 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
   
   const { working, patch, addTag, removeTag, updateIngredient, addIngredient, removeIngredient, moveIngredientItem, updateInstruction, addInstruction, removeInstruction } = 
     useWorkingRecipe(recipe, editMode);
+  
+  // Update recipe context with working recipe data (includes edits)
+  useEffect(() => {
+    if (working) {
+      setCurrentRecipe(working);
+    }
+  }, [working, setCurrentRecipe]);
   
   // For image uploads - need to handle both new and existing recipes
   const [tempId] = useState(() => `temp-${Date.now()}`);
@@ -667,12 +675,15 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
               <div className="recipe-owner-email">
                 by {(() => {
                   const authId = working.owner_id;
+                  // If it's already an email, return as is
                   if (authId.includes('@')) return authId;
+                  // If it's an auth0 ID like "auth0|123456", show a short identifier
                   if (authId.includes('|')) {
                     const parts = authId.split('|');
-                    return `user${parts[1]?.substring(0, 6) || 'unknown'}@example.com`;
+                    return `user-${parts[1]?.substring(0, 8) || 'unknown'}`;
                   }
-                  return `${authId.substring(0, 8)}@example.com`;
+                  // Fallback: truncate the id for display
+                  return authId.substring(0, 8);
                 })()}
               </div>
               
@@ -716,19 +727,29 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   </button>
                 )}
                 
-                {/* Visibility Badge */}
-                <div style={{
-                  background: working.visibility === 'public' ? '#dcfdf7' : '#f3f4f6',
-                  color: working.visibility === 'public' ? '#047857' : '#6b7280',
-                  padding: '0.125rem 0.375rem',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.7rem',
-                  fontWeight: '600',
-                  border: `1px solid ${working.visibility === 'public' ? '#10b981' : '#d1d5db'}`,
-                  flexShrink: 0
-                }}>
-                  {working.visibility === 'public' ? 'Public' : 'Private'}
-                </div>
+                {/* Visibility Badge - interactive for owners in edit mode */}
+                {editMode && getCurrentUserId() === working.owner_id ? (
+                  <Visibility
+                    visibility={working.visibility}
+                    owner_id={working.owner_id}
+                    editing={editMode}
+                    onChange={(updates: { visibility?: string; owner_id?: string }) => patch(updates)}
+                    compact={true}
+                  />
+                ) : (
+                  <div style={{
+                    background: working.visibility === 'public' ? '#dcfdf7' : '#f3f4f6',
+                    color: working.visibility === 'public' ? '#047857' : '#6b7280',
+                    padding: '0.125rem 0.375rem',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.7rem',
+                    fontWeight: '600',
+                    border: `1px solid ${working.visibility === 'public' ? '#10b981' : '#d1d5db'}`,
+                    flexShrink: 0
+                  }}>
+                    {working.visibility === 'public' ? 'Public' : 'Private'}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -737,7 +758,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             url={working.image_url} 
             uploading={uploading} 
             onUpload={f => upload(f)}
-            lastUploadTime={lastUploadTime} 
+            lastUploadTime={lastUploadTime}
+            editing={editMode}
           />
           
           {/* Phase 4: AI Assistant now in global header - removed from page

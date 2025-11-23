@@ -182,12 +182,10 @@
   object-position: center;
   background: #f8fafc;
   transition: transform 0.3s ease; /* Add subtle hover effect */
+  pointer-events: none; /* Don't intercept mouse events - let button be clickable */
 }
 
-/* Hover effect for images */
-.recipe-image-wrapper:hover img {
-  transform: scale(1.02);
-}
+/* Removed hover scale effect to prevent image from covering the Change Image button */
 
 /* Typography & Sections */
 .recipe-title {

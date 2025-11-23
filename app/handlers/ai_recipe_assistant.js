@@ -625,21 +625,53 @@ async function handleChatMessage(message, history, aiProvider, currentRecipe = n
     console.log(`📝 Chat message in ${mode} mode with recipe context:`, currentRecipe ? 'Yes' : 'No');
     console.log(`📋 Page context:`, pageContext ? `${pageContext.page}` : 'None');
     
-    // If in view mode with a recipe, prefix the message with recipe context
+    // If in view or edit mode with a recipe, prefix the message with recipe context
     let enhancedMessage = message;
-    if (mode === 'view' && currentRecipe) {
-      enhancedMessage = `I'm viewing a recipe with the following details:
-Title: ${currentRecipe.title || 'Unknown'}
-Ingredients: ${currentRecipe.ingredients?.map(ing => 
-  typeof ing === 'string' ? ing : `${ing.quantity || ''} ${ing.name || ''}`.trim()
-).join(', ') || 'None listed'}
-Instructions: ${Array.isArray(currentRecipe.instructions) ? currentRecipe.instructions.join(' ') : currentRecipe.instructions || 'None listed'}
-Yield: ${currentRecipe.yield || 'Not specified'}
-${currentRecipe.tags ? `Tags: ${currentRecipe.tags.join(', ')}` : ''}
+    if ((mode === 'view' || mode === 'edit') && currentRecipe) {
+      // Format ingredients - handle both array of objects and array of strings
+      const ingredientsText = currentRecipe.ingredients?.map(ing => {
+        if (typeof ing === 'string') return ing;
+        if (ing && typeof ing === 'object') {
+          // Handle nested ingredient groups
+          if (ing.items && Array.isArray(ing.items)) {
+            return ing.items.map(item => 
+              `${item.quantity || ''} ${item.name || ''}`.trim()
+            ).join(', ');
+          }
+          return `${ing.quantity || ''} ${ing.name || ''}`.trim();
+        }
+        return '';
+      }).filter(Boolean).join(', ') || 'None listed';
+      
+      // Format time object if present
+      const timeText = currentRecipe.time && typeof currentRecipe.time === 'object' 
+        ? Object.entries(currentRecipe.time)
+            .filter(([_, v]) => v)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(', ')
+        : null;
+      
+      // Build comprehensive recipe context with ALL fields
+      const recipeContext = [];
+      recipeContext.push(`I'm ${mode === 'edit' ? 'editing' : 'viewing'} a recipe with the following details:`);
+      recipeContext.push(`Title: ${currentRecipe.title || 'Unknown'}`);
+      if (currentRecipe.subtitle) recipeContext.push(`Subtitle: ${currentRecipe.subtitle}`);
+      if (currentRecipe.description) recipeContext.push(`Description: ${currentRecipe.description}`);
+      if (currentRecipe.author) recipeContext.push(`Author: ${currentRecipe.author}`);
+      if (currentRecipe.source) recipeContext.push(`Source: ${currentRecipe.source}`);
+      recipeContext.push(`Ingredients: ${ingredientsText}`);
+      recipeContext.push(`Instructions: ${Array.isArray(currentRecipe.instructions) ? currentRecipe.instructions.join(' ') : currentRecipe.instructions || 'None listed'}`);
+      if (currentRecipe.yield) recipeContext.push(`Yield: ${currentRecipe.yield}`);
+      if (timeText) recipeContext.push(`Time: ${timeText}`);
+      if (currentRecipe.tags && currentRecipe.tags.length > 0) recipeContext.push(`Tags: ${currentRecipe.tags.join(', ')}`);
+      if (currentRecipe.notes) recipeContext.push(`Notes: ${currentRecipe.notes}`);
+      if (currentRecipe.visibility) recipeContext.push(`Visibility: ${currentRecipe.visibility}`);
+      
+      enhancedMessage = `${recipeContext.join('\n')}
 
 User question: ${message}
 
-Please answer the user's question about this recipe. In view mode, you should provide suggestions and answer questions, but do NOT return recipeData to modify the recipe - just provide helpful information in your response.`;
+${mode === 'edit' ? 'Please answer the user\'s question about this recipe. You can provide suggestions for improvements or modifications.' : 'Please answer the user\'s question about this recipe. In view mode, you should provide suggestions and answer questions, but do NOT return recipeData to modify the recipe - just provide helpful information in your response.'}`;
       
       console.log('Enhanced message with recipe context (first 200 chars):', enhancedMessage.substring(0, 200));
     }

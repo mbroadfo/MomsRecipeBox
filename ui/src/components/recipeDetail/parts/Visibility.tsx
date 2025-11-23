@@ -53,12 +53,12 @@ export const Visibility: React.FC<VisibilityProps> = ({ visibility = 'private', 
             transform: editing ? 'scale(1)' : 'none',
             boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
             minWidth: '50px',
-            textAlign: 'center' as const
+            textAlign: 'center' as const,
+            pointerEvents: editing ? 'auto' : 'none'
           }}
-          disabled={!editing}
           title={editing ? "Click to change visibility" : undefined}
         >
-          {label.charAt(0).toUpperCase()}
+          {label}
         </button>
       );
     };

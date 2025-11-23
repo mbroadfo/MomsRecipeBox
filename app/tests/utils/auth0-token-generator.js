@@ -2,7 +2,7 @@
  * Auth0 JWT Token Generator for Testing
  * 
  * This utility generates JWT tokens using Auth0's Machine-to-Machine (M2M) client
- * credentials from AWS Secrets Manager for API testing purposes.
+ * credentials from AWS Parameter Store for API testing purposes.
  */
 
 import axios from 'axios';
@@ -19,7 +19,7 @@ class Auth0TokenGenerator {
     }
 
     /**
-     * Retrieve Auth0 credentials from AWS Secrets Manager
+     * Retrieve Auth0 credentials from AWS Parameter Store
      */
     async getAuth0Config() {
         if (secretsCache) {
@@ -27,27 +27,27 @@ class Auth0TokenGenerator {
         }
 
         try {
-            const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
+            const parameterName = process.env.SSM_SECRETS_PARAMETER_NAME || '/mrb/dev/secrets';
             const region = process.env.AWS_REGION || 'us-west-2';
             const awsProfile = process.env.AWS_PROFILE || 'mrb-api';
 
-            console.log('🔐 Retrieving Auth0 credentials from AWS Secrets Manager...');
+            console.log('🔐 Retrieving Auth0 credentials from AWS Parameter Store...');
             console.log(`📋 Using AWS Profile: ${awsProfile}`);
 
-            const command = `aws secretsmanager get-secret-value --secret-id "${secretName}" --region "${region}" --query SecretString --output text`;
+            const command = `aws ssm get-parameter --name "${parameterName}" --region "${region}" --with-decryption --query Parameter.Value --output text`;
             const secretJson = execSync(command, {
                 encoding: 'utf-8',
                 env: { ...process.env, AWS_PROFILE: awsProfile }
             }).trim();
             
             const secrets = JSON.parse(secretJson);
-            console.log('✅ Auth0 credentials retrieved successfully from AWS');
+            console.log('✅ Auth0 credentials retrieved successfully from Parameter Store');
             
             // Cache the secrets
             secretsCache = secrets;
             return secrets;
         } catch (error) {
-            console.error('❌ Failed to retrieve Auth0 credentials from AWS:', error.message);
+            console.error('❌ Failed to retrieve Auth0 credentials from Parameter Store:', error.message);
             throw error;
         }
     }
@@ -81,7 +81,7 @@ class Auth0TokenGenerator {
         const config = await this.getAuth0Config();
         
         if (!config.AUTH0_M2M_CLIENT_ID || !config.AUTH0_M2M_CLIENT_SECRET) {
-            throw new Error('Auth0 M2M credentials not found in AWS Secrets Manager. Please ensure AUTH0_M2M_CLIENT_ID and AUTH0_M2M_CLIENT_SECRET are stored in the secrets.');
+            throw new Error('Auth0 M2M credentials not found in AWS Parameter Store. Please ensure AUTH0_M2M_CLIENT_ID and AUTH0_M2M_CLIENT_SECRET are stored in the parameter.');
         }
 
         const tokenUrl = `https://${config.AUTH0_DOMAIN}/oauth/token`;
@@ -147,7 +147,7 @@ class Auth0TokenGenerator {
             if (!config.AUTH0_DOMAIN) missing.push('AUTH0_DOMAIN');
 
             if (missing.length > 0) {
-                throw new Error(`Missing Auth0 configuration in AWS Secrets Manager: ${missing.join(', ')}`);
+                throw new Error(`Missing Auth0 configuration in AWS Parameter Store: ${missing.join(', ')}`);
             }
 
             console.log('Auth0 configuration validated successfully');

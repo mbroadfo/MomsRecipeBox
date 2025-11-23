@@ -13,7 +13,7 @@ import { execSync } from 'child_process';
 let secretsCache = null;
 
 /**
- * Retrieve configuration from AWS Secrets Manager
+ * Retrieve configuration from AWS Parameter Store
  */
 async function getAwsConfig() {
   if (secretsCache) {
@@ -21,11 +21,11 @@ async function getAwsConfig() {
   }
 
   try {
-    const secretName = process.env.AWS_SECRET_NAME || 'moms-recipe-secrets-dev';
+    const parameterName = process.env.SSM_SECRETS_PARAMETER_NAME || '/mrb/dev/secrets';
     const region = process.env.AWS_REGION || 'us-west-2';
     const awsProfile = process.env.AWS_PROFILE || 'mrb-api';
 
-    const command = `aws secretsmanager get-secret-value --secret-id "${secretName}" --region "${region}" --query SecretString --output text`;
+    const command = `aws ssm get-parameter --name "${parameterName}" --region "${region}" --with-decryption --query Parameter.Value --output text`;
     const secretJson = execSync(command, {
       encoding: 'utf-8',
       env: { ...process.env, AWS_PROFILE: awsProfile }
@@ -37,8 +37,8 @@ async function getAwsConfig() {
     secretsCache = secrets;
     return secrets;
   } catch (error) {
-    console.log('⚠️  Could not retrieve AWS secrets:', error.message);
-    throw new Error(`Failed to retrieve AWS secrets: ${error.message}. Ensure AWS profile '${process.env.AWS_PROFILE || 'mrb-api'}' is configured.`);
+    console.log('⚠️  Could not retrieve AWS Parameter Store secrets:', error.message);
+    throw new Error(`Failed to retrieve Parameter Store secrets: ${error.message}. Ensure AWS profile '${process.env.AWS_PROFILE || 'mrb-api'}' is configured.`);
   }
 }
 
@@ -53,23 +53,23 @@ export async function getBaseUrl() {
     return process.env.API_BASE_URL;
   }
 
-  // Cloud-only: Get URL from AWS Secrets Manager
+  // Cloud-only: Get URL from AWS Parameter Store
   const awsConfig = await getAwsConfig();
   
   // Try LAMBDA_APP_URL first (preferred)
   if (awsConfig.LAMBDA_APP_URL) {
-    console.log(`🔐 Using LAMBDA_APP_URL from AWS Secrets: ${awsConfig.LAMBDA_APP_URL}`);
+    console.log(`🔐 Using LAMBDA_APP_URL from AWS Parameter Store: ${awsConfig.LAMBDA_APP_URL}`);
     return awsConfig.LAMBDA_APP_URL;
   }
   
   // Fallback to LAMBDA_API_URL for backward compatibility
   if (awsConfig.LAMBDA_API_URL) {
-    console.log(`🔐 Using LAMBDA_API_URL from AWS Secrets: ${awsConfig.LAMBDA_API_URL}`);
+    console.log(`🔐 Using LAMBDA_API_URL from AWS Parameter Store: ${awsConfig.LAMBDA_API_URL}`);
     return awsConfig.LAMBDA_API_URL;
   }
   
   // If no URL found in secrets, this is a configuration error
-  throw new Error('No Lambda API URL found in AWS Secrets Manager. Please add LAMBDA_APP_URL to the secrets or set API_BASE_URL environment variable.');
+  throw new Error('No Lambda API URL found in AWS Parameter Store. Please add LAMBDA_APP_URL to the parameter or set API_BASE_URL environment variable.');
 }
 
 /**
@@ -89,5 +89,5 @@ export async function logEnvironmentInfo() {
   console.log(`🎯 Target API: ${baseUrl}`);
   console.log(`🔧 Architecture: cloud-only (simplified)`);
   console.log(`🔐 AWS Profile: ${process.env.AWS_PROFILE || 'mrb-api'}`);
-  console.log(`🗄️  Database: Atlas (via AWS Secrets Manager)`);
+  console.log(`🗄️  Database: Atlas (via AWS Parameter Store)`);
 }

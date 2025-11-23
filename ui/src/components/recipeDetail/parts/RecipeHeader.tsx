@@ -240,8 +240,8 @@ export const RecipeHeader: React.FC<RecipeHeaderProps> = ({
             <Visibility 
               visibility={visibility}
               owner_id={ownerId}
-              editing={false}
-              onChange={() => {}} // Not editable in header
+              editing={editMode}
+              onChange={() => {}} // Header doesn't have mutation access; parent should handle changes
               compact={true}
             />
           </div>

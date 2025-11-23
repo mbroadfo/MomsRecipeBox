@@ -4,6 +4,55 @@ Future improvements, features, and tasks identified during development but not i
 
 ## 💡 New Ideas & Recent Additions
 
+### 37. "Let's Start Cooking" Mode - Hands-Free Recipe View
+
+**User Story**: When actively cooking, users need a distraction-free, easy-to-navigate view of just ingredients or instructions - not the full cluttered recipe page.
+
+**Feature Requirements**:
+
+1. **Entry Point**:
+   - Add "Start Cooking" button to recipe detail page (desktop & mobile)
+   - Button placement must not disrupt existing UX/layout
+   - Consider: Near "Edit" button, or in action menu, or floating action button
+
+2. **Cooking Mode Interface**:
+   - **Minimal Header**: Only back arrow to return to full recipe view
+   - **Two Tabs**: "Ingredients" and "Instructions"
+   - **Clean Content**: Only the selected list displayed, no other recipe details
+   - **Large Touch Targets**: Easy to tap with messy cooking hands
+   - **High Contrast**: Easy to read from counter distance
+
+3. **Tab Behavior**:
+   - Switch between Ingredients and Instructions tabs
+   - **Remember Scroll Position**: Each tab preserves scroll position when switching
+   - Smooth transitions between tabs
+
+4. **Technical Implementation**:
+   - New route: `/recipes/{id}/cooking` or modal overlay approach
+   - State management for scroll positions (useRef for scroll containers)
+   - Responsive design for phone/tablet/desktop
+   - Consider preventing screen sleep/dimming during cooking mode
+   - Possibly add step-by-step mode for instructions (future enhancement)
+
+5. **UX Enhancements** (Future):
+   - Voice control for hands-free navigation
+   - Timer integration for timed steps
+   - Check off ingredients as you add them
+   - Check off instruction steps as you complete them
+   - Adjustable text size for readability
+
+**Impact**: **HIGHEST** - Core user experience improvement for primary use case (actually cooking!)
+**Effort**: Medium (3-5 days) - New UI component, routing, state management, responsive design
+**Priority**: **VERY HIGH** - User explicitly requested, addresses primary user workflow
+
+**Design Considerations**:
+
+- Mobile-first design (most users cook with phone in kitchen)
+- Prevent accidental navigation away from cooking mode
+- Quick access back to full recipe if needed
+- Consider landscape/portrait orientations
+- Test with flour/oil/water on fingers (touch sensitivity)
+
 ### 27. Windows Subsystem for Linux (WSL) Development Environment
 
 - Investigate using WSL for development to reduce Windows-specific command errors

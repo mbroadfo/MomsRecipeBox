@@ -7,6 +7,155 @@ import { AIProviderFactory } from '../ai_providers/index.js';
 function logApiOperation(stage, provider, details) {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [${provider}] [${stage}] ${details}`);
+}
+
+/**
+ * Extract recipe data from Next.js __NEXT_DATA__ JSON
+ * Many modern recipe sites (like Made With Lau) embed complete recipe data in Next.js state
+ */
+function extractNextJsRecipeData(htmlContent) {
+  try {
+    // Look for __NEXT_DATA__ script tag
+    const match = htmlContent.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+    if (!match) {
+      return null;
+    }
+
+    const data = JSON.parse(match[1]);
+    console.log('Found __NEXT_DATA__ - attempting to extract recipe data');
+
+    // Navigate to recipe data (structure may vary by site)
+    // Common patterns: props.pageProps.trpcState.queries[0].state.data
+    let recipeData = null;
+    
+    // Pattern 1: tRPC state (Made With Lau uses this)
+    if (data?.props?.pageProps?.trpcState?.queries) {
+      const query = data.props.pageProps.trpcState.queries.find(q => 
+        q.state?.data?.ingredientsArray || q.state?.data?.instructionsArray
+      );
+      if (query?.state?.data) {
+        recipeData = query.state.data;
+      }
+    }
+
+    // Pattern 2: Direct in pageProps
+    if (!recipeData && data?.props?.pageProps?.recipe) {
+      recipeData = data.props.pageProps.recipe;
+    }
+
+    if (!recipeData) {
+      return null;
+    }
+
+    console.log('Successfully extracted recipe data from Next.js state');
+
+    // Build recipe object
+    const recipe = {
+      title: recipeData.title || recipeData.name || '',
+      description: '',
+      ingredients: [],
+      instructions: [],
+      servings: recipeData.servings || recipeData.yield || '',
+      prepTime: recipeData.prepTime || '',
+      cookTime: recipeData.cookTime || '',
+      totalTime: recipeData.totalTime || '',
+      author: recipeData.author || '',
+      source: recipeData.source || ''
+    };
+
+    // Extract description from various possible fields
+    if (recipeData.description) {
+      if (Array.isArray(recipeData.description)) {
+        recipe.description = recipeData.description
+          .map(block => block.children?.map(child => child.text).join('') || '')
+          .join('\n');
+      } else {
+        recipe.description = recipeData.description;
+      }
+    }
+
+    // Extract ingredients
+    if (recipeData.ingredientsArray) {
+      recipeData.ingredientsArray.forEach(ing => {
+        if (ing._type === 'ingredientSection') {
+          // Section header
+          recipe.ingredients.push(`\n${ing.section || ing.name}:`);
+        } else if (ing._type === 'ingredient' || ing.item) {
+          // Ingredient item
+          let ingredientLine = '';
+          if (ing.amount) ingredientLine += `${ing.amount} `;
+          if (ing.unit) ingredientLine += `${ing.unit} `;
+          if (ing.item) ingredientLine += ing.item;
+          
+          // Add notes if present
+          if (ing.notes && Array.isArray(ing.notes)) {
+            const notes = ing.notes
+              .map(block => block.children?.map(child => child.text).join('') || '')
+              .join(' ');
+            if (notes) ingredientLine += ` (${notes})`;
+          }
+          
+          recipe.ingredients.push(ingredientLine.trim());
+        }
+      });
+    }
+
+    // Extract instructions
+    if (recipeData.instructionsArray) {
+      recipeData.instructionsArray.forEach((step, index) => {
+        if (step.headline || step.freeformDescription) {
+          let instruction = '';
+          
+          // Add headline if present
+          if (step.headline) {
+            instruction += step.headline;
+          }
+          
+          // Add description
+          if (step.freeformDescription && Array.isArray(step.freeformDescription)) {
+            const description = step.freeformDescription
+              .map(block => block.children?.map(child => child.text).join('') || '')
+              .join(' ');
+            if (description) {
+              instruction += (instruction ? ': ' : '') + description;
+            }
+          }
+          
+          if (instruction) {
+            recipe.instructions.push(instruction.trim());
+          }
+        } else if (step.text || step.description) {
+          // Simpler instruction format
+          recipe.instructions.push(step.text || step.description);
+        }
+      });
+    }
+
+    // Extract servings/yield
+    if (recipeData.servingsString) {
+      recipe.servings = recipeData.servingsString;
+    } else if (recipeData.servings) {
+      recipe.servings = recipeData.servings.toString();
+    }
+
+    // Extract timing info
+    if (recipeData.timing) {
+      if (recipeData.timing.prep) recipe.prepTime = recipeData.timing.prep;
+      if (recipeData.timing.cook) recipe.cookTime = recipeData.timing.cook;
+      if (recipeData.timing.total) recipe.totalTime = recipeData.timing.total;
+    }
+
+    // Only return if we got meaningful data
+    if (recipe.ingredients.length > 0 || recipe.instructions.length > 0) {
+      console.log(`Extracted ${recipe.ingredients.length} ingredients and ${recipe.instructions.length} instructions from Next.js data`);
+      return recipe;
+    }
+
+    return null;
+  } catch (error) {
+    console.log('Error extracting Next.js recipe data:', error.message);
+    return null;
+  }
 }/**
  * Helper function to optimize image URLs from known sources
  * Attempts to get higher resolution or better quality versions of images
@@ -254,6 +403,17 @@ async function handleUrlExtraction(url, aiProvider) {
     }
     const htmlContent = response.data;
     
+    // Try to extract recipe data from Next.js __NEXT_DATA__ first
+    // This provides much more reliable extraction than AI parsing for Next.js sites
+    const nextJsRecipe = extractNextJsRecipeData(htmlContent);
+    if (nextJsRecipe) {
+      console.log('Successfully extracted recipe from Next.js data - skipping AI extraction');
+      
+      // Still extract images normally
+      // (Continue with image extraction code below, then return nextJsRecipe data)
+      // We'll handle this after the image extraction logic
+    }
+    
     // First, extract potential image URLs from the HTML
     let allImageCandidates = [];
     
@@ -419,7 +579,58 @@ async function handleUrlExtraction(url, aiProvider) {
       imageUrl = optimizeImageUrl(imageUrl, recipeTitle);
     }
     
-    // Extract text content from HTML to reduce payload size
+    // If we successfully extracted from Next.js data, use that instead of AI
+    if (nextJsRecipe) {
+      console.log('Using Next.js extracted recipe data');
+      
+      // Add the image URL to the recipe data if we found one
+      if (imageUrl) {
+        nextJsRecipe.imageUrl = imageUrl;
+      }
+      
+      // Add the source URL to the recipe
+      if (!nextJsRecipe.source) {
+        // Extract domain name for the source
+        const domain = new URL(url).hostname.replace('www.', '');
+        nextJsRecipe.source = domain;
+      }
+      
+      // Format the response message
+      const ingredientsList = nextJsRecipe.ingredients.length > 0 
+        ? `Ingredients:\n${nextJsRecipe.ingredients.map(ing => `- ${ing}`).join('\n')}` 
+        : '';
+      const instructionsList = nextJsRecipe.instructions.length > 0
+        ? `\nInstructions:\n${nextJsRecipe.instructions.map((ins, i) => `${i + 1}. ${ins}`).join('\n')}`
+        : '';
+      
+      const responseMessage = `I've extracted the recipe from ${url}. Here's what I found:
+
+Title: ${nextJsRecipe.title}
+${nextJsRecipe.description ? `\nDescription: ${nextJsRecipe.description}\n` : ''}
+${nextJsRecipe.servings ? `Servings: ${nextJsRecipe.servings}\n` : ''}
+${nextJsRecipe.prepTime ? `Prep Time: ${nextJsRecipe.prepTime}\n` : ''}
+${nextJsRecipe.cookTime ? `Cook Time: ${nextJsRecipe.cookTime}\n` : ''}
+${nextJsRecipe.totalTime ? `Total Time: ${nextJsRecipe.totalTime}\n` : ''}
+
+${ingredientsList}
+
+${instructionsList}
+
+${imageUrl ? "I also found an image that I'll include with your recipe." : ""}
+Would you like me to apply this to your recipe form? You'll be able to make additional edits afterward.`;
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          message: responseMessage,
+          recipeData: nextJsRecipe,
+          imageUrl
+        })
+      };
+    }
+    
+    // Extract text content from HTML to reduce payload size (for AI extraction)
     const textContent = htmlContent
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove styles
@@ -427,7 +638,7 @@ async function handleUrlExtraction(url, aiProvider) {
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
     
-    // Use our provider to handle URL extraction
+    // Use our provider to handle URL extraction (fallback for non-Next.js sites)
     try {
       // Add retry logic with exponential backoff for API calls
       let retries = 3;

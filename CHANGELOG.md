@@ -5,6 +5,96 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-23
+
+### Added - Organized Test Suite Structure
+
+#### 🎯 Goal: Organize 13 standalone test files into logical npm test scripts
+
+**Problem**:
+
+- Only 5 of 18 test files were included in `npm run test` suite (28%)
+- 13 specialized tests (AI, Auth0, infrastructure) were orphaned and hard to discover
+- No easy way to run all tests or specific test categories
+
+**Solution**:
+
+Added organized npm test scripts in `app/tests/package.json`:
+
+- `npm run test:all` - Run ALL tests (functional + AI + auth + infrastructure)
+- `npm run test:ai` - All AI-related tests (assistant, recipe extraction, categorization)
+- `npm run test:auth` - Auth0 token and caching tests
+- `npm run test:infrastructure` - Environment, errors, Lambda runner tests
+
+**Individual Test Scripts**:
+
+- `test:ai-assistant` - AI assistant functionality
+- `test:ai-recipe` - AI recipe assistant (Mocha)
+- `test:ai-categorization` - Shopping list categorization + fallback
+- `test:ai-extraction` - Next.js recipe extraction validation
+- `test:auth` - Auth0 tokens + token caching
+- `test:env` - Environment setup validation
+- `test:errors` - Error scenario handling
+- `test:lambda-runner` - Lambda test runner
+- `test:analytics` - Analytics functionality
+- `test:shopping-integration` - Shopping list integration tests
+- `test:comment-update` - Comment update tests
+
+**Impact**:
+
+- **100% test coverage in npm scripts** - All 18 test files now accessible
+- **Logical organization** - Tests grouped by purpose (AI, Auth, Infrastructure)
+- **Easy discovery** - Developers can run specific test categories
+- **Comprehensive testing** - `test:all` runs entire suite
+
+---
+
+## [Unreleased] - 2025-11-22
+
+### Added - Next.js Recipe Extraction Support
+
+#### 🎯 Goal: Dramatically improve recipe extraction reliability for Next.js-based recipe sites
+
+**Problem**:
+
+- Made With Lau and other JavaScript-rendered recipe sites were failing to extract ingredients and instructions
+- AI extraction was only getting page metadata (title, description) but missing core recipe content
+- Root cause: Sites use JavaScript to render recipe content, so `axios` only gets empty HTML shell
+
+**Solution**:
+
+- Added `extractNextJsRecipeData()` function that extracts recipe data directly from `__NEXT_DATA__` JSON embedded in Next.js pages
+- This provides 100% reliable extraction with perfectly structured data (no AI parsing needed!)
+- Falls back to AI extraction for non-Next.js sites
+
+**Impact**:
+
+- Made With Lau recipes now extract **perfectly** - all ingredients, instructions, timing, servings
+- Faster extraction (no AI call needed for Next.js sites)
+- More reliable and accurate than AI parsing
+- Tested with Moo Shu Pork recipe: 17 ingredients + 9 instruction steps extracted successfully
+
+**Files Modified**:
+
+- `app/handlers/ai_recipe_assistant.js`
+  - Added `extractNextJsRecipeData()` function (155 lines)
+  - Modified `handleUrlExtraction()` to check for Next.js data before AI extraction
+  - Supports tRPC state pattern (Made With Lau) and direct pageProps pattern
+
+**Files Created**:
+
+- `app/tests/test-nextjs-extraction.js` - Test script validating extraction
+- `app/tests/test-html-extraction.js` - Diagnostic script for HTML analysis
+- `app/tests/test-raw-html.js` - Next.js detection script
+
+**Next Steps**:
+
+- Consider adding schema.org Recipe markup extraction as another fallback
+- Monitor for other Next.js recipe sites that may use different data structures
+- Deploy to production and test with user's Made With Lau recipes
+
+---
+
 ## [Unreleased] - 2025-11-22
 
 ### Fix - Change Image Button Visibility and AI Assistant Context

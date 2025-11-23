@@ -372,6 +372,86 @@ curl -H "Authorization: Bearer $TOKEN" \
 # Should return all 5 providers as "available"
 ```
 
+### 3b. AI Recipe Extraction Patterns
+
+**❌ MISTAKE**: Only using AI for recipe extraction from all websites
+**✅ CORRECT**: Check for structured data (Next.js, schema.org) BEFORE falling back to AI extraction
+
+**Critical Extraction Priority**:
+
+1. **First**: Check for `__NEXT_DATA__` JSON (Next.js sites)
+2. **Second**: Check for schema.org `<script type="application/ld+json">` Recipe markup
+3. **Last**: Fall back to AI-based text extraction
+
+**Next.js Data Extraction Pattern**:
+
+```javascript
+// ✅ Extract from embedded Next.js state
+function extractNextJsRecipeData(htmlContent) {
+  const match = htmlContent.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+  if (!match) return null;
+  
+  const data = JSON.parse(match[1]);
+  
+  // Pattern 1: tRPC state (Made With Lau)
+  if (data?.props?.pageProps?.trpcState?.queries) {
+    const recipe = data.props.pageProps.trpcState.queries.find(q => 
+      q.state?.data?.ingredientsArray || q.state?.data?.instructionsArray
+    );
+    return recipe?.state?.data;
+  }
+  
+  // Pattern 2: Direct pageProps (other Next.js sites)
+  if (data?.props?.pageProps?.recipe) {
+    return data.props.pageProps.recipe;
+  }
+  
+  return null;
+}
+
+// Use before AI extraction
+const nextJsRecipe = extractNextJsRecipeData(htmlContent);
+if (nextJsRecipe) {
+  return formatRecipe(nextJsRecipe); // Skip AI entirely!
+}
+```
+
+**Why This Matters**:
+
+- **JavaScript-rendered sites**: axios only gets HTML shell, recipe content loaded via JS
+- **Next.js sites**: Embed complete data in `__NEXT_DATA__` for hydration
+- **100% accuracy**: Structured data is more reliable than AI parsing
+- **Faster + Free**: No AI API call needed, instant extraction
+- **Performance**: Skip expensive AI operations when structured data available
+
+**Diagnostic Approach for Extraction Failures**:
+
+1. **Fetch raw HTML**: Check actual page content with browser-like headers
+2. **Check for `__NEXT_DATA__`**: Look for Next.js JSON embedding
+3. **Check for schema.org**: Search for Recipe markup in JSON-LD scripts
+4. **Analyze text extraction**: See what content AI actually receives
+5. **Measure extraction ratio**: Compare extracted text length vs HTML size
+
+**Temporary Test File Cleanup**:
+
+When debugging extraction issues, create diagnostic scripts but clean them up before commit:
+
+```bash
+# ❌ Leave debugging clutter
+git status
+# Untracked: test-moo-shu-extraction.js, test-html-extraction.js, moo-shu-raw.html
+
+# ✅ Clean up temporary files, keep useful test
+rm test-moo-shu-extraction.js test-html-extraction.js moo-shu-raw.html
+git add app/tests/test-nextjs-extraction.js  # Keep the useful test
+```
+
+**Common JavaScript-Rendered Recipe Sites**:
+
+- Made With Lau (Next.js with tRPC state)
+- Many modern recipe blogs using Next.js, Gatsby, or React frameworks
+- Sites where "View Source" shows minimal HTML but browser displays full content
+
 ### 4. UI Styling and AI Categorization Patterns
 
 **❌ MISTAKE**: Relying solely on CSS classes for critical UI element visibility

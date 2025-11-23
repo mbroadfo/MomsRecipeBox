@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "npm run test:functional",
+    "test:all": "npm run test:functional && npm run test:ai && npm run test:auth && npm run test:infrastructure",
     "test:functional": "npm run test:recipes && npm run test:images && npm run test:comments && npm run test:favorites && npm run test:shopping",
     "test:integration:local": "echo \"Integration tests for Express mode - placeholder for infrastructure-specific tests\"",
     "test:integration:atlas": "echo \"Integration tests for Atlas mode - placeholder for infrastructure-specific tests\"", 
@@ -17,7 +18,19 @@
     "test:comments": "node test_comments.js",
     "test:favorites": "node test_favorites.js",
     "test:shopping": "node test_shopping_list.js",
-    "test:ai": "mocha test_ai_recipe_assistant.js"
+    "test:shopping-integration": "node test_shopping_list_integration.js",
+    "test:ai": "npm run test:ai-assistant && npm run test:ai-recipe && npm run test:ai-categorization && npm run test:ai-extraction",
+    "test:ai-assistant": "node test_ai_assistant.js",
+    "test:ai-recipe": "mocha test_ai_recipe_assistant.js",
+    "test:ai-categorization": "node test_categorization.js && node test_categorization_fallback.js",
+    "test:ai-extraction": "node test-nextjs-extraction.js",
+    "test:auth": "node test-auth0-tokens.js && node test_auth0_token_cache.js",
+    "test:infrastructure": "npm run test:env && npm run test:errors && npm run test:lambda-runner",
+    "test:env": "node test-env-setup.js",
+    "test:errors": "node test-error-scenarios.js",
+    "test:lambda-runner": "node run-lambda-tests.js",
+    "test:analytics": "node test_analytics.js",
+    "test:comment-update": "node test_update_comment.js"
   },
   "dependencies": {
     "axios": "^1.6.2",

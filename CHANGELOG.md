@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-23
 
+### Fixed - Next.js Recipe Extraction Frontend Integration
+
+#### 🎯 Goal: Fix recipe data format mismatch between Next.js extraction and frontend expectations
+
+**Problem**:
+
+- Next.js extraction successfully extracted 17 ingredients + 9 instructions from Made With Lau
+- Recipe created successfully with image uploaded to S3
+- BUT: Recipe displayed with only title, image, and source - all other fields blank
+- Root cause: Frontend expected `{ quantity, name }` objects for ingredients, but extraction returned strings
+- Root cause: Frontend expected `steps` array, but extraction returned `instructions` array
+
+**Solution**:
+
+1. **Fixed image URL extraction** from Next.js `__NEXT_DATA__`:
+   - Now extracts from `mainImage.asset.url` (Made With Lau pattern)
+   - Fallback to `featuredImage.asset.url` and `image` field patterns
+   - Prefers Next.js data image over HTML-scraped images
+   - Example: `https://cdn.sanity.io/images/2r0kdewr/production/2f472be61a221f6c71519de9e294e59fbd8a7627-6000x3375.jpg`
+
+2. **Converted ingredient format** for frontend compatibility:
+   - Parse string ingredients like "1 oz wood ear fungus" into `{ quantity: "1 oz", name: "wood ear fungus" }`
+   - Handle section headers (ingredients starting with newline) appropriately
+   - Use regex to extract quantity patterns (oz, lb, cups, tsp, etc.)
+
+3. **Renamed instructions field** to match frontend:
+   - Changed from `instructions` array to `steps` array
+   - Frontend expects `steps` property name
+
+4. **Changed default recipe visibility** to public:
+   - New recipes now default to `public` instead of `private`
+   - User-requested feature for easier sharing
+
+**Files Modified**:
+
+- `app/handlers/ai_recipe_assistant.js` - Fixed Next.js extraction response format
+- `app/handlers/create_recipe.js` - Changed default visibility to public
+- `app/tests/test-nextjs-extraction.js` - Updated test to show image URL extraction
+
+**Impact**:
+
+- ✅ **Complete recipe extraction from Next.js sites** - All data fields properly populated
+- ✅ **17 ingredients displayed correctly** with quantity/name structure
+- ✅ **9 instructions displayed** as numbered steps
+- ✅ **Image upload working** with proper Sanity CDN URLs
+- ✅ **Default to public visibility** for easier recipe sharing
+
+**Before**:
+
+- Recipe displayed: Title, image, source only
+- Ingredients: Empty
+- Instructions: Empty
+- Visibility: Private (required manual change)
+
+**After**:
+
+- Recipe displayed: Title, image, source, servings, prep/cook time
+- Ingredients: 17 items with quantities and names properly parsed
+- Instructions: 9 steps with full detailed instructions
+- Visibility: Public (shareable by default)
+
+---
+
 ### Added - Organized Test Suite Structure
 
 #### 🎯 Goal: Organize 13 standalone test files into logical npm test scripts

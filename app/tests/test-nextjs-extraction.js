@@ -40,7 +40,8 @@ function extractNextJsRecipeData(htmlContent) {
       cookTime: recipeData.cookTime || '',
       totalTime: recipeData.totalTime || '',
       author: recipeData.author || '',
-      source: recipeData.source || ''
+      source: recipeData.source || '',
+      imageUrl: null
     };
 
     if (recipeData.description) {
@@ -114,6 +115,26 @@ function extractNextJsRecipeData(htmlContent) {
       if (recipeData.timing.total) recipe.totalTime = recipeData.timing.total;
     }
 
+    // Extract image URL from various possible patterns
+    if (recipeData.mainImage?.asset?.url) {
+      recipe.imageUrl = recipeData.mainImage.asset.url;
+      console.log(`Extracted image URL from Next.js data (mainImage): ${recipe.imageUrl}`);
+    } else if (recipeData.featuredImage?.asset?.url) {
+      recipe.imageUrl = recipeData.featuredImage.asset.url;
+      console.log(`Extracted image URL from Next.js data (featuredImage): ${recipe.imageUrl}`);
+    } else if (recipeData.image) {
+      if (typeof recipeData.image === 'string') {
+        recipe.imageUrl = recipeData.image;
+      } else if (recipeData.image.url) {
+        recipe.imageUrl = recipeData.image.url;
+      } else if (recipeData.image.asset?.url) {
+        recipe.imageUrl = recipeData.image.asset.url;
+      }
+      if (recipe.imageUrl) {
+        console.log(`Extracted image URL from Next.js data (image): ${recipe.imageUrl}`);
+      }
+    }
+
     if (recipe.ingredients.length > 0 || recipe.instructions.length > 0) {
       console.log(`Extracted ${recipe.ingredients.length} ingredients and ${recipe.instructions.length} instructions from Next.js data`);
       return recipe;
@@ -147,6 +168,7 @@ try {
         console.log('');
         console.log('📝 Title:', recipe.title);
         console.log('📖 Description:', recipe.description ? recipe.description.substring(0, 200) + '...' : 'None');
+        console.log('🖼️  Image URL:', recipe.imageUrl || 'None');
         console.log('🍽️  Servings:', recipe.servings || 'Not specified');
         console.log('⏱️  Prep Time:', recipe.prepTime || 'Not specified');
         console.log('⏱️  Cook Time:', recipe.cookTime || 'Not specified');

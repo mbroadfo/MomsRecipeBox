@@ -60,7 +60,8 @@ function extractNextJsRecipeData(htmlContent) {
       cookTime: recipeData.cookTime || '',
       totalTime: recipeData.totalTime || '',
       author: recipeData.author || '',
-      source: recipeData.source || ''
+      source: recipeData.source || '',
+      imageUrl: null // Will extract from featuredImage if available
     };
 
     // Extract description from various possible fields
@@ -143,6 +144,31 @@ function extractNextJsRecipeData(htmlContent) {
       if (recipeData.timing.prep) recipe.prepTime = recipeData.timing.prep;
       if (recipeData.timing.cook) recipe.cookTime = recipeData.timing.cook;
       if (recipeData.timing.total) recipe.totalTime = recipeData.timing.total;
+    }
+
+    // Extract image URL from various possible patterns
+    // Pattern 1: mainImage (Made With Lau uses this)
+    if (recipeData.mainImage?.asset?.url) {
+      recipe.imageUrl = recipeData.mainImage.asset.url;
+      console.log(`Extracted image URL from Next.js data (mainImage): ${recipe.imageUrl}`);
+    }
+    // Pattern 2: featuredImage
+    else if (recipeData.featuredImage?.asset?.url) {
+      recipe.imageUrl = recipeData.featuredImage.asset.url;
+      console.log(`Extracted image URL from Next.js data (featuredImage): ${recipe.imageUrl}`);
+    }
+    // Pattern 3: image field (various formats)
+    else if (recipeData.image) {
+      if (typeof recipeData.image === 'string') {
+        recipe.imageUrl = recipeData.image;
+      } else if (recipeData.image.url) {
+        recipe.imageUrl = recipeData.image.url;
+      } else if (recipeData.image.asset?.url) {
+        recipe.imageUrl = recipeData.image.asset.url;
+      }
+      if (recipe.imageUrl) {
+        console.log(`Extracted image URL from Next.js data (image): ${recipe.imageUrl}`);
+      }
     }
 
     // Only return if we got meaningful data
@@ -583,9 +609,12 @@ async function handleUrlExtraction(url, aiProvider) {
     if (nextJsRecipe) {
       console.log('Using Next.js extracted recipe data');
       
-      // Add the image URL to the recipe data if we found one
-      if (imageUrl) {
+      // Prefer Next.js imageUrl over HTML-extracted image (HTML images may be Next.js optimized/encoded)
+      if (!nextJsRecipe.imageUrl && imageUrl) {
+        console.log('No image in Next.js data, using HTML-extracted image');
         nextJsRecipe.imageUrl = imageUrl;
+      } else if (nextJsRecipe.imageUrl) {
+        console.log('Using image URL from Next.js data (ignoring HTML-extracted image)');
       }
       
       // Add the source URL to the recipe
@@ -616,16 +645,63 @@ ${ingredientsList}
 
 ${instructionsList}
 
-${imageUrl ? "I also found an image that I'll include with your recipe." : ""}
+${nextJsRecipe.imageUrl ? "I also found an image that I'll include with your recipe." : ""}
 Would you like me to apply this to your recipe form? You'll be able to make additional edits afterward.`;
+      
+      // Convert ingredients from string format to object format for frontend
+      // Frontend expects: [{ quantity: "1 oz", name: "wood ear fungus" }]
+      // We have: ["1 oz wood ear fungus", "8 oz cabbage"]
+      const formattedIngredients = nextJsRecipe.ingredients.map(ing => {
+        // Skip section headers (they start with newline)
+        if (ing.startsWith('\n')) {
+          return { quantity: '', name: ing.trim() };
+        }
+        
+        // Try to split quantity from name (basic heuristic)
+        // Match patterns like "1 oz", "2 cups", "1/2 tsp", etc.
+        const match = ing.match(/^([\d\/\.\s]+(?:oz|lb|g|kg|cup|cups|tbsp|tsp|tablespoon|teaspoon|ml|l|pinch|dash|to taste)?)\s+(.+)$/i);
+        
+        if (match) {
+          return {
+            quantity: match[1].trim(),
+            name: match[2].trim()
+          };
+        }
+        
+        // If no quantity pattern found, treat entire string as name
+        return {
+          quantity: '',
+          name: ing.trim()
+        };
+      });
+      
+      // Build frontend-compatible recipe data structure
+      const frontendRecipeData = {
+        title: nextJsRecipe.title,
+        subtitle: '',
+        description: nextJsRecipe.description || '',
+        author: nextJsRecipe.author || '',
+        source: nextJsRecipe.source || '',
+        yield: nextJsRecipe.servings || '',
+        time: {
+          prep: nextJsRecipe.prepTime || '',
+          cook: nextJsRecipe.cookTime || '',
+          total: nextJsRecipe.totalTime || ''
+        },
+        ingredients: formattedIngredients,
+        steps: nextJsRecipe.instructions, // Frontend expects 'steps', not 'instructions'
+        tags: [],
+        notes: '',
+        imageUrl: nextJsRecipe.imageUrl || null
+      };
       
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           message: responseMessage,
-          recipeData: nextJsRecipe,
-          imageUrl
+          recipeData: frontendRecipeData,
+          imageUrl: nextJsRecipe.imageUrl || null
         })
       };
     }

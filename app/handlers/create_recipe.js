@@ -19,7 +19,7 @@ export default async function createRecipe(db, body, event) {
     author: body.author || '',
     source: body.source || '',
     owner_id: body.owner_id,
-    visibility: body.visibility || 'private',
+    visibility: body.visibility || 'public',
     tags: body.tags || [],
     yield: body.yield || '',
     time: body.time || {},

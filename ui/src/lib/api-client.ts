@@ -5,7 +5,7 @@
 
 import { config, getApiUrl, devLog } from '../config/environment.js';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
@@ -13,10 +13,25 @@ export interface ApiResponse<T = any> {
   status: number;
 }
 
+/**
+ * Global authentication error handler
+ * This will be set by the App component to trigger login redirect
+ */
+let globalAuthErrorHandler: (() => void) | null = null;
+
+/**
+ * Set the global authentication error handler
+ * Should be called once during app initialization
+ */
+export function setGlobalAuthErrorHandler(handler: () => void) {
+  globalAuthErrorHandler = handler;
+  devLog('🔐 Global auth error handler registered');
+}
+
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   timeout?: number;
 }
 
@@ -82,7 +97,7 @@ export class ApiClient {
   /**
    * Generic API request method
    */
-  async request<T = any>(
+  async request<T = unknown>(
     endpoint: string, 
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
@@ -117,6 +132,13 @@ export class ApiClient {
       if (!response.ok) {
         apiResponse.error = responseData.message || responseData.error || `HTTP ${response.status}`;
         devLog('API Error:', apiResponse);
+        
+        // Handle authentication errors globally
+        if (response.status === 401 && globalAuthErrorHandler) {
+          console.warn('🔐 Authentication failed (401) - triggering global auth handler');
+          // Trigger the global auth error handler to redirect to login
+          globalAuthErrorHandler();
+        }
       } else {
         devLog('API Success:', { status: response.status, data: responseData });
       }
@@ -138,28 +160,28 @@ export class ApiClient {
   /**
    * GET request helper
    */
-  async get<T = any>(endpoint: string, options: Omit<RequestOptions, 'method'> = {}): Promise<ApiResponse<T>> {
+  async get<T = unknown>(endpoint: string, options: Omit<RequestOptions, 'method'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
   
   /**
    * POST request helper
    */
-  async post<T = any>(endpoint: string, body?: any, options: Omit<RequestOptions, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async post<T = unknown>(endpoint: string, body?: unknown, options: Omit<RequestOptions, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'POST', body });
   }
   
   /**
    * PUT request helper
    */
-  async put<T = any>(endpoint: string, body?: any, options: Omit<RequestOptions, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async put<T = unknown>(endpoint: string, body?: unknown, options: Omit<RequestOptions, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'PUT', body });
   }
   
   /**
    * DELETE request helper
    */
-  async delete<T = any>(endpoint: string, options: Omit<RequestOptions, 'method'> = {}): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(endpoint: string, options: Omit<RequestOptions, 'method'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
   
@@ -189,8 +211,8 @@ export const apiClient = new ApiClient();
 export const recipeApi = {
   getAll: () => apiClient.get('/recipes'),
   getById: (id: string) => apiClient.get(`/recipes/${id}`),
-  create: (recipe: any) => apiClient.post('/recipes', recipe),
-  update: (id: string, recipe: any) => apiClient.put(`/recipes/${id}`, recipe),
+  create: (recipe: unknown) => apiClient.post('/recipes', recipe),
+  update: (id: string, recipe: unknown) => apiClient.put(`/recipes/${id}`, recipe),
   delete: (id: string) => apiClient.delete(`/recipes/${id}`),
   search: (query: string) => apiClient.get(`/recipes/search?q=${encodeURIComponent(query)}`),
 };

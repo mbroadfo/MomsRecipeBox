@@ -5,6 +5,68 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-24
+
+### Added - Universal Authentication Error Handling
+
+#### 🔐 Goal: Automatically redirect to Auth0 login when JWT tokens expire or become invalid
+
+**Problem**: Users refreshing old browser sessions or experiencing expired JWT tokens would see "Failed to load recipes" or other API errors without being prompted to re-authenticate.
+
+**Solution**: Implemented universal 401 error handler that automatically redirects to Auth0 login page from any location in the application.
+
+**Features Implemented**:
+
+1. **Global Auth Error Handler**:
+   - Registered once during app initialization in `App.tsx`
+   - Captures all 401 Unauthorized responses from any API call
+   - Automatically triggers Auth0 login redirect
+   - Preserves current page location to return after authentication
+
+2. **API Client Enhancement**:
+   - Added `setGlobalAuthErrorHandler()` function to register handler
+   - Enhanced `request()` method to detect 401 status codes
+   - Logs authentication failures for debugging
+   - Gracefully handles expired or invalid JWT tokens
+
+3. **Seamless User Experience**:
+   - No error messages shown to user
+   - Automatic redirect to Auth0 Universal Login
+   - Returns to original page after successful authentication
+   - Works universally across all pages and API endpoints
+
+**Technical Implementation**:
+
+- Modified: `ui/src/lib/api-client.ts`
+  - Added global auth error handler registration
+  - Added 401 detection in response handling
+  - Triggers `loginWithRedirect()` with return path
+
+- Modified: `ui/src/App.tsx`
+  - Imports `setGlobalAuthErrorHandler` from api-client
+  - Registers handler during AuthenticatedApp initialization
+  - Passes current pathname as `returnTo` state
+
+**Files Modified**:
+
+- `ui/src/lib/api-client.ts` - Global auth handler and 401 detection
+- `ui/src/App.tsx` - Handler registration on app initialization
+
+**Impact**:
+
+- ✅ **User Experience**: No more confusing "Failed to load" errors
+- ✅ **Security**: Expired tokens immediately trigger re-authentication
+- ✅ **Universal**: Works on all pages (recipes, shopping list, profile, admin, etc.)
+- ✅ **Seamless**: Users return to their original page after login
+- ✅ **Reliability**: Handles all authentication edge cases automatically
+
+**Behavior**:
+
+- User with expired token visits any page → Automatic redirect to login
+- User refreshes old browser session → Seamless re-authentication
+- API returns 401 from any endpoint → Universal login redirect
+- After login → User returns to the page they were trying to access
+
 ## [Unreleased] - 2025-11-23
 
 ### Added - "Let's Start Cooking" Mode - Hands-Free Recipe View

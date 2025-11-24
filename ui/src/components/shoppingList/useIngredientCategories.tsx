@@ -46,7 +46,7 @@ export const useIngredientCategories = (items: ShoppingListItem[], viewMode: 're
       }
       
       // Call our API endpoint
-      const response = await apiClient.request('shopping-list/categorize', {
+      const response = await apiClient.request<{ categories: Record<string, string> }>('shopping-list/categorize', {
         method: 'POST',
         body: { ingredients: ingredientNames }
       });

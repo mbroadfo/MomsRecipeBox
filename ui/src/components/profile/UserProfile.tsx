@@ -55,14 +55,14 @@ export const UserProfileEditor: React.FC<UserProfileProps> = ({
     try {
       setLoading(true);
       const token = await getAccessTokenSilently();
-      const response = await apiClient.get('/user/profile', {
+      const response = await apiClient.get<{ user: Record<string, unknown> }>('/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.data?.user) {
         setProfile(prevProfile => ({
           ...prevProfile,
-          ...response.data.user
+          ...(response.data?.user || {})
         }));
       }
     } catch (error) {

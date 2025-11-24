@@ -23,10 +23,23 @@ import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import UserManagementPage from './pages/UserManagementPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import { setGlobalAuthErrorHandler } from './lib/api-client';
 
 // Authentication wrapper component
 const AuthenticatedApp: React.FC = () => {
   const { isLoading, isAuthenticated, loginWithRedirect, error, user, getAccessTokenSilently } = useAuth0();
+
+  // Register global authentication error handler for 401 responses
+  React.useEffect(() => {
+    setGlobalAuthErrorHandler(() => {
+      console.log('🔐 Global auth error handler triggered - redirecting to login');
+      loginWithRedirect({
+        appState: {
+          returnTo: window.location.pathname
+        }
+      });
+    });
+  }, [loginWithRedirect]);
 
   // Handle automatic login redirect - must be at top level
   React.useEffect(() => {

@@ -9,6 +9,7 @@ import ShoppingListPage from './components/shoppingList/ShoppingListPage';
 import { UserProfileEditor } from './components/profile/UserProfile';
 import { Layout } from './components/layout';
 import CallbackPage from './pages/CallbackPage';
+import { CookingMode } from './components/cooking/CookingMode';
 
 // Context Providers
 import { AIProvider } from './contexts/AIProvider';
@@ -145,6 +146,7 @@ const AppRoutes = () => {
         <Route path="/" element={<HomePage />} />
         {/* The "new" route must come before the :id route to prevent treating "new" as an ID */}
         <Route path="/recipe/new" element={<NewRecipeWrapper />} />
+        <Route path="/recipe/:id/cooking" element={<CookingMode />} />
         <Route path="/recipe/:id" element={<RecipeDetailRouteWrapper />} />
         <Route path="/shopping-list" element={<ShoppingListPage />} />
         <Route path="/profile" element={<UserProfileEditor />} />

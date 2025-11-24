@@ -7,6 +7,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-11-23
 
+### Added - "Let's Start Cooking" Mode - Hands-Free Recipe View
+
+#### 🎯 Goal: Provide distraction-free, mobile-optimized view for actively cooking from recipes
+
+**User Story**: When cooking, users need a simple, focused view of ingredients or instructions without navigating through the full recipe page layout.
+
+**Features Implemented**:
+
+1. **New Cooking Mode Route**: `/recipe/:id/cooking`
+   - Dedicated full-screen cooking interface
+   - Minimal UI - only back arrow and content tabs
+   - No navigation clutter or distractions
+
+2. **"Start Cooking" Button**:
+   - Added to recipe detail page header
+   - Green button with chef's hat icon
+   - Only visible for existing recipes (not in edit mode)
+   - One-click access to cooking mode
+
+3. **Tabbed Interface**:
+   - Two tabs: "Ingredients" and "Instructions"
+   - Large touch targets (48px minimum for accessibility)
+   - Active tab highlighted in blue
+   - Easy to switch with messy cooking hands
+
+4. **Smart Scroll Position Memory**:
+   - Remembers scroll position when switching tabs
+   - Resume where you left off on each tab
+   - Smooth transitions between views
+
+5. **Progress Tracking with Checkboxes**:
+   - ✅ Checkbox next to each ingredient and instruction step
+   - Click anywhere on item to check/uncheck
+   - Strikethrough text when checked
+   - Visual opacity change for completed items
+   - Track progress as you cook
+   - Independent state for ingredients and instructions tabs
+   - **Session persistence**: Checkmarks saved to sessionStorage
+   - Navigate away and back - progress is remembered until browser tab closes
+   - Per-recipe tracking using recipe ID
+   - **Clear All button**: Red button appears when items are checked
+   - One-click to uncheck all items on current tab
+   - Separate clear buttons for ingredients and instructions
+
+6. **Mobile-First Design**:
+   - Large, readable text (1.125rem base, 1.25rem on tablet+)
+   - High contrast for readability from counter distance
+   - Touch-optimized interface
+   - Responsive across phone, tablet, desktop
+   - Landscape orientation support
+
+7. **Clean Content Display**:
+   - **Ingredients Tab**: Recipe title, yield, formatted ingredient list with quantities
+   - **Instructions Tab**: Recipe title, numbered steps with circle indicators
+   - Handles both flat and grouped ingredient structures
+   - No clutter - just what you need to cook
+
+**Technical Implementation**:
+
+- New Component: `ui/src/components/cooking/CookingMode.tsx`
+- Styling: `ui/src/components/cooking/CookingMode.css`
+- Route: Added to App.tsx before `:id` route to prevent routing conflicts
+- State Management: useRef for scroll containers, localStorage for positions
+- TypeScript: Proper typing for ingredient groups and items
+
+**Files Created**:
+
+- `ui/src/components/cooking/CookingMode.tsx` - Main cooking mode component
+- `ui/src/components/cooking/CookingMode.css` - Mobile-first responsive styles
+
+**Files Modified**:
+
+- `ui/src/App.tsx` - Added `/recipe/:id/cooking` route
+- `ui/src/components/recipeDetail/RecipeDetailContainer.tsx` - Added "Start Cooking" button
+
+**Impact**:
+
+- ✅ **Core Use Case**: Addresses primary user workflow (actually cooking!)
+- ✅ **Mobile Optimized**: Designed for phone in kitchen scenario
+- ✅ **Accessibility**: Large touch targets, high contrast, readable fonts
+- ✅ **User Experience**: Distraction-free, single-purpose interface
+- ✅ **Smooth Workflow**: Seamless switch between recipe detail and cooking mode
+
+**Future Enhancements** (Noted in JOBJAR):
+
+- Voice control for hands-free navigation
+- Timer integration for timed steps
+- Checkboxes to mark off ingredients/steps as completed
+- Adjustable text size for better readability
+- Step-by-step mode with auto-advance
+- Prevent screen sleep/dimming during cooking
+
+**Testing**:
+
+- Verified route navigation from recipe detail page
+- Tested tab switching and scroll position memory
+- Validated responsive design on mobile, tablet, desktop viewports
+- Confirmed ingredient and instruction display for various recipe formats
+
 ### Fixed - Recipe Image Update File Extension Mismatch
 
 #### 🎯 Goal: Fix uploaded images not displaying in UI after successful S3 upload

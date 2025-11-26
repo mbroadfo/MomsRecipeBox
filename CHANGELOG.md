@@ -5,6 +5,113 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-25
+
+### Added - Data Quality Dashboard & Recipe Management Improvements
+
+#### 📊 Goal: Provide admins with comprehensive data quality monitoring and fix critical recipe creation bugs
+
+**Problem**: Three critical issues identified during testing:
+
+1. JWT token expiration causing 401 errors without user feedback
+2. New recipes being created with wrong owner ID (demo-user instead of Auth0 ID)
+3. New recipes defaulting to private instead of public visibility
+
+**Solution**: Implemented Data Quality Dashboard for admin monitoring and fixed all recipe creation bugs with improved authentication handling.
+
+**Features Implemented**:
+
+1. **Data Quality Dashboard** (`/admin/data-quality`):
+   - Letter grade scoring system (A-F) based on recipe completeness
+   - Real-time statistics: total recipes, clean recipes, recipes needing attention
+   - Quality criteria breakdown by priority (Critical, High, Medium, Low)
+   - Context-sensitive recommendations based on current quality level
+   - Manual refresh capability for on-demand analysis
+   - Integration with MongoDB health checks
+
+2. **Silent Token Refresh**:
+   - Enhanced global auth error handler to attempt silent token refresh before forcing login
+   - Uses `getAccessTokenSilently({ cacheMode: 'off' })` to get fresh token
+   - Automatically reloads page on successful refresh
+   - Falls back to login redirect only if silent refresh fails
+   - Provides better UX for expired tokens (~24 hour JWT lifespan)
+
+3. **Recipe Creation Fixes**:
+   - Fixed owner_id to use `getCurrentUserId()` helper instead of window fallbacks
+   - Changed recipe save to use `recipeApi.create()` with proper auth error handling
+   - Fixed default visibility from 'private' to 'public' for new recipes
+   - Delete button now correctly appears for user's own recipes
+
+**Technical Implementation**:
+
+- Added: `ui/src/pages/DataQualityPage.tsx`
+  - Comprehensive admin dashboard component
+  - Grade calculation logic (A-F based on percentage)
+  - Real-time metrics display with visual indicators
+  - Quality criteria reference and recommendations
+
+- Added: `docs/data-quality-standards.md`
+  - Complete documentation of quality criteria
+  - Scoring methodology and grade definitions
+  - Technical implementation details
+  - Future enhancement roadmap
+
+- Added: `scripts/check_ownership.js`
+  - MongoDB aggregation script for ownership/visibility analysis
+  - Useful utility for database auditing
+
+- Modified: `ui/src/App.tsx`
+  - Enhanced global auth error handler with silent token refresh
+  - Added getAccessTokenSilently dependency
+  - Improved error handling with try/catch
+
+- Modified: `ui/src/components/admin/AdminLayout.tsx`
+  - Added Data Quality navigation item
+  - Added route title for data quality page
+
+- Modified: `ui/src/components/recipeDetail/hooks/useNewRecipe.ts`
+  - Changed owner_id to use `getCurrentUserId()` helper
+  - Changed default visibility from 'private' to 'public'
+  - Replaced raw fetch() with recipeApi.create() for proper auth handling
+  - Removed window.currentUser/currentUserId fallback pattern
+
+- Modified: `ui/src/components/recipeDetail/RecipeDetailContainer.tsx`
+  - Removed debug console.log for delete button visibility
+
+**Data Quality Monitoring**:
+
+- Analyzes recipes for missing required fields (title, ingredients, instructions)
+- Identifies empty arrays and incomplete metadata
+- Provides actionable recommendations based on quality score
+- Displays environment info (dev/production, database name)
+- Shows last analysis timestamp
+
+**User Experience Improvements**:
+
+- Expired tokens now silently refresh instead of forcing immediate logout
+- New recipes correctly assigned to creating user with proper Auth0 ID
+- New recipes default to public visibility for easier sharing
+- Delete button correctly appears for user's own recipes
+- Admin dashboard provides visibility into overall data health
+
+**Files Modified**:
+
+```text
+ui/src/App.tsx
+ui/src/components/admin/AdminLayout.tsx
+ui/src/components/recipeDetail/hooks/useNewRecipe.ts
+ui/src/components/recipeDetail/RecipeDetailContainer.tsx
+ui/src/pages/DataQualityPage.tsx (new)
+docs/data-quality-standards.md (new)
+scripts/check_ownership.js (new)
+```
+
+**Database Analysis Results**:
+
+- All 39 recipes owned by primary user (auth0|67e1cc293eeee752d79bfd3a)
+- 38 recipes public, 1 recipe private
+- 100% data quality score (all recipes have required fields)
+
 ## [Unreleased] - 2025-11-24
 
 ### Added - Universal Authentication Error Handling

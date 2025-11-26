@@ -23,6 +23,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import UserManagementPage from './pages/UserManagementPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import DataQualityPage from './pages/DataQualityPage';
 import { setGlobalAuthErrorHandler } from './lib/api-client';
 
 // Authentication wrapper component
@@ -31,15 +32,31 @@ const AuthenticatedApp: React.FC = () => {
 
   // Register global authentication error handler for 401 responses
   React.useEffect(() => {
-    setGlobalAuthErrorHandler(() => {
-      console.log('🔐 Global auth error handler triggered - redirecting to login');
-      loginWithRedirect({
-        appState: {
-          returnTo: window.location.pathname
-        }
-      });
+    setGlobalAuthErrorHandler(async () => {
+      console.log('🔐 Global auth error handler triggered - attempting silent token refresh');
+      try {
+        // Try to silently refresh the token
+        await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+          cacheMode: 'off' // Force fresh token
+        });
+        
+        console.log('✅ Token refreshed successfully - reloading page');
+        // Token refreshed successfully - reload to retry the failed request
+        window.location.reload();
+      } catch (error) {
+        console.warn('⚠️ Silent token refresh failed - redirecting to login', error);
+        // Silent refresh failed, redirect to login
+        loginWithRedirect({
+          appState: {
+            returnTo: window.location.pathname
+          }
+        });
+      }
     });
-  }, [loginWithRedirect]);
+  }, [loginWithRedirect, getAccessTokenSilently]);
 
   // Handle automatic login redirect - must be at top level
   React.useEffect(() => {
@@ -178,6 +195,7 @@ const AdminRoutes = () => {
             <Route path="/users" element={<UserManagementPage />} />
             <Route path="/recipes" element={<div>Recipe Moderation - Coming Soon</div>} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/data-quality" element={<DataQualityPage />} />
           </Routes>
         </AdminLayout>
       </AdminErrorBoundary>

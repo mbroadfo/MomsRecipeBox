@@ -1,12 +1,7 @@
 import { useState } from 'react';
-import { getApiUrl } from '../../../config/environment.js';
+import { recipeApi } from '../../../lib/api-client';
+import { getCurrentUserId } from '../../../types/global';
 import type { RawRecipe } from './useRecipe';
-
-// Type definitions for window global properties
-interface WindowWithUser extends Window {
-  currentUser?: { id: string };
-  currentUserId?: string;
-}
 
 // Type for ingredient items in the nested structure
 interface IngredientItem {
@@ -36,8 +31,8 @@ export function useNewRecipe() {
     ingredients: [],
     steps: [],
     notes: '',
-    visibility: 'private', // Default to private for new recipes
-    owner_id: (window as WindowWithUser).currentUser?.id || (window as WindowWithUser).currentUserId || 'demo-user'
+    visibility: 'public', // Default to public for new recipes
+    owner_id: getCurrentUserId() || 'demo-user'
   };
   
   // Using const declaration to avoid unused variable warning
@@ -49,7 +44,7 @@ export function useNewRecipe() {
     setLoading(true);
     setError(null);
     try {
-      const userId = (window as WindowWithUser).currentUser?.id || (window as WindowWithUser).currentUserId || 'demo-user';
+      const userId = getCurrentUserId() || 'demo-user';
       
       // Make sure we have all required fields
       if (!recipeData.title) {
@@ -84,7 +79,7 @@ export function useNewRecipe() {
         author: recipeData.author || "",
         source: recipeData.source || "",
         owner_id: recipeData.owner_id || userId,
-        visibility: recipeData.visibility || 'private',
+        visibility: recipeData.visibility || 'public',
         tags: normalizedTags,
         yield: recipeData.yield || "",
         time: recipeData.time || {},
@@ -111,21 +106,10 @@ export function useNewRecipe() {
       
       console.log("Saving new recipe with payload:", payload);
       
-      const response = await fetch(getApiUrl('recipes'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error response:", errorText);
-        throw new Error(`Save failed (${response.status}): ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log("Successfully created recipe:", data);
-      return data._id;
+      // Use recipeApi which handles auth errors automatically
+      const response = await recipeApi.create(payload);
+      console.log("Successfully created recipe:", response);
+      return (response.data as any)._id;
     } catch (e: unknown) {
       console.error("Error saving recipe:", e);
       const error = e instanceof Error ? e : new Error(String(e));

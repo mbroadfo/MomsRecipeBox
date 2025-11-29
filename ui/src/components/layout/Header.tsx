@@ -4,16 +4,19 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { isUserAdmin } from '../../auth/types';
 import { useFilter } from '../../contexts/FilterContext';
 import { useAI } from '../../contexts/AIContext';
+import { usePageActions } from '../../contexts/PageActionsContext';
 import defaultLogo from '../../assets/default.png';
 import './Header.css';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isShoppingListPage = location.pathname === '/shopping-list';
   
   // Get filter context (always available now since FilterProvider wraps everything)
   const { filter, setFilter, sort, setSort } = useFilter();
   const { isVisible: aiVisible, toggleAI } = useAI();
+  const { actions: pageActions } = usePageActions();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth0();
@@ -56,12 +59,12 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-end gap-3 md:gap-4 flex-shrink-0 ml-auto">
-        {/* Mobile: Hamburger menu (only show on HomePage) */}
-        {location.pathname === '/' && (
+        {/* Hamburger menu - mobile only for HomePage, both mobile and desktop for shopping list */}
+        {(isHomePage || (isShoppingListPage && pageActions.length > 0)) && (
           <button
-            className="mobile-hamburger-btn md:hidden"
+            className={isHomePage ? "mobile-hamburger-btn md:hidden" : "mobile-hamburger-btn"}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Filter and sort menu"
+            aria-label={isHomePage ? "Filter and sort menu" : "Page actions menu"}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -271,6 +274,31 @@ export const Header: React.FC = () => {
               >
                 Recently Updated
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shopping List Page Actions Menu */}
+      {mobileMenuOpen && isShoppingListPage && pageActions.length > 0 && (
+        <div className="mobile-filter-menu">
+          <div className="mobile-menu-section">
+            <h3 className="mobile-menu-title">Actions:</h3>
+            <div className="mobile-menu-buttons">
+              {pageActions.map((action) => (
+                <button
+                  key={action.id}
+                  className={`mobile-menu-btn ${action.variant === 'danger' ? 'text-red-600' : ''}`}
+                  onClick={() => {
+                    action.onClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  disabled={action.disabled}
+                >
+                  {action.icon && <span className="mr-2">{action.icon}</span>}
+                  {action.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

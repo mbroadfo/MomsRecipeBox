@@ -3,8 +3,8 @@ import { useShoppingList } from './useShoppingList';
 import { useIngredientCategories } from './useIngredientCategories';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useAI } from '../../contexts/AIContext';
 import { showToast, ToastType } from '../Toast';
+import { usePageActions } from '../../contexts/PageActionsContext';
 import type { ShoppingListItem } from './useShoppingList';
 import { 
   Chip, 
@@ -12,11 +12,8 @@ import {
 } from './components';
 import { 
   PlusCircle, 
-  ShoppingCart, 
-  LayoutGrid, 
   Trash2, 
   Printer, 
-  Download,
   CheckCircle
 } from 'lucide-react';
 import './ShoppingListPage.css';
@@ -25,7 +22,7 @@ import './PrintStyles.css';
 const ShoppingListPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
-  const { showAI } = useAI();
+  const { setActions, clearActions } = usePageActions();
   const [viewMode, setViewMode] = useState<'recipe' | 'category'>('recipe');
   const [searchText, setSearchText] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState<'all' | 'purchased' | null>(null);
@@ -57,6 +54,29 @@ const ShoppingListPage: React.FC = () => {
   
   // Create a separate list of purchased items
   const purchasedItems = shoppingList?.items?.filter(item => item.checked) || [];
+
+  // Register page actions in header hamburger menu
+  React.useEffect(() => {
+    setActions([
+      {
+        id: 'print',
+        label: 'Print List',
+        icon: <Printer className="w-4 h-4" />,
+        onClick: () => window.print(),
+        disabled: false
+      },
+      {
+        id: 'clear',
+        label: 'Clear All',
+        icon: <Trash2 className="w-4 h-4" />,
+        onClick: () => setShowConfirmModal('all'),
+        disabled: loading || shoppingList?.items?.length === 0,
+        variant: 'danger' as const
+      }
+    ]);
+
+    return () => clearActions();
+  }, [setActions, clearActions, loading, shoppingList?.items?.length]);
 
   if (loading) {
     return (
@@ -97,9 +117,34 @@ const ShoppingListPage: React.FC = () => {
   if (!shoppingList || !shoppingList.items || shoppingList.items.length === 0) {
     return (
       <div className="shopping-list-page">
-        <div className="shopping-list-header">
-          <h1 className="shopping-list-title">Shopping List</h1>
-          <p className="shopping-list-subtitle">Plan your grocery trips with ease</p>
+        {/* Compact header with back button */}
+        <div className="shopping-list-header-compact">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  console.log('Back button clicked - navigating to /');
+                  window.location.href = '/';
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  fontSize: '1rem',
+                  fontWeight: 'normal'
+                }}
+                aria-label="Back to recipes"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <h1 className="shopping-list-title-compact" style={{ marginTop: '2px' }}>Shopping List</h1>
+            </div>
+          </div>
         </div>
         
         <div className="empty-state">
@@ -124,8 +169,27 @@ const ShoppingListPage: React.FC = () => {
             Browse your favorite recipes and select ingredients to add them to your shopping list
           </p>
           <button
-            className="shopping-list-button btn-primary"
-            onClick={() => navigate('/')}
+            onClick={() => {
+              console.log('Browse Recipes button clicked - navigating to /');
+              window.location.href = '/';
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.5rem',
+              fontSize: '1rem',
+              fontWeight: '600',
+              color: '#ffffff',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              border: '2px solid #1e40af',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              margin: '0 auto',
+              boxShadow: '0 4px 6px rgba(37, 99, 235, 0.25)',
+              transition: 'all 0.2s ease'
+            }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
@@ -138,10 +202,6 @@ const ShoppingListPage: React.FC = () => {
   }
 
   // Handle clear actions with confirmation
-  const handleClearAll = () => {
-    setShowConfirmModal('all'); // Show confirmation for clear all
-  };
-
   const handleClearPurchased = () => {
     // Execute directly without confirmation - now uses a single API call
     clearList('delete_purchased')
@@ -157,27 +217,6 @@ const ShoppingListPage: React.FC = () => {
       });
     }
     setShowConfirmModal(null);
-  };
-
-  // Handle print functionality
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleOpenAIWithContext = () => {
-    // Prepare shopping list context
-    const context = {
-      page: 'shopping-list' as const,
-      data: {
-        items: shoppingList?.items || [],
-        itemsByRecipe: getItemsByRecipe(),
-        totalItems: shoppingList?.items?.length || 0,
-        checkedItems: shoppingList?.items?.filter(item => item.checked).length || 0,
-        viewMode: viewMode // 'recipe' or 'category'
-      }
-    };
-
-    showAI(context);
   };
 
   // Handle adding custom items directly from search input
@@ -207,151 +246,73 @@ const ShoppingListPage: React.FC = () => {
 
   return (
     <div className="shopping-list-page">
-      <div className="shopping-list-header">
-        <h1 className="shopping-list-title">Shopping List</h1>
-        <p className="shopping-list-subtitle">Organize your ingredients efficiently</p>
-      </div>
-      
-      {/* New sticky control bar */}
-      <div className="shopping-list-control-bar">
-        <div className="control-bar-grid">
-          {/* Left zone: Search and add items */}
-          <div className="control-bar-left">
-            <div className="w-full max-w-md">
-              {/* Combined Search/Add Bar */}
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  placeholder="Type to search or add item..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchText.trim()) {
-                      handleAddItemFromSearch();
-                    }
-                  }}
-                  className="flex-1 px-4 py-3 text-[15.2px] text-slate-700 bg-white border-2 border-blue-500 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 font-sans"
-                  style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
-                />
-                
-                <button 
-                  className="flex items-center gap-1.5 px-4 py-3 text-[15.2px] font-medium text-white bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 border-2 border-green-600 rounded-r-lg shadow-md transition-all disabled:from-gray-400 disabled:to-gray-500 disabled:border-gray-500 disabled:cursor-not-allowed"
-                  onClick={handleAddItemFromSearch}
-                  disabled={!searchText.trim()}
-                  style={{ fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif' }}
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  Add
-                </button>
-              </div>
-              <p className="text-xs text-gray-600 mt-1 ml-1">💡 Type an item and press Enter or click Add to add it to your list</p>
-            </div>
-          </div>
-          
-          {/* Center zone: Simple button controls (replacement for broken SegmentedControl) */}
-          <div className="control-bar-center">
-            <div className="flex gap-2">
-              <button
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all !important ${
-                  viewMode === 'recipe' 
-                    ? '!bg-blue-600 !text-white !border-2 !border-blue-600 shadow-lg' 
-                    : '!bg-white !text-blue-600 !border-2 !border-blue-300 hover:!bg-blue-50 shadow-md'
-                }`}
-                style={{
-                  backgroundColor: viewMode === 'recipe' ? '#2563eb !important' : '#ffffff !important',
-                  color: viewMode === 'recipe' ? '#ffffff !important' : '#2563eb !important',
-                  border: viewMode === 'recipe' ? '2px solid #2563eb' : '2px solid #93c5fd'
-                }}
-                onClick={() => {
-                  setViewMode('recipe');
-                }}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                By Recipe
-              </button>
-              
-              <button
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all !important ${
-                  viewMode === 'category' 
-                    ? '!bg-green-600 !text-white !border-2 !border-green-600 shadow-lg' 
-                    : '!bg-white !text-green-600 !border-2 !border-green-300 hover:!bg-green-50 shadow-md'
-                }`}
-                style={{
-                  backgroundColor: viewMode === 'category' ? '#16a34a !important' : '#ffffff !important',
-                  color: viewMode === 'category' ? '#ffffff !important' : '#16a34a !important',
-                  border: viewMode === 'category' ? '2px solid #16a34a' : '2px solid #86efac'
-                }}
-                onClick={() => {
-                  setViewMode('category');
+      {/* Compact header with title, view selector, and action buttons */}
+      <div className="shopping-list-header-compact">
+        <div className="flex items-center justify-between">
+          {/* Left: Back button and title */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                padding: '0.5rem',
+                color: '#334155'
+              }}
+              aria-label="Back to recipes"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <h1 className="shopping-list-title-compact" style={{ marginTop: '2px' }}>Shopping List</h1>
+            
+            {/* View mode dropdown */}
+            <select 
+              value={viewMode}
+              onChange={(e) => {
+                const newMode = e.target.value as 'recipe' | 'category';
+                setViewMode(newMode);
+                if (newMode === 'category') {
                   categorizeWithAI();
-                }}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                {aiCategorizing ? 'AI Thinking...' : 'By Category'}
-                {isAiCategorized && <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">AI</span>}
-              </button>
-            </div>
-          </div>
-          
-          {/* Right zone: Global actions */}
-          <div className="control-bar-right">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => showToast('Export functionality coming soon', ToastType.Info)}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-lg shadow-md"
-                title="Export shopping list"
-                aria-label="Export shopping list"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
-              
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-2 border-blue-600 rounded-lg shadow-md"
-                title="Print shopping list"
-                aria-label="Print shopping list"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print</span>
-              </button>
-              
-              <button
-                onClick={handleOpenAIWithContext}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 border-2 border-purple-600 rounded-lg shadow-md"
-                title="Ask AI about your shopping list"
-                aria-label="Ask AI about your shopping list"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 4.2-4.3.6 3.1 3- .7 4.2 3.8-2 3.8 2-.7-4.2 3.1-3-4.3-.6z"/></svg>
-                <span>Ask AI</span>
-              </button>
-              
-              <button
-                onClick={handleClearAll}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg shadow-md"
-                title="Clear all items"
-                aria-label="Clear all items"
-                style={{
-                  background: 'linear-gradient(to bottom right, #e11d48, #be123c)',
-                  borderWidth: '2px',
-                  borderStyle: 'solid',
-                  borderColor: '#be123c',
-                  boxShadow: '0 3px 6px rgba(190, 18, 60, 0.3)',
-                  textShadow: '0 1px 1px rgba(0, 0, 0, 0.2)',
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  letterSpacing: '0.01em'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'linear-gradient(to bottom right, #be123c, #9f1239)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'linear-gradient(to bottom right, #e11d48, #be123c)'}
-                disabled={loading || shoppingList?.items?.length === 0}
-              >
-                <Trash2 className="w-4 h-4 text-white" />
-                <span style={{ color: 'white' }}>Clear All</span>
-              </button>
-            </div>
+                }
+              }}
+              className="px-3 py-1.5 text-sm font-medium border-2 border-gray-300 rounded-lg bg-white cursor-pointer hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#334155'
+              }}
+            >
+              <option value="recipe">By Recipe</option>
+              <option value="category">By Category {isAiCategorized ? '(AI)' : ''}</option>
+            </select>
           </div>
         </div>
+      </div>
+      
+      {/* Compact search bar */}
+      <div className="shopping-list-search-bar">
+        <input
+          type="text"
+          placeholder="Type to add item and press Enter..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && searchText.trim()) {
+              handleAddItemFromSearch();
+            }
+          }}
+          className="flex-1 px-4 py-2 text-sm bg-white border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <button 
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+          onClick={handleAddItemFromSearch}
+          disabled={!searchText.trim()}
+        >
+          <PlusCircle className="w-4 h-4" />
+          Add
+        </button>
       </div>
 
       <div className="shopping-list-content">
@@ -400,6 +361,13 @@ const ShoppingListPage: React.FC = () => {
               </div>
             );
           })
+        ) : aiCategorizing ? (
+          // Loading state while AI is categorizing
+          <div className="loading-state" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+            <div className="loader" style={{ margin: '0 auto 1rem' }}></div>
+            <p style={{ color: '#6b7280', fontSize: '1rem' }}>AI is categorizing your items...</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '0.5rem' }}>This usually takes a few seconds</p>
+          </div>
         ) : (
           // Category View - Show only unchecked items
           Object.entries(categorizedItems).map(([categoryKey, category]) => {

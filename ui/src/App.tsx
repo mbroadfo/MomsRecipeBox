@@ -15,6 +15,7 @@ import { CookingMode } from './components/cooking/CookingMode';
 import { AIProvider } from './contexts/AIProvider';
 import { RecipeProvider } from './contexts/RecipeContext';
 import { AdminProvider } from './contexts/AdminContext';
+import { PageActionsProvider } from './contexts/PageActionsContext';
 
 // Admin Components
 import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
@@ -208,7 +209,9 @@ const App: React.FC = () => {
     <BrowserRouter>
       <RecipeProvider>
         <AIProvider>
-          <AuthenticatedApp />
+          <PageActionsProvider>
+            <AuthenticatedApp />
+          </PageActionsProvider>
         </AIProvider>
       </RecipeProvider>
     </BrowserRouter>

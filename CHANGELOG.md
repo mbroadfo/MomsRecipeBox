@@ -5,6 +5,97 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-28
+
+### UI - Shopping List UX Improvements
+
+#### 📱 Compact Header & Navigation Fixes
+
+**Goal**: Optimize shopping list interface for better mobile experience and fix critical navigation issues.
+
+**Features Implemented**:
+
+1. **PageActionsContext System**:
+   - New context provider for page-specific actions in app header hamburger menu
+   - Allows pages to register custom actions (Print, Clear, etc.)
+   - Clean separation of concerns between global header and page-specific functionality
+
+2. **Compact Shopping List Header**:
+   - Moved Print and Clear actions from page to hamburger menu
+   - Removed redundant AI button (already present in app header)
+   - Fixed title clipping with improved CSS (line-height, padding adjustments)
+   - Eliminated excessive spacing (changed top margin from -1.5rem to 0)
+   - Back button and title in compact layout with dropdown for view mode
+
+3. **AI Categorization Loading State**:
+   - Added loading spinner with "AI is categorizing your items..." message
+   - Exposed isLoading state from useIngredientCategories hook
+   - Better user feedback during AI processing
+
+4. **Enhanced Empty State**:
+   - Compact header with functional back button
+   - Browse Recipes button with proper styling (inline styles to override global CSS)
+   - Navigation using window.location.href for reliability (React Router navigate() fails in early return)
+   - Console logging for debugging navigation issues
+
+5. **Hamburger Menu Visibility**:
+   - Mobile-only for HomePage (filter/sort actions)
+   - Both mobile and desktop for shopping list (Print/Clear actions)
+   - Conditional CSS classes based on page context
+
+**Technical Implementation**:
+
+- **Created**: `ui/src/contexts/PageActionsContext.tsx`
+  - PageAction interface with id, label, icon, onClick, disabled, variant
+  - usePageActions hook for accessing context
+  - PageActionsProvider wrapper
+
+- **Modified**: `ui/src/App.tsx`
+  - Added PageActionsProvider wrapper around AuthenticatedApp
+
+- **Modified**: `ui/src/components/layout/Header.tsx`
+  - Added usePageActions hook
+  - Conditional hamburger button visibility and class
+  - Shopping list actions menu section in hamburger dropdown
+
+- **Modified**: `ui/src/components/shoppingList/ShoppingListPage.tsx`
+  - Removed useAI hook, showMenu state, page-level buttons
+  - Added usePageActions, registered Print/Clear actions via useEffect
+  - Compact header with back button, title, view mode dropdown
+  - AI categorization loading UI
+  - Empty state with window.location.href navigation
+  - Browse Recipes button with full inline styles
+
+- **Modified**: `ui/src/components/shoppingList/ShoppingListPage.css`
+  - .shopping-list-header-compact: padding 1rem, margin 0 top
+  - .shopping-list-title-compact: line-height 1.4, proper spacing
+
+**Issues Resolved**:
+
+1. **Header Wrapping**: Print/Clear moved to hamburger menu
+2. **Title Clipping**: Fixed CSS line-height and margins
+3. **AI Blank Screen**: Added loading spinner during categorization
+4. **Browse Recipes Button**: Fixed visibility with inline styles
+5. **Empty State Navigation**: Fixed with window.location.href (early return prevented useNavigate hook)
+
+**Files Changed**:
+
+```text
+ui/src/contexts/PageActionsContext.tsx (new)
+ui/src/App.tsx
+ui/src/components/layout/Header.tsx
+ui/src/components/shoppingList/ShoppingListPage.tsx
+ui/src/components/shoppingList/ShoppingListPage.css
+```
+
+**Impact**:
+
+- ✅ **Compact Header**: No wrapping, better mobile experience
+- ✅ **Clear Actions**: Print/Clear accessible via hamburger menu
+- ✅ **Better Feedback**: Loading spinner during AI categorization
+- ✅ **Fixed Navigation**: Empty state buttons navigate to home page
+- ✅ **Improved Spacing**: Eliminated excessive margins and clipping
+
 ## [Unreleased] - 2025-11-25
 
 ### Added - Data Quality Dashboard & Recipe Management Improvements

@@ -50,7 +50,7 @@ declare const window: WindowWithUser;
 interface Props { recipeId?: string; isNew?: boolean; onBack: () => void; }
 export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false, onBack }) => {
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, user } = useAuth0();
   const [editMode, setEditMode] = useState(isNew);
   const [saving, setSaving] = useState(false);
   // AI Assistant state now managed globally via AIContext
@@ -529,7 +529,18 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
             <InstructionsView instructions={working.instructions} />
           )}
           <Notes value={working.notes} editing={editMode} onChange={v => patch({ notes: v })} />
-          {Array.isArray(recipe.comments) && <Comments comments={recipe.comments} />}
+          {!isNew && recipeId && (
+            <Comments 
+              comments={Array.isArray(recipe.comments) ? recipe.comments as Array<{_id: string; user_id: string; content: string; created_at: string; updated_at?: string}> : []} 
+              recipeId={recipeId}
+              onCommentsChange={() => {
+                // Refresh to get updated comments
+                if (refresh) {
+                  refresh();
+                }
+              }}
+            />
+          )}
           {uploadError && <div style={{ color: '#dc2626', fontSize: '.75rem' }}>{uploadError}</div>}
           
           {/* Only show delete button in edit mode for recipe owners */}
@@ -719,6 +730,8 @@ export const RecipeDetailContainer: React.FC<Props> = ({ recipeId, isNew = false
                   const authId = working.owner_id;
                   // If it's already an email, return as is
                   if (authId.includes('@')) return authId;
+                  // If this is the current user, prefer Auth0 email when available
+                  if (authId === getCurrentUserId() && user?.email) return user.email;
                   // If it's an auth0 ID like "auth0|123456", show a short identifier
                   if (authId.includes('|')) {
                     const parts = authId.split('|');

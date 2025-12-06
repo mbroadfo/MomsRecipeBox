@@ -21,7 +21,6 @@ export const HomePage: React.FC = () => {
   // Sorting options
   const sortingOptions = [
     { value: 'newest', label: 'Newest' },
-    { value: 'popular', label: 'Most Popular' },
     { value: 'favorites', label: 'Most Favorited' },
     { value: 'az', label: 'A-Z' },
     { value: 'updated', label: 'Recently Updated' },

@@ -6,7 +6,7 @@ const handler = async (event) => {
   try {
     const db = await getDb();
 
-    const { owner_id, visibility, tags, limit = 50, offset = 0 } = event.queryStringParameters || {};
+    const { owner_id, visibility, tags, offset = 0 } = event.queryStringParameters || {};
     const user_id = getUserId(event); // Get user ID from JWT authorizer or query params
     const query = {};
 
@@ -27,17 +27,30 @@ const handler = async (event) => {
     }
 
     const recipes = await db.collection('recipes')
-      .find(query, { projection: { title: 1, image_url: 1, likes_count: 1, created_at: 1, updated_at: 1 } })
+      .find(query, { projection: { title: 1, image_url: 1, likes_count: 1, created_at: 1, updated_at: 1, owner_id: 1, visibility: 1 } })
+      .sort({ created_at: -1 }) // Sort by newest first
       .skip(parseInt(offset))
-      .limit(parseInt(limit))
       .toArray();
 
     if (user_id && recipes.length) {
       const ids = recipes.map(r => r._id);
       const favs = await db.collection('favorites').find({ recipeId: { $in: ids }, userId: user_id }).project({ recipeId: 1 }).toArray();
       const favSet = new Set(favs.map(f => f.recipeId.toString()));
+      
+      // Get comment counts for all recipes
+      const commentCounts = await db.collection('comments')
+        .aggregate([
+          { $match: { recipeId: { $in: ids } } },
+          { $group: { _id: '$recipeId', count: { $sum: 1 } } }
+        ])
+        .toArray()
+        .catch(() => []); // Return empty array if comments collection doesn't exist
+      
+      const commentCountMap = new Map(commentCounts.map(c => [c._id.toString(), c.count]));
+      
       for (const r of recipes) {
         r.liked = favSet.has(r._id.toString());
+        r.comments = commentCountMap.get(r._id.toString()) || 0;
       }
     }
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { apiClient } from '../lib/api-client';
 import RecipeCard from './RecipeCard';
+import { getCurrentUserId } from '../types/global';
 
 interface Recipe {
   _id?: string;
@@ -12,6 +13,10 @@ interface Recipe {
   liked?: boolean;
   image_url?: string;
   comments?: number;
+  owner_id?: string;
+  visibility?: string;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: unknown; // Allow additional properties
 }
 
@@ -71,14 +76,14 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
     fetchRecipes();
   }, [isAuthenticated, getAccessTokenSilently]);
 
-  // Simple filter logic placeholder
+  // Client-side filter
   let filteredRecipes = recipes.filter((recipe) => {
-    const rid = recipe.id || recipe._id || '';
+    const currentUserId = getCurrentUserId();
     switch (filter) {
       case 'mine':
-        return rid.startsWith('mine');
+        return recipe.owner_id === currentUserId;
       case 'families':
-        return rid.startsWith('family');
+        return recipe.visibility === 'family';
       case 'favorites':
         return !!recipe.liked;
       default:
@@ -92,15 +97,20 @@ export const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe, filter =
     case 'favorites':
       filteredRecipes.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
       break;
-    case 'popular':
-      filteredRecipes.sort((a, b) => (b.comments ?? 0) - (a.comments ?? 0));
-      break;
     case 'updated':
-      // TODO: Add updated date to Recipe and sort by it
+      filteredRecipes.sort((a, b) => {
+        const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return dateB - dateA; // Most recently updated first
+      });
       break;
     case 'newest':
     default:
-      // TODO: Add created date to Recipe and sort by it
+      filteredRecipes.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA; // Newest first
+      });
       break;
   }
 

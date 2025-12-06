@@ -372,19 +372,28 @@ async function handleUrlExtraction(url, aiProvider) {
     try {
       response = await axios.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
           'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Encoding': 'gzip, deflate, br, zstd',
           'DNT': '1',
           'Connection': 'keep-alive',
           'Upgrade-Insecure-Requests': '1',
           'Sec-Fetch-Dest': 'document',
           'Sec-Fetch-Mode': 'navigate',
           'Sec-Fetch-Site': 'none',
-          'Cache-Control': 'max-age=0'
+          'Sec-Fetch-User': '?1',
+          'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Cache-Control': 'max-age=0',
+          'Referer': 'https://www.google.com/'
         },
-        timeout: 15000 // 15 second timeout
+        timeout: 15000, // 15 second timeout
+        maxRedirects: 5, // Follow redirects
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // Don't throw on 4xx errors
+        }
       });
     } catch (fetchError) {
       // Handle HTTP errors when fetching the URL
@@ -428,6 +437,21 @@ async function handleUrlExtraction(url, aiProvider) {
       throw fetchError;
     }
     const htmlContent = response.data;
+    
+    // Check for Cloudflare bot protection / CAPTCHA
+    if (htmlContent.includes('Just a moment') || 
+        htmlContent.includes('Checking your browser') ||
+        htmlContent.includes('challenge-platform') ||
+        htmlContent.includes('cf-browser-verification')) {
+      console.log('Detected Cloudflare bot protection on URL:', url);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: false,
+          message: `This website (${new URL(url).hostname}) uses advanced bot protection that prevents automated recipe extraction. Please:\n\n1. Visit the recipe page in your browser\n2. Copy the recipe text (title, ingredients, instructions)\n3. Paste it into the chat\n\nI can extract the recipe from the pasted text!`
+        })
+      };
+    }
     
     // Try to extract recipe data from Next.js __NEXT_DATA__ first
     // This provides much more reliable extraction than AI parsing for Next.js sites

@@ -239,15 +239,6 @@ export const Header: React.FC = () => {
                 Newest
               </button>
               <button 
-                className={`mobile-menu-btn ${sort === 'popular' ? 'active' : ''}`}
-                onClick={() => {
-                  setSort?.('popular');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                Most Popular
-              </button>
-              <button 
                 className={`mobile-menu-btn ${sort === 'favorites' ? 'active' : ''}`}
                 onClick={() => {
                   setSort?.('favorites');

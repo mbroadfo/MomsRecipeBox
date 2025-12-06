@@ -43,7 +43,7 @@ const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed top-4 right-4 ${getBgColor()} text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300`}
+      className={`fixed top-20 right-4 ${getBgColor()} text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300`}
       style={{ opacity: isVisible ? 1 : 0 }}
     >
       {message}
@@ -68,7 +68,7 @@ export const showToast = (message: string, type: ToastType = 'success', duration
   
   // Create a simple styled div for the toast
   const toast = document.createElement('div');
-  toast.className = `fixed top-4 right-4 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'} text-white px-4 py-2 rounded shadow-lg z-50`;
+  toast.className = `fixed top-20 right-4 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'} text-white px-4 py-2 rounded shadow-lg z-50`;
   toast.style.transition = 'opacity 0.3s ease-in-out';
   toast.style.opacity = '0';
   toast.textContent = message;

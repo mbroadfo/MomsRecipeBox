@@ -5,6 +5,64 @@ All notable changes to the MomsRecipeBox project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-12-05
+
+### Interactive Comments System & UI Polish
+
+**Goal**: Enable users to add, edit, and delete comments on recipes with modern UX patterns, and fix various UI/filtering issues.
+
+**Features Implemented**:
+
+1. **Full CRUD Comments System**:
+   - Users can add comments to any recipe on the detail page
+   - Edit and delete buttons available for comment owners only
+   - Toast notifications for all comment operations (success/error feedback)
+   - Modal confirmation dialog for destructive delete actions
+   - Real-time comment count display in recipe cards
+   - Relative time formatting (5m ago, 3h ago, 2d ago, etc.)
+   - Backend MongoDB aggregation for efficient comment counts
+
+2. **Modern UX Components**:
+   - **ConfirmDialog**: Reusable modal confirmation component with danger mode
+   - **Toast Notifications**: Replaced all alert() popups with styled toasts
+   - Repositioned toasts from top-4 to top-20 (80px from top) to avoid avatar collision
+   - Smooth fade in/out transitions for all notifications
+
+3. **Recipe List Improvements**:
+   - **Fixed "Mine" Filter**: Now correctly compares owner_id === currentUserId
+   - **Fixed "Families" Filter**: Checks visibility === 'family' properly
+   - **Removed 50-Recipe Limit**: All recipes now display without artificial cap
+   - **Date Sorting**: Implemented newest and recently updated sort options
+   - **Removed "Most Popular"**: Eliminated comment-based sort (not user-generated yet)
+   - Added owner_id, visibility, created_at, updated_at to API projection
+
+4. **AI Recipe Extraction Enhancements**:
+   - Updated User-Agent to Chrome 131 for better compatibility
+   - Added Cloudflare bot detection with helpful user guidance
+   - Enhanced headers (Sec-Ch-Ua, Sec-Fetch-User, Referer, etc.)
+   - Improved error handling for bot-protected sites
+
+**Technical Changes**:
+
+- `app/handlers/list_recipes.js`: MongoDB aggregation for comment counts, removed limit
+- `app/handlers/ai_recipe_assistant.js`: Chrome 131 headers, Cloudflare detection
+- `ui/src/components/ConfirmDialog.tsx`: New reusable confirmation modal (NEW FILE)
+- `ui/src/components/Toast.tsx`: Repositioned from top-4 to top-20
+- `ui/src/components/recipeDetail/parts/Comments.tsx`: Complete rewrite with CRUD
+- `ui/src/components/RecipeList.tsx`: Fixed filters, implemented date sorting
+- `ui/src/pages/HomePage.tsx`: Removed "Most Popular" option
+- `ui/src/components/layout/Header.tsx`: Removed "Most Popular" from mobile menu
+- `ui/src/components/recipeDetail/RecipeDetailContainer.tsx`: Integrated interactive comments
+
+**User Impact**:
+
+- Users can now interact with comments (previously read-only)
+- Modern confirmation dialogs replace jarring browser popups
+- Toast notifications positioned to not obscure user avatar
+- Recipe filters now work correctly ("Mine" and "Families")
+- All recipes visible without arbitrary 50-item limit
+- Better AI recipe extraction from modern websites
+
 ## [Unreleased] - 2025-11-28
 
 ### UI - Shopping List UX Improvements
